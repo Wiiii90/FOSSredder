@@ -3,13 +3,14 @@
  * @brief Composes statement draft review.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder 1.0 as App
 import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Import 1.0 as Import
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -40,6 +41,7 @@ Item {
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             objectName: "statementDraftEmptyLabel"
             visible: !statementState.hasDraft
             text: qsTr("No drafts available!")
@@ -62,15 +64,20 @@ Item {
             Layout.fillHeight: true
             contentSpacing: 0
 
-            ScrollView {
+            Flickable {
                 id: txScroll
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 0
                 clip: true
+                contentWidth: width
+                contentHeight: transactionDraftContent.implicitHeight
+
+                ScrollBar.vertical: Controls.AppScrollBar {}
 
                 Import.TransactionDraftView {
-                    width: txScroll.availableWidth > 0 ? txScroll.availableWidth : txScroll.width
+                    id: transactionDraftContent
+                    width: Math.max(0, txScroll.width - root.theme.scrollBarGutterWidth)
                     theme: root.theme
                     transactionState: transactionState
                 }

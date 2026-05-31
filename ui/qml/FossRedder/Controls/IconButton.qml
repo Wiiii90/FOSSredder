@@ -3,11 +3,12 @@
  * @brief Provides the IconButton component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import QtQuick.Effects
 import FossRedder 1.0
-pragma ComponentBehavior: Bound
 
 Item {
     id: button
@@ -21,30 +22,43 @@ Item {
     property string label: ""
     property bool active: false
 
-    signal clicked()
+    signal clicked
 
-    Rectangle { anchors.fill: parent; color: "transparent" }
+    Rectangle {
+        id: buttonBackground
+        anchors.fill: parent
+        anchors.topMargin: Theme.toolbarItemFrameTopInset
+        radius: Theme.radius
+        color: button.active ? Theme.toolbarItemSelectedFill : (buttonMouse.containsMouse ? Theme.toolbarItemHoverFill : "transparent")
+        border.width: button.active || buttonMouse.containsMouse ? Theme.borderWidthThin : 0
+        border.color: button.active ? Theme.toolbarItemSelectedBorder : Theme.toolbarBorder
+    }
 
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Theme.spacingSmall
-        spacing: Theme.spacingSmall
+        anchors.fill: buttonBackground
+        spacing: Theme.margins
         Layout.alignment: Qt.AlignVCenter
 
         Item {
-            Layout.preferredWidth: Math.min(Math.round(button.implicitHeight * 0.65), Math.round(button.width * 0.9))
-            Layout.preferredHeight: Layout.preferredWidth
+            Layout.preferredWidth: Theme.toolbarIconSize
+            Layout.preferredHeight: Theme.toolbarIconSize
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
-            transformOrigin: Item.Center
 
             Item {
                 id: iconContainer
-                anchors.fill: parent
+                anchors.centerIn: parent
+                width: Theme.toolbarIconSize
+                height: Theme.toolbarIconSize
                 property bool hovered: false
                 property bool pressed: false
-                scale: ((button.active || hovered) ? 1.08 : 1.0) * (pressed ? 0.96 : 1.0)
+                scale: (hovered ? 1.02 : 1.0) * (pressed ? 0.97 : 1.0)
 
-                Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: Theme.animationDurationFast
+                        easing.type: Easing.OutQuad
+                    }
+                }
 
                 MultiEffect {
                     anchors.fill: parent
@@ -73,14 +87,17 @@ Item {
         Text {
             text: button.label
             horizontalAlignment: Text.AlignHCenter
-            font.pointSize: Theme.fontSizeSmall
-            color: Theme.textPrimary
+            font.family: Theme.fontFamily
+            font.pointSize: Theme.toolbarLabelFontSize
+            font.weight: button.active ? Font.Medium : Font.Normal
+            color: button.active ? Theme.toolbarItemActiveText : Theme.toolbarItemText
             Layout.alignment: Qt.AlignHCenter
             visible: button.label !== ""
         }
     }
 
     MouseArea {
+        id: buttonMouse
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor

@@ -3,13 +3,14 @@
  * @brief Provides the SecondaryButton component.
  */
 
-import QtQuick 2.15
-import FossRedder 1.0
 pragma ComponentBehavior: Bound
 
+import QtQuick 2.15
+import FossRedder 1.0
+
 Button {
-    fillColor: Theme.surface
-    textColor: Theme.textPrimary
+    fillColor: Theme.buttonFill
+    textColor: Theme.buttonText
     bordered: true
     filled: false
 }

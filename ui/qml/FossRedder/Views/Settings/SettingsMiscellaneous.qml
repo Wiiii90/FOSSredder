@@ -4,6 +4,7 @@
  */
 
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
 pragma ComponentBehavior: Bound
@@ -18,6 +19,8 @@ Flickable {
     contentWidth: width
     clip: true
 
+    ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
+
     ColumnLayout {
         id: column
         anchors.fill: parent
@@ -26,14 +29,19 @@ Flickable {
 
         Controls.Panel {
             Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.preferredHeight: implicitHeight
             contentSpacing: root.theme.spacingSmall
 
             ColumnLayout {
                 Layout.fillWidth: true
+                Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                Layout.preferredHeight: implicitHeight
                 spacing: root.theme.spacingSmall
 
                 GridLayout {
                     Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignTop | Qt.AlignLeft
                     columns: 2
                     columnSpacing: root.theme.spacingLarge
                     rowSpacing: root.theme.spacingSmall

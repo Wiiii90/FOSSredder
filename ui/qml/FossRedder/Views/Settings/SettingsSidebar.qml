@@ -3,9 +3,12 @@
  * @brief Renders settings category navigation entries in the sidebar.
  */
 
-import QtQuick 2.15
-import QtQuick.Layouts 1.3
 pragma ComponentBehavior: Bound
+
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.3
+import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
@@ -14,19 +17,29 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.theme.spacingMedium
         spacing: root.theme.spacingSmall
 
         Flickable {
+            id: settingsSidebarFlick
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
             contentWidth: width
             contentHeight: settingsColumn.implicitHeight
 
+            ScrollBar.vertical: Controls.AppScrollBar {
+                parent: settingsSidebarFlick
+                anchors.right: settingsSidebarFlick.right
+                anchors.rightMargin: root.theme.viewSidebarScrollBarOuterInset
+                anchors.top: settingsSidebarFlick.top
+                anchors.bottom: settingsSidebarFlick.bottom
+                persistent: true
+            }
+
             Column {
                 id: settingsColumn
-                width: parent.width
+                x: root.theme.viewSidebarEntryInset
+                width: Math.max(0, parent.width - root.theme.viewSidebarEntryInsetTotal)
                 spacing: root.theme.spacingSmall
 
                 Repeater {
@@ -39,13 +52,16 @@ Item {
                         width: settingsColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: settingsRow.modelData.selected ? root.theme.selectionHighlight : "transparent"
-                        border.color: root.theme.borderSoft
+                        color: settingsRow.modelData.selected ? root.theme.selectionHighlight : (settingsMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: settingsRow.modelData.selected ? root.theme.selectionBorder : (settingsMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
+                            id: settingsMouse
                             objectName: "settingsSidebarCategoryClick_" + settingsRow.modelData.category
                             anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: root.settingsState.selectCategory(settingsRow.modelData.category)
                         }
 

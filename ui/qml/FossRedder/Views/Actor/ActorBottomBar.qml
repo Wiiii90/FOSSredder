@@ -51,18 +51,20 @@ Item {
             onClicked: if (root.actorState) root.actorState.submit()
         }
 
-        Controls.CompactAddButton {
-            objectName: "actorCreateModeButton"
-            visible: root.actorState ? root.actorState.isEdit : false
-            onClicked: if (root.actorState) root.actorState.enterCreateMode()
-        }
-
         Controls.DangerButton {
             objectName: "actorDeleteButton"
             visible: root.actorState ? root.actorState.isEdit : false
             text: qsTr("Delete")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
             onClicked: if (root.actorState) root.actorState.deleteCurrent()
+        }
+
+        Controls.SecondaryButton {
+            objectName: "actorCreateModeButton"
+            visible: root.actorState ? root.actorState.isEdit : false
+            text: qsTr("New")
+            Layout.preferredWidth: root.theme.viewActionButtonWidth
+            onClicked: if (root.actorState) root.actorState.enterCreateMode()
         }
 
         Controls.SuccessButton {

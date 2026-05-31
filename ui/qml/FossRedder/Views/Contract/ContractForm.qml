@@ -3,12 +3,13 @@
  * @brief Provides the ContractForm component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Contract 1.0 as Contract
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -33,23 +34,21 @@ Item {
             Layout.fillHeight: true
             clip: true
             contentWidth: width
-            contentHeight: contractContent.height
+            contentHeight: contractContent.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
 
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-            }
+            ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
 
             ColumnLayout {
                 id: contractContent
                 width: contractScroll.width
-                height: Math.max(implicitHeight, contractScroll.height)
                 spacing: root.theme.spacingSmall
 
                 RowLayout {
                     Layout.fillWidth: true
 
                     Label {
+                        color: root.theme.textPrimary
                         text: qsTr("Contract Name")
                         Layout.preferredWidth: root.theme.formLabelWidth
                     }
@@ -60,8 +59,10 @@ Item {
                         placeholderText: ""
                         Layout.fillWidth: true
                         text: root.contractState ? root.contractState.name : ""
-                        onTextChanged: if (root.contractState) root.contractState.name = text
-                        onTextEdited: if (root.contractState) root.contractState.name = text
+                        onTextChanged: if (root.contractState)
+                            root.contractState.name = text
+                        onTextEdited: if (root.contractState)
+                            root.contractState.name = text
                     }
                 }
 
@@ -74,6 +75,7 @@ Item {
                         Layout.fillWidth: true
 
                         Label {
+                            color: root.theme.textPrimary
                             text: qsTr("Aliases")
                             Layout.preferredWidth: root.theme.formLabelWidth
                         }
@@ -84,20 +86,24 @@ Item {
                             Layout.fillWidth: true
                             placeholderText: ""
                             text: root.contractState ? root.contractState.aliasInputText : ""
-                            onTextChanged: if (root.contractState) root.contractState.aliasInputText = text
-                            onTextEdited: if (root.contractState) root.contractState.aliasInputText = text
+                            onTextChanged: if (root.contractState)
+                                root.contractState.aliasInputText = text
+                            onTextEdited: if (root.contractState)
+                                root.contractState.aliasInputText = text
                         }
 
                         Controls.CompactAddButton {
                             objectName: "contractAddAliasButton"
                             enabled: root.contractState ? root.contractState.canAddAlias(contractAliasInput.text) : false
-                            onClicked: if (root.contractState) root.contractState.addAlias(contractAliasInput.text)
+                            onClicked: if (root.contractState)
+                                root.contractState.addAlias(contractAliasInput.text)
                         }
 
                         Controls.CompactRemoveButton {
                             objectName: "contractRemoveAliasButton"
                             enabled: root.aliasIndex >= 0 && root.aliasIndex < root.aliases.length
-                            onClicked: if (root.contractState) root.contractState.requestRemoveSelectedAlias()
+                            onClicked: if (root.contractState)
+                                root.contractState.requestRemoveSelectedAlias()
                         }
                     }
 
@@ -123,9 +129,7 @@ Item {
                             contentWidth: width
                             contentHeight: contractAliasFlow.implicitHeight
 
-                            ScrollBar.vertical: ScrollBar {
-                                policy: ScrollBar.AsNeeded
-                            }
+                            ScrollBar.vertical: Controls.AppScrollBar {}
 
                             Flow {
                                 id: contractAliasFlow
@@ -161,8 +165,10 @@ Item {
                                             objectName: "contractAliasMouse_" + contractAliasChip.index
                                             anchors.fill: parent
                                             preventStealing: true
-                                            onPressed: if (root.contractState) root.contractState.aliasIndex = contractAliasChip.index
-                                            onClicked: if (root.contractState) root.contractState.aliasIndex = contractAliasChip.index
+                                            onPressed: if (root.contractState)
+                                                root.contractState.aliasIndex = contractAliasChip.index
+                                            onClicked: if (root.contractState)
+                                                root.contractState.aliasIndex = contractAliasChip.index
                                         }
                                     }
                                 }
@@ -193,9 +199,6 @@ Item {
 
                 Contract.ContractPropertiesPanel {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight
-                    Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
                     theme: root.theme
                     contractState: root.contractState
                     propertyRows: root.propertyRows

@@ -3,9 +3,12 @@
  * @brief Shows and selects property entries in the sidebar list.
  */
 
-import QtQuick 2.15
-import QtQuick.Layouts 1.3
 pragma ComponentBehavior: Bound
+
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.3
+import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
@@ -16,10 +19,10 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.theme.spacingMedium
         spacing: root.theme.spacingSmall
 
         Flickable {
+            id: propertySidebarFlick
             objectName: "propertySidebarFlick"
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -27,9 +30,19 @@ Item {
             contentWidth: width
             contentHeight: propertyColumn.implicitHeight
 
+            ScrollBar.vertical: Controls.AppScrollBar {
+                parent: propertySidebarFlick
+                anchors.right: propertySidebarFlick.right
+                anchors.rightMargin: root.theme.viewSidebarScrollBarOuterInset
+                anchors.top: propertySidebarFlick.top
+                anchors.bottom: propertySidebarFlick.bottom
+                persistent: true
+            }
+
             Column {
                 id: propertyColumn
-                width: parent.width
+                x: root.theme.viewSidebarEntryInset
+                width: Math.max(0, parent.width - root.theme.viewSidebarEntryInsetTotal)
                 spacing: root.theme.spacingSmall
 
                 Repeater {
@@ -43,13 +56,16 @@ Item {
                         width: propertyColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: propertyRow.propertyId === root.propertyState.currentId ? root.theme.selectionHighlight : "transparent"
-                        border.color: root.theme.borderSoft
+                        color: propertyRow.propertyId === root.propertyState.currentId ? root.theme.selectionHighlight : (propertyMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: propertyRow.propertyId === root.propertyState.currentId ? root.theme.selectionBorder : (propertyMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
+                            id: propertyMouse
                             objectName: "propertySidebarMouse_" + propertyRow.propertyId
                             anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: root.propertyState.selectProperty(propertyRow.propertyId)
                         }
 

@@ -29,6 +29,7 @@ Controls.Panel {
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Type")
             Layout.fillWidth: true
         }
@@ -37,8 +38,10 @@ Controls.Panel {
             objectName: "contractTypeField"
             Layout.fillWidth: true
             text: root.contractState ? root.contractState.type : ""
-            onTextChanged: if (root.contractState) root.contractState.type = text
-            onTextEdited: if (root.contractState) root.contractState.type = text
+            onTextChanged: if (root.contractState)
+                root.contractState.type = text
+            onTextEdited: if (root.contractState)
+                root.contractState.type = text
         }
     }
 }

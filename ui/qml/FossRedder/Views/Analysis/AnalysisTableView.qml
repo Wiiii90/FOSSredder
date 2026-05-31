@@ -3,10 +3,12 @@
  * @brief Provides the Analysis table preview.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
-pragma ComponentBehavior: Bound
+import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
@@ -28,15 +30,12 @@ Item {
             contentHeight: matrixContent.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
 
-            ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+            ScrollBar.horizontal: Controls.AppScrollBar {}
+            ScrollBar.vertical: Controls.AppScrollBar {}
 
             ColumnLayout {
                 id: matrixContent
-                width: Math.max(matrixViewport.width,
-                                root.theme.analysis.table.propertyColumnWidth
-                                + Math.max(1, root.analysisState.tableContractTypes.length) * root.theme.analysis.table.amountColumnWidth
-                                + root.theme.analysis.table.totalColumnWidth)
+                width: Math.max(Math.max(0, matrixViewport.width - root.theme.scrollBarGutterWidth), root.theme.analysis.table.propertyColumnWidth + Math.max(1, root.analysisState.tableContractTypes.length) * root.theme.analysis.table.amountColumnWidth + root.theme.analysis.table.totalColumnWidth)
                 spacing: 0
 
                 Rectangle {
@@ -52,6 +51,7 @@ Item {
                         spacing: 0
 
                         Label {
+                            color: root.theme.textPrimary
                             text: qsTr("Property")
                             Layout.preferredWidth: root.theme.analysis.table.propertyColumnWidth
                             leftPadding: root.theme.spacingSmall
@@ -62,6 +62,7 @@ Item {
                             model: root.analysisState.tableContractTypes
 
                             Label {
+                                color: root.theme.textPrimary
                                 required property var modelData
                                 text: modelData
                                 Layout.preferredWidth: root.theme.analysis.table.amountColumnWidth
@@ -72,6 +73,7 @@ Item {
                         }
 
                         Label {
+                            color: root.theme.textPrimary
                             text: qsTr("Total")
                             Layout.preferredWidth: root.theme.analysis.table.totalColumnWidth
                             Layout.minimumWidth: root.theme.analysis.table.totalColumnWidth
@@ -101,6 +103,7 @@ Item {
                             spacing: 0
 
                             Label {
+                                color: root.theme.textPrimary
                                 text: rowContainer.modelData.propertyName
                                 Layout.preferredWidth: root.theme.analysis.table.propertyColumnWidth
                                 leftPadding: root.theme.spacingSmall
@@ -120,6 +123,7 @@ Item {
                                     border.color: root.theme.borderLight
 
                                     Label {
+                                        color: root.theme.textPrimary
                                         anchors.fill: parent
                                         text: Number(amountCell.modelData).toFixed(2)
                                         horizontalAlignment: Text.AlignRight
@@ -139,6 +143,7 @@ Item {
                                 border.color: root.theme.borderStrong
 
                                 Label {
+                                    color: root.theme.textPrimary
                                     anchors.fill: parent
                                     text: Number(rowContainer.modelData.total).toFixed(2)
                                     horizontalAlignment: Text.AlignRight
@@ -183,6 +188,7 @@ Item {
                                 border.color: root.theme.borderStrong
 
                                 Label {
+                                    color: root.theme.textPrimary
                                     anchors.fill: parent
                                     text: ""
                                 }
@@ -199,6 +205,7 @@ Item {
                             border.color: root.theme.borderStrong
 
                             Label {
+                                color: root.theme.textPrimary
                                 anchors.fill: parent
                                 text: root.analysisState.tableGrandTotal.toFixed(2)
                                 rightPadding: root.theme.spacingSmall

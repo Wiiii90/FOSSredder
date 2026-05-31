@@ -9,6 +9,7 @@ inline constexpr std::string_view kApplicationName = "FOSSRedder";
 
 namespace keys {
 inline constexpr std::string_view kLanguage = "general/language";
+inline constexpr std::string_view kThemeMode = "general/themeMode";
 inline constexpr std::string_view kImportDefaultPath = "import/defaultPath";
 inline constexpr std::string_view kImportPoppler = "import/poppler";
 inline constexpr std::string_view kImportOpenCv = "import/opencv";

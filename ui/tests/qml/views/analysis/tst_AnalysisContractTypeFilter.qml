@@ -30,6 +30,7 @@ TestCase {
         property color surfaceAlt: "#f5f5f5"
         property color surface: "#ffffff"
         property color border: "#cccccc"
+        property color textPrimary: "#000000"
     }
 
     property var analysisState: QtObject {
@@ -48,6 +49,10 @@ TestCase {
 
         function selectAllContractTypes() {
             selectedContractTypes = ["lease", "unassigned"]
+        }
+
+        function selectNoContractTypes() {
+            selectedContractTypes = []
         }
 
         function selectUnassignedContractTypes() {
@@ -77,9 +82,8 @@ TestCase {
     function test_ANL_CTF_001_contractTypeFilterActionsForwardSelectionToState() {
         const filter = createFilter()
 
-        TestSupport.findRequired(Lookup, filter, "analysisContractTypeFilterUnassignedButton").clicked()
-        compare(analysisState.selectedContractTypes.length, 1)
-        compare(analysisState.selectedContractTypes[0], "unassigned")
+        TestSupport.findRequired(Lookup, filter, "analysisContractTypeFilterNoneButton").clicked()
+        compare(analysisState.selectedContractTypes.length, 0)
 
         TestSupport.findRequired(Lookup, filter, "analysisContractTypeFilterAllButton").clicked()
         compare(analysisState.selectedContractTypes.length, 2)

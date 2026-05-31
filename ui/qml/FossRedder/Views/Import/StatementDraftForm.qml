@@ -3,11 +3,12 @@
  * @brief Provides statement draft name and transaction navigation controls.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 ColumnLayout {
     id: root
@@ -19,6 +20,7 @@ ColumnLayout {
         Layout.fillWidth: true
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Statement")
             Layout.preferredWidth: root.theme.formLabelWidth
         }
@@ -30,7 +32,8 @@ ColumnLayout {
             onTextEdited: root.statementState.statementName = text
             onEditingFinished: root.statementState.statementName = text
             onAccepted: root.statementState.statementName = text
-            onActiveFocusChanged: if (!activeFocus) root.statementState.statementName = text
+            onActiveFocusChanged: if (!activeFocus)
+                root.statementState.statementName = text
         }
     }
 
@@ -38,6 +41,7 @@ ColumnLayout {
         Layout.fillWidth: true
 
         Label {
+            color: root.theme.textPrimary
             Layout.fillWidth: true
             text: root.statementState.transactionInfoText
         }

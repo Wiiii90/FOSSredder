@@ -3,10 +3,12 @@
  * @brief Provides the BookingSidebar component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -18,10 +20,10 @@ Item {
 
     ColumnLayout {
         anchors.fill: root
-        anchors.margins: root.theme.pageContentMargin
         spacing: root.theme.spacingSmall
 
         Flickable {
+            id: bookingStatementsFlick
             objectName: "bookingStatementsFlick"
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -29,9 +31,19 @@ Item {
             contentWidth: width
             contentHeight: statementColumn.implicitHeight
 
+            ScrollBar.vertical: Controls.AppScrollBar {
+                parent: bookingStatementsFlick
+                anchors.right: bookingStatementsFlick.right
+                anchors.rightMargin: root.theme.viewSidebarScrollBarOuterInset
+                anchors.top: bookingStatementsFlick.top
+                anchors.bottom: bookingStatementsFlick.bottom
+                persistent: true
+            }
+
             Column {
                 id: statementColumn
-                width: root.width - (root.theme.pageContentMargin * 2)
+                x: root.theme.viewSidebarEntryInset
+                width: Math.max(0, parent.width - root.theme.viewSidebarEntryInsetTotal)
                 spacing: root.theme.spacingSmall
 
                 Repeater {
@@ -46,10 +58,10 @@ Item {
                         property string statementId: statementEntry.modelData.id
                         property string statementName: statementEntry.modelData.name
                         readonly property bool isSelectedStatement: statementEntry.statementId === root.bookingState.selectedStatementId
-                        color: root.panelSurfaceAlt
+                        color: statementMouseArea.containsMouse ? root.theme.sidebarHoverFill : root.panelSurfaceAlt
                         radius: root.rowRadius
                         border.width: root.theme.borderWidthThin
-                        border.color: statementEntry.isSelectedStatement ? root.theme.selectionHighlight : root.theme.borderSoft
+                        border.color: statementEntry.isSelectedStatement ? root.theme.selectionBorder : (statementMouseArea.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         implicitHeight: statementContent.implicitHeight + (root.theme.spacingSmall * 2)
 
                         Column {
@@ -61,14 +73,15 @@ Item {
                             Item {
                                 id: statementHeader
                                 width: statementContent.width
-                                height: Math.max(root.rowHeight - (root.theme.spacingSmall * 2),
-                                                 statementNameText.implicitHeight + (root.theme.margins * 2),
-                                                 collapseButton.implicitHeight + (root.theme.margins * 2))
+                                height: Math.max(root.rowHeight - (root.theme.spacingSmall * 2), statementNameText.implicitHeight + (root.theme.margins * 2), collapseButton.implicitHeight + (root.theme.margins * 2))
 
                                 MouseArea {
+                                    id: statementMouseArea
                                     objectName: "bookingStatementMouse_" + statementEntry.statementId
                                     anchors.fill: statementHeader
                                     acceptedButtons: Qt.LeftButton
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
                                     preventStealing: true
                                     onClicked: root.bookingState.selectStatement(statementEntry.statementId)
                                 }
@@ -115,14 +128,17 @@ Item {
                                         width: transactionColumn.width
                                         height: root.rowHeight
                                         radius: root.rowRadius
-                                        color: transactionEntry.transactionId === root.bookingState.selectedTransactionId ? root.theme.selectionHighlight : "transparent"
-                                        border.color: root.theme.borderSoft
+                                        color: transactionEntry.transactionId === root.bookingState.selectedTransactionId ? root.theme.selectionHighlight : (transactionMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                                        border.color: transactionEntry.transactionId === root.bookingState.selectedTransactionId ? root.theme.selectionBorder : (transactionMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                                         border.width: root.theme.borderWidthThin
 
                                         MouseArea {
+                                            id: transactionMouse
                                             objectName: "bookingTransactionMouse_" + transactionEntry.transactionId
                                             anchors.fill: transactionEntry
                                             acceptedButtons: Qt.LeftButton
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
                                             preventStealing: true
                                             onClicked: root.bookingState.selectTransaction(statementEntry.statementId, transactionEntry.transactionId)
                                         }

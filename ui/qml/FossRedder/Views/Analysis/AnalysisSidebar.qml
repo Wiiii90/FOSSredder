@@ -3,9 +3,12 @@
  * @brief Provides the Analysis sidebar list.
  */
 
-import QtQuick 2.15
-import QtQuick.Layouts 1.3
 pragma ComponentBehavior: Bound
+
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.3
+import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
@@ -15,19 +18,29 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.theme.spacingMedium
         spacing: root.theme.spacingSmall
 
         Flickable {
+            id: analysisSidebarFlick
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
             contentWidth: width
             contentHeight: analysisColumn.implicitHeight
 
+            ScrollBar.vertical: Controls.AppScrollBar {
+                parent: analysisSidebarFlick
+                anchors.right: analysisSidebarFlick.right
+                anchors.rightMargin: root.theme.viewSidebarScrollBarOuterInset
+                anchors.top: analysisSidebarFlick.top
+                anchors.bottom: analysisSidebarFlick.bottom
+                persistent: true
+            }
+
             Column {
                 id: analysisColumn
-                width: parent.width
+                x: root.theme.viewSidebarEntryInset
+                width: Math.max(0, parent.width - root.theme.viewSidebarEntryInsetTotal)
                 spacing: root.theme.spacingSmall
 
                 Repeater {
@@ -40,15 +53,16 @@ Item {
                         width: analysisColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: analysisRow.modelData.id === root.analysisState.selectedAnalysisId
-                               ? root.theme.selectionHighlight
-                               : "transparent"
-                        border.color: root.theme.borderSoft
+                        color: analysisRow.modelData.id === root.analysisState.selectedAnalysisId ? root.theme.selectionHighlight : (analysisMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: analysisRow.modelData.id === root.analysisState.selectedAnalysisId ? root.theme.selectionBorder : (analysisMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
+                            id: analysisMouse
                             objectName: "analysisSidebarRowMouseArea"
                             anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: root.analysisState.selectAnalysis(analysisRow.modelData.id)
                         }
 

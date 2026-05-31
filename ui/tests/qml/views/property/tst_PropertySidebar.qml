@@ -39,9 +39,15 @@ TestCase {
         property int viewSidebarRowHeight: 40
         property int viewSidebarRowRadius: 4
         property int viewSidebarRowSpacing: 4
+        property int viewSidebarEntryInset: 6
+        property int viewSidebarScrollBarOuterInset: 6
+        property int viewSidebarEntryInsetTotal: 12
         property int borderWidthThin: 1
         property color selectionHighlight: "#aaccee"
+        property color selectionBorder: "#aaccee"
         property color borderSoft: "#cccccc"
+        property color sidebarHoverFill: "#eeeeee"
+        property color sidebarHoverBorder: "#bbbbbb"
         property color textPrimary: "#000000"
     }
 

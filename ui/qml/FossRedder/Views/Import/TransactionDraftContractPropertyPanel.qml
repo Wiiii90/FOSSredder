@@ -3,11 +3,12 @@
  * @brief Manages property selection inside the transaction draft contract panel.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -19,7 +20,9 @@ Item {
     readonly property color suggestionColor: root.suggestionTone === 2 ? root.theme.successStrong : (root.suggestionTone === 1 ? root.theme.warning : root.theme.danger)
 
     Layout.fillWidth: true
+    Layout.fillHeight: false
     Layout.preferredWidth: 1
+    Layout.preferredHeight: implicitHeight
     implicitHeight: contentLayout.implicitHeight
 
     ColumnLayout {
@@ -29,6 +32,8 @@ Item {
 
         Controls.Panel {
             Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.preferredHeight: implicitHeight
             contentSpacing: root.theme.spacingSmall
 
             background: Rectangle {
@@ -40,14 +45,17 @@ Item {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                Layout.preferredHeight: implicitHeight
                 spacing: root.theme.spacingSmall
 
-                Label { text: qsTr("Select Property"); Layout.fillWidth: true }
-
-                ColumnLayout {
+                Label {
+                    color: root.theme.textPrimary
+                    text: qsTr("Select Property")
                     Layout.fillWidth: true
-                    spacing: root.theme.spacingSmall
+                }
+
+                Controls.CheckListPanel {
 
                     Repeater {
                         id: propertyRepeater
@@ -68,13 +76,16 @@ Item {
                             }
 
                             Label {
+                                color: root.theme.textPrimary
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                 text: propertyOption.modelData.display || propertyOption.modelData.name || ""
                                 elide: Text.ElideRight
                                 verticalAlignment: Text.AlignVCenter
                             }
 
-                            Item { Layout.fillWidth: true }
+                            Item {
+                                Layout.fillWidth: true
+                            }
                         }
                     }
 
@@ -94,7 +105,11 @@ Item {
                         Layout.fillWidth: true
                         spacing: root.theme.spacingSmall
 
-                        Label { text: qsTr("Name"); Layout.fillWidth: true }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Name")
+                            Layout.fillWidth: true
+                        }
 
                         Controls.TextField {
                             objectName: "transactionDraftPropertyNameInput"
@@ -108,7 +123,11 @@ Item {
 
                     ColumnLayout {
                         spacing: root.theme.spacingSmall
-                        Label { text: " "; Layout.fillWidth: false }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: " "
+                            Layout.fillWidth: false
+                        }
                         Controls.CompactAddButton {
                             objectName: "transactionDraftPropertyAddButton"
                             enabled: root.transactionState.canAddProperty

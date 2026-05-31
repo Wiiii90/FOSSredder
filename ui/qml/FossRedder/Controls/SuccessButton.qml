@@ -3,13 +3,16 @@
  * @brief Provides the SuccessButton component.
  */
 
-import QtQuick 2.15
-import FossRedder 1.0
 pragma ComponentBehavior: Bound
 
+import QtQuick 2.15
+import FossRedder 1.0
+
 Button {
-    fillColor: Qt.lighter(Theme.success, 3.2)
-    textColor: Theme.textPrimary
+    fillColor: Theme.buttonConfirmFill
+    textColor: Theme.buttonConfirmText
+    borderColor: Theme.buttonConfirmBorder
+    hoverBorderColor: Theme.accent
     bordered: true
-    filled: false
+    filled: true
 }

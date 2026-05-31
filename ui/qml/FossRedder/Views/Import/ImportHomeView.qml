@@ -6,6 +6,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
+import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Import 1.0 as Import
 pragma ComponentBehavior: Bound
 
@@ -26,7 +27,7 @@ Item {
             contentHeight: Math.max(content.implicitHeight, scroll.height)
             contentWidth: width
 
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+            ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
 
             ColumnLayout {
                 id: content

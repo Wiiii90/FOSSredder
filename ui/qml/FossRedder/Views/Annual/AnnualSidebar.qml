@@ -3,9 +3,12 @@
  * @brief Provides the Annual sidebar list.
  */
 
-import QtQuick 2.15
-import QtQuick.Layouts 1.3
 pragma ComponentBehavior: Bound
+
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.3
+import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
@@ -15,19 +18,29 @@ Item {
 
     ColumnLayout {
         anchors.fill: root
-        anchors.margins: root.theme.spacingMedium
         spacing: root.theme.spacingSmall
 
         Flickable {
+            id: annualSidebarFlick
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
             contentWidth: width
             contentHeight: annualColumn.implicitHeight
 
+            ScrollBar.vertical: Controls.AppScrollBar {
+                parent: annualSidebarFlick
+                anchors.right: annualSidebarFlick.right
+                anchors.rightMargin: root.theme.viewSidebarScrollBarOuterInset
+                anchors.top: annualSidebarFlick.top
+                anchors.bottom: annualSidebarFlick.bottom
+                persistent: true
+            }
+
             Column {
                 id: annualColumn
-                width: parent.width
+                x: root.theme.viewSidebarEntryInset
+                width: Math.max(0, parent.width - root.theme.viewSidebarEntryInsetTotal)
                 spacing: root.theme.spacingSmall
 
                 Repeater {
@@ -40,15 +53,16 @@ Item {
                         width: annualColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: annualRow.modelData.id === root.annualState.selectedAnnualId
-                               ? root.theme.selectionHighlight
-                               : "transparent"
-                        border.color: root.theme.borderSoft
+                        color: annualRow.modelData.id === root.annualState.selectedAnnualId ? root.theme.selectionHighlight : (annualMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: annualRow.modelData.id === root.annualState.selectedAnnualId ? root.theme.selectionBorder : (annualMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
+                            id: annualMouse
                             objectName: "annualSidebarRowMouseArea"
                             anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: root.annualState.selectAnnual(annualRow.modelData.id)
                         }
 

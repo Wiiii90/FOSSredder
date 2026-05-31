@@ -3,11 +3,12 @@
  * @brief Provides the ImportForm component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -18,7 +19,11 @@ Controls.Panel {
 
     RowLayout {
         Layout.fillWidth: true
-        Label { text: qsTr("Source"); Layout.preferredWidth: root.theme.formLabelWidth }
+        Label {
+            color: root.theme.textPrimary
+            text: qsTr("Source")
+            Layout.preferredWidth: root.theme.formLabelWidth
+        }
         Controls.DropdownMenu {
             id: sourceKind
             objectName: "importSourceComboBox"
@@ -29,7 +34,11 @@ Controls.Panel {
 
     RowLayout {
         Layout.fillWidth: true
-        Label { text: qsTr("Strategy"); Layout.preferredWidth: root.theme.formLabelWidth }
+        Label {
+            color: root.theme.textPrimary
+            text: qsTr("Strategy")
+            Layout.preferredWidth: root.theme.formLabelWidth
+        }
         Controls.DropdownMenu {
             id: strategy
             objectName: "importStrategyComboBox"

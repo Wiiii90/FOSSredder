@@ -3,11 +3,12 @@
  * @brief Provides the AnalysisContractTypeFilter component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -19,8 +20,8 @@ Controls.Panel {
     readonly property real actionButtonWidth: Math.max(root.actionButtonSize, 96)
 
     Layout.fillWidth: true
-    Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight
-    Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
+    Layout.fillHeight: false
+    Layout.preferredHeight: implicitHeight
     contentSpacing: root.theme.spacingSmall
 
     background: Rectangle {
@@ -32,87 +33,69 @@ Controls.Panel {
 
     ColumnLayout {
         Layout.fillWidth: true
-        Layout.fillHeight: true
+        Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+        Layout.preferredHeight: implicitHeight
         spacing: root.theme.spacingSmall
 
         RowLayout {
             Layout.fillWidth: true
+            spacing: root.theme.spacingSmall
 
             Label {
+                color: root.theme.textPrimary
                 text: qsTr("Contract Types")
                 Layout.fillWidth: true
             }
 
-            Controls.SecondaryButton {
-                objectName: "analysisContractTypeFilterAllButton"
-                text: qsTr("All")
-                Layout.preferredWidth: root.actionButtonWidth
-                Layout.preferredHeight: root.actionButtonSize
-                onClicked: root.analysisState.selectAllContractTypes()
-            }
+            RowLayout {
+                spacing: root.theme.spacingSmall
 
-            Controls.SecondaryButton {
-                objectName: "analysisContractTypeFilterUnassignedButton"
-                text: qsTr("Unassigned")
-                Layout.preferredWidth: root.actionButtonWidth
-                Layout.preferredHeight: root.actionButtonSize
-                onClicked: root.analysisState.selectUnassignedContractTypes()
+                Controls.SecondaryButton {
+                    objectName: "analysisContractTypeFilterAllButton"
+                    text: qsTr("All")
+                    Layout.preferredWidth: root.actionButtonWidth
+                    Layout.preferredHeight: root.actionButtonSize
+                    onClicked: root.analysisState.selectAllContractTypes()
+                }
+
+                Controls.SecondaryButton {
+                    objectName: "analysisContractTypeFilterNoneButton"
+                    text: qsTr("None")
+                    Layout.preferredWidth: root.actionButtonWidth
+                    Layout.preferredHeight: root.actionButtonSize
+                    onClicked: root.analysisState.selectNoContractTypes()
+                }
             }
         }
 
-        Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+        Controls.CheckListPanel {
+            Repeater {
+                model: root.analysisState.contractTypeRows
 
-            Rectangle {
-                anchors.fill: parent
-                radius: root.theme.radius
-                color: root.theme.surface
-                border.width: root.theme.borderWidthThin
-                border.color: root.theme.border
-            }
-
-            Flickable {
-                id: contractTypeScroll
-                anchors.fill: parent
-                anchors.margins: root.theme.panelPadding || root.theme.spacingSmall || 0
-                clip: true
-                contentWidth: width
-                contentHeight: contractTypeColumn.implicitHeight
-
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-
-                Column {
-                    id: contractTypeColumn
-                    width: contractTypeScroll.width
+                delegate: RowLayout {
+                    id: ctRow
+                    required property var modelData
+                    Layout.fillWidth: true
                     spacing: root.theme.spacingSmall
+                    Layout.preferredHeight: Math.max(checkBox.implicitHeight, contractTypeLabel.implicitHeight)
 
-                    Repeater {
-                        model: root.analysisState.contractTypeRows
+                    Controls.CheckBox {
+                        id: checkBox
+                        objectName: "analysisContractTypeFilterCheckBox"
+                        Layout.fillWidth: false
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                        checked: root.selectedTypes.indexOf(String(ctRow.modelData.value)) !== -1
+                        onClicked: root.analysisState.setContractTypeSelected(String(ctRow.modelData.value), checked)
+                    }
 
-                        delegate: RowLayout {
-                            id: ctRow
-                            required property var modelData
-                            Layout.fillWidth: true
-                            spacing: root.theme.spacingSmall
-
-                            Controls.CheckBox {
-                                objectName: "analysisContractTypeFilterCheckBox"
-                                Layout.fillWidth: false
-                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                checked: root.selectedTypes.indexOf(String(ctRow.modelData.value)) !== -1
-                                onClicked: root.analysisState.setContractTypeSelected(String(ctRow.modelData.value), checked)
-                            }
-
-                            Label {
-                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                text: String(ctRow.modelData.label)
-                                elide: Text.ElideRight
-                                verticalAlignment: Text.AlignVCenter
-                            }
-
-                            Item { Layout.fillWidth: true }
-                        }
+                    Label {
+                        id: contractTypeLabel
+                        color: root.theme.textPrimary
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                        Layout.fillWidth: true
+                        text: String(ctRow.modelData.label)
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignTop
                     }
                 }
             }

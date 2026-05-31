@@ -3,11 +3,12 @@
  * @brief Provides basic transaction draft fields.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 ColumnLayout {
     id: root
@@ -30,7 +31,8 @@ ColumnLayout {
                 onTextEdited: root.transactionState.nameText = text
                 onEditingFinished: root.transactionState.commitNameText()
                 onAccepted: root.transactionState.commitNameText()
-                onActiveFocusChanged: if (!activeFocus) root.transactionState.commitNameText()
+                onActiveFocusChanged: if (!activeFocus)
+                    root.transactionState.commitNameText()
             }
         }
 
@@ -40,7 +42,9 @@ ColumnLayout {
                 textRole: "label"
                 model: root.transactionState.statusOptions
                 currentIndex: root.transactionState.statusIndex
-                onActivated: function(index) { root.transactionState.setStatusByIndex(index) }
+                onActivated: function (index) {
+                    root.transactionState.setStatusByIndex(index);
+                }
             }
         }
     }
@@ -60,7 +64,8 @@ ColumnLayout {
                 onTextEdited: root.transactionState.bookingDateText = text
                 onEditingFinished: root.transactionState.commitBookingDateText()
                 onAccepted: root.transactionState.commitBookingDateText()
-                onActiveFocusChanged: if (!activeFocus) root.transactionState.commitBookingDateText()
+                onActiveFocusChanged: if (!activeFocus)
+                    root.transactionState.commitBookingDateText()
             }
         }
 
@@ -71,7 +76,8 @@ ColumnLayout {
                 onTextEdited: root.transactionState.valutaText = text
                 onEditingFinished: root.transactionState.commitValutaText()
                 onAccepted: root.transactionState.commitValutaText()
-                onActiveFocusChanged: if (!activeFocus) root.transactionState.commitValutaText()
+                onActiveFocusChanged: if (!activeFocus)
+                    root.transactionState.commitValutaText()
             }
         }
     }
@@ -81,6 +87,7 @@ ColumnLayout {
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Amount")
             Layout.fillWidth: true
         }
@@ -92,7 +99,8 @@ ColumnLayout {
             onTextEdited: root.transactionState.amountText = text
             onEditingFinished: root.transactionState.commitAmountText()
             onAccepted: root.transactionState.commitAmountText()
-            onActiveFocusChanged: if (!activeFocus) root.transactionState.commitAmountText()
+            onActiveFocusChanged: if (!activeFocus)
+                root.transactionState.commitAmountText()
         }
     }
 }

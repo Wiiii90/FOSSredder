@@ -3,29 +3,19 @@
  * @brief Provides the AnalysisTransactionsPanel component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
     required property var theme
     required property var analysisState
     readonly property var txTheme: root.theme.analysis.transactions
-    readonly property int txTableMinimumWidth: root.txTheme.applyColumnWidth
-                                               + root.txTheme.statementColumnWidth
-                                               + root.txTheme.transactionColumnWidth
-                                               + root.txTheme.dateColumnWidth
-                                               + root.txTheme.dateColumnWidth
-                                               + root.txTheme.actorColumnWidth
-                                               + root.txTheme.contractColumnWidth
-                                               + root.txTheme.typeColumnWidth
-                                               + root.txTheme.propertiesColumnWidth
-                                               + root.txTheme.amountColumnWidth
-                                               + root.theme.spacingSmall * root.txTheme.columnSpacingCount
-                                               + root.theme.spacingSmall * root.txTheme.horizontalPaddingCount
+    readonly property int txTableMinimumWidth: root.txTheme.applyColumnWidth + root.txTheme.statementColumnWidth + root.txTheme.transactionColumnWidth + root.txTheme.dateColumnWidth + root.txTheme.dateColumnWidth + root.txTheme.actorColumnWidth + root.txTheme.contractColumnWidth + root.txTheme.typeColumnWidth + root.txTheme.propertiesColumnWidth + root.txTheme.amountColumnWidth + root.theme.spacingSmall * root.txTheme.columnSpacingCount + root.theme.spacingSmall * root.txTheme.horizontalPaddingCount
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -39,6 +29,7 @@ Controls.Panel {
         RowLayout {
             Layout.fillWidth: true
             Label {
+                color: root.theme.textPrimary
                 text: qsTr("Calc name")
                 Layout.preferredWidth: root.theme.formLabelWidth
             }
@@ -50,7 +41,10 @@ Controls.Panel {
                 text: root.analysisState.calcName
                 onTextChanged: root.analysisState.calcName = text
             }
-            Label { text: qsTr("Calc %") }
+            Label {
+                color: root.theme.textPrimary
+                text: qsTr("Calc %")
+            }
             Controls.TextField {
                 id: calcPercentField
                 objectName: "analysisCalcPercentField"
@@ -71,17 +65,16 @@ Controls.Panel {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
+            flickableDirection: Flickable.HorizontalFlick
             contentWidth: txTable.width
-            contentHeight: txTable.implicitHeight
+            contentHeight: height
             boundsBehavior: Flickable.StopAtBounds
 
-            ScrollBar.horizontal: ScrollBar {
-                policy: ScrollBar.AsNeeded
-            }
+            ScrollBar.horizontal: Controls.AppScrollBar { hidden: true }
 
             Item {
                 id: txTable
-                width: Math.max(txViewport.width, root.txTableMinimumWidth)
+                width: Math.max(Math.max(0, txViewport.width - root.theme.scrollBarGutterWidth), root.txTableMinimumWidth)
                 implicitHeight: headerRect.height + txList.contentHeight
 
                 Rectangle {
@@ -97,16 +90,58 @@ Controls.Panel {
                         anchors.leftMargin: root.theme.spacingSmall
                         anchors.rightMargin: root.theme.spacingSmall
                         spacing: root.theme.spacingSmall
-                        Label { text: qsTr("Apply"); Layout.preferredWidth: root.txTheme.applyColumnWidth }
-                        Label { text: qsTr("Statement"); Layout.preferredWidth: root.txTheme.statementColumnWidth }
-                        Label { text: qsTr("Transaction"); Layout.preferredWidth: root.txTheme.transactionColumnWidth }
-                        Label { text: qsTr("Booking Date"); Layout.preferredWidth: root.txTheme.dateColumnWidth }
-                        Label { text: qsTr("Valuta"); Layout.preferredWidth: root.txTheme.dateColumnWidth }
-                        Label { text: qsTr("Actor"); Layout.preferredWidth: root.txTheme.actorColumnWidth }
-                        Label { text: qsTr("Contract"); Layout.preferredWidth: root.txTheme.contractColumnWidth }
-                        Label { text: qsTr("Type"); Layout.preferredWidth: root.txTheme.typeColumnWidth }
-                        Label { text: qsTr("Properties"); Layout.preferredWidth: root.txTheme.propertiesColumnWidth; elide: Text.ElideRight }
-                        Label { text: qsTr("Amount"); Layout.preferredWidth: root.txTheme.amountColumnWidth; horizontalAlignment: Text.AlignRight }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Apply")
+                            Layout.preferredWidth: root.txTheme.applyColumnWidth
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Statement")
+                            Layout.preferredWidth: root.txTheme.statementColumnWidth
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Transaction")
+                            Layout.preferredWidth: root.txTheme.transactionColumnWidth
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Booking Date")
+                            Layout.preferredWidth: root.txTheme.dateColumnWidth
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Valuta")
+                            Layout.preferredWidth: root.txTheme.dateColumnWidth
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Actor")
+                            Layout.preferredWidth: root.txTheme.actorColumnWidth
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Contract")
+                            Layout.preferredWidth: root.txTheme.contractColumnWidth
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Type")
+                            Layout.preferredWidth: root.txTheme.typeColumnWidth
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Properties")
+                            Layout.preferredWidth: root.txTheme.propertiesColumnWidth
+                            elide: Text.ElideRight
+                        }
+                        Label {
+                            color: root.theme.textPrimary
+                            text: qsTr("Amount")
+                            Layout.preferredWidth: root.txTheme.amountColumnWidth
+                            horizontalAlignment: Text.AlignRight
+                        }
                     }
                 }
 
@@ -138,19 +173,59 @@ Controls.Panel {
                                 Layout.fillWidth: false
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                 checked: root.analysisState.selectedAdjustmentTxIds.indexOf(txRow.modelData.id) !== -1
-                                onToggled: root.analysisState.setAdjustmentTransactionSelected(txRow.modelData.id,
-                                                                                                checked)
+                                onToggled: root.analysisState.setAdjustmentTransactionSelected(txRow.modelData.id, checked)
                             }
 
-                            Label { text: txRow.modelData.statementName; Layout.preferredWidth: root.txTheme.statementColumnWidth; elide: Text.ElideRight }
-                            Label { text: txRow.modelData.transactionName; Layout.preferredWidth: root.txTheme.transactionColumnWidth; elide: Text.ElideRight }
-                            Label { text: txRow.modelData.date; Layout.preferredWidth: root.txTheme.dateColumnWidth; elide: Text.ElideRight }
-                            Label { text: txRow.modelData.valuta; Layout.preferredWidth: root.txTheme.dateColumnWidth; elide: Text.ElideRight }
-                            Label { text: txRow.modelData.actorName; Layout.preferredWidth: root.txTheme.actorColumnWidth; elide: Text.ElideRight }
-                            Label { text: txRow.modelData.contractName; Layout.preferredWidth: root.txTheme.contractColumnWidth; elide: Text.ElideRight }
-                            Label { text: txRow.modelData.contractType; Layout.preferredWidth: root.txTheme.typeColumnWidth; elide: Text.ElideRight }
-                            Label { text: txRow.modelData.propertiesLabel; Layout.preferredWidth: root.txTheme.propertiesColumnWidth; elide: Text.ElideRight }
                             Label {
+                                color: root.theme.textPrimary
+                                text: txRow.modelData.statementName
+                                Layout.preferredWidth: root.txTheme.statementColumnWidth
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                color: root.theme.textPrimary
+                                text: txRow.modelData.transactionName
+                                Layout.preferredWidth: root.txTheme.transactionColumnWidth
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                color: root.theme.textPrimary
+                                text: txRow.modelData.date
+                                Layout.preferredWidth: root.txTheme.dateColumnWidth
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                color: root.theme.textPrimary
+                                text: txRow.modelData.valuta
+                                Layout.preferredWidth: root.txTheme.dateColumnWidth
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                color: root.theme.textPrimary
+                                text: txRow.modelData.actorName
+                                Layout.preferredWidth: root.txTheme.actorColumnWidth
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                color: root.theme.textPrimary
+                                text: txRow.modelData.contractName
+                                Layout.preferredWidth: root.txTheme.contractColumnWidth
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                color: root.theme.textPrimary
+                                text: txRow.modelData.contractType
+                                Layout.preferredWidth: root.txTheme.typeColumnWidth
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                color: root.theme.textPrimary
+                                text: txRow.modelData.propertiesLabel
+                                Layout.preferredWidth: root.txTheme.propertiesColumnWidth
+                                elide: Text.ElideRight
+                            }
+                            Label {
+                                color: root.theme.textPrimary
                                 Layout.preferredWidth: root.txTheme.amountColumnWidth
                                 horizontalAlignment: Text.AlignRight
                                 text: txRow.modelData.amountText
@@ -169,10 +244,25 @@ Controls.Panel {
 
         RowLayout {
             Layout.fillWidth: true
-            Label { text: root.analysisState.previewStatementCountText; Layout.preferredWidth: root.txTheme.metricsStatementWidth }
-            Label { text: root.analysisState.previewTransactionCountText; Layout.preferredWidth: root.txTheme.metricsTransactionWidth }
-            Item { Layout.fillWidth: true }
-            Label { text: root.analysisState.previewAmountSumText; Layout.preferredWidth: root.txTheme.metricsAmountWidth; horizontalAlignment: Text.AlignRight }
+            Label {
+                color: root.theme.textPrimary
+                text: root.analysisState.previewStatementCountText
+                Layout.preferredWidth: root.txTheme.metricsStatementWidth
+            }
+            Label {
+                color: root.theme.textPrimary
+                text: root.analysisState.previewTransactionCountText
+                Layout.preferredWidth: root.txTheme.metricsTransactionWidth
+            }
+            Item {
+                Layout.fillWidth: true
+            }
+            Label {
+                color: root.theme.textPrimary
+                text: root.analysisState.previewAmountSumText
+                Layout.preferredWidth: root.txTheme.metricsAmountWidth
+                horizontalAlignment: Text.AlignRight
+            }
         }
     }
 }

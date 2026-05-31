@@ -3,12 +3,13 @@
  * @brief Provides the Annual form surface.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Annual 1.0 as Annual
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -30,9 +31,7 @@ Item {
             contentHeight: annualWorkspaceContent.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
 
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-            }
+            ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
 
             ColumnLayout {
                 id: annualWorkspaceContent
@@ -44,6 +43,7 @@ Item {
                     Layout.fillWidth: true
 
                     Label {
+                        color: root.theme.textPrimary
                         text: qsTr("Annual Name")
                         Layout.preferredWidth: root.theme.formLabelWidth
                     }
@@ -60,6 +60,7 @@ Item {
                     Layout.fillWidth: true
 
                     Label {
+                        color: root.theme.textPrimary
                         text: qsTr("Year")
                         Layout.preferredWidth: root.theme.formLabelWidth
                     }

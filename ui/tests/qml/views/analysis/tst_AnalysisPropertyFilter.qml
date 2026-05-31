@@ -30,6 +30,7 @@ TestCase {
         property color surfaceAlt: "#f5f5f5"
         property color surface: "#ffffff"
         property color border: "#cccccc"
+        property color textPrimary: "#000000"
     }
 
     property var analysisState: QtObject {
@@ -48,6 +49,10 @@ TestCase {
 
         function selectAllProperties() {
             selectedPropertyIds = ["property-1", "unassigned"]
+        }
+
+        function selectNoProperties() {
+            selectedPropertyIds = []
         }
 
         function selectUnassignedProperties() {
@@ -77,9 +82,8 @@ TestCase {
     function test_ANL_PF_001_propertyFilterActionsForwardSelectionToState() {
         const filter = createFilter()
 
-        TestSupport.findRequired(Lookup, filter, "analysisPropertyFilterUnassignedButton").clicked()
-        compare(analysisState.selectedPropertyIds.length, 1)
-        compare(analysisState.selectedPropertyIds[0], "unassigned")
+        TestSupport.findRequired(Lookup, filter, "analysisPropertyFilterNoneButton").clicked()
+        compare(analysisState.selectedPropertyIds.length, 0)
 
         TestSupport.findRequired(Lookup, filter, "analysisPropertyFilterAllButton").clicked()
         compare(analysisState.selectedPropertyIds.length, 2)

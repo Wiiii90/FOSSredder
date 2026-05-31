@@ -3,8 +3,9 @@
  * @brief Provides the ListRow component.
  */
 
-import QtQuick 2.15
 pragma ComponentBehavior: Bound
+
+import QtQuick 2.15
 
 Item {
     id: root
@@ -21,7 +22,7 @@ Item {
     property real radius: root.theme.viewSidebarRowRadius
     property int padding: root.theme.spacingSmall
 
-    signal activated()
+    signal activated
 
     implicitHeight: Math.max(root.theme.viewSidebarRowHeight, contentRow.height + root.padding * 2)
 
@@ -32,7 +33,6 @@ Item {
         radius: root.radius
         border.color: root.borderColor
         border.width: root.borderWidth
-
     }
 
     Row {

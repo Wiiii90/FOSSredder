@@ -695,13 +695,13 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| ANL-PF-001 | Property filter actions | QML/Interaction | Property filter receives AnalysisState with property rows and selected ids | Click All, Unassigned, and one row checkbox | Selection commands are delegated to AnalysisState |
+| ANL-PF-001 | Property filter actions | QML/Interaction | Property filter receives AnalysisState with property rows and selected ids | Click None, All, and one row checkbox; Unassigned remains a regular checkbox row | Selection commands are delegated to AnalysisState |
 
 ### AnalysisContractTypeFilter
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| ANL-CTF-001 | Contract type filter actions | QML/Interaction | Contract type filter receives AnalysisState with available types and selected types | Click All, Unassigned, and one row checkbox | Selection commands are delegated to AnalysisState |
+| ANL-CTF-001 | Contract type filter actions | QML/Interaction | Contract type filter receives AnalysisState with available types and selected types | Click None, All, and one row checkbox; Unassigned remains a regular checkbox row | Selection commands are delegated to AnalysisState |
 
 ### AnalysisAllocatableFilter
 
@@ -747,6 +747,7 @@ ui/
 | SET-G-001 | Language selection | QML/Interaction | General settings receives language options | Select a language | Selection is delegated to SettingsState |
 | SET-G-002 | Unavailable language | QML/Interaction | General settings receives an unavailable option | Select the unavailable language | SettingsState keeps the active language unchanged |
 | SET-G-003 | Current language binding | QML/State | SettingsState exposes a selected language index | Mount general settings | The dropdown reflects the selected index |
+| SET-G-004 | Theme mode selection | QML/Interaction | General settings receives theme mode options | Select a theme mode | Selection is delegated to SettingsState |
 
 ### SettingsImport
 

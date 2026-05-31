@@ -86,9 +86,7 @@ Controls.Panel {
                 contentWidth: width
                 contentHeight: Math.max(analysisList.implicitHeight, analysisScroll.height)
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                }
+                ScrollBar.vertical: Controls.AppScrollBar {}
 
                 Column {
                     id: analysisList

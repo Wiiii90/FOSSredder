@@ -3,11 +3,12 @@
  * @brief Provides the BookingTransactionContractPanel component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -30,6 +31,7 @@ Controls.Panel {
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Contract")
             Layout.fillWidth: true
         }
@@ -41,7 +43,9 @@ Controls.Panel {
             textRole: "display"
             model: root.bookingState.contractDisplayRows
             currentIndex: root.bookingState.selectedContractIndex
-            onActivated: function(index) { root.bookingState.selectContractIndex(index) }
+            onActivated: function (index) {
+                root.bookingState.selectContractIndex(index);
+            }
         }
     }
 }

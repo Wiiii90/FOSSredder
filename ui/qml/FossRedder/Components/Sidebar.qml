@@ -25,10 +25,8 @@ Item {
     ColumnLayout {
         id: col
         anchors.fill: parent
-        anchors.leftMargin: Theme.spacing
-        anchors.rightMargin: Theme.spacing
-        anchors.bottomMargin: Theme.spacing
-        anchors.topMargin: headerLabel.text && headerLabel.text.length > 0 ? Theme.spacing : 0
+        anchors.topMargin: Theme.viewSidebarOuterVerticalInset
+        anchors.bottomMargin: Theme.viewSidebarOuterVerticalInset
         spacing: Theme.spacing
 
         Label {

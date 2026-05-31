@@ -3,11 +3,12 @@
  * @brief Provides the Export form component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -20,6 +21,7 @@ Controls.Panel {
         Layout.fillWidth: true
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Target")
             Layout.preferredWidth: root.theme.formLabelWidth
         }
@@ -43,6 +45,7 @@ Controls.Panel {
         Layout.fillWidth: true
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Archive")
             Layout.preferredWidth: root.theme.formLabelWidth
         }

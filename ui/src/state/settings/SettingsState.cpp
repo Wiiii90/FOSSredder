@@ -38,6 +38,14 @@ bool languageAvailable(const QVariant &value) {
          map.value(QStringLiteral("available")).toBool();
 }
 
+QVariantMap themeModeOption(const QString &code, const QString &label) {
+  return {{QStringLiteral("code"), code}, {QStringLiteral("label"), label}};
+}
+
+QString themeModeCode(const QVariant &value) {
+  return value.toMap().value(QStringLiteral("code")).toString();
+}
+
 } // namespace
 
 SettingsState::SettingsState(QObject *parent) : QObject(parent) {}
@@ -113,6 +121,22 @@ int SettingsState::languageIndex() const {
   return -1;
 }
 
+QVariantList SettingsState::themeModeOptions() const {
+  return {themeModeOption(QStringLiteral("light"), tr("Light")),
+          themeModeOption(QStringLiteral("dark"), tr("Dark"))};
+}
+
+int SettingsState::themeModeIndex() const {
+  const QString selectedThemeMode = themeMode();
+  const QVariantList options = themeModeOptions();
+  for (int i = 0; i < options.size(); ++i) {
+    if (themeModeCode(options.at(i)) == selectedThemeMode) {
+      return i;
+    }
+  }
+  return 0;
+}
+
 QString SettingsState::language() const {
   if (settingsViewModel_) {
     return settingsViewModel_->language();
@@ -126,6 +150,17 @@ void SettingsState::setLanguage(const QString &value) {
   }
   if (languageService_) {
     languageService_->applyLanguage(value);
+  }
+}
+
+QString SettingsState::themeMode() const {
+  return settingsViewModel_ ? settingsViewModel_->themeMode()
+                            : QStringLiteral("light");
+}
+
+void SettingsState::setThemeMode(const QString &value) {
+  if (settingsViewModel_) {
+    settingsViewModel_->setThemeMode(value);
   }
 }
 
@@ -365,6 +400,15 @@ void SettingsState::selectLanguageAt(int index) {
   setLanguage(languageCode(options.at(index)));
 }
 
+void SettingsState::selectThemeModeAt(int index) {
+  const QVariantList options = themeModeOptions();
+  if (index < 0 || index >= options.size()) {
+    emitChanged();
+    return;
+  }
+  setThemeMode(themeModeCode(options.at(index)));
+}
+
 void SettingsState::browseImportPath() {
   if (actions_) {
     actions_->browseImportPdf();
@@ -401,6 +445,8 @@ void SettingsState::bindSettings(SettingsViewModel *value) {
     connect(settingsViewModel_, &SettingsViewModel::stateChanged, this,
             &SettingsState::emitChanged);
     connect(settingsViewModel_, &SettingsViewModel::languageChanged, this,
+            &SettingsState::emitChanged);
+    connect(settingsViewModel_, &SettingsViewModel::themeModeChanged, this,
             &SettingsState::emitChanged);
   }
 }

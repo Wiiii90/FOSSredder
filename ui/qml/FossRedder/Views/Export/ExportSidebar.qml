@@ -3,10 +3,11 @@
  * @brief Provides the Export sidebar.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Components 1.0 as Components
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -15,7 +16,6 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.theme.spacingMedium
         spacing: root.theme.spacingSmall
 
         Components.RunLogList {
@@ -28,17 +28,15 @@ Item {
             listTopMargin: 0
             itemSpacing: root.theme.spacingSmall
             baseBorderColor: root.theme.borderSoft
-            hoverBorderColor: root.theme.borderSoft
             actionButtonSize: root.theme.viewCompactActionButtonSizeTiny
-            actionButtonTopInset: 0
-            actionButtonRightInset: 0
             headerTopInset: root.theme.spacingSmall
             model: root.exportState.runs
-            onRunClicked: function(index, logId, draftAttached, statementId) {
-                root.exportState.openRunLocationAt(index)
+            fileRowsClickable: true
+            onRunClicked: function (index, logId, draftAttached, statementId) {
+                root.exportState.openRunLocationAt(index);
             }
-            onDeleteClicked: function(index, draftAttached, draftId) {
-                root.exportState.removeRunAt(index)
+            onDeleteClicked: function (index, draftAttached, draftId) {
+                root.exportState.removeRunAt(index);
             }
         }
     }

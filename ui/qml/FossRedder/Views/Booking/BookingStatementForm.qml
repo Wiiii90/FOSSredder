@@ -3,12 +3,13 @@
  * @brief Provides the Booking statement form composition.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Booking 1.0 as Booking
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -28,6 +29,7 @@ Item {
             Layout.fillWidth: true
 
             Label {
+                color: root.theme.textPrimary
                 text: qsTr("Statement")
                 Layout.preferredWidth: root.theme.formLabelWidth
             }
@@ -88,13 +90,11 @@ Item {
                 contentWidth: width
                 contentHeight: contentLayout.implicitHeight
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                }
+                ScrollBar.vertical: Controls.AppScrollBar {}
 
                 ColumnLayout {
                     id: contentLayout
-                    width: transactionScroll.width
+                    width: Math.max(0, transactionScroll.width - root.theme.scrollBarGutterWidth)
                     spacing: root.theme.spacingSmall
 
                     Booking.BookingTransactionView {

@@ -29,6 +29,7 @@ Controls.Panel {
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Allocatable")
             Layout.fillWidth: true
         }
@@ -39,9 +40,9 @@ Controls.Panel {
             Layout.fillWidth: true
             model: [qsTr("Mixed"), qsTr("Always allocatable"), qsTr("Never allocatable")]
             currentIndex: root.contractState && root.contractState.allocatableMode === "allocatable" ? 1 : (root.contractState && root.contractState.allocatableMode === "non-allocatable" ? 2 : 0)
-            onActivated: function(index) {
+            onActivated: function (index) {
                 if (root.contractState)
-                    root.contractState.allocatableMode = index === 1 ? "allocatable" : (index === 2 ? "non-allocatable" : "mixed")
+                    root.contractState.allocatableMode = index === 1 ? "allocatable" : (index === 2 ? "non-allocatable" : "mixed");
             }
         }
     }

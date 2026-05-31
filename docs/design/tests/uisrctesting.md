@@ -151,7 +151,7 @@ too stateful for declarative QML.
 | ANL-ST-001 | Analysis include-calc preview refresh | Unit | AnalysisState loaded with a selected analysis containing calculation adjustments | Toggle include-calc off | Visible preview totals rebuild from the unadjusted analysis result |
 | ANL-ST-002 | Analysis create with calc adjustments | Unit | AnalysisState in create mode with preview transactions and all filters selected | Select an adjustment transaction, enter a localized percent value, apply calc, and create | The new analysis persists adjustments, stores all-selection config filters as unfiltered, and the initial preview render uses the adjusted values |
 | ANL-ST-003 | Analysis update preserves stored calc amounts | Unit | AnalysisState loaded with an existing analysis containing stored calculation adjustments | Update analysis metadata in edit mode | Existing adjustment amounts remain unchanged in the core snapshot and pending UI state |
-| ANL-ST-004 | Analysis filter unassigned options | Unit | AnalysisState in create mode with workspace choices loaded | Inspect property and contract-type filter choices, then trigger the unassigned-only shortcuts | Both filter lists expose explicit unassigned choices and the shortcut selections keep the UI state deterministic |
+| ANL-ST-004 | Analysis filter unassigned and none options | Unit | AnalysisState in create mode with workspace choices loaded | Inspect property and contract-type filter choices, trigger the unassigned-only shortcuts, then clear each filter group | Both filter lists expose explicit unassigned choices, unassigned remains deterministic, and empty filter groups make submit invalid |
 | ANN-ST-001 | Annual state loads selected annual | Unit | AnnualState loaded with a selected annual and analysis rows | Refresh from selection | Form fields, assigned/available analysis rows, and derived transaction sections reflect the annual |
 | ANN-ST-002 | Annual assignment preview and update | Unit | AnnualState loaded with one assigned and one available analysis | Add the available analysis and submit update | The preview updates, dirty state is set, and the annual persists both analysis ids |
 | ANN-ST-003 | Annual create commit | Unit | AnnualState in create mode with analysis rows | Enter name/year, assign an analysis, and create | A new annual is persisted and selected through the workspace facade |
@@ -164,7 +164,7 @@ too stateful for declarative QML.
 | SET-ST-001 | Settings category navigation | Unit | SettingsState connected to NavigationState | Navigate past both category edges | Category navigation wraps deterministically |
 | SET-ST-002 | Settings category rows | Unit | SettingsState connected to NavigationState | Select a category and inspect rows | Category rows expose stable category values and selected state |
 | SET-ST-003 | Settings file selections | Unit | SettingsState connected to SettingsViewModel and Actions | Emit selected import and export paths | The settings view model receives the selected default paths |
-| SET-ST-004 | Settings property delegation | Unit | SettingsState connected to SettingsViewModel | Change export, import, and toolbar properties | Setters delegate to the settings view model |
+| SET-ST-004 | Settings property delegation | Unit | SettingsState connected to SettingsViewModel | Change export, import, theme, and toolbar properties | Setters delegate to the settings view model |
 
 ### Boundary checks
 

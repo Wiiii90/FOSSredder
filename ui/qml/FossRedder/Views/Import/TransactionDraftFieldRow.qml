@@ -3,10 +3,11 @@
  * @brief Provides a reusable two-column field row layout for transaction draft panels.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -35,7 +36,11 @@ Item {
             Layout.alignment: Qt.AlignTop
             spacing: root.theme.spacingSmall
 
-            Label { text: root.leftLabel; Layout.fillWidth: true }
+            Label {
+                color: root.theme.textPrimary
+                text: root.leftLabel
+                Layout.fillWidth: true
+            }
 
             Loader {
                 id: leftLoader
@@ -43,8 +48,10 @@ Item {
                 Layout.preferredHeight: item ? Math.max(root.theme.controlHeight, item.implicitHeight || 0) : root.theme.controlHeight
                 Layout.alignment: Qt.AlignTop
                 sourceComponent: root.leftContent
-                onLoaded: if (item && item.hasOwnProperty("width")) item.width = width
-                onWidthChanged: if (item && item.hasOwnProperty("width")) item.width = width
+                onLoaded: if (item && item.hasOwnProperty("width"))
+                    item.width = width
+                onWidthChanged: if (item && item.hasOwnProperty("width"))
+                    item.width = width
             }
         }
 
@@ -55,7 +62,11 @@ Item {
             Layout.alignment: Qt.AlignTop
             spacing: root.theme.spacingSmall
 
-            Label { text: root.rightLabel; Layout.fillWidth: true }
+            Label {
+                color: root.theme.textPrimary
+                text: root.rightLabel
+                Layout.fillWidth: true
+            }
 
             Loader {
                 id: rightLoader
@@ -63,8 +74,10 @@ Item {
                 Layout.preferredHeight: item ? Math.max(root.theme.controlHeight, item.implicitHeight || 0) : root.theme.controlHeight
                 Layout.alignment: Qt.AlignTop
                 sourceComponent: root.rightContent
-                onLoaded: if (item && item.hasOwnProperty("width")) item.width = width
-                onWidthChanged: if (item && item.hasOwnProperty("width")) item.width = width
+                onLoaded: if (item && item.hasOwnProperty("width"))
+                    item.width = width
+                onWidthChanged: if (item && item.hasOwnProperty("width"))
+                    item.width = width
             }
         }
     }

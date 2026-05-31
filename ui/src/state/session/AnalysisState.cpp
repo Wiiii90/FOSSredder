@@ -462,7 +462,10 @@ bool AnalysisState::currentResultIsTable() const {
   return currentResultType() == qstr(kTab);
 }
 
-bool AnalysisState::canSubmit() const { return !name_.trimmed().isEmpty(); }
+bool AnalysisState::canSubmit() const {
+  return !name_.trimmed().isEmpty() && !selectedPropertyIds_.isEmpty() &&
+         !selectedContractTypes_.isEmpty();
+}
 
 bool AnalysisState::hasRows() const { return !analysisRows().isEmpty(); }
 
@@ -519,6 +522,8 @@ void AnalysisState::setPropertySelected(const QString &id, bool selected) {
 
 void AnalysisState::selectAllProperties() { setSelectedPropertyIds(allPropertyIds()); }
 
+void AnalysisState::selectNoProperties() { setSelectedPropertyIds({}); }
+
 void AnalysisState::selectUnassignedProperties() {
   setSelectedPropertyIds({qstr(kUnassigned)});
 }
@@ -545,6 +550,8 @@ void AnalysisState::setContractTypeSelected(const QString &type, bool selected) 
 void AnalysisState::selectAllContractTypes() {
   setSelectedContractTypes(allContractTypes());
 }
+
+void AnalysisState::selectNoContractTypes() { setSelectedContractTypes({}); }
 
 void AnalysisState::selectUnassignedContractTypes() {
   setSelectedContractTypes({qstr(kUnassigned)});
@@ -880,10 +887,8 @@ QStringList AnalysisState::effectiveSelectedPropertyIds() const {
                     QStringLiteral("id"))) {
     return {};
   }
-  const QVariantList selected = selectedPropertyIds_.isEmpty()
-                                    ? QVariantList{qstr(kUnassigned)}
-                                    : selectedPropertyIds_;
-  return stringList(selected);
+  return selectedPropertyIds_.isEmpty() ? QStringList{}
+                                        : stringList(selectedPropertyIds_);
 }
 
 QStringList AnalysisState::effectiveSelectedContractTypes() const {
@@ -891,10 +896,8 @@ QStringList AnalysisState::effectiveSelectedContractTypes() const {
       isAllSelected(selectedContractTypes_, contractTypeRows_)) {
     return {};
   }
-  const QVariantList selected = selectedContractTypes_.isEmpty()
-                                    ? QVariantList{qstr(kUnassigned)}
-                                    : selectedContractTypes_;
-  return stringList(selected);
+  return selectedContractTypes_.isEmpty() ? QStringList{}
+                                          : stringList(selectedContractTypes_);
 }
 
 QString AnalysisState::currentFilterSpec() const {

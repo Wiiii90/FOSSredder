@@ -3,11 +3,12 @@
  * @brief Displays metadata preview fields for the current transaction draft.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -30,7 +31,11 @@ Controls.Panel {
         Layout.fillHeight: true
         spacing: root.theme.spacingSmall
 
-        Label { text: qsTr("Metadata"); Layout.fillWidth: true }
+        Label {
+            color: root.theme.textPrimary
+            text: qsTr("Metadata")
+            Layout.fillWidth: true
+        }
         Controls.TextArea {
             objectName: "transactionDraftMetadataTextArea"
             Layout.fillWidth: true

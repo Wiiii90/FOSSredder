@@ -37,8 +37,11 @@ class SettingsState : public QObject {
   Q_PROPERTY(bool canNavigateCategories READ canNavigateCategories NOTIFY changed)
   Q_PROPERTY(QVariantList languageOptions READ languageOptions NOTIFY changed)
   Q_PROPERTY(int languageIndex READ languageIndex NOTIFY changed)
+  Q_PROPERTY(QVariantList themeModeOptions READ themeModeOptions NOTIFY changed)
+  Q_PROPERTY(int themeModeIndex READ themeModeIndex NOTIFY changed)
 
   Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY changed)
+  Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY changed)
   Q_PROPERTY(QString importDefaultPath READ importDefaultPath WRITE
                  setImportDefaultPath NOTIFY changed)
   Q_PROPERTY(QString importPoppler READ importPoppler WRITE setImportPoppler
@@ -96,9 +99,13 @@ public:
   bool canNavigateCategories() const noexcept;
   QVariantList languageOptions() const;
   int languageIndex() const;
+  QVariantList themeModeOptions() const;
+  int themeModeIndex() const;
 
   QString language() const;
   void setLanguage(const QString &value);
+  QString themeMode() const;
+  void setThemeMode(const QString &value);
   QString importDefaultPath() const;
   void setImportDefaultPath(const QString &value);
   QString importPoppler() const;
@@ -142,6 +149,7 @@ public:
   Q_INVOKABLE void saveSettings();
   Q_INVOKABLE void resetSettings();
   Q_INVOKABLE void selectLanguageAt(int index);
+  Q_INVOKABLE void selectThemeModeAt(int index);
   Q_INVOKABLE void browseImportPath();
   Q_INVOKABLE void browseExportDirectory();
 

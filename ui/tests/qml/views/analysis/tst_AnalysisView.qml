@@ -133,10 +133,12 @@ TestCase {
         function isPropertySelected(id) { return selectedPropertyIds.indexOf(id) !== -1 }
         function setPropertySelected(id, selected) {}
         function selectAllProperties() {}
+        function selectNoProperties() {}
         function selectUnassignedProperties() {}
         function isContractTypeSelected(type) { return selectedContractTypes.indexOf(type) !== -1 }
         function setContractTypeSelected(type, selected) {}
         function selectAllContractTypes() {}
+        function selectNoContractTypes() {}
         function selectUnassignedContractTypes() {}
         function isAdjustmentTransactionSelected(id) { return selectedAdjustmentTxIds.indexOf(id) !== -1 }
         function setAdjustmentTransactionSelected(id, selected) {}

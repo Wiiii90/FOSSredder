@@ -27,6 +27,13 @@ TestCase {
         property int languageIndex: 0
         property string language: "en"
         property int selectedLanguageIndex: -1
+        property var themeModeOptions: [
+            { code: "light", label: "Light" },
+            { code: "dark", label: "Dark" }
+        ]
+        property int themeModeIndex: 0
+        property string themeMode: "light"
+        property int selectedThemeModeIndex: -1
 
         function selectLanguageAt(index) {
             selectedLanguageIndex = index
@@ -35,6 +42,15 @@ TestCase {
                 return
             language = option.code
             languageIndex = index
+        }
+
+        function selectThemeModeAt(index) {
+            selectedThemeModeIndex = index
+            const option = themeModeOptions[index]
+            if (!option)
+                return
+            themeMode = option.code
+            themeModeIndex = index
         }
     }
 
@@ -67,6 +83,9 @@ TestCase {
         settingsState.language = "en"
         settingsState.languageIndex = 0
         settingsState.selectedLanguageIndex = -1
+        settingsState.themeMode = "light"
+        settingsState.themeModeIndex = 0
+        settingsState.selectedThemeModeIndex = -1
     }
 
     function test_SET_G_001_languageSelectionDelegatesToSettingsState() {
@@ -104,5 +123,16 @@ TestCase {
         const languageDropdown = TestSupport.findRequired(Lookup, view, "settingsLanguageDropdown")
 
         compare(languageDropdown.currentIndex, 1)
+    }
+
+    function test_SET_G_004_themeModeSelectionDelegatesToSettingsState() {
+        const view = createView()
+        const themeModeDropdown = TestSupport.findRequired(Lookup, view, "settingsThemeModeDropdown")
+
+        themeModeDropdown.currentIndex = 1
+        themeModeDropdown.activated(1)
+
+        compare(settingsState.selectedThemeModeIndex, 1)
+        compare(settingsState.themeMode, "dark")
     }
 }

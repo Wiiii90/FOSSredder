@@ -3,12 +3,13 @@
  * @brief Handles property create/update/delete flows and related form state.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Property 1.0 as Property
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -33,23 +34,21 @@ Item {
             Layout.fillHeight: true
             clip: true
             contentWidth: width
-            contentHeight: propertyContent.height
+            contentHeight: propertyContent.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
 
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-            }
+            ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
 
             ColumnLayout {
                 id: propertyContent
                 width: propertyScroll.width
-                height: Math.max(implicitHeight, propertyScroll.height)
                 spacing: root.theme.spacingSmall
 
                 RowLayout {
                     Layout.fillWidth: true
 
                     Label {
+                        color: root.theme.textPrimary
                         text: qsTr("Property Name")
                         Layout.preferredWidth: root.theme.formLabelWidth
                     }
@@ -60,8 +59,10 @@ Item {
                         placeholderText: ""
                         Layout.fillWidth: true
                         text: root.propertyState ? root.propertyState.name : ""
-                        onTextChanged: if (root.propertyState) root.propertyState.name = text
-                        onTextEdited: if (root.propertyState) root.propertyState.name = text
+                        onTextChanged: if (root.propertyState)
+                            root.propertyState.name = text
+                        onTextEdited: if (root.propertyState)
+                            root.propertyState.name = text
                     }
                 }
 
@@ -74,6 +75,7 @@ Item {
                         Layout.fillWidth: true
 
                         Label {
+                            color: root.theme.textPrimary
                             text: qsTr("Aliases")
                             Layout.preferredWidth: root.theme.formLabelWidth
                         }
@@ -84,20 +86,24 @@ Item {
                             Layout.fillWidth: true
                             placeholderText: ""
                             text: root.propertyState ? root.propertyState.aliasInputText : ""
-                            onTextChanged: if (root.propertyState) root.propertyState.aliasInputText = text
-                            onTextEdited: if (root.propertyState) root.propertyState.aliasInputText = text
+                            onTextChanged: if (root.propertyState)
+                                root.propertyState.aliasInputText = text
+                            onTextEdited: if (root.propertyState)
+                                root.propertyState.aliasInputText = text
                         }
 
                         Controls.CompactAddButton {
                             objectName: "propertyAddAliasButton"
                             enabled: root.propertyState ? root.propertyState.canAddAlias(propertyAliasInput.text) : false
-                            onClicked: if (root.propertyState) root.propertyState.addAlias(propertyAliasInput.text)
+                            onClicked: if (root.propertyState)
+                                root.propertyState.addAlias(propertyAliasInput.text)
                         }
 
                         Controls.CompactRemoveButton {
                             objectName: "propertyRemoveAliasButton"
                             enabled: root.aliasIndex >= 0 && root.aliasIndex < root.aliases.length
-                            onClicked: if (root.propertyState) root.propertyState.requestRemoveSelectedAlias()
+                            onClicked: if (root.propertyState)
+                                root.propertyState.requestRemoveSelectedAlias()
                         }
                     }
 
@@ -123,9 +129,7 @@ Item {
                             contentWidth: width
                             contentHeight: propertyAliasFlow.implicitHeight
 
-                            ScrollBar.vertical: ScrollBar {
-                                policy: ScrollBar.AsNeeded
-                            }
+                            ScrollBar.vertical: Controls.AppScrollBar {}
 
                             Flow {
                                 id: propertyAliasFlow
@@ -161,8 +165,10 @@ Item {
                                             objectName: "propertyAliasMouse_" + propertyAliasChip.index
                                             anchors.fill: parent
                                             preventStealing: true
-                                            onPressed: if (root.propertyState) root.propertyState.aliasIndex = propertyAliasChip.index
-                                            onClicked: if (root.propertyState) root.propertyState.aliasIndex = propertyAliasChip.index
+                                            onPressed: if (root.propertyState)
+                                                root.propertyState.aliasIndex = propertyAliasChip.index
+                                            onClicked: if (root.propertyState)
+                                                root.propertyState.aliasIndex = propertyAliasChip.index
                                         }
                                     }
                                 }
@@ -173,9 +179,6 @@ Item {
 
                 Property.PropertyContractPanel {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight
-                    Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
                     theme: root.theme
                     propertyState: root.propertyState
                     contractRows: root.contractRows

@@ -132,6 +132,7 @@ TestCase {
             selectedPropertyIds = next
         }
         function selectAllProperties() { selectedPropertyIds = ["property-1", "unassigned"] }
+        function selectNoProperties() { selectedPropertyIds = [] }
         function selectUnassignedProperties() { selectedPropertyIds = ["unassigned"] }
         function isContractTypeSelected(type) { return selectedContractTypes.indexOf(type) !== -1 }
         function setContractTypeSelected(type, selected) {
@@ -144,6 +145,7 @@ TestCase {
             selectedContractTypes = next
         }
         function selectAllContractTypes() { selectedContractTypes = ["lease", "unassigned"] }
+        function selectNoContractTypes() { selectedContractTypes = [] }
         function selectUnassignedContractTypes() { selectedContractTypes = ["unassigned"] }
         function isAdjustmentTransactionSelected(id) { return selectedAdjustmentTxIds.indexOf(id) !== -1 }
         function setAdjustmentTransactionSelected(id, selected) { selectedAdjustmentTxIds = selected ? [id] : [] }
@@ -197,13 +199,11 @@ TestCase {
         compare(analysisState.selectedPropertyIds.length, 2)
         compare(analysisState.selectedPropertyIds[0], "property-1")
 
-        TestSupport.findRequired(Lookup, form, "analysisPropertyFilterUnassignedButton").clicked()
-        compare(analysisState.selectedPropertyIds.length, 1)
-        compare(analysisState.selectedPropertyIds[0], "unassigned")
+        TestSupport.findRequired(Lookup, form, "analysisPropertyFilterNoneButton").clicked()
+        compare(analysisState.selectedPropertyIds.length, 0)
 
-        TestSupport.findRequired(Lookup, form, "analysisContractTypeFilterUnassignedButton").clicked()
-        compare(analysisState.selectedContractTypes.length, 1)
-        compare(analysisState.selectedContractTypes[0], "unassigned")
+        TestSupport.findRequired(Lookup, form, "analysisContractTypeFilterNoneButton").clicked()
+        compare(analysisState.selectedContractTypes.length, 0)
 
         TestSupport.findRequired(Lookup, form, "analysisContractTypeFilterAllButton").clicked()
         compare(analysisState.selectedContractTypes.length, 2)

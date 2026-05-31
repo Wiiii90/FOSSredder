@@ -3,11 +3,13 @@
  * @brief Provides the Annual transactions panel.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
+import FossRedder.Components 1.0 as Components
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -24,6 +26,7 @@ Controls.Panel {
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Annual transactions")
             Layout.fillWidth: true
         }
@@ -44,12 +47,12 @@ Controls.Panel {
                 contentWidth: txRows.width
                 contentHeight: txRows.implicitHeight
 
-                ScrollBar.horizontal: ScrollBar { policy: ScrollBar.AsNeeded }
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                ScrollBar.horizontal: Controls.AppScrollBar {}
+                ScrollBar.vertical: Controls.AppScrollBar {}
 
                 Column {
                     id: txRows
-                    width: Math.max(txScroll.width, root.theme.annual.transactions.tableMinWidth)
+                    width: Math.max(Math.max(0, txScroll.width - root.theme.scrollBarGutterWidth), root.theme.annual.transactions.tableMinWidth)
                     spacing: root.theme.spacingSmall
 
                     Repeater {
@@ -77,8 +80,7 @@ Controls.Panel {
                                     anchors.rightMargin: root.theme.spacingSmall
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
-                                    text: (sectionColumn.modelData.expanded ? "\u25BE " : "\u25B8 ")
-                                          + sectionColumn.modelData.title + " (" + sectionColumn.modelData.rows.length + ")"
+                                    text: (sectionColumn.modelData.expanded ? "\u25BE " : "\u25B8 ") + sectionColumn.modelData.title + " (" + sectionColumn.modelData.rows.length + ")"
                                     color: root.theme.textPrimary
                                     elide: Text.ElideRight
                                 }
@@ -102,9 +104,7 @@ Controls.Panel {
                                     radius: root.theme.radius
                                     color: root.theme.surface
                                     border.width: root.theme.borderWidthThin
-                                    border.color: txRow.modelData.isMixedYear
-                                                  ? root.theme.danger
-                                                  : root.theme.border
+                                    border.color: txRow.modelData.isMixedYear ? root.theme.danger : root.theme.border
 
                                     RowLayout {
                                         id: rowLayout
@@ -117,6 +117,7 @@ Controls.Panel {
                                             spacing: root.theme.spacingSmall
 
                                             Label {
+                                                color: root.theme.textPrimary
                                                 text: txRow.modelData.name
                                                 Layout.fillWidth: true
                                                 elide: Text.ElideRight
@@ -132,6 +133,7 @@ Controls.Panel {
                                         }
 
                                         Label {
+                                            color: root.theme.textPrimary
                                             text: txRow.modelData.bookingDate
                                             Layout.preferredWidth: root.theme.annual.transactions.dateColumnWidth
                                             horizontalAlignment: Text.AlignRight
@@ -139,6 +141,7 @@ Controls.Panel {
                                         }
 
                                         Label {
+                                            color: root.theme.textPrimary
                                             text: txRow.modelData.amountText
                                             Layout.preferredWidth: root.theme.annual.transactions.amountColumnWidth
                                             horizontalAlignment: Text.AlignRight
@@ -157,23 +160,14 @@ Controls.Panel {
                                             Layout.preferredWidth: root.theme.annual.transactions.typeColumnWidth
                                             horizontalAlignment: Text.AlignRight
                                             elide: Text.ElideRight
-                                            color: txRow.modelData.contractType.length > 0
-                                                   ? root.theme.textPrimary
-                                                   : root.theme.textMuted
+                                            color: txRow.modelData.contractType.length > 0 ? root.theme.textPrimary : root.theme.textMuted
                                         }
 
-                                        Label {
+                                        Components.StatusChip {
                                             text: txRow.modelData.statusText
+                                            theme: root.theme
+                                            tone: txRow.modelData.statusTone.length > 0 ? txRow.modelData.statusTone : "neutral"
                                             Layout.preferredWidth: root.theme.annual.transactions.statusColumnWidth
-                                            horizontalAlignment: Text.AlignRight
-                                            color: txRow.modelData.statusTone === "success"
-                                                   ? root.theme.success
-                                                   : txRow.modelData.statusTone === "info"
-                                                     ? root.theme.info
-                                                     : txRow.modelData.statusTone === "warning"
-                                                       ? root.theme.warning
-                                                       : root.theme.textPrimary
-                                            elide: Text.ElideRight
                                         }
                                     }
                                 }

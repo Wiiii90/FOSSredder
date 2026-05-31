@@ -3,11 +3,12 @@
  * @brief Provides the Annual verification summary panel.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -24,6 +25,7 @@ Controls.Panel {
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Statistics")
             Layout.fillWidth: true
         }
@@ -56,22 +58,14 @@ Controls.Panel {
                             text: verificationRow.modelData.label
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
-                            color: verificationRow.modelData.tone === "success"
-                                   ? root.theme.success
-                                   : verificationRow.modelData.tone === "danger"
-                                     ? root.theme.danger
-                                     : root.theme.textPrimary
+                            color: verificationRow.modelData.tone === "success" ? root.theme.success : verificationRow.modelData.tone === "danger" ? root.theme.danger : root.theme.textPrimary
                         }
 
                         Label {
                             Layout.minimumWidth: root.theme.formLabelWidth / 2
                             horizontalAlignment: Text.AlignRight
                             text: String(verificationRow.modelData.value)
-                            color: verificationRow.modelData.tone === "success"
-                                   ? root.theme.success
-                                   : verificationRow.modelData.tone === "danger"
-                                     ? root.theme.danger
-                                     : root.theme.textPrimary
+                            color: verificationRow.modelData.tone === "success" ? root.theme.success : verificationRow.modelData.tone === "danger" ? root.theme.danger : root.theme.textPrimary
                         }
                     }
                 }
@@ -81,12 +75,14 @@ Controls.Panel {
                     spacing: root.theme.spacingSmall
 
                     Label {
+                        color: root.theme.textPrimary
                         text: qsTr("Statuses")
                         Layout.fillWidth: true
                         wrapMode: Text.WordWrap
                     }
 
                     Label {
+                        color: root.theme.textPrimary
                         objectName: "annualStatusSummaryLabel"
                         text: root.annualState.statusSummaryText
                         Layout.fillWidth: true

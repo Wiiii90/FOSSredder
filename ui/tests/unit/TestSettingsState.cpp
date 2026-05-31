@@ -98,11 +98,17 @@ TEST(SettingsStateTest, SET_ST_004_SettingsPropertiesDelegateToViewModel)
     state.setExportIncludeFormulas(false);
     state.setToolbarShowBooking(false);
     state.setImportMatcher(QStringLiteral("matcher-default"));
+    state.setThemeMode(QStringLiteral("dark"));
 
     EXPECT_EQ(settings.exportArchiveFormat(), 1);
     EXPECT_FALSE(settings.exportIncludeFormulas());
     EXPECT_FALSE(settings.toolbarShowBooking());
     EXPECT_EQ(settings.importMatcher(), QStringLiteral("matcher-default"));
+    EXPECT_EQ(settings.themeMode(), QStringLiteral("dark"));
+    EXPECT_EQ(state.themeModeIndex(), 1);
+
+    state.selectThemeModeAt(0);
+    EXPECT_EQ(settings.themeMode(), QStringLiteral("light"));
 }
 
 } // namespace ui

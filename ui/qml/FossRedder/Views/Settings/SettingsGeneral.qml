@@ -3,10 +3,12 @@
  * @brief Manages general settings options such as application language.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Flickable {
     id: root
@@ -17,6 +19,8 @@ Flickable {
     contentHeight: column.implicitHeight
     contentWidth: width
     clip: true
+
+    ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
 
     ColumnLayout {
         id: column
@@ -35,6 +39,25 @@ Flickable {
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
+                        text: qsTr("Theme")
+                        color: root.theme.textPrimary
+                        Layout.preferredWidth: root.theme.formLabelWidth
+                    }
+                    Controls.DropdownMenu {
+                        id: themeMode
+                        objectName: "settingsThemeModeDropdown"
+                        model: root.settingsState.themeModeOptions
+                        textRole: "label"
+                        currentIndex: root.settingsState.themeModeIndex
+                        onActivated: function (index) {
+                            root.settingsState.selectThemeModeAt(index);
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
                         text: qsTr("Language")
                         color: root.theme.textPrimary
                         Layout.preferredWidth: root.theme.formLabelWidth
@@ -45,8 +68,8 @@ Flickable {
                         model: root.settingsState.languageOptions
                         textRole: "label"
                         currentIndex: root.settingsState.languageIndex
-                        onActivated: function(index) {
-                            root.settingsState.selectLanguageAt(index)
+                        onActivated: function (index) {
+                            root.settingsState.selectLanguageAt(index);
                         }
                     }
                 }

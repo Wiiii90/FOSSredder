@@ -3,13 +3,13 @@
  * @brief Provides the ActorForm component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Actor 1.0 as Actor
-
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -32,23 +32,21 @@ Item {
             Layout.fillHeight: true
             clip: true
             contentWidth: width
-            contentHeight: actorContent.height
+            contentHeight: actorContent.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
 
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-            }
+            ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
 
             ColumnLayout {
                 id: actorContent
                 width: actorScroll.width
-                height: Math.max(implicitHeight, actorScroll.height)
                 spacing: root.theme.spacingSmall
 
                 RowLayout {
                     Layout.fillWidth: true
 
                     Label {
+                        color: root.theme.textPrimary
                         text: qsTr("Actor Name")
                         Layout.preferredWidth: root.theme.formLabelWidth
                     }
@@ -59,8 +57,10 @@ Item {
                         placeholderText: ""
                         text: root.actorState ? root.actorState.name : ""
                         Layout.fillWidth: true
-                        onTextChanged: if (root.actorState) root.actorState.name = text
-                        onTextEdited: if (root.actorState) root.actorState.name = text
+                        onTextChanged: if (root.actorState)
+                            root.actorState.name = text
+                        onTextEdited: if (root.actorState)
+                            root.actorState.name = text
                     }
                 }
 
@@ -73,6 +73,7 @@ Item {
                         Layout.fillWidth: true
 
                         Label {
+                            color: root.theme.textPrimary
                             text: qsTr("Aliases")
                             Layout.preferredWidth: root.theme.formLabelWidth
                         }
@@ -83,20 +84,24 @@ Item {
                             Layout.fillWidth: true
                             placeholderText: ""
                             text: root.actorState ? root.actorState.aliasInputText : ""
-                            onTextChanged: if (root.actorState) root.actorState.aliasInputText = text
-                            onTextEdited: if (root.actorState) root.actorState.aliasInputText = text
+                            onTextChanged: if (root.actorState)
+                                root.actorState.aliasInputText = text
+                            onTextEdited: if (root.actorState)
+                                root.actorState.aliasInputText = text
                         }
 
                         Controls.CompactAddButton {
                             objectName: "actorAddAliasButton"
                             enabled: root.actorState ? root.actorState.canAddAlias(actorAliasInput.text) : false
-                            onClicked: if (root.actorState) root.actorState.addAlias(actorAliasInput.text)
+                            onClicked: if (root.actorState)
+                                root.actorState.addAlias(actorAliasInput.text)
                         }
 
                         Controls.CompactRemoveButton {
                             objectName: "actorRemoveAliasButton"
                             enabled: root.aliasIndex >= 0 && root.aliasIndex < root.aliases.length
-                            onClicked: if (root.actorState) root.actorState.requestRemoveSelectedAlias()
+                            onClicked: if (root.actorState)
+                                root.actorState.requestRemoveSelectedAlias()
                         }
                     }
 
@@ -122,9 +127,7 @@ Item {
                             contentWidth: width
                             contentHeight: actorAliasFlow.implicitHeight
 
-                            ScrollBar.vertical: ScrollBar {
-                                policy: ScrollBar.AsNeeded
-                            }
+                            ScrollBar.vertical: Controls.AppScrollBar {}
 
                             Flow {
                                 id: actorAliasFlow
@@ -160,8 +163,10 @@ Item {
                                             objectName: "actorAliasMouse_" + actorAliasChip.index
                                             anchors.fill: parent
                                             preventStealing: true
-                                            onPressed: if (root.actorState) root.actorState.aliasIndex = actorAliasChip.index
-                                            onClicked: if (root.actorState) root.actorState.aliasIndex = actorAliasChip.index
+                                            onPressed: if (root.actorState)
+                                                root.actorState.aliasIndex = actorAliasChip.index
+                                            onClicked: if (root.actorState)
+                                                root.actorState.aliasIndex = actorAliasChip.index
                                         }
                                     }
                                 }
@@ -172,9 +177,6 @@ Item {
 
                 Actor.ActorContractPanel {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight
-                    Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
                     theme: root.theme
                     actorState: root.actorState
                     contractRows: root.contractRows

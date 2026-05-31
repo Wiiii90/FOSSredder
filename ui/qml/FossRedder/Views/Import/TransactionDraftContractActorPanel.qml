@@ -19,7 +19,9 @@ Item {
     readonly property color suggestionColor: root.suggestionTone === 2 ? root.theme.successStrong : (root.suggestionTone === 1 ? root.theme.warning : root.theme.danger)
 
     Layout.fillWidth: true
+    Layout.fillHeight: false
     Layout.preferredWidth: 1
+    Layout.preferredHeight: implicitHeight
     implicitHeight: contentLayout.implicitHeight
 
     ColumnLayout {
@@ -29,6 +31,8 @@ Item {
 
         Controls.Panel {
             Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.preferredHeight: implicitHeight
             contentSpacing: root.theme.spacingSmall
 
             background: Rectangle {
@@ -40,7 +44,8 @@ Item {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.fillHeight: false
+                Layout.preferredHeight: implicitHeight
                 spacing: root.theme.spacingSmall
 
                 TransactionDraftFieldRow {

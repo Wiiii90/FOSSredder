@@ -3,9 +3,12 @@
  * @brief Provides the ActorSidebar component.
  */
 
-import QtQuick 2.15
-import QtQuick.Layouts 1.3
 pragma ComponentBehavior: Bound
+
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.3
+import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
@@ -16,10 +19,10 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.theme.spacingMedium
         spacing: root.theme.spacingSmall
 
         Flickable {
+            id: actorSidebarFlick
             objectName: "actorSidebarFlick"
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -27,9 +30,19 @@ Item {
             contentWidth: width
             contentHeight: actorColumn.implicitHeight
 
+            ScrollBar.vertical: Controls.AppScrollBar {
+                parent: actorSidebarFlick
+                anchors.right: actorSidebarFlick.right
+                anchors.rightMargin: root.theme.viewSidebarScrollBarOuterInset
+                anchors.top: actorSidebarFlick.top
+                anchors.bottom: actorSidebarFlick.bottom
+                persistent: true
+            }
+
             Column {
                 id: actorColumn
-                width: parent.width
+                x: root.theme.viewSidebarEntryInset
+                width: Math.max(0, parent.width - root.theme.viewSidebarEntryInsetTotal)
                 spacing: root.theme.spacingSmall
 
                 Repeater {
@@ -43,15 +56,16 @@ Item {
                         width: actorColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: actorRow.actorId === root.actorState.currentId
-                               ? root.theme.selectionHighlight
-                               : "transparent"
-                        border.color: root.theme.borderSoft
+                        color: actorRow.actorId === root.actorState.currentId ? root.theme.selectionHighlight : (actorMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: actorRow.actorId === root.actorState.currentId ? root.theme.selectionBorder : (actorMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
+                            id: actorMouse
                             objectName: "actorSidebarMouse_" + actorRow.actorId
                             anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             preventStealing: true
                             onClicked: root.actorState.selectActor(actorRow.actorId)
                         }
@@ -69,7 +83,6 @@ Item {
                                 color: root.theme.textPrimary
                                 elide: Text.ElideRight
                             }
-
                         }
                     }
                 }

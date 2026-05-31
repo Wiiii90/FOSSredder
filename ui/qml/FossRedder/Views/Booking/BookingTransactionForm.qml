@@ -3,11 +3,12 @@
  * @brief Provides the booking transaction field form.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -32,6 +33,7 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Label {
+                    color: root.theme.textPrimary
                     text: qsTr("Name")
                     Layout.fillWidth: true
                 }
@@ -51,6 +53,7 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Label {
+                    color: root.theme.textPrimary
                     text: qsTr("Status")
                     Layout.fillWidth: true
                 }
@@ -62,7 +65,9 @@ Item {
                     textRole: "label"
                     model: root.bookingState.transactionStatusOptions
                     currentIndex: root.bookingState.transactionStatusIndex
-                    onActivated: function(index) { root.bookingState.transactionStatusIndex = index }
+                    onActivated: function (index) {
+                        root.bookingState.transactionStatusIndex = index;
+                    }
                 }
             }
         }
@@ -77,6 +82,7 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Label {
+                    color: root.theme.textPrimary
                     text: qsTr("Booking Date")
                     Layout.fillWidth: true
                 }
@@ -96,6 +102,7 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Label {
+                    color: root.theme.textPrimary
                     text: qsTr("Valuta")
                     Layout.fillWidth: true
                 }
@@ -115,6 +122,7 @@ Item {
             spacing: root.theme.spacingSmall
 
             Label {
+                color: root.theme.textPrimary
                 text: qsTr("Amount")
                 Layout.fillWidth: true
             }

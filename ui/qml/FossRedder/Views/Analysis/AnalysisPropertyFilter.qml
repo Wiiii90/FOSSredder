@@ -3,11 +3,12 @@
  * @brief Provides the AnalysisPropertyFilter component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -19,8 +20,8 @@ Controls.Panel {
     readonly property real actionButtonWidth: Math.max(root.actionButtonSize, 96)
 
     Layout.fillWidth: true
-    Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight
-    Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
+    Layout.fillHeight: false
+    Layout.preferredHeight: implicitHeight
     contentSpacing: root.theme.spacingSmall
 
     background: Rectangle {
@@ -32,87 +33,69 @@ Controls.Panel {
 
     ColumnLayout {
         Layout.fillWidth: true
-        Layout.fillHeight: true
+        Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+        Layout.preferredHeight: implicitHeight
         spacing: root.theme.spacingSmall
 
         RowLayout {
             Layout.fillWidth: true
+            spacing: root.theme.spacingSmall
 
             Label {
+                color: root.theme.textPrimary
                 text: qsTr("Properties")
                 Layout.fillWidth: true
             }
 
-            Controls.SecondaryButton {
-                objectName: "analysisPropertyFilterAllButton"
-                text: qsTr("All")
-                Layout.preferredWidth: root.actionButtonWidth
-                Layout.preferredHeight: root.actionButtonSize
-                onClicked: root.analysisState.selectAllProperties()
-            }
+            RowLayout {
+                spacing: root.theme.spacingSmall
 
-            Controls.SecondaryButton {
-                objectName: "analysisPropertyFilterUnassignedButton"
-                text: qsTr("Unassigned")
-                Layout.preferredWidth: root.actionButtonWidth
-                Layout.preferredHeight: root.actionButtonSize
-                onClicked: root.analysisState.selectUnassignedProperties()
+                Controls.SecondaryButton {
+                    objectName: "analysisPropertyFilterAllButton"
+                    text: qsTr("All")
+                    Layout.preferredWidth: root.actionButtonWidth
+                    Layout.preferredHeight: root.actionButtonSize
+                    onClicked: root.analysisState.selectAllProperties()
+                }
+
+                Controls.SecondaryButton {
+                    objectName: "analysisPropertyFilterNoneButton"
+                    text: qsTr("None")
+                    Layout.preferredWidth: root.actionButtonWidth
+                    Layout.preferredHeight: root.actionButtonSize
+                    onClicked: root.analysisState.selectNoProperties()
+                }
             }
         }
 
-        Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+        Controls.CheckListPanel {
+            Repeater {
+                model: root.analysisState.propertyFilterRows
 
-            Rectangle {
-                anchors.fill: parent
-                radius: root.theme.radius
-                color: root.theme.surface
-                border.width: root.theme.borderWidthThin
-                border.color: root.theme.border
-            }
-
-            Flickable {
-                id: propertyScroll
-                anchors.fill: parent
-                anchors.margins: root.theme.panelPadding || root.theme.spacingSmall || 0
-                clip: true
-                contentWidth: width
-                contentHeight: propertyColumn.implicitHeight
-
-                ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-
-                Column {
-                    id: propertyColumn
-                    width: propertyScroll.width
+                delegate: RowLayout {
+                    id: rowRoot
+                    required property var modelData
+                    Layout.fillWidth: true
                     spacing: root.theme.spacingSmall
+                    Layout.preferredHeight: Math.max(checkBox.implicitHeight, propertyLabel.implicitHeight)
 
-                    Repeater {
-                        model: root.analysisState.propertyFilterRows
+                    Controls.CheckBox {
+                        id: checkBox
+                        objectName: "analysisPropertyFilterCheckBox"
+                        Layout.fillWidth: false
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                        checked: root.selectedIds.indexOf(rowRoot.modelData.id) !== -1
+                        onClicked: root.analysisState.setPropertySelected(rowRoot.modelData.id, checked)
+                    }
 
-                        delegate: RowLayout {
-                            id: rowRoot
-                            required property var modelData
-                            Layout.fillWidth: true
-                            spacing: root.theme.spacingSmall
-
-                            Controls.CheckBox {
-                                objectName: "analysisPropertyFilterCheckBox"
-                                Layout.fillWidth: false
-                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                checked: root.selectedIds.indexOf(rowRoot.modelData.id) !== -1
-                                onClicked: root.analysisState.setPropertySelected(rowRoot.modelData.id, checked)
-                            }
-
-                            Label {
-                                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                text: rowRoot.modelData.name
-                                elide: Text.ElideRight
-                                verticalAlignment: Text.AlignVCenter
-                            }
-
-                            Item { Layout.fillWidth: true }
-                        }
+                    Label {
+                        id: propertyLabel
+                        color: root.theme.textPrimary
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                        Layout.fillWidth: true
+                        text: rowRoot.modelData.name
+                        elide: Text.ElideRight
+                        verticalAlignment: Text.AlignTop
                     }
                 }
             }

@@ -47,6 +47,12 @@ int SettingsViewModel::normalizeArchiveFormat(int value) noexcept
     return value == 1 ? 1 : 0;
 }
 
+QString SettingsViewModel::normalizeThemeMode(const QString& value)
+{
+    const QString normalized = value.trimmed().toLower();
+    return normalized == QStringLiteral("dark") ? QStringLiteral("dark") : QStringLiteral("light");
+}
+
 QString normalizeAnalysisDateMode(const QString& value)
 {
     const QString normalized = value.trimmed().toLower();
@@ -66,6 +72,7 @@ void SettingsViewModel::emitStateChanged()
 void SettingsViewModel::applyDefaults()
 {
     language_ = fromCoreString(core::constants::localization::languages::kEnglish);
+    themeMode_ = QStringLiteral("light");
     importDefaultPath_.clear();
     importPoppler_.clear();
     importOpenCv_.clear();
@@ -93,6 +100,7 @@ void SettingsViewModel::loadFromPersistentStore()
     auto settings = openSettingsStore();
     language_ = normalizeText(settings.value(fromCoreString(core::constants::preferences::keys::kLanguage), fromCoreString(core::constants::localization::languages::kEnglish)).toString());
     if (language_.isEmpty()) language_ = fromCoreString(core::constants::localization::languages::kEnglish);
+    themeMode_ = normalizeThemeMode(settings.value(fromCoreString(core::constants::preferences::keys::kThemeMode), QStringLiteral("light")).toString());
     importDefaultPath_ = normalizeText(settings.value(fromCoreString(core::constants::preferences::keys::kImportDefaultPath)).toString());
     importPoppler_ = settings.value(fromCoreString(core::constants::preferences::keys::kImportPoppler)).toString();
     importOpenCv_ = settings.value(fromCoreString(core::constants::preferences::keys::kImportOpenCv)).toString();
@@ -119,6 +127,7 @@ void SettingsViewModel::persistToStore() const
 {
     auto settings = openSettingsStore();
     settings.setValue(fromCoreString(core::constants::preferences::keys::kLanguage), language_);
+    settings.setValue(fromCoreString(core::constants::preferences::keys::kThemeMode), themeMode_);
     settings.setValue(fromCoreString(core::constants::preferences::keys::kImportDefaultPath), importDefaultPath_);
     settings.setValue(fromCoreString(core::constants::preferences::keys::kImportPoppler), importPoppler_);
     settings.setValue(fromCoreString(core::constants::preferences::keys::kImportOpenCv), importOpenCv_);
@@ -149,6 +158,15 @@ void SettingsViewModel::setLanguage(const QString& value)
     if (language_ == nextValue) return;
     language_ = nextValue;
     emit languageChanged();
+    emitStateChanged();
+}
+
+void SettingsViewModel::setThemeMode(const QString& value)
+{
+    const QString nextValue = normalizeThemeMode(value);
+    if (themeMode_ == nextValue) return;
+    themeMode_ = nextValue;
+    emit themeModeChanged();
     emitStateChanged();
 }
 
@@ -323,6 +341,7 @@ void SettingsViewModel::load()
     loadFromPersistentStore();
 
     savedLanguage_ = language_;
+    savedThemeMode_ = themeMode_;
     savedImportDefaultPath_ = importDefaultPath_;
     savedImportPoppler_ = importPoppler_;
     savedImportOpenCv_ = importOpenCv_;
@@ -351,6 +370,7 @@ void SettingsViewModel::save()
 {
     persistToStore();
     savedLanguage_ = language_;
+    savedThemeMode_ = themeMode_;
     savedImportDefaultPath_ = importDefaultPath_;
     savedImportPoppler_ = importPoppler_;
     savedImportOpenCv_ = importOpenCv_;
@@ -379,6 +399,7 @@ void SettingsViewModel::resetToDefaults()
 {
     applyDefaults();
     emit languageChanged();
+    emit themeModeChanged();
     emit importDefaultPathChanged();
     emit importPopplerChanged();
     emit importOpenCvChanged();
@@ -406,6 +427,7 @@ void SettingsViewModel::resetToDefaults()
 bool SettingsViewModel::hasChanges() const noexcept
 {
     return language_ != savedLanguage_
+        || themeMode_ != savedThemeMode_
         || importDefaultPath_ != savedImportDefaultPath_
         || importPoppler_ != savedImportPoppler_
         || importOpenCv_ != savedImportOpenCv_

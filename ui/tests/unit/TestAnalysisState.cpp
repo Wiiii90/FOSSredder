@@ -263,7 +263,7 @@ TEST(AnalysisStateTest, ANL_ST_003_UpdatePreservesStoredCalcAdjustmentAmounts)
               QStringLiteral("{\"tx-1\":1500}"));
 }
 
-TEST(AnalysisStateTest, ANL_ST_004_FilterChoicesExposeUnassignedSelection)
+TEST(AnalysisStateTest, ANL_ST_004_FilterChoicesExposeUnassignedAndNoneSelection)
 {
     auto harness = makeCreateHarness();
 
@@ -285,6 +285,20 @@ TEST(AnalysisStateTest, ANL_ST_004_FilterChoicesExposeUnassignedSelection)
     ASSERT_EQ(harness.state->selectedContractTypes().size(), 1);
     EXPECT_EQ(harness.state->selectedContractTypes().front().toString(),
               QStringLiteral("unassigned"));
+
+    harness.state->setName(QStringLiteral("Analysis"));
+    EXPECT_TRUE(harness.state->canSubmit());
+
+    harness.state->selectNoProperties();
+    EXPECT_TRUE(harness.state->selectedPropertyIds().isEmpty());
+    EXPECT_FALSE(harness.state->canSubmit());
+
+    harness.state->selectAllProperties();
+    EXPECT_TRUE(harness.state->canSubmit());
+
+    harness.state->selectNoContractTypes();
+    EXPECT_TRUE(harness.state->selectedContractTypes().isEmpty());
+    EXPECT_FALSE(harness.state->canSubmit());
 }
 
 } // namespace ui

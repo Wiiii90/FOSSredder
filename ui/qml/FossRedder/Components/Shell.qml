@@ -3,10 +3,11 @@
  * @brief Provides the Shell component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import FossRedder 1.0 as App
-pragma ComponentBehavior: Bound
 
 GridLayout {
     id: layoutRoot
@@ -55,6 +56,13 @@ GridLayout {
         settingsViewModel: layoutRoot.appContext.settingsViewModel
         actions: layoutRoot.appContext.actions
         languageService: layoutRoot.appContext.languageService
+    }
+
+    Binding {
+        target: layoutRoot.theme
+        property: "mode"
+        value: settingsState.themeMode
+        restoreMode: Binding.RestoreBinding
     }
 
     App.ShellNavigationState {
@@ -147,5 +155,4 @@ GridLayout {
         statusState: layoutRoot.appContext.status
         theme: layoutRoot.theme
     }
-
 }

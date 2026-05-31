@@ -3,10 +3,11 @@
  * @brief Provides the BookingTransactionAllocatablePanel component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -28,34 +29,17 @@ Controls.Panel {
         Layout.fillWidth: true
         spacing: root.theme.spacingSmall
 
-        Item {
-            id: toggleSurface
+        Controls.Button {
+            objectName: "bookingTransactionAllocatableToggle"
             Layout.fillWidth: true
             Layout.preferredHeight: root.theme.controlHeight
-
-            Rectangle {
-                anchors.fill: toggleSurface
-                radius: root.theme.radius
-                color: root.theme.surface
-                border.width: 1
-                border.color: root.theme.border
-            }
-
-            Text {
-                anchors.centerIn: toggleSurface
-                text: root.bookingState.transactionAllocatable ? qsTr("Allocatable") : qsTr("Not allocatable")
-                color: root.theme.textPrimary
-                font.family: root.theme.fontFamily
-                font.pointSize: root.theme.fontSize
-                font.bold: false
-                font.weight: Font.Normal
-            }
-
-            MouseArea {
-                objectName: "bookingTransactionAllocatableToggle"
-                anchors.fill: toggleSurface
-                onClicked: root.bookingState.transactionAllocatable = !root.bookingState.transactionAllocatable
-            }
+            fillColor: root.theme.surface
+            textColor: root.theme.textPrimary
+            bordered: true
+            filled: false
+            emphasized: false
+            text: root.bookingState.transactionAllocatable ? qsTr("Allocatable") : qsTr("Not allocatable")
+            onClicked: root.bookingState.transactionAllocatable = !root.bookingState.transactionAllocatable
         }
     }
 }

@@ -3,10 +3,11 @@
  * @brief Provides a compact year selector with text-field-like styling.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import FossRedder 1.0
-pragma ComponentBehavior: Bound
 
 SpinBox {
     id: control
@@ -18,12 +19,18 @@ SpinBox {
     implicitHeight: Theme.controlHeight
     font.family: Theme.fontFamily
     font.pointSize: Theme.fontSize
+    palette.text: Theme.textPrimary
+    palette.buttonText: Theme.textPrimary
+    palette.highlight: Theme.primary
+    palette.highlightedText: Theme.onPrimary
 
-    textFromValue: function(v, locale) {
-        return String(Math.trunc(v))
+    textFromValue: function (v, locale) {
+        return String(Math.trunc(v));
     }
 
-    valueFromText: function(t, locale) { return parseInt(String(t)) }
+    valueFromText: function (t, locale) {
+        return parseInt(String(t));
+    }
     background: Rectangle {
         color: Theme.surface
         radius: Theme.radius
@@ -31,6 +38,10 @@ SpinBox {
         border.width: Theme.borderWidthThin
         implicitHeight: Theme.controlHeight
         anchors.fill: parent
-        Behavior on border.color { ColorAnimation { duration: 160 } }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: 160
+            }
+        }
     }
 }

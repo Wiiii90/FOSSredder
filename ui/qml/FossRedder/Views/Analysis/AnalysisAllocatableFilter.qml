@@ -3,11 +3,12 @@
  * @brief Provides the AnalysisAllocatableFilter component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -24,6 +25,7 @@ Controls.Panel {
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Allocatable")
             Layout.preferredWidth: root.theme.formLabelWidth
         }
@@ -32,12 +34,12 @@ Controls.Panel {
             id: allocatableCombo
             objectName: "analysisAllocatableModeComboBox"
             Layout.preferredWidth: root.theme.formFieldWidth
-            model: [ qsTr("All"), qsTr("Only allocatable"), qsTr("Only non allocatable") ]
+            model: [qsTr("All"), qsTr("Only allocatable"), qsTr("Only non allocatable")]
             currentIndex: root.mode === "allocatable" ? 1 : (root.mode === "non-allocatable" ? 2 : 0)
             onCurrentIndexChanged: {
                 if (!root.initialized)
-                    return
-                root.analysisState.setAllocatableModeIndex(currentIndex)
+                    return;
+                root.analysisState.setAllocatableModeIndex(currentIndex);
             }
         }
 

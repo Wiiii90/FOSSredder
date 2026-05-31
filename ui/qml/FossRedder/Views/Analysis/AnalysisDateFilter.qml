@@ -3,11 +3,12 @@
  * @brief Provides the AnalysisDateFilter component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
@@ -29,11 +30,11 @@ Controls.Panel {
             id: dateFieldCombo
             objectName: "analysisDateFieldComboBox"
             Layout.preferredWidth: root.theme.formFieldWidth
-            model: [ qsTr("Booking Date"), qsTr("Valuta") ]
+            model: [qsTr("Booking Date"), qsTr("Valuta")]
             currentIndex: root.analysisState.dateFieldIndex
             onCurrentIndexChanged: {
                 if (root.initialized)
-                    root.analysisState.dateFieldIndex = currentIndex
+                    root.analysisState.dateFieldIndex = currentIndex;
             }
         }
 
@@ -41,16 +42,17 @@ Controls.Panel {
             id: dateModeCombo
             objectName: "analysisDateModeComboBox"
             Layout.preferredWidth: root.theme.formFieldWidth
-            model: [ qsTr("Year"), qsTr("Date Range") ]
+            model: [qsTr("Year"), qsTr("Date Range")]
             currentIndex: root.analysisState.dateModeIndex
             onCurrentIndexChanged: {
                 if (root.initialized)
-                    root.analysisState.dateModeIndex = currentIndex
+                    root.analysisState.dateModeIndex = currentIndex;
             }
         }
 
         Label {
             id: implicitFromLabel
+            color: root.theme.textPrimary
             visible: root.analysisState.dateModeIndex === 1
             text: qsTr("From")
         }
@@ -64,12 +66,13 @@ Controls.Panel {
             text: root.analysisState.dateFromValue
             onTextChanged: {
                 if (root.initialized)
-                    root.analysisState.dateFromValue = text
+                    root.analysisState.dateFromValue = text;
             }
         }
 
         Label {
             id: implicitToLabel
+            color: root.theme.textPrimary
             visible: root.analysisState.dateModeIndex === 1
             text: qsTr("To")
         }
@@ -83,7 +86,7 @@ Controls.Panel {
             text: root.analysisState.dateToValue
             onTextChanged: {
                 if (root.initialized)
-                    root.analysisState.dateToValue = text
+                    root.analysisState.dateToValue = text;
             }
         }
 
@@ -96,7 +99,7 @@ Controls.Panel {
             text: root.analysisState.yearValue
             onTextChanged: {
                 if (root.initialized)
-                    root.analysisState.yearValue = text
+                    root.analysisState.yearValue = text;
             }
         }
 

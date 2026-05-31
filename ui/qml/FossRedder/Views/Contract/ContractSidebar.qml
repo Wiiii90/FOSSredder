@@ -3,9 +3,12 @@
  * @brief Provides the ContractSidebar component.
  */
 
-import QtQuick 2.15
-import QtQuick.Layouts 1.3
 pragma ComponentBehavior: Bound
+
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.3
+import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
@@ -16,10 +19,10 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.theme.spacingMedium
         spacing: root.theme.spacingSmall
 
         Flickable {
+            id: contractSidebarFlick
             objectName: "contractSidebarFlick"
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -27,9 +30,19 @@ Item {
             contentWidth: width
             contentHeight: contractColumn.implicitHeight
 
+            ScrollBar.vertical: Controls.AppScrollBar {
+                parent: contractSidebarFlick
+                anchors.right: contractSidebarFlick.right
+                anchors.rightMargin: root.theme.viewSidebarScrollBarOuterInset
+                anchors.top: contractSidebarFlick.top
+                anchors.bottom: contractSidebarFlick.bottom
+                persistent: true
+            }
+
             Column {
                 id: contractColumn
-                width: parent.width
+                x: root.theme.viewSidebarEntryInset
+                width: Math.max(0, parent.width - root.theme.viewSidebarEntryInsetTotal)
                 spacing: root.theme.spacingSmall
 
                 Repeater {
@@ -43,15 +56,16 @@ Item {
                         width: contractColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: contractRow.contractId === root.contractState.currentId
-                               ? root.theme.selectionHighlight
-                               : "transparent"
-                        border.color: root.theme.borderSoft
+                        color: contractRow.contractId === root.contractState.currentId ? root.theme.selectionHighlight : (contractMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: contractRow.contractId === root.contractState.currentId ? root.theme.selectionBorder : (contractMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
+                            id: contractMouse
                             objectName: "contractSidebarMouse_" + contractRow.contractId
                             anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             preventStealing: true
                             onClicked: root.contractState.selectContract(contractRow.contractId)
                         }

@@ -3,10 +3,11 @@
  * @brief Provides the Toolbar component.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Item {
     id: toolBar
@@ -22,27 +23,31 @@ Item {
     readonly property int navSettings: toolBar.shellNavigationState.settingsSection
     readonly property int navAnalysis: toolBar.shellNavigationState.analysisSection
     readonly property int navAnnual: toolBar.shellNavigationState.annualSection
+    readonly property bool fileGroupActive: toolBar.shellNavigationState.activeSection === toolBar.navImport || toolBar.shellNavigationState.activeSection === toolBar.navExport
+    readonly property bool domainGroupActive: toolBar.shellNavigationState.activeSection === toolBar.navBooking || toolBar.shellNavigationState.activeSection === toolBar.navActors || toolBar.shellNavigationState.activeSection === toolBar.navProperties || toolBar.shellNavigationState.activeSection === toolBar.navContracts
+    readonly property bool toolsGroupActive: toolBar.shellNavigationState.activeSection === toolBar.navAnalysis || toolBar.shellNavigationState.activeSection === toolBar.navAnnual
+    readonly property bool appGroupActive: toolBar.shellNavigationState.activeSection === toolBar.navSettings
     implicitHeight: toolBar.theme.toolbarHeight
-    property int iconRowHeight: Math.round(implicitHeight * 0.55)
+    property int iconRowHeight: toolBar.theme.toolbarIconRowHeight
 
     function assetUrl(fileName) {
-        return Qt.resolvedUrl("../assets/" + fileName)
+        return Qt.resolvedUrl("../assets/" + fileName);
     }
 
     function navigateTo(section, clearSelection) {
-        toolBar.shellNavigationState.navigateToSection(section, clearSelection)
+        toolBar.shellNavigationState.navigateToSection(section, clearSelection);
     }
 
     function navigateToImportHome() {
-        toolBar.shellNavigationState.navigateToImportHome()
+        toolBar.shellNavigationState.navigateToImportHome();
     }
 
     function navigateToBookingCreate() {
-        toolBar.shellNavigationState.navigateToBookingCreate()
+        toolBar.shellNavigationState.navigateToBookingCreate();
     }
 
     function showDividerForGroup(visibleGroup, hasVisibleAfter) {
-        return visibleGroup && hasVisibleAfter
+        return visibleGroup && hasVisibleAfter;
     }
 
     Rectangle {
@@ -50,25 +55,44 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         height: toolBar.implicitHeight
-        color: toolBar.theme.toolbarBackground
         border.width: toolBar.theme.borderWidthThin
         border.color: toolBar.theme.toolbarBorder
-            clip: false
+        clip: false
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: toolBar.theme.toolbarBackgroundTop
+            }
+            GradientStop {
+                position: 1.0
+                color: toolBar.theme.toolbarBackgroundBottom
+            }
+        }
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: 1
+            color: toolBar.theme.shadow
+            opacity: toolBar.theme.dark ? 0.28 : 0.08
+        }
 
         RowLayout {
             id: rootRow
             anchors.fill: parent
+            anchors.leftMargin: toolBar.theme.toolbarGroupSpacing
+            anchors.rightMargin: toolBar.theme.toolbarGroupSpacing
             spacing: toolBar.theme.spacing + toolBar.theme.margins
             Layout.alignment: Qt.AlignVCenter
 
             ColumnLayout {
                 id: fileGroup
-                visible: toolBar.settingsViewModel.toolbarShowImport
-                         || toolBar.settingsViewModel.toolbarShowExport
+                visible: toolBar.settingsViewModel.toolbarShowImport || toolBar.settingsViewModel.toolbarShowExport
                 spacing: toolBar.theme.toolbarSectionSpacing
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredHeight: toolBar.implicitHeight
-                Layout.maximumHeight: toolBar.implicitHeight
+                Layout.preferredHeight: rootRow.height
+                Layout.maximumHeight: rootRow.height
 
                 RowLayout {
                     id: fileIcons
@@ -99,12 +123,18 @@ Item {
                 Text {
                     id: groupLabelFile
                     text: qsTr("File")
-                    color: toolBar.theme.textMuted
-                    font.pointSize: toolBar.theme.fontSizeSmall
+                    color: toolBar.fileGroupActive ? toolBar.theme.toolbarGroupActiveText : toolBar.theme.textMuted
+                    font.family: toolBar.theme.fontFamily
+                    font.pointSize: toolBar.theme.toolbarLabelFontSize
+                    font.weight: Font.Normal
                     horizontalAlignment: Text.AlignHCenter
                     Layout.alignment: Qt.AlignHCenter
                     elide: Text.ElideRight
                     visible: true
+                }
+
+                Item {
+                    Layout.preferredHeight: toolBar.theme.toolbarContentBottomInset
                 }
             }
 
@@ -113,20 +143,16 @@ Item {
                 Layout.fillHeight: true
                 color: toolBar.theme.divider
                 Layout.alignment: Qt.AlignVCenter
-                visible: toolBar.showDividerForGroup(fileGroup.visible,
-                    domainGroup.visible || toolsGroup.visible || appGroup.visible)
+                visible: toolBar.showDividerForGroup(fileGroup.visible, domainGroup.visible || toolsGroup.visible || appGroup.visible)
             }
 
             ColumnLayout {
                 id: domainGroup
-                visible: toolBar.settingsViewModel.toolbarShowBooking
-                         || toolBar.settingsViewModel.toolbarShowActors
-                         || toolBar.settingsViewModel.toolbarShowProperties
-                         || toolBar.settingsViewModel.toolbarShowContracts
+                visible: toolBar.settingsViewModel.toolbarShowBooking || toolBar.settingsViewModel.toolbarShowActors || toolBar.settingsViewModel.toolbarShowProperties || toolBar.settingsViewModel.toolbarShowContracts
                 spacing: toolBar.theme.toolbarSectionSpacing
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredHeight: toolBar.implicitHeight
-                Layout.maximumHeight: toolBar.implicitHeight
+                Layout.preferredHeight: rootRow.height
+                Layout.maximumHeight: rootRow.height
 
                 RowLayout {
                     id: domainIcons
@@ -175,12 +201,18 @@ Item {
                 Text {
                     id: groupLabelDomain
                     text: qsTr("Domain")
-                    color: toolBar.theme.textMuted
-                    font.pointSize: toolBar.theme.fontSizeSmall
+                    color: toolBar.domainGroupActive ? toolBar.theme.toolbarGroupActiveText : toolBar.theme.textMuted
+                    font.family: toolBar.theme.fontFamily
+                    font.pointSize: toolBar.theme.toolbarLabelFontSize
+                    font.weight: Font.Normal
                     horizontalAlignment: Text.AlignHCenter
                     Layout.alignment: Qt.AlignHCenter
                     elide: Text.ElideRight
                     visible: true
+                }
+
+                Item {
+                    Layout.preferredHeight: toolBar.theme.toolbarContentBottomInset
                 }
             }
 
@@ -189,18 +221,16 @@ Item {
                 Layout.fillHeight: true
                 color: toolBar.theme.divider
                 Layout.alignment: Qt.AlignVCenter
-                visible: toolBar.showDividerForGroup(domainGroup.visible,
-                    toolsGroup.visible || appGroup.visible)
+                visible: toolBar.showDividerForGroup(domainGroup.visible, toolsGroup.visible || appGroup.visible)
             }
 
             ColumnLayout {
                 id: toolsGroup
-                visible: toolBar.settingsViewModel.toolbarShowAnalysis
-                         || toolBar.settingsViewModel.toolbarShowAnnual
+                visible: toolBar.settingsViewModel.toolbarShowAnalysis || toolBar.settingsViewModel.toolbarShowAnnual
                 spacing: toolBar.theme.toolbarSectionSpacing
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredHeight: toolBar.implicitHeight
-                Layout.maximumHeight: toolBar.implicitHeight
+                Layout.preferredHeight: rootRow.height
+                Layout.maximumHeight: rootRow.height
 
                 RowLayout {
                     id: toolsIcons
@@ -231,12 +261,18 @@ Item {
                 Text {
                     id: groupLabelTools
                     text: qsTr("Tools")
-                    color: toolBar.theme.textMuted
-                    font.pointSize: toolBar.theme.fontSizeSmall
+                    color: toolBar.toolsGroupActive ? toolBar.theme.toolbarGroupActiveText : toolBar.theme.textMuted
+                    font.family: toolBar.theme.fontFamily
+                    font.pointSize: toolBar.theme.toolbarLabelFontSize
+                    font.weight: Font.Normal
                     horizontalAlignment: Text.AlignHCenter
                     Layout.alignment: Qt.AlignHCenter
                     elide: Text.ElideRight
                     visible: true
+                }
+
+                Item {
+                    Layout.preferredHeight: toolBar.theme.toolbarContentBottomInset
                 }
             }
 
@@ -253,8 +289,8 @@ Item {
                 visible: toolBar.settingsViewModel.toolbarShowSettings
                 spacing: toolBar.theme.toolbarSectionSpacing
                 Layout.alignment: Qt.AlignVCenter
-                Layout.preferredHeight: toolBar.implicitHeight
-                Layout.maximumHeight: toolBar.implicitHeight
+                Layout.preferredHeight: rootRow.height
+                Layout.maximumHeight: rootRow.height
 
                 RowLayout {
                     id: appIcons
@@ -270,18 +306,24 @@ Item {
                         label: qsTr("Settings")
                         active: toolBar.shellNavigationState.activeSection === toolBar.navSettings
                         onClicked: toolBar.navigateTo(toolBar.navSettings, false)
-    }
+                    }
                 }
 
                 Text {
                     id: groupLabelApp
                     text: qsTr("Application")
-                    color: toolBar.theme.textMuted
-                    font.pointSize: toolBar.theme.fontSizeSmall
+                    color: toolBar.appGroupActive ? toolBar.theme.toolbarGroupActiveText : toolBar.theme.textMuted
+                    font.family: toolBar.theme.fontFamily
+                    font.pointSize: toolBar.theme.toolbarLabelFontSize
+                    font.weight: Font.Normal
                     horizontalAlignment: Text.AlignHCenter
                     Layout.alignment: Qt.AlignHCenter
                     elide: Text.ElideRight
                     visible: true
+                }
+
+                Item {
+                    Layout.preferredHeight: toolBar.theme.toolbarContentBottomInset
                 }
             }
 
@@ -293,7 +335,9 @@ Item {
                 visible: appGroup.visible
             }
 
-            Item { Layout.fillWidth: true }
+            Item {
+                Layout.fillWidth: true
+            }
         }
     }
 }

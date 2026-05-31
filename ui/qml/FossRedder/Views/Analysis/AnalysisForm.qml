@@ -3,12 +3,13 @@
  * @brief Provides the Analysis form surface.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Analysis 1.0 as Analysis
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -39,7 +40,7 @@ Item {
             contentHeight: root.analysisState.isEdit ? height : analysisContent.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
 
-            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+            ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
 
             ColumnLayout {
                 id: analysisContent
@@ -51,6 +52,7 @@ Item {
                     Layout.fillWidth: true
 
                     Label {
+                        color: root.theme.textPrimary
                         text: qsTr("Analysis Name")
                         Layout.preferredWidth: root.theme.formLabelWidth
                     }
@@ -78,6 +80,7 @@ Item {
                             Layout.fillWidth: true
 
                             Label {
+                                color: root.theme.textPrimary
                                 text: qsTr("Analysis Type")
                                 Layout.preferredWidth: root.theme.formLabelWidth
                             }
@@ -86,7 +89,7 @@ Item {
                                 id: mainTypeCombo
                                 objectName: "analysisMainTypeComboBox"
                                 Layout.fillWidth: true
-                                model: [ qsTr("Plot"), qsTr("Table") ]
+                                model: [qsTr("Plot"), qsTr("Table")]
                                 currentIndex: root.analysisState.mainTypeIndex
                                 onActivated: root.analysisState.mainTypeIndex = currentIndex
                             }
@@ -97,6 +100,7 @@ Item {
                             Layout.fillWidth: true
 
                             Label {
+                                color: root.theme.textPrimary
                                 text: qsTr("Plot Subtype")
                                 Layout.preferredWidth: root.theme.formLabelWidth
                             }
@@ -129,6 +133,7 @@ Item {
                             Layout.fillWidth: true
 
                             Label {
+                                color: root.theme.textPrimary
                                 text: qsTr("Export Format")
                                 Layout.preferredWidth: root.theme.formLabelWidth
                             }
@@ -143,15 +148,16 @@ Item {
                                 onActivated: root.analysisState.exportFormatIndex = currentIndex
                             }
 
-                            Item { Layout.fillWidth: true }
+                            Item {
+                                Layout.fillWidth: true
+                            }
                         }
 
                         Item {
                             id: includeCalcAdjustmentsRow
                             objectName: "analysisIncludeCalcAdjustmentsRow"
                             Layout.fillWidth: true
-                            Layout.preferredHeight: Math.max(includeCalcAdjustmentsCheckBox.implicitHeight,
-                                                             includeCalcAdjustmentsLabel.implicitHeight)
+                            Layout.preferredHeight: Math.max(includeCalcAdjustmentsCheckBox.implicitHeight, includeCalcAdjustmentsLabel.implicitHeight)
 
                             RowLayout {
                                 anchors.fill: parent
@@ -166,19 +172,21 @@ Item {
 
                                 Label {
                                     id: includeCalcAdjustmentsLabel
+                                    color: root.theme.textPrimary
                                     text: qsTr("Include Calc Adjustments")
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                 }
 
-                                Item { Layout.fillWidth: true }
+                                Item {
+                                    Layout.fillWidth: true
+                                }
                             }
 
                             MouseArea {
                                 objectName: "analysisIncludeCalcAdjustmentsMouseArea"
                                 anchors.fill: parent
                                 z: 1
-                                onClicked: root.analysisState.includeCalcAdjustments =
-                                           !root.analysisState.includeCalcAdjustments
+                                onClicked: root.analysisState.includeCalcAdjustments = !root.analysisState.includeCalcAdjustments
                             }
                         }
                     }
@@ -223,11 +231,11 @@ Item {
                         contentHeight: filterSpecContent.implicitHeight
                         boundsBehavior: Flickable.StopAtBounds
 
-                        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                        ScrollBar.vertical: Controls.AppScrollBar {}
 
                         ColumnLayout {
                             id: filterSpecContent
-                            width: filterSpecScroll.width
+                            width: Math.max(0, filterSpecScroll.width - root.theme.scrollBarGutterWidth)
                             spacing: root.theme.spacingSmall
 
                             Item {
@@ -247,14 +255,12 @@ Item {
                                 theme: root.theme
                                 analysisState: root.analysisState
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
                             }
 
                             Analysis.AnalysisContractTypeFilter {
                                 theme: root.theme
                                 analysisState: root.analysisState
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
                             }
 
                             Analysis.AnalysisAllocatableFilter {

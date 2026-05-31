@@ -51,18 +51,20 @@ Item {
             onClicked: if (root.contractState) root.contractState.submit()
         }
 
-        Controls.CompactAddButton {
-            objectName: "contractCreateModeButton"
-            visible: root.contractState ? root.contractState.isEdit : false
-            onClicked: if (root.contractState) root.contractState.enterCreateMode()
-        }
-
         Controls.DangerButton {
             objectName: "contractDeleteButton"
             visible: root.contractState ? root.contractState.isEdit : false
             text: qsTr("Delete")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
             onClicked: if (root.contractState) root.contractState.deleteCurrent()
+        }
+
+        Controls.SecondaryButton {
+            objectName: "contractCreateModeButton"
+            visible: root.contractState ? root.contractState.isEdit : false
+            text: qsTr("New")
+            Layout.preferredWidth: root.theme.viewActionButtonWidth
+            onClicked: if (root.contractState) root.contractState.enterCreateMode()
         }
 
         Controls.SuccessButton {

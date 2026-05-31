@@ -3,14 +3,15 @@
  * @brief Provides a shared compact remove action button.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import FossRedder 1.0
-pragma ComponentBehavior: Bound
 
 SecondaryButton {
     text: qsTr("-")
-    textColor: Theme.textMuted
+    textColor: Theme.buttonMutedText
     implicitWidth: Theme.viewCompactActionButtonSize
     implicitHeight: Theme.viewCompactActionButtonSize
     Layout.preferredWidth: Theme.viewCompactActionButtonSize

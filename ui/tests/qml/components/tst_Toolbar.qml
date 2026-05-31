@@ -114,6 +114,8 @@ TestCase {
         property int borderWidthThin: 1
         property int radius: 3
         property int fontSizeSmall: 8
+        property int toolbarLabelFontSize: 8
+        property string fontFamily: "Segoe UI"
         property color toolbarBackground: "#ffffff"
         property color toolbarBorder: "#cccccc"
         property color divider: "#dddddd"

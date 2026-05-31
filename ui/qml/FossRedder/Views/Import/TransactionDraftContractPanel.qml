@@ -3,12 +3,13 @@
  * @brief Selects and updates contract assignment for the current transaction draft.
  */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
 import FossRedder.Views.Import 1.0 as Import
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -24,7 +25,9 @@ Item {
     readonly property color suggestionColor: root.suggestionTone === 2 ? root.theme.successStrong : (root.suggestionTone === 1 ? root.theme.warning : root.theme.danger)
 
     Layout.fillWidth: true
+    Layout.fillHeight: false
     Layout.preferredWidth: 1
+    Layout.preferredHeight: implicitHeight
     implicitHeight: contentLayout.implicitHeight
 
     ColumnLayout {
@@ -34,6 +37,8 @@ Item {
 
         Controls.Panel {
             Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.preferredHeight: implicitHeight
             contentSpacing: root.theme.spacingSmall
 
             background: Rectangle {
@@ -45,10 +50,12 @@ Item {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.fillHeight: false
+                Layout.preferredHeight: implicitHeight
                 spacing: root.theme.spacingSmall
 
                 Label {
+                    color: root.theme.textPrimary
                     text: qsTr("Contract")
                     Layout.fillWidth: true
                     Layout.bottomMargin: -root.theme.spacingSmall
@@ -71,11 +78,13 @@ Item {
                                 Layout.fillWidth: true
                                 spacing: root.theme.spacingSmall
                                 Label {
+                                    color: root.theme.textPrimary
                                     text: qsTr("Name")
                                     Layout.fillWidth: true
                                     Layout.preferredWidth: root.contractInnerNameWeight
                                 }
                                 Label {
+                                    color: root.theme.textPrimary
                                     text: qsTr("Type")
                                     Layout.fillWidth: true
                                     Layout.preferredWidth: root.contractInnerTypeWeight
@@ -94,7 +103,8 @@ Item {
                                     onTextEdited: root.transactionState.contractNameText = text
                                     onEditingFinished: root.transactionState.contractNameText = text
                                     onAccepted: root.transactionState.contractNameText = text
-                                    onActiveFocusChanged: if (!activeFocus) root.transactionState.contractNameText = text
+                                    onActiveFocusChanged: if (!activeFocus)
+                                        root.transactionState.contractNameText = text
                                 }
                                 Controls.TextField {
                                     objectName: "transactionDraftContractTypeField"
@@ -104,7 +114,8 @@ Item {
                                     onTextEdited: root.transactionState.contractTypeText = text
                                     onEditingFinished: root.transactionState.contractTypeText = text
                                     onAccepted: root.transactionState.contractTypeText = text
-                                    onActiveFocusChanged: if (!activeFocus) root.transactionState.contractTypeText = text
+                                    onActiveFocusChanged: if (!activeFocus)
+                                        root.transactionState.contractTypeText = text
                                 }
                             }
                         }
@@ -113,7 +124,11 @@ Item {
                     rightContent: Component {
                         ColumnLayout {
                             spacing: root.theme.spacingSmall
-                            Label { text: qsTr("Allocatable"); Layout.fillWidth: true }
+                            Label {
+                                color: root.theme.textPrimary
+                                text: qsTr("Allocatable")
+                                Layout.fillWidth: true
+                            }
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: root.theme.spacingSmall
@@ -124,7 +139,9 @@ Item {
                                     textRole: "label"
                                     model: root.transactionState.contractAllocatableModes
                                     currentIndex: root.transactionState.contractAllocatableModeIndex
-                                    onActivated: function(index) { root.transactionState.contractAllocatableModeIndex = index }
+                                    onActivated: function (index) {
+                                        root.transactionState.contractAllocatableModeIndex = index;
+                                    }
                                 }
 
                                 Controls.CompactAddButton {
@@ -171,14 +188,20 @@ Item {
                                             Layout.fillWidth: true
                                             Layout.preferredWidth: root.contractInnerNameWeight
                                             spacing: root.theme.spacingSmall
-                                            Label { text: qsTr("Select Contract"); Layout.fillWidth: true }
+                                            Label {
+                                                color: root.theme.textPrimary
+                                                text: qsTr("Select Contract")
+                                                Layout.fillWidth: true
+                                            }
                                             Controls.DropdownMenu {
                                                 objectName: "transactionDraftContractChoiceCombo"
                                                 Layout.fillWidth: true
                                                 textRole: "display"
                                                 model: root.transactionState.contractChoiceModel
                                                 currentIndex: root.transactionState.selectedContractIndex
-                                                onActivated: function(index) { root.transactionState.selectContractIndex(index) }
+                                                onActivated: function (index) {
+                                                    root.transactionState.selectContractIndex(index);
+                                                }
                                             }
                                         }
 
@@ -186,7 +209,11 @@ Item {
                                             Layout.fillWidth: true
                                             Layout.preferredWidth: root.contractInnerTypeWeight
                                             spacing: root.theme.spacingSmall
-                                            Label { text: qsTr("Type"); Layout.fillWidth: true }
+                                            Label {
+                                                color: root.theme.textPrimary
+                                                text: qsTr("Type")
+                                                Layout.fillWidth: true
+                                            }
                                             Controls.TextField {
                                                 objectName: "transactionDraftContractSelectedTypeField"
                                                 Layout.fillWidth: true

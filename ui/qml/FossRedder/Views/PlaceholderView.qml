@@ -11,6 +11,10 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Theme.background
-        Label { anchors.centerIn: parent; text: qsTr("Not implemented") }
+        Label {
+            anchors.centerIn: parent
+            color: Theme.textPrimary
+            text: qsTr("Not implemented")
+        }
     }
 }

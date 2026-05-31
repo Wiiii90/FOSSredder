@@ -20,6 +20,7 @@ class SettingsViewModel : public QObject {
     QML_UNCREATABLE("SettingsViewModel is provided by the application context")
 
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
+    Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY themeModeChanged)
     Q_PROPERTY(QString importDefaultPath READ importDefaultPath WRITE setImportDefaultPath NOTIFY importDefaultPathChanged)
     Q_PROPERTY(QString importPoppler READ importPoppler WRITE setImportPoppler NOTIFY importPopplerChanged)
     Q_PROPERTY(QString importOpenCv READ importOpenCv WRITE setImportOpenCv NOTIFY importOpenCvChanged)
@@ -45,6 +46,7 @@ public:
     explicit SettingsViewModel(QObject* parent = nullptr);
 
     QString language() const { return language_; }
+    QString themeMode() const { return themeMode_; }
     QString importDefaultPath() const { return importDefaultPath_; }
     QString importPoppler() const { return importPoppler_; }
     QString importOpenCv() const { return importOpenCv_; }
@@ -67,6 +69,7 @@ public:
     bool toolbarShowSettings() const noexcept { return toolbarShowSettings_; }
 
     void setLanguage(const QString& value);
+    void setThemeMode(const QString& value);
     void setImportDefaultPath(const QString& value);
     void setImportPoppler(const QString& value);
     void setImportOpenCv(const QString& value);
@@ -95,6 +98,7 @@ public:
 
 signals:
     void languageChanged();
+    void themeModeChanged();
     void importDefaultPathChanged();
     void importPopplerChanged();
     void importOpenCvChanged();
@@ -121,6 +125,7 @@ signals:
 
 private:
     static QString normalizeText(const QString& value);
+    static QString normalizeThemeMode(const QString& value);
     static int normalizeArchiveFormat(int value) noexcept;
 
     void emitStateChanged();
@@ -129,6 +134,7 @@ private:
     void persistToStore() const;
 
     QString language_;
+    QString themeMode_;
     QString importDefaultPath_;
     QString importPoppler_;
     QString importOpenCv_;
@@ -151,6 +157,7 @@ private:
     bool toolbarShowSettings_ = true;
 
     QString savedLanguage_;
+    QString savedThemeMode_;
     QString savedImportDefaultPath_;
     QString savedImportPoppler_;
     QString savedImportOpenCv_;

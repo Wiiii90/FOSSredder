@@ -183,10 +183,12 @@ public:
   Q_INVOKABLE bool isPropertySelected(const QString &id) const;
   Q_INVOKABLE void setPropertySelected(const QString &id, bool selected);
   Q_INVOKABLE void selectAllProperties();
+  Q_INVOKABLE void selectNoProperties();
   Q_INVOKABLE void selectUnassignedProperties();
   Q_INVOKABLE bool isContractTypeSelected(const QString &type) const;
   Q_INVOKABLE void setContractTypeSelected(const QString &type, bool selected);
   Q_INVOKABLE void selectAllContractTypes();
+  Q_INVOKABLE void selectNoContractTypes();
   Q_INVOKABLE void selectUnassignedContractTypes();
   Q_INVOKABLE bool isAdjustmentTransactionSelected(const QString &id) const;
   Q_INVOKABLE void setAdjustmentTransactionSelected(const QString &id,

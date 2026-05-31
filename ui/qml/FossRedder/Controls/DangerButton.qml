@@ -3,13 +3,17 @@
  * @brief Provides the DangerButton component.
  */
 
-import QtQuick 2.15
-import FossRedder 1.0
 pragma ComponentBehavior: Bound
 
+import QtQuick 2.15
+import FossRedder 1.0
+
 Button {
-    fillColor: Qt.lighter(Theme.danger, 2.2)
-    textColor: Theme.textPrimary
+    fillColor: Theme.buttonFill
+    textColor: Theme.buttonText
+    borderColor: Theme.borderMedium
+    hoverBorderColor: Theme.danger
     bordered: true
     filled: false
+    emphasized: false
 }

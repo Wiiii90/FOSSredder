@@ -89,6 +89,8 @@ Controls.Panel {
             contentWidth: width
             contentHeight: Math.max(contentColumn.implicitHeight, objectsFlick.height)
 
+            ScrollBar.vertical: Controls.AppScrollBar {}
+
             Column {
                 id: contentColumn
                 width: objectsFlick.width
