@@ -11,11 +11,15 @@ namespace ui::config {
 
 /** @brief Resource URL of the root QML document loaded into the main window. */
 inline const auto kMainQmlSource = QStringLiteral("qrc:/qml/FossRedder/Main.qml");
+/** @brief Resource URL of the application icon embedded into the executable. */
+inline const auto kAppIconResource = QStringLiteral(":/app/icons/fossredder.png");
 
 /** @brief Default width of the widget-hosted desktop main window. */
 constexpr int kMainWindowDefaultWidth = 1200;
 /** @brief Default height of the widget-hosted desktop main window. */
 constexpr int kMainWindowDefaultHeight = 800;
+/** @brief Pixel size used for the About dialog application icon. */
+constexpr int kAboutDialogIconSize = 96;
 
 /** @brief Deployment directory containing filesystem QML modules next to the executable. */
 inline const auto kAppQmlDirName = QStringLiteral("qml");

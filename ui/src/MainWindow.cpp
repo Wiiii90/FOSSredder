@@ -7,6 +7,7 @@
 
 #include <QCloseEvent>
 #include <QEvent>
+#include <QIcon>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QQmlContext>
@@ -15,6 +16,7 @@
 #include <QVariant>
 #include <QQuickItem>
 #include <QQuickView>
+#include <QSize>
 #include <QSizePolicy>
 #include <QWidget>
 #include <qqml.h>
@@ -297,6 +299,13 @@ void MainWindow::handleStorageOperationFailed(const QString &operation,
 }
 
 void MainWindow::onAbout() {
-  QMessageBox::about(this, ui::text::mainWindow::aboutTitle(),
-                     ui::text::mainWindow::aboutBody());
+  QMessageBox dialog(this);
+  dialog.setWindowTitle(ui::text::mainWindow::aboutTitle());
+  dialog.setIconPixmap(QIcon(ui::config::kAppIconResource)
+                           .pixmap(QSize(ui::config::kAboutDialogIconSize,
+                                         ui::config::kAboutDialogIconSize)));
+  dialog.setText(ui::text::mainWindow::aboutHeadline());
+  dialog.setInformativeText(ui::text::mainWindow::aboutBody());
+  dialog.setStandardButtons(QMessageBox::Ok);
+  dialog.exec();
 }

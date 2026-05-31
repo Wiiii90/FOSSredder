@@ -4,8 +4,8 @@
 
 namespace core::constants::preferences {
 
-inline constexpr std::string_view kOrganizationName = "FOSSRedder";
-inline constexpr std::string_view kApplicationName = "FOSSRedder";
+inline constexpr std::string_view kOrganizationName = "FOSSredder";
+inline constexpr std::string_view kApplicationName = "FOSSredder";
 
 namespace keys {
 inline constexpr std::string_view kLanguage = "general/language";

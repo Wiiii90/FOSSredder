@@ -4,6 +4,6 @@
 
 namespace core::constants::application {
 
-inline constexpr std::string_view kDisplayName = "FOSSRedder";
+inline constexpr std::string_view kDisplayName = "FOSSredder";
 
 } // namespace core::constants::application

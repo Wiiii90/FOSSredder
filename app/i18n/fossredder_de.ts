@@ -251,13 +251,13 @@
     </message>
     <message>
         <location filename="../../ui/include/ui/text/Text.h" line="87"/>
-        <source>About FOSSRedder</source>
-        <translation>Über FOSSRedder</translation>
+        <source>About FOSSredder</source>
+        <translation>Über FOSSredder</translation>
     </message>
     <message>
         <location filename="../../ui/include/ui/text/Text.h" line="88"/>
-        <source>FOSSRedder</source>
-        <translation>FOSSRedder</translation>
+        <source>FOSSredder</source>
+        <translation>FOSSredder</translation>
     </message>
 </context>
 <context>
@@ -1479,5 +1479,4 @@
     <message><source>Application</source><translation>Anwendung</translation></message>
 </context>
 </TS>
-
 

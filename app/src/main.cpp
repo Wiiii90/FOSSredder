@@ -8,6 +8,7 @@
 #include "core/domain/catalog/WorkspaceCatalog.h"
 #include <QApplication>
 #include <QByteArray>
+#include <QIcon>
 #include <QMessageBox>
 #include <QObject>
 #include <QQuickStyle>
@@ -23,6 +24,7 @@
 #include "core/errors/ErrorCodes.h"
 #include "core/errors/ErrorReporterRegistry.h"
 #include "debug/ErrorReporter.h"
+#include "ui/shared/config/Defaults.h"
 #include "ui/shared/observability/ErrorCodes.h"
 
 #include <QDir>
@@ -127,6 +129,7 @@ int main(int argc, char *argv[]) {
       core::constants::preferences::kOrganizationName.data()));
   app.setApplicationName(QString::fromLatin1(
       core::constants::preferences::kApplicationName.data()));
+  app.setWindowIcon(QIcon(ui::config::kAppIconResource));
 
   // Setup storage manager and controller (manages application state files)
   const QString appDataLocation =

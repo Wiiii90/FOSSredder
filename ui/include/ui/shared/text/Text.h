@@ -84,12 +84,14 @@ namespace mainWindow {
 inline constexpr auto kContext = "MainWindow";
 inline constexpr auto kSelectedStatusPatternSource = QT_TRANSLATE_NOOP("MainWindow", "Selected: %1");
 inline constexpr auto kExportPathStatusPatternSource = QT_TRANSLATE_NOOP("MainWindow", "Export path: %1");
-inline constexpr auto kAboutTitleSource = QT_TRANSLATE_NOOP("MainWindow", "About FOSSRedder");
-inline constexpr auto kAboutBodySource = QT_TRANSLATE_NOOP("MainWindow", "FOSSRedder");
+inline constexpr auto kAboutTitleSource = QT_TRANSLATE_NOOP("MainWindow", "About FOSSredder");
+inline constexpr auto kAboutHeadlineSource = QT_TRANSLATE_NOOP("MainWindow", "FOSSredder");
+inline constexpr auto kAboutBodySource = QT_TRANSLATE_NOOP("MainWindow", "Local-first document cleanup for bank statements, annual cost allocation, and the kind of Excel archaeology that quietly ruins weekends.\n\nFOSSredder extracts transactions from PDF statements, matches them to actors, properties, and contracts, and turns the result into analyses, annual reports, and exports.\n\nNo cloud. No external APIs. Deliberately overengineered for a very real workflow.");
 
 inline QString selectedStatusPattern() { return detail::translate(kContext, kSelectedStatusPatternSource); }
 inline QString exportPathStatusPattern() { return detail::translate(kContext, kExportPathStatusPatternSource); }
 inline QString aboutTitle() { return detail::translate(kContext, kAboutTitleSource); }
+inline QString aboutHeadline() { return detail::translate(kContext, kAboutHeadlineSource); }
 inline QString aboutBody() { return detail::translate(kContext, kAboutBodySource); }
 
 }

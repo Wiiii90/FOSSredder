@@ -10,6 +10,21 @@ set(APP_QML_SRCS
     src/main_qml.cpp
 )
 
+set(APP_RESOURCE_SRCS
+    assets/fossredder_resources.qrc
+)
+
+if(WIN32)
+    set(APP_ICON_ICO "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/fossredder.ico")
+    set(APP_ICON_RC "${CMAKE_CURRENT_BINARY_DIR}/fossredder_icon.rc")
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/fossredder_icon.rc.in"
+        "${APP_ICON_RC}"
+        @ONLY
+    )
+    list(APPEND APP_RESOURCE_SRCS "${APP_ICON_RC}")
+endif()
+
 find_package(Qt6 COMPONENTS Quick Qml Widgets LinguistTools QUIET)
 if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
     if(NOT USE_QML)
@@ -21,7 +36,7 @@ else()
     endif()
 endif()
 
-set(APP_SRCS ${APP_COMMON_SRCS})
+set(APP_SRCS ${APP_COMMON_SRCS} ${APP_RESOURCE_SRCS})
 if(USE_QML)
     list(APPEND APP_SRCS ${APP_QML_SRCS})
 endif()
