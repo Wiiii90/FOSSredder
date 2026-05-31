@@ -9,12 +9,10 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var actorState
     required property var theme
 
-    readonly property var workspaceFacade: root.appContext ? root.appContext.workspaceFacade : null
-    readonly property var actorState: root.workspaceFacade ? root.workspaceFacade.actorState : null
-    readonly property var actorRows: root.workspaceFacade ? root.workspaceFacade.actorRows : []
+    readonly property var actorRows: root.actorState.actorRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -45,7 +43,7 @@ Item {
                         width: actorColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: root.workspaceFacade && actorRow.actorId === String(root.workspaceFacade.selectedActorId || "")
+                        color: actorRow.actorId === root.actorState.currentId
                                ? root.theme.selectionHighlight
                                : "transparent"
                         border.color: root.theme.borderSoft
@@ -55,7 +53,7 @@ Item {
                             objectName: "actorSidebarMouse_" + actorRow.actorId
                             anchors.fill: parent
                             preventStealing: true
-                            onClicked: if (root.actorState) root.actorState.selectActor(actorRow.actorId)
+                            onClicked: root.actorState.selectActor(actorRow.actorId)
                         }
 
                         Column {

@@ -5,6 +5,7 @@
 
 import QtQuick 2.15
 import FossRedder 1.0
+pragma ComponentBehavior: Bound
 
 Button {
     fillColor: Theme.surface

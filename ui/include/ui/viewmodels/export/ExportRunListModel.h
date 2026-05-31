@@ -39,7 +39,10 @@ public:
         PayloadRole,
         DraftAttachedRole,
         DraftIdRole,
-        StatementIdRole
+        StatementIdRole,
+        DisplayTimeRole,
+        DisplayTitleRole,
+        DisplayStatusDetailRole
     };
 
 private:

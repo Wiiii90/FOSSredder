@@ -6,6 +6,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import FossRedder 1.0
+pragma ComponentBehavior: Bound
 
 SpinBox {
     id: control

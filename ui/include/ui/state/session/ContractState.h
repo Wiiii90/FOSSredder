@@ -35,6 +35,11 @@ class ContractState : public QObject {
                  setSelectedActorIds NOTIFY changed)
   Q_PROPERTY(QVariantList selectedPropertyIds READ selectedPropertyIds WRITE
                  setSelectedPropertyIds NOTIFY changed)
+  Q_PROPERTY(QVariantList actorRows READ actorRows NOTIFY changed)
+  Q_PROPERTY(QVariantList actorDisplayRows READ actorDisplayRows NOTIFY changed)
+  Q_PROPERTY(QVariantList contractRows READ contractRows NOTIFY changed)
+  Q_PROPERTY(QVariantList propertyRows READ propertyRows NOTIFY changed)
+  Q_PROPERTY(int selectedActorIndex READ selectedActorIndex NOTIFY changed)
   Q_PROPERTY(bool isEdit READ isEdit NOTIFY changed)
   Q_PROPERTY(bool hasChanges READ hasChanges NOTIFY changed)
   Q_PROPERTY(bool canSubmit READ canSubmit NOTIFY changed)
@@ -61,6 +66,11 @@ public:
   void setSelectedActorIds(const QVariantList &value);
   QVariantList selectedPropertyIds() const;
   void setSelectedPropertyIds(const QVariantList &value);
+  QVariantList actorRows() const;
+  QVariantList actorDisplayRows() const;
+  QVariantList contractRows() const;
+  QVariantList propertyRows() const;
+  int selectedActorIndex() const;
 
   bool isEdit() const;
   bool hasChanges() const;

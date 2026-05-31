@@ -37,6 +37,7 @@ Item {
                 Import.ImportForm {
                     Layout.fillWidth: true
                     theme: root.theme
+                    importState: root.importState
                 }
 
                 Import.ImportPanel {

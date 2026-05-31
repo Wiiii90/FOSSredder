@@ -9,7 +9,6 @@ DangerButton 1.0 DangerButton.qml
 DropdownMenu 1.0 DropdownMenu.qml
 DisclosureButton 1.0 DisclosureButton.qml
 DropZone 1.0 DropZone.qml
-FilePicker 1.0 FilePicker.qml
 IconButton 1.0 IconButton.qml
 NextButton 1.0 NextButton.qml
 NextPageButton 1.0 NextPageButton.qml

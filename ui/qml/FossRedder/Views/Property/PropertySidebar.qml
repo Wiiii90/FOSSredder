@@ -9,12 +9,10 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var propertyState
     required property var theme
 
-    readonly property var workspaceFacade: root.appContext ? root.appContext.workspaceFacade : null
-    readonly property var propertyState: root.workspaceFacade ? root.workspaceFacade.propertyState : null
-    readonly property var propertyRows: root.workspaceFacade ? root.workspaceFacade.propertyRows : []
+    readonly property var propertyRows: root.propertyState.propertyRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -45,14 +43,14 @@ Item {
                         width: propertyColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: root.workspaceFacade && propertyRow.propertyId === root.workspaceFacade.selectedPropertyId ? root.theme.selectionHighlight : "transparent"
+                        color: propertyRow.propertyId === root.propertyState.currentId ? root.theme.selectionHighlight : "transparent"
                         border.color: root.theme.borderSoft
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
                             objectName: "propertySidebarMouse_" + propertyRow.propertyId
                             anchors.fill: parent
-                            onClicked: if (root.propertyState) root.propertyState.selectProperty(propertyRow.propertyId)
+                            onClicked: root.propertyState.selectProperty(propertyRow.propertyId)
                         }
 
                         Column {

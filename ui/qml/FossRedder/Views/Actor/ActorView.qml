@@ -10,11 +10,9 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var actorState
     required property var theme
-    readonly property var workspaceFacade: root.appContext ? root.appContext.workspaceFacade : null
-    readonly property var actorState: root.workspaceFacade ? root.workspaceFacade.actorState : null
-    readonly property var actorRows: root.workspaceFacade ? root.workspaceFacade.actorRows : []
+    readonly property var actorRows: root.actorState.actorRows
     readonly property bool isEdit: root.actorState ? root.actorState.isEdit : false
     readonly property bool hasChanges: root.actorState ? root.actorState.hasChanges : false
     readonly property string name: root.actorState ? root.actorState.name : ""
@@ -30,7 +28,6 @@ Item {
         Actor.ActorForm {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            appContext: root.appContext
             actorState: root.actorState
             theme: root.theme
         }

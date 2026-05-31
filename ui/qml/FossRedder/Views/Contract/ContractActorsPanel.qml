@@ -11,9 +11,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var sessionState
     required property var contractState
-    property var actorRows: []
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -44,11 +42,8 @@ Controls.Panel {
                                                      : ""
             Layout.fillWidth: true
             textRole: "display"
-            model: root.sessionState ? root.sessionState.displayRowsWithEmpty(root.actorRows || [], qsTr("No actor"), "name") : []
-            currentIndex: {
-                const idx = root.sessionState ? root.sessionState.indexOfId(model, selectedActorId) : -1
-                return idx >= 0 ? idx : 0
-            }
+            model: root.contractState.actorDisplayRows
+            currentIndex: root.contractState.selectedActorIndex
             onActivated: function(index) {
                 const row = model[index]
                 if (root.contractState)

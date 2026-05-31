@@ -7,11 +7,12 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import QtQuick.Effects
 import FossRedder 1.0
+pragma ComponentBehavior: Bound
 
 Item {
     id: button
-    implicitWidth: 100
-    implicitHeight: 48
+    implicitWidth: Theme.toolbarIconButtonWidth
+    implicitHeight: Theme.controlHeight
 
     width: button.parent && button.parent.width > 0 ? button.parent.width : implicitWidth
     height: button.parent && button.parent.height > 0 ? button.parent.height : implicitHeight
@@ -26,8 +27,8 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 4
-        spacing: 4
+        anchors.margins: Theme.spacingSmall
+        spacing: Theme.spacingSmall
         Layout.alignment: Qt.AlignVCenter
 
         Item {
@@ -72,7 +73,7 @@ Item {
         Text {
             text: button.label
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: Math.max(10, Math.round(button.height * 0.14))
+            font.pointSize: Theme.fontSizeSmall
             color: Theme.textPrimary
             Layout.alignment: Qt.AlignHCenter
             visible: button.label !== ""

@@ -17,7 +17,10 @@ that reusable behavior instead of a one-off scene.
 ## Scope
 
 Included in this matrix:
-- `ui/tests/qml/*`
+- `ui/tests/qml/common/*`
+- `ui/tests/qml/controls/*`
+- `ui/tests/qml/components/*`
+- `ui/tests/qml/views/*`
 - QML components under `ui/qml/FossRedder/*`
 
 Out of scope:
@@ -31,107 +34,110 @@ Out of scope:
 ```text
 ui/
   tests/
-      qml/
+    qml/
       qmltests.cpp
-      Lookup.js
-      TestSupport.js
       common/
+        Lookup.js
+        TestSupport.js
+      controls/
         tst_Button.qml
-        tst_BottomBar.qml
         tst_CheckBox.qml
         tst_DropdownMenu.qml
         tst_Panel.qml
         tst_ProgressBar.qml
+        tst_TextField.qml
+      components/
+        tst_BottomBar.qml
         tst_RunLogList.qml
         tst_Toolbar.qml
-        tst_TextField.qml
-      actor/
-        tst_ActorView.qml
-        tst_ActorSidebar.qml
-        tst_ActorForm.qml
-        tst_ActorBottomBar.qml
-        tst_ActorContractPanel.qml
-      property/
-        tst_PropertyView.qml
-        tst_PropertyForm.qml
-        tst_PropertyBottomBar.qml
-        tst_PropertySidebar.qml
-        tst_PropertyContractPanel.qml
-      contract/
-        tst_ContractView.qml
-        tst_ContractForm.qml
-        tst_ContractSidebar.qml
-        tst_ContractBottomBar.qml
-        tst_ContractActorsPanel.qml
-        tst_ContractPropertiesPanel.qml
-        tst_ContractTypePanel.qml
-        tst_ContractAllocatablePanel.qml
-      annual/
-        tst_AnnualView.qml
-        tst_AnnualForm.qml
-        tst_AnnualBottomBar.qml
-        tst_AnnualSidebar.qml
-        tst_AnnualAnalysesPanel.qml
-        tst_AnnualTransactionsPanel.qml
-        tst_AnnualVerificationPanel.qml
-      booking/
-        tst_BookingView.qml
-        tst_BookingStatementView.qml
-        tst_BookingStatementForm.qml
-        tst_BookingSidebar.qml
-        tst_BookingBottomBar.qml
-        tst_BookingTransactionView.qml
-        tst_BookingTransactionForm.qml
-        tst_BookingTransactionActorPanel.qml
-        tst_BookingTransactionContractPanel.qml
-        tst_BookingTransactionPropertyPanel.qml
-        tst_BookingTransactionAllocatablePanel.qml
-      analysis/
-        tst_AnalysisAllocatableFilter.qml
-        tst_AnalysisBottomBar.qml
-        tst_AnalysisContractTypeFilter.qml
-        tst_AnalysisDateFilter.qml
-        tst_AnalysisView.qml
-        tst_AnalysisPropertyFilter.qml
-        tst_AnalysisSidebar.qml
-        tst_AnalysisTransactionsPanel.qml
-        tst_AnalysisTableView.qml
-        tst_AnalysisPlotView.qml
-        tst_AnalysisForm.qml
-      import/
-        tst_ImportBottomBar.qml
-        tst_ImportForm.qml
-        tst_ImportHomeView.qml
-        tst_ImportPanel.qml
-        tst_ImportProgressBar.qml
-        tst_ImportSidebar.qml
-        tst_ImportView.qml
-        tst_StatementDraftBottomBar.qml
-        tst_StatementDraftForm.qml
-        tst_StatementDraftView.qml
-        tst_TransactionDraftContractActorPanel.qml
-        tst_TransactionDraftContractAllocatablePanel.qml
-        tst_TransactionDraftContractPanel.qml
-        tst_TransactionDraftContractPropertyPanel.qml
-        tst_TransactionDraftFieldRow.qml
-        tst_TransactionDraftForm.qml
-        tst_TransactionDraftMetadataPanel.qml
-        tst_TransactionDraftProofPanel.qml
-        tst_TransactionDraftView.qml
-      export/
-        tst_ExportBottomBar.qml
-        tst_ExportSidebar.qml
-        tst_ExportForm.qml
-        tst_ExportPanel.qml
-        tst_ExportProgressBar.qml
-        tst_ExportView.qml
-      settings/
-        tst_SettingsExport.qml
-        tst_SettingsGeneral.qml
-        tst_SettingsImport.qml
-        tst_SettingsMiscellaneous.qml
-        tst_SettingsSidebar.qml
-        tst_SettingsView.qml
+      views/
+        actor/
+          tst_ActorView.qml
+          tst_ActorSidebar.qml
+          tst_ActorForm.qml
+          tst_ActorBottomBar.qml
+          tst_ActorContractPanel.qml
+        property/
+          tst_PropertyView.qml
+          tst_PropertyForm.qml
+          tst_PropertyBottomBar.qml
+          tst_PropertySidebar.qml
+          tst_PropertyContractPanel.qml
+        contract/
+          tst_ContractView.qml
+          tst_ContractForm.qml
+          tst_ContractSidebar.qml
+          tst_ContractBottomBar.qml
+          tst_ContractActorsPanel.qml
+          tst_ContractPropertiesPanel.qml
+          tst_ContractTypePanel.qml
+          tst_ContractAllocatablePanel.qml
+        annual/
+          tst_AnnualView.qml
+          tst_AnnualForm.qml
+          tst_AnnualBottomBar.qml
+          tst_AnnualSidebar.qml
+          tst_AnnualAnalysesPanel.qml
+          tst_AnnualTransactionsPanel.qml
+          tst_AnnualVerificationPanel.qml
+        booking/
+          tst_BookingView.qml
+          tst_BookingStatementView.qml
+          tst_BookingStatementForm.qml
+          tst_BookingSidebar.qml
+          tst_BookingBottomBar.qml
+          tst_BookingTransactionView.qml
+          tst_BookingTransactionForm.qml
+          tst_BookingTransactionActorPanel.qml
+          tst_BookingTransactionContractPanel.qml
+          tst_BookingTransactionPropertyPanel.qml
+          tst_BookingTransactionAllocatablePanel.qml
+        analysis/
+          tst_AnalysisAllocatableFilter.qml
+          tst_AnalysisBottomBar.qml
+          tst_AnalysisContractTypeFilter.qml
+          tst_AnalysisDateFilter.qml
+          tst_AnalysisView.qml
+          tst_AnalysisPropertyFilter.qml
+          tst_AnalysisSidebar.qml
+          tst_AnalysisTransactionsPanel.qml
+          tst_AnalysisTableView.qml
+          tst_AnalysisPlotView.qml
+          tst_AnalysisForm.qml
+        import/
+          tst_ImportBottomBar.qml
+          tst_ImportForm.qml
+          tst_ImportHomeView.qml
+          tst_ImportPanel.qml
+          tst_ImportProgressBar.qml
+          tst_ImportSidebar.qml
+          tst_ImportView.qml
+          tst_StatementDraftBottomBar.qml
+          tst_StatementDraftForm.qml
+          tst_StatementDraftView.qml
+          tst_TransactionDraftContractActorPanel.qml
+          tst_TransactionDraftContractAllocatablePanel.qml
+          tst_TransactionDraftContractPanel.qml
+          tst_TransactionDraftContractPropertyPanel.qml
+          tst_TransactionDraftFieldRow.qml
+          tst_TransactionDraftForm.qml
+          tst_TransactionDraftMetadataPanel.qml
+          tst_TransactionDraftProofPanel.qml
+          tst_TransactionDraftView.qml
+        export/
+          tst_ExportBottomBar.qml
+          tst_ExportSidebar.qml
+          tst_ExportForm.qml
+          tst_ExportPanel.qml
+          tst_ExportProgressBar.qml
+          tst_ExportView.qml
+        settings/
+          tst_SettingsExport.qml
+          tst_SettingsGeneral.qml
+          tst_SettingsImport.qml
+          tst_SettingsMiscellaneous.qml
+          tst_SettingsSidebar.qml
+          tst_SettingsView.qml
 ```
 
 ## Testing Principles
@@ -140,7 +146,7 @@ ui/
   it.
 - Keep test ids stable so the matrix remains useful when the UI internals move.
 - Prefer matrix-prefixed QML test function names so the code stays easy to cross-reference with the table rows.
-- Use the smallest realistic QML harness or fake app context that can express
+- Use the smallest realistic QML harness, fake state, or fake app context that can express
   the interaction.
 - Prefer boundary wiring tests over layout pixel tests unless layout behavior is
   the point of the test.
@@ -157,7 +163,7 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| IMP-V-001 | Import stack composition | QML/Composition | App context and theme available | Open ImportView | The import content stack is mounted |
+| IMP-V-001 | Import stack composition | QML/Composition | ImportState and theme available | Open ImportView | The import content stack is mounted |
 
 ### ImportHomeView
 
@@ -191,8 +197,8 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| IMP-F-001 | Source selection | QML | Form loaded | Inspect source selector | Supported import source labels are shown |
-| IMP-F-002 | Strategy selection | QML | Form loaded | Inspect strategy selector | Supported statement strategy labels are shown |
+| IMP-F-001 | Source selection | QML | Form receives ImportState | Inspect source selector | Supported import source labels from ImportState are shown |
+| IMP-F-002 | Strategy selection | QML | Form receives ImportState | Inspect strategy selector | Supported statement strategy labels from ImportState are shown |
 
 ### ImportSidebar
 
@@ -346,7 +352,7 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| ACT-S-001 | Row binding | QML/Interaction | Sidebar loaded with actor rows | Open the sidebar | The sidebar renders the actor row labels from the workspace facade |
+| ACT-S-001 | Row binding | QML/Interaction | Sidebar loaded with actor state rows | Open the sidebar | The sidebar renders the actor row labels from actor state |
 | ACT-S-002 | Row selection | QML/Interaction | Sidebar loaded with actor rows | Click an actor row | The selection request is forwarded through actor state |
 | ACT-S-003 | Selected highlight | QML/Visual state | Sidebar loaded with a selected actor id | Open the sidebar | The matching actor row uses the theme selection highlight |
 | ACT-S-004 | Sidebar scrolling | QML/Layout | Sidebar has more rows than visible height | Open the sidebar | The internal flickable becomes scrollable for the full row list |
@@ -400,7 +406,7 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| PROP-S-001 | Row binding | QML/Interaction | Sidebar loaded with property rows | Open the sidebar | The sidebar renders the property row labels from the workspace facade |
+| PROP-S-001 | Row binding | QML/Interaction | Sidebar loaded with property state rows | Open the sidebar | The sidebar renders the property row labels from property state |
 | PROP-S-002 | Row selection | QML/Interaction | Sidebar loaded with property rows | Click a property row | The selection request is forwarded through property state |
 | PROP-S-003 | Selected highlight | QML/Visual state | Sidebar loaded with a selected property id | Open the sidebar | The matching property row uses the theme selection highlight |
 | PROP-S-004 | Sidebar scrolling | QML/Layout | Sidebar has more rows than visible height | Open the sidebar | The internal flickable becomes scrollable for the full row list |
@@ -454,7 +460,7 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| CON-S-001 | Row binding | QML/Interaction | Sidebar loaded with contract rows | Open the sidebar | The sidebar renders the contract row labels from the workspace facade |
+| CON-S-001 | Row binding | QML/Interaction | Sidebar loaded with contract state rows | Open the sidebar | The sidebar renders the contract row labels from contract state |
 | CON-S-002 | Row selection | QML/Interaction | Sidebar loaded with contract rows | Click a contract row | The selection request is forwarded through contract state |
 | CON-S-003 | Selected highlight | QML/Visual state | Sidebar loaded with a selected contract id | Open the sidebar | The matching contract row uses the theme selection highlight |
 | CON-S-004 | Sidebar scrolling | QML/Layout | Sidebar has more rows than visible height | Open the sidebar | The internal flickable becomes scrollable for the full row list |
@@ -573,8 +579,8 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| BKG-V-001 | Create-mode container mount | QML | App context and theme available with no selected statement | Open BookingView | `BookingStatementView` is filled with app context and theme in create mode |
-| BKG-V-002 | Edit-mode container mount | QML | App context and theme available with BookingState in edit mode | Open BookingView and click Update | The update command is forwarded to `BookingState.updateCurrent()` |
+| BKG-V-001 | Create-mode container mount | QML | BookingState and theme available with no selected statement | Open BookingView | `BookingStatementView` is filled with BookingState and theme in create mode |
+| BKG-V-002 | Edit-mode container mount | QML | BookingState and theme available in edit mode | Open BookingView and click Update | The update command is forwarded to `BookingState.updateCurrent()` |
 
 ### BookingBottomBar
 
@@ -722,32 +728,6 @@ ui/
 | ANL-TV-001 | Table render uses state matrix | QML | Table view receives contract columns, property rows, and grand total | Open table view | Rows, contract columns, and totals render from AnalysisState |
 | ANL-TV-002 | Table preview geometry | QML/Layout | Table view receives a non-empty state matrix | Open table view | Table content exposes renderable geometry for rows and totals |
 
-## Components
-
-### EntityPicker
-
-| ID | Scope | Layer | Setup | Action | Expected |
-|---|---|---|---|---|---|
-| ENT-001 | Actor add | QML/Interaction | Picker bound to actor model | Type name and activate add item button | `addActor()` is called and selection includes returned id |
-| ENT-002 | Property add | QML/Interaction | Picker bound to property model | Type name and activate add item button | `addProperty()` is called and selection includes returned id |
-| ENT-003 | Contract add | QML/Interaction | Picker bound to contract model | Type name and activate add item button | `addContract()` is called and selection includes returned id |
-| ENT-004 | Duplicate selection guard | QML/Interaction | Returned id already selected | Add same item again | Selection stays deduplicated |
-| ENT-005 | Add field reset | QML/Interaction | Name entered | Activate add item button | Input field clears after add |
-| ENT-006 | Toggle selection | QML/Interaction | Item listed | Toggle checkbox | Id is added or removed from selected ids |
-
-### FilePicker
-
-| ID | Scope | Layer | Setup | Action | Expected |
-|---|---|---|---|---|---|
-| FILE-001 | Initial folder | QML | File system controller present | Open picker | Folder defaults to application directory |
-| FILE-002 | Open directory | QML/Interaction | Picker loaded | Call open(dir) | Folder and field text update to chosen directory |
-| FILE-003 | Up navigation | QML/Interaction | Current folder has parent | Activate up button | Folder changes to parent path |
-| FILE-004 | Directory selection | QML/Interaction | File list contains directory | Activate directory row | Folder changes to clicked directory |
-| FILE-005 | File selection | QML/Interaction | File list contains file | Activate file row | Selected file changes to clicked file path |
-| FILE-006 | Accept typed filename | QML/Interaction | Folder set and filename entered | Activate select button | Accepted path combines folder and filename |
-| FILE-007 | Accept selected file fallback | QML/Interaction | Selected file set and filename empty | Activate select button | Accepted path uses selected file |
-| FILE-008 | Cancel picker | QML/Interaction | Picker loaded | Activate cancel button | Rejected signal is emitted |
-
 ## Settings
 
 ### SettingsView
@@ -855,7 +835,7 @@ ui/
 |---|---|---|---|---|---|
 | CTRL-TB-001 | Domain create-mode navigation | QML/Interaction | Toolbar has actor, property and contract selections | Navigate to each domain section through the toolbar | Domain selections are cleared so the target form opens in create mode |
 | CTRL-TB-002 | Booking and tool create-mode navigation | QML/Interaction | Toolbar has booking, analysis and annual selections | Navigate to those sections through the toolbar | Target selections are cleared so the target view opens in create mode |
-| CTRL-TB-003 | App menu preserves current selection | QML/Interaction | App menu has existing selections | Navigate to a section through the menu | Existing selections are preserved unless the menu action explicitly clears them |
+| CTRL-TB-003 | App menu preserves non-booking selection | QML/Interaction | App menu has existing domain and booking selections | Navigate to a section through the menu | Domain selection is preserved while stale booking selection clears outside Booking |
 
 ### RunLogList
 
@@ -863,6 +843,8 @@ ui/
 |---|---|---|---|---|---|
 | CTRL-RL-001 | Log click | QML/Interaction | Log model available | Activate log row | Run click signal wiring is available for row interaction |
 | CTRL-RL-002 | Delete click | QML/Interaction | Log row available | Activate remove button | Delete click signal wiring is available for row interaction |
-| CTRL-RL-003 | Payload summary | QML | Log contains payload | Inspect rendered text | Summary reflects annuals, analyses and formats |
+| CTRL-RL-003 | Display role rendering | QML | Log model provides display roles | Inspect rendered labels | Time, title and detail text render from model-provided display roles |
 | CTRL-RL-004 | Draft id forwarding | QML/Interaction | Clickable draft log row | Activate log row with a real mouse click | Run click signal includes the draft id |
 | CTRL-RL-005 | Delegate click geometry | QML/Layout | Log model contains rows | Open run log list | Delegate rows expose a non-zero click height |
+| CTRL-RL-006 | Deleted run click guard | QML/Interaction | Log row has no draft or statement target | Open run log list | Row click area is disabled |
+| CTRL-RL-007 | Stable detail geometry | QML/Layout | One log has detail text and another does not | Open run log list | Delegate rows keep equal reserved detail height |

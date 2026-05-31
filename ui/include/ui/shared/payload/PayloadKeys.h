@@ -18,6 +18,9 @@ inline const auto kDescription = QStringLiteral("description");
 inline const auto kAmount = QStringLiteral("amount");
 inline const auto kStatus = QStringLiteral("status");
 inline const auto kMetadata = QStringLiteral("metadata");
+inline const auto kDisplayTime = QStringLiteral("displayTime");
+inline const auto kDisplayTitle = QStringLiteral("displayTitle");
+inline const auto kDisplayStatusDetail = QStringLiteral("displayStatusDetail");
 }
 
 namespace actor {

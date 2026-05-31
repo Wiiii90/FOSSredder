@@ -105,6 +105,14 @@ void PropertyState::setSelectedContractIds(const QVariantList &value) {
   emit changed();
 }
 
+QVariantList PropertyState::propertyRows() const {
+  return workspace_ ? workspace_->propertyRows() : QVariantList{};
+}
+
+QVariantList PropertyState::contractRows() const {
+  return workspace_ ? workspace_->contractRows() : QVariantList{};
+}
+
 bool PropertyState::isEdit() const { return !currentId().isEmpty(); }
 
 bool PropertyState::hasChanges() const {
@@ -115,8 +123,8 @@ bool PropertyState::hasChanges() const {
     return false;
   }
   return dirty_ || workspace_->session()->formStateChanged(
-                        savedName_, savedAliases_, savedSelectedContractIds_,
-                        name_, aliases_, selectedContractIds_);
+                       savedName_, savedAliases_, savedSelectedContractIds_,
+                       name_, aliases_, selectedContractIds_);
 }
 
 bool PropertyState::canSubmit() const { return !name_.trimmed().isEmpty(); }
@@ -227,11 +235,10 @@ void PropertyState::setContractSelected(const QString &contractId,
   if (normalizedId.isEmpty()) {
     return;
   }
-  const QVariantList next =
-      selected ? workspace_->session()->addUniqueTrimmed(selectedContractIds_,
-                                                         normalizedId)
-               : workspace_->session()->removeString(selectedContractIds_,
-                                                     normalizedId);
+  const QVariantList next = selected ? workspace_->session()->addUniqueTrimmed(
+                                           selectedContractIds_, normalizedId)
+                                     : workspace_->session()->removeString(
+                                           selectedContractIds_, normalizedId);
   if (next == selectedContractIds_) {
     return;
   }
@@ -305,9 +312,8 @@ void PropertyState::bindSignals() {
   QObject::connect(workspace_->selection(),
                    &SessionSelection::selectedPropertyIdChanged, this,
                    [this]() { reloadFromSelection(false); });
-  QObject::connect(workspace_->selectedProperty(),
-                   &PropertySelection::changed, this,
-                   [this]() { reloadFromSelection(true); });
+  QObject::connect(workspace_->selectedProperty(), &PropertySelection::changed,
+                   this, [this]() { reloadFromSelection(true); });
 }
 
 void PropertyState::applyFormState(const QVariantMap &state) {

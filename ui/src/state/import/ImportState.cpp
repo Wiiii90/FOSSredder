@@ -176,6 +176,27 @@ QStringList ImportState::importFiles() const {
   return files;
 }
 
+QString ImportState::importFileSummary() const {
+  const QStringList files = importFiles();
+  if (files.isEmpty()) {
+    return {};
+  }
+
+  QStringList names;
+  names.reserve(files.size());
+  for (const QString &file : files) {
+    const QString name = QFileInfo(file).fileName();
+    names.push_back(name.isEmpty() ? file : name);
+  }
+  return tr("Selected: %1").arg(names.join(QStringLiteral(", ")));
+}
+
+QStringList ImportState::importSourceLabels() const { return {tr("PDF")}; }
+
+QStringList ImportState::statementStrategyLabels() const {
+  return {tr("Commerzbank26")};
+}
+
 int ImportState::queuedCount() const noexcept {
   return importWorkflow_ ? importWorkflow_->queuedCount() : 0;
 }

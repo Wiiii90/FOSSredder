@@ -10,12 +10,10 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var propertyState
     required property var theme
 
-    readonly property var workspaceFacade: root.appContext ? root.appContext.workspaceFacade : null
-    readonly property var propertyState: root.workspaceFacade ? root.workspaceFacade.propertyState : null
-    readonly property var propertyRows: root.workspaceFacade ? root.workspaceFacade.propertyRows : []
+    readonly property var propertyRows: root.propertyState.propertyRows
     readonly property bool isEdit: root.propertyState ? root.propertyState.isEdit : false
     readonly property bool hasChanges: root.propertyState ? root.propertyState.hasChanges : false
     readonly property string name: root.propertyState ? root.propertyState.name : ""
@@ -31,7 +29,6 @@ Item {
         Property.PropertyForm {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            appContext: root.appContext
             propertyState: root.propertyState
             theme: root.theme
         }

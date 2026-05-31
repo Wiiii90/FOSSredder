@@ -21,6 +21,7 @@
 #include "ui/state/import/TransactionDraftState.h"
 #include "ui/state/navigation/NavigationState.h"
 #include "ui/state/settings/SettingsState.h"
+#include "ui/state/shell/ShellNavigationState.h"
 
 namespace ui::bootstrap {
 
@@ -61,6 +62,10 @@ void registerTypes()
                                        ui::qml::contracts::module::kMajorVersion,
                                        ui::qml::contracts::module::kMinorVersion,
                                        "SettingsState");
+    qmlRegisterType<ui::ShellNavigationState>(ui::qml::contracts::module::kName,
+                                              ui::qml::contracts::module::kMajorVersion,
+                                              ui::qml::contracts::module::kMinorVersion,
+                                              "ShellNavigationState");
     qmlRegisterType<ui::StatementDraftState>(ui::qml::contracts::module::kName,
                                              ui::qml::contracts::module::kMajorVersion,
                                              ui::qml::contracts::module::kMinorVersion,

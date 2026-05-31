@@ -90,6 +90,10 @@ QtObject {
     property int viewCompactActionButtonSize: 40
     property int viewCompactActionButtonSizeSmall: 32
     property int viewCompactActionButtonSizeTiny: 22
+    property int dropdownIndicatorWidth: 36
+    property int dropdownPopupMaxHeight: 280
+    property int popupZ: 999
+    property int animationDurationFast: 160
     property color subtlePrimaryFill: "#DCEBFA"
     property int radius: 3
     property int borderWidthThin: 1

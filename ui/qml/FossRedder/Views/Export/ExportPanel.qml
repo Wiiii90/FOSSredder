@@ -111,7 +111,7 @@ Controls.Panel {
                             Layout.alignment: Qt.AlignHCenter
                             Layout.preferredWidth: root.theme.viewSectionIconSize
                             Layout.preferredHeight: root.theme.viewSectionIconSize
-                            source: Qt.resolvedUrl("../../Assets/export.svg")
+                            source: Qt.resolvedUrl("../../assets/export.svg")
                             fillMode: Image.PreserveAspectFit
                             smooth: true
                             opacity: 0.85

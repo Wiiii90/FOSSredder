@@ -12,21 +12,14 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
-    property var contractState: root.workspaceFacade ? root.workspaceFacade.contractState : null
+    required property var contractState
     required property var theme
 
-    readonly property var workspaceFacade: root.appContext ? root.appContext.workspaceFacade : null
-    readonly property var sessionState: root.workspaceFacade ? root.workspaceFacade.session : null
     readonly property var aliases: root.contractState ? root.contractState.aliases : []
     readonly property int aliasIndex: root.contractState ? root.contractState.aliasIndex : -1
     readonly property var selectedActorIds: root.contractState ? root.contractState.selectedActorIds : []
     readonly property var selectedPropertyIds: root.contractState ? root.contractState.selectedPropertyIds : []
-    readonly property var propertyRows: root.workspaceFacade ? root.workspaceFacade.propertyRows : []
-
-    function actorRows() {
-        return root.workspaceFacade ? root.workspaceFacade.actorRows : []
-    }
+    readonly property var propertyRows: root.contractState.propertyRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -195,9 +188,7 @@ Item {
                     Layout.preferredHeight: implicitHeight
                     Layout.maximumHeight: implicitHeight
                     theme: root.theme
-                    sessionState: root.sessionState
                     contractState: root.contractState
-                    actorRows: root.actorRows()
                 }
 
                 Contract.ContractPropertiesPanel {

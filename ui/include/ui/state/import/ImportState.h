@@ -54,6 +54,10 @@ class ImportState : public QObject {
   Q_PROPERTY(QString manualPathText READ manualPathText WRITE setManualPathText
                  NOTIFY changed)
   Q_PROPERTY(QStringList importFiles READ importFiles NOTIFY changed)
+  Q_PROPERTY(QString importFileSummary READ importFileSummary NOTIFY changed)
+  Q_PROPERTY(QStringList importSourceLabels READ importSourceLabels CONSTANT)
+  Q_PROPERTY(QStringList statementStrategyLabels READ statementStrategyLabels
+                 CONSTANT)
   Q_PROPERTY(int queuedCount READ queuedCount NOTIFY changed)
   Q_PROPERTY(QObject *runModel READ runModel NOTIFY changed)
   Q_PROPERTY(QString selectedRunLogId READ selectedRunLogId NOTIFY changed)
@@ -100,6 +104,9 @@ public:
   QString manualPathText() const { return manualPathText_; }
   void setManualPathText(const QString &value);
   QStringList importFiles() const;
+  QString importFileSummary() const;
+  QStringList importSourceLabels() const;
+  QStringList statementStrategyLabels() const;
   int queuedCount() const noexcept;
   QObject *runModel() const noexcept;
   QString selectedRunLogId() const;

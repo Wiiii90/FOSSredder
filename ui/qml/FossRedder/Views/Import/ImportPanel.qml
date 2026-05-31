@@ -62,6 +62,7 @@ Controls.Panel {
         clickToBrowse: true
         queuedCount: root.importState.queuedCount
         files: root.importState.importFiles
+        fileSummary: root.importState.importFileSummary
         onBrowseRequested: root.importState.browseImportPdf()
     }
 }

@@ -102,6 +102,14 @@ void ActorState::setSelectedContractIds(const QVariantList &value) {
   emit changed();
 }
 
+QVariantList ActorState::actorRows() const {
+  return workspace_ ? workspace_->actorRows() : QVariantList{};
+}
+
+QVariantList ActorState::contractRows() const {
+  return workspace_ ? workspace_->contractRows() : QVariantList{};
+}
+
 bool ActorState::isEdit() const { return !currentId().isEmpty(); }
 
 bool ActorState::hasChanges() const {
@@ -220,11 +228,10 @@ void ActorState::setContractSelected(const QString &contractId, bool selected) {
   if (normalizedId.isEmpty()) {
     return;
   }
-  const QVariantList next =
-      selected ? workspace_->session()->addUniqueTrimmed(selectedContractIds_,
-                                                         normalizedId)
-               : workspace_->session()->removeString(selectedContractIds_,
-                                                     normalizedId);
+  const QVariantList next = selected ? workspace_->session()->addUniqueTrimmed(
+                                           selectedContractIds_, normalizedId)
+                                     : workspace_->session()->removeString(
+                                           selectedContractIds_, normalizedId);
   if (next == selectedContractIds_) {
     return;
   }

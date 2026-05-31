@@ -44,6 +44,7 @@ Item {
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
+                            objectName: "settingsSidebarCategoryClick_" + settingsRow.modelData.category
                             anchors.fill: parent
                             onClicked: root.settingsState.selectCategory(settingsRow.modelData.category)
                         }

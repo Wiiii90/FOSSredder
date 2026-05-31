@@ -60,6 +60,7 @@ TEST(ImportStateTest, OverviewStateAppliesDefaultPathAndFiltersManualFiles)
     state.commitManualImportFiles();
 
     EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/statement.PDF"));
+    EXPECT_EQ(state.importFileSummary(), QStringLiteral("Selected: statement.PDF"));
     EXPECT_TRUE(state.manualPathText().isEmpty());
 
     settings.setImportDefaultPath(QStringLiteral("P:/imports/later-default.pdf"));

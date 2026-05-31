@@ -12,16 +12,14 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
     required property var propertyState
     required property var theme
 
-    readonly property var workspaceFacade: root.appContext ? root.appContext.workspaceFacade : null
     readonly property bool isEdit: root.propertyState ? root.propertyState.isEdit : false
     readonly property var aliases: root.propertyState ? root.propertyState.aliases : []
     readonly property int aliasIndex: root.propertyState ? root.propertyState.aliasIndex : -1
     readonly property var selectedContractIds: root.propertyState ? root.propertyState.selectedContractIds : []
-    readonly property var contractRows: root.workspaceFacade ? root.workspaceFacade.contractRows : []
+    readonly property var contractRows: root.propertyState.contractRows
 
     ColumnLayout {
         anchors.fill: parent

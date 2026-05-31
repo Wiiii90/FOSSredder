@@ -54,8 +54,10 @@ ui/
       TestImportSuggestionService.cpp
       TestImportWorkflow.cpp
       TestNavigationState.cpp
+      TestRunListModels.cpp
       TestSelectionState.cpp
       TestSettingsState.cpp
+      TestShellNavigationState.cpp
       TestSessionModels.cpp
       TestSessionMutationState.cpp
       TestWorkspaceFacade.cpp
@@ -133,6 +135,9 @@ too stateful for declarative QML.
 | ST-008 | Selection state projects and clears rows consistently | Unit | Selection state with a representative workspace catalog | Set and then remove source rows | Selected rows resolve while present and clear once the source disappears |
 | ST-009 | Navigation state stores the current section and settings category | Unit | Fresh navigation state | Change section and settings category values | Section and category values stay in sync with the enum representation |
 | ST-010 | Mutation helpers normalize string and draft state families | Unit | Mixed string collections and draft payloads | Normalize, insert, remove, and current-state helpers | String collections, transaction drafts, and draft-list helpers stay deterministic |
+| SHL-NAV-001 | Toolbar create navigation clears workspace selection | Unit | ShellNavigationState connected to navigation and workspace facade | Navigate to a create-mode section with reset enabled | Domain, booking, analysis, and annual selections clear and the target section is remembered |
+| SHL-NAV-002 | Menu navigation preserves non-booking selection | Unit | ShellNavigationState connected to navigation and workspace facade | Navigate through app-menu style section routing | Non-booking selection remains while stale booking selection is cleared outside Booking |
+| SHL-NAV-003 | Booking create navigation clears booking selection | Unit | ShellNavigationState with selected statement and transaction | Navigate to booking create | Statement and transaction selection clear and Booking is marked loaded |
 | BKG-ST-001 | Booking create commit | Unit | Fresh workspace and BookingState draft | Fill statement and transaction fields and submit | A statement and transaction are created, selection moves to the created statement, and amount/status/allocatable values persist |
 | BKG-ST-002 | Booking empty default transaction | Unit | Fresh workspace and BookingState draft with only statement name | Submit the statement | The statement is created without committing the empty default transaction draft |
 | BKG-ST-003 | Booking incomplete transaction guard | Unit | Fresh workspace and BookingState draft with a statement name and incomplete transaction content | Attempt submit | Create remains disabled and no statement or transaction is committed |
@@ -184,6 +189,8 @@ payload shapes that QML and workflows consume.
 | ADP-005 | Analysis preview returns filtered transactions from the current workspace snapshot | Unit | Analysis workflow with a representative workspace catalog | Request a preview for an empty filter and for a matching filter expression | The preview returns the visible transactions, the count metrics, and the row payloads stay aligned with the workspace snapshot |
 | ADP-006 | Analysis filter composition defaults to the previous year and skips unrestricted groups | Unit | Analysis workflow with UI filter inputs and settings defaults | Build a filter from an unconfigured year selector and from all-selected property and contract groups | The canonical filter uses the previous year as default, keeps the year mode as the default case, and omits property and contract clauses when the selection is unrestricted |
 | ADP-007 | Analysis filter composition keeps explicit partial selections intact | Unit | Analysis workflow with UI filter inputs | Build a filter from a partial property selection, a partial contract selection, and an explicit allocatable mode | The canonical filter preserves the explicit clauses and remains stable for preview and execution |
+| RUN-LIST-001 | Import run display roles | Unit | ImportRunList with an import row | Read display time, title, and detail roles | The model provides presentation-ready values for RunLogList |
+| RUN-LIST-002 | Export run display roles | Unit | ExportRunList with export payload metadata | Read display title and detail roles | The model derives the export summary and status detail outside QML |
 
 ### Boundary checks
 
@@ -239,7 +246,7 @@ binding the suite to QML rendering.
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
 | IMP-001 | Import workflow header remains usable | Interaction | Import workflow state header available | Include the workflow state header | The import workflow boundary remains buildable and accessible from the UI source layer |
-| IMP-002 | Import overview state selection | Interaction | ImportState with ImportWorkflow and SettingsViewModel | Apply and change default PDF path, then commit manual non-PDF and PDF paths | Default PDF changes refresh the pristine selection, non-PDF input is ignored, and a manual PDF selection is not overwritten by later default changes |
+| IMP-002 | Import overview state selection | Interaction | ImportState with ImportWorkflow and SettingsViewModel | Apply and change default PDF path, then commit manual non-PDF and PDF paths | Default PDF changes refresh the pristine selection, non-PDF input is ignored, a manual PDF selection exposes a display summary, and later defaults do not overwrite manual selection |
 
 ### Boundary checks
 
@@ -267,8 +274,10 @@ ui/
       TestImportSuggestionService.cpp
       TestImportWorkflow.cpp
       TestNavigationState.cpp
+      TestRunListModels.cpp
       TestSelectionState.cpp
       TestSettingsState.cpp
+      TestShellNavigationState.cpp
       TestSessionModels.cpp
       TestSessionMutationState.cpp
       TestWorkspaceFacade.cpp

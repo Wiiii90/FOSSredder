@@ -5,11 +5,23 @@
 
 #include "ui/viewmodels/import/ImportRunListModel.h"
 
+#include <QFileInfo>
 #include <QVariant>
 
 #include "ui/shared/payload/PayloadKeys.h"
 
 namespace ui {
+
+namespace {
+
+QString fileName(const QString& path)
+{
+    const QFileInfo info(path);
+    const QString name = info.fileName();
+    return name.isEmpty() ? path : name;
+}
+
+} // namespace
 
 ImportRunList::ImportRunList(QObject* parent)
     : Base(parent)
@@ -32,6 +44,9 @@ QVariant ImportRunList::data(const QModelIndex& index, int role) const
     case DraftAttachedRole: return r->draftAttached;
     case DraftIdRole: return r->draftId;
     case StatementIdRole: return r->statementId;
+    case DisplayTimeRole: return r->time;
+    case DisplayTitleRole: return fileName(r->file);
+    case DisplayStatusDetailRole: return r->message;
     default: return {};
     }
 }
@@ -48,6 +63,9 @@ QHash<int, QByteArray> ImportRunList::roleNames() const
     roles[DraftAttachedRole] = ui::payload::keys::importRun::kDraftAttached.toUtf8();
     roles[DraftIdRole] = ui::payload::keys::importRun::kDraftId.toUtf8();
     roles[StatementIdRole] = ui::payload::keys::importRun::kStatementId.toUtf8();
+    roles[DisplayTimeRole] = ui::payload::keys::common::kDisplayTime.toUtf8();
+    roles[DisplayTitleRole] = ui::payload::keys::common::kDisplayTitle.toUtf8();
+    roles[DisplayStatusDetailRole] = ui::payload::keys::common::kDisplayStatusDetail.toUtf8();
     return roles;
 }
 
@@ -65,7 +83,8 @@ bool ImportRunList::upsertRun(const ImportRunRow& row)
         return true;
     }
     replaceRow(idx, row);
-    emitRowChanged(idx, {LogIdRole, TimeRole, TypeRole, FileRole, StatusRole, MessageRole, DraftAttachedRole, DraftIdRole, StatementIdRole});
+    emitRowChanged(idx, {LogIdRole, TimeRole, TypeRole, FileRole, StatusRole, MessageRole, DraftAttachedRole, DraftIdRole, StatementIdRole,
+                         DisplayTimeRole, DisplayTitleRole, DisplayStatusDetailRole});
     return false;
 }
 

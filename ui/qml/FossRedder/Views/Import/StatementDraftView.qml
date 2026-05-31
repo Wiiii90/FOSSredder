@@ -14,16 +14,14 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var importWorkflow
-    required property var navigation
-    required property var workspace
+    required property var importState
     property var draft
 
     App.StatementDraftState {
         id: statementState
         objectName: "statementDraftState"
-        importWorkflow: root.importWorkflow
-        navigation: root.navigation
+        importWorkflow: root.importState.importWorkflow
+        navigation: root.importState.navigation
         draft: root.draft
         transactionState: transactionState
     }
@@ -31,8 +29,8 @@ Item {
     App.TransactionDraftState {
         id: transactionState
         objectName: "transactionDraftState"
-        importWorkflow: root.importWorkflow
-        workspace: root.workspace
+        importWorkflow: root.importState.importWorkflow
+        workspace: root.importState.workspace
         draft: root.draft
     }
 

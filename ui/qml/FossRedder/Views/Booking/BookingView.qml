@@ -10,10 +10,8 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var bookingState
     required property var theme
-    readonly property var workspaceFacade: root.appContext.workspaceFacade
-    readonly property var bookingState: root.workspaceFacade.bookingState
 
     ColumnLayout {
         anchors.fill: root

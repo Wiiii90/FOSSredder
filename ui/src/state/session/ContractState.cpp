@@ -72,8 +72,8 @@ void ContractState::setType(const QString &value) {
 QString ContractState::allocatableMode() const { return allocatableMode_; }
 
 void ContractState::setAllocatableMode(const QString &value) {
-  const QString next = value.trimmed().isEmpty() ? QStringLiteral("mixed")
-                                                 : value.trimmed();
+  const QString next =
+      value.trimmed().isEmpty() ? QStringLiteral("mixed") : value.trimmed();
   if (allocatableMode_ == next) {
     return;
   }
@@ -142,6 +142,37 @@ void ContractState::setSelectedPropertyIds(const QVariantList &value) {
   emit changed();
 }
 
+QVariantList ContractState::actorRows() const {
+  return workspace_ ? workspace_->actorRows() : QVariantList{};
+}
+
+QVariantList ContractState::actorDisplayRows() const {
+  return workspace_ && workspace_->session()
+             ? workspace_->session()->displayRowsWithEmpty(
+                   actorRows(), tr("No actor"), QStringLiteral("name"))
+             : QVariantList{};
+}
+
+QVariantList ContractState::contractRows() const {
+  return workspace_ ? workspace_->contractRows() : QVariantList{};
+}
+
+QVariantList ContractState::propertyRows() const {
+  return workspace_ ? workspace_->propertyRows() : QVariantList{};
+}
+
+int ContractState::selectedActorIndex() const {
+  if (!workspace_ || !workspace_->session()) {
+    return 0;
+  }
+  const QString selectedActorId = selectedActorIds_.isEmpty()
+                                      ? QString()
+                                      : selectedActorIds_.front().toString();
+  const int index =
+      workspace_->session()->indexOfId(actorDisplayRows(), selectedActorId);
+  return index >= 0 ? index : 0;
+}
+
 bool ContractState::isEdit() const { return !currentId().isEmpty(); }
 
 bool ContractState::hasChanges() const {
@@ -157,7 +188,8 @@ bool ContractState::hasChanges() const {
              workspace_->session()->normalizedStringListKey(aliases_) ||
          workspace_->session()->normalizedStringListKey(
              savedSelectedActorIds_) !=
-             workspace_->session()->normalizedStringListKey(selectedActorIds_) ||
+             workspace_->session()->normalizedStringListKey(
+                 selectedActorIds_) ||
          workspace_->session()->normalizedStringListKey(
              savedSelectedPropertyIds_) !=
              workspace_->session()->normalizedStringListKey(
@@ -287,11 +319,10 @@ void ContractState::setPropertySelected(const QString &propertyId,
   if (normalizedId.isEmpty()) {
     return;
   }
-  const QVariantList next =
-      selected ? workspace_->session()->addUniqueTrimmed(selectedPropertyIds_,
-                                                         normalizedId)
-               : workspace_->session()->removeString(selectedPropertyIds_,
-                                                     normalizedId);
+  const QVariantList next = selected ? workspace_->session()->addUniqueTrimmed(
+                                           selectedPropertyIds_, normalizedId)
+                                     : workspace_->session()->removeString(
+                                           selectedPropertyIds_, normalizedId);
   if (next == selectedPropertyIds_) {
     return;
   }
@@ -367,9 +398,8 @@ void ContractState::bindSignals() {
   QObject::connect(workspace_->selection(),
                    &SessionSelection::selectedContractIdChanged, this,
                    [this]() { reloadFromSelection(false); });
-  QObject::connect(workspace_->selectedContract(),
-                   &ContractSelection::changed, this,
-                   [this]() { reloadFromSelection(true); });
+  QObject::connect(workspace_->selectedContract(), &ContractSelection::changed,
+                   this, [this]() { reloadFromSelection(true); });
 }
 
 void ContractState::applyFormState(const QVariantMap &state) {
@@ -412,10 +442,10 @@ QString ContractState::currentAllocatableMode() const {
     if (row.value(QStringLiteral("id")).toString() != selectedId) {
       continue;
     }
-    const QString mode = row.value(QStringLiteral("allocatableMode"),
-                                   QStringLiteral("mixed"))
-                             .toString()
-                             .trimmed();
+    const QString mode =
+        row.value(QStringLiteral("allocatableMode"), QStringLiteral("mixed"))
+            .toString()
+            .trimmed();
     return mode.isEmpty() ? QStringLiteral("mixed") : mode;
   }
   return QStringLiteral("mixed");

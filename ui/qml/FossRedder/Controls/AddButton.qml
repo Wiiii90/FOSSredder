@@ -4,6 +4,7 @@
  */
 
 import QtQuick 2.15
+pragma ComponentBehavior: Bound
 
 SecondaryButton {
     text: qsTr("Add")

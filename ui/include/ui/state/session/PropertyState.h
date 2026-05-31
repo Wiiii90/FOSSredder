@@ -30,6 +30,8 @@ class PropertyState : public QObject {
   Q_PROPERTY(int aliasIndex READ aliasIndex WRITE setAliasIndex NOTIFY changed)
   Q_PROPERTY(QVariantList selectedContractIds READ selectedContractIds WRITE
                  setSelectedContractIds NOTIFY changed)
+  Q_PROPERTY(QVariantList propertyRows READ propertyRows NOTIFY changed)
+  Q_PROPERTY(QVariantList contractRows READ contractRows NOTIFY changed)
   Q_PROPERTY(QString savedName READ savedName NOTIFY changed)
   Q_PROPERTY(QVariantList savedAliases READ savedAliases NOTIFY changed)
   Q_PROPERTY(QVariantList savedSelectedContractIds READ savedSelectedContractIds
@@ -56,6 +58,8 @@ public:
 
   QVariantList selectedContractIds() const;
   void setSelectedContractIds(const QVariantList &value);
+  QVariantList propertyRows() const;
+  QVariantList contractRows() const;
 
   QString savedName() const { return savedName_; }
   QVariantList savedAliases() const { return savedAliases_; }

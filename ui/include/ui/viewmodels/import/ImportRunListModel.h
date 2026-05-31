@@ -39,7 +39,10 @@ public:
         MessageRole,
         DraftAttachedRole,
         DraftIdRole,
-        StatementIdRole
+        StatementIdRole,
+        DisplayTimeRole,
+        DisplayTitleRole,
+        DisplayStatusDetailRole
     };
 
 private:

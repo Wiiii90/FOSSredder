@@ -124,6 +124,9 @@ void SettingsState::setLanguage(const QString &value) {
   if (settingsViewModel_) {
     settingsViewModel_->setLanguage(value);
   }
+  if (languageService_) {
+    languageService_->applyLanguage(value);
+  }
 }
 
 QString SettingsState::importDefaultPath() const {

@@ -28,14 +28,14 @@ ComboBox {
         border.width: Theme.borderWidthThin
         implicitHeight: Theme.controlHeight
         anchors.fill: parent
-        Behavior on border.color { ColorAnimation { duration: 160 } }
+        Behavior on border.color { ColorAnimation { duration: Theme.animationDurationFast } }
     }
 
     popup: Popup {
         id: popup
         y: control.height
         width: control.width
-        z: 999
+        z: Theme.popupZ
         padding: 0
         modal: false
         focus: true
@@ -49,7 +49,7 @@ ComboBox {
         }
 
         contentItem: ListView {
-            implicitHeight: Math.min(contentHeight, 280)
+            implicitHeight: Math.min(contentHeight, Theme.dropdownPopupMaxHeight)
             model: control.delegateModel
             clip: true
 
@@ -60,9 +60,9 @@ ComboBox {
             delegate: ItemDelegate {
                 required property int index
                 required property var model
-                width: ListView.view ? ListView.view.width : control.width
-                text: model && model.display !== undefined ? model.display : ""
-                enabled: !model || model.available !== false
+                width: ListView.view.width
+                text: model.display
+                enabled: model.available !== false
                 opacity: enabled ? 1.0 : 0.5
                 font.family: Theme.fontFamily
                 font.pointSize: Theme.fontSize
@@ -77,11 +77,11 @@ ComboBox {
     }
 
     indicator: Rectangle {
-        width: 36
-        height: parent ? parent.height : Theme.controlHeight
+        width: Theme.dropdownIndicatorWidth
+        height: parent.height
         color: "transparent"
-        anchors.right: parent ? parent.right : undefined
-        anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
 
         Text {
             anchors.centerIn: parent

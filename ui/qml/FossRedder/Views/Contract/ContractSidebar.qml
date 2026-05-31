@@ -9,13 +9,10 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var contractState
     required property var theme
 
-    readonly property var session: root.appContext ? root.appContext.session : null
-    readonly property var workspaceFacade: root.appContext ? root.appContext.workspaceFacade : null
-    readonly property var contractState: root.workspaceFacade ? root.workspaceFacade.contractState : null
-    readonly property var contractRows: root.workspaceFacade ? root.workspaceFacade.contractRows : []
+    readonly property var contractRows: root.contractState.contractRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -46,7 +43,7 @@ Item {
                         width: contractColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: root.workspaceFacade && contractRow.contractId === String(root.workspaceFacade.selectedContractId || "")
+                        color: contractRow.contractId === root.contractState.currentId
                                ? root.theme.selectionHighlight
                                : "transparent"
                         border.color: root.theme.borderSoft
@@ -56,7 +53,7 @@ Item {
                             objectName: "contractSidebarMouse_" + contractRow.contractId
                             anchors.fill: parent
                             preventStealing: true
-                            onClicked: if (root.contractState) root.contractState.selectContract(contractRow.contractId)
+                            onClicked: root.contractState.selectContract(contractRow.contractId)
                         }
 
                         Column {

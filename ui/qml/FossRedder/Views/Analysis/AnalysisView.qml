@@ -10,7 +10,6 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
     required property var analysisState
     required property var theme
 

@@ -57,6 +57,7 @@ set(UI_SOURCES
     src/state/import/TransactionDraftState.cpp
     src/state/navigation/NavigationState.cpp
     src/state/settings/SettingsState.cpp
+    src/state/shell/ShellNavigationState.cpp
     src/state/session/AnalysisState.cpp
     src/state/session/AnnualState.cpp
     src/state/session/ActorState.cpp
@@ -130,6 +131,7 @@ set(UI_HEADERS
     include/ui/state/import/TransactionDraftState.h
     include/ui/state/navigation/NavigationState.h
     include/ui/state/settings/SettingsState.h
+    include/ui/state/shell/ShellNavigationState.h
     include/ui/state/session/AnalysisState.h
     include/ui/state/session/AnnualState.h
     include/ui/state/session/ActorState.h
@@ -197,6 +199,7 @@ target_include_directories(fossredder_ui PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/navigation
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/selection
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/settings
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/shell
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/session
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/status
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels
@@ -269,12 +272,13 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
         "${UI_QML_MODULE_ROOT}/Constants/*.js"
     )
     file(GLOB UI_QML_ROOT_RESOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
-        "${UI_QML_MODULE_ROOT}/Assets/*"
+        "${UI_QML_MODULE_ROOT}/assets/*"
     )
     file(GLOB UI_QML_CONTROLS_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
         "${UI_QML_MODULE_ROOT}/Controls/*.qml"
     )
     file(GLOB UI_QML_COMPONENTS_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
+        "${UI_QML_MODULE_ROOT}/Components/*.qml"
         "${UI_QML_MODULE_ROOT}/Components/**/*.qml"
     )
     file(GLOB UI_QML_VIEWS_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
@@ -403,8 +407,10 @@ if(BUILD_UI_TESTS)
         tests/unit/TestImportWorkflow.cpp
         tests/unit/TestImportSuggestionService.cpp
         tests/unit/TestNavigationState.cpp
+        tests/unit/TestRunListModels.cpp
         tests/unit/TestSelectionState.cpp
         tests/unit/TestSettingsState.cpp
+        tests/unit/TestShellNavigationState.cpp
         tests/unit/TestSessionModels.cpp
         tests/unit/TestSessionMutationState.cpp
         tests/unit/TestWorkspaceStartupRehydration.cpp
