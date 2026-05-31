@@ -27,7 +27,7 @@ TestCase {
         return createTemporaryObject(buttonComponent, testCase)
     }
 
-    function test_clickEmitsClicked() {
+    function clickEmitsClicked() {
         var control = createControl()
         var clicked = false
         control.clicked.connect(function() { clicked = true })
@@ -47,7 +47,7 @@ TestCase {
     }
 
     function test_CTRL_B_001_clickEmitsClicked() {
-        test_clickEmitsClicked()
+        clickEmitsClicked()
     }
 
     function test_CTRL_B_003_disabledControlDoesNotActivate() {

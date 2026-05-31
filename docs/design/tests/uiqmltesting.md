@@ -40,13 +40,21 @@ ui/
         Lookup.js
         TestSupport.js
       controls/
+        tst_AppScrollBar.qml
         tst_Button.qml
         tst_CheckBox.qml
+        tst_CheckListPanel.qml
+        tst_DropZone.qml
         tst_DropdownMenu.qml
+        tst_FixedSizeButtons.qml
+        tst_IconButton.qml
         tst_Panel.qml
         tst_ProgressBar.qml
+        tst_SemanticButtons.qml
+        tst_TextArea.qml
         tst_TextField.qml
       components/
+        tst_AppMenu.qml
         tst_BottomBar.qml
         tst_RunLogList.qml
         tst_Toolbar.qml
@@ -795,12 +803,33 @@ ui/
 | CTRL-CB-001 | Toggle state | QML | Checkbox loaded | Toggle checkbox | Checked state changes deterministically |
 | CTRL-CB-002 | Layout binding | QML | Checkbox in layout | Inspect control | Checkbox fills width and aligns vertically |
 
+### CheckListPanel
+
+| ID | Scope | Layer | Setup | Action | Expected |
+|---|---|---|---|---|---|
+| CTRL-CLP-001 | Content hosting | QML | CheckListPanel loaded with checkboxes | Inspect content host | Nested checklist content is hosted by the panel |
+| CTRL-CLP-002 | Non-stretch layout | QML/Layout | CheckListPanel loaded in a layout context | Inspect layout bindings | Checklist panel does not fill parent width or height by default |
+
+### AppScrollBar
+
+| ID | Scope | Layer | Setup | Action | Expected |
+|---|---|---|---|---|---|
+| CTRL-SB-001 | Persistent policy | QML | AppScrollBar loaded | Enable persistent mode | Scrollbar policy switches from as-needed to always-on |
+| CTRL-SB-002 | Hidden policy | QML | AppScrollBar loaded | Enable hidden mode | Scrollbar policy switches off and interaction is disabled |
+
 ### TextField
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
 | CTRL-TF-001 | Text binding | QML | TextField loaded | Edit text | Bound text updates immediately |
-| CTRL-TF-002 | Focus styling | QML | TextField focused | Inspect border | Focused border styling is applied |
+| CTRL-TF-002 | Focus state | QML | TextField loaded | Activate focus | TextField gains focus so focus styling can be applied |
+
+### TextArea
+
+| ID | Scope | Layer | Setup | Action | Expected |
+|---|---|---|---|---|---|
+| CTRL-TA-001 | Text binding | QML | TextArea loaded | Edit text | Bound text updates immediately |
+| CTRL-TA-002 | Wrap mode | QML | TextArea loaded | Inspect wrap mode | TextArea wraps long text by words |
 
 ### DropdownMenu
 
@@ -808,6 +837,36 @@ ui/
 |---|---|---|---|---|---|
 | CTRL-DD-001 | Selection change | QML | Model available | Select item | Current index and activated signal update |
 | CTRL-DD-002 | Index update | QML | Model contains multiple options | Change current index | Current index updates deterministically |
+
+### DropZone
+
+| ID | Scope | Layer | Setup | Action | Expected |
+|---|---|---|---|---|---|
+| CTRL-DZ-001 | Browse click | QML/Interaction | DropZone loaded with browse enabled | Click drop zone | Browse request signal is emitted |
+| CTRL-DZ-002 | Public state | QML | DropZone loaded with file summary and queue count | Inspect properties | Public display state is applied |
+
+### FixedSizeButtons
+
+| ID | Scope | Layer | Setup | Action | Expected |
+|---|---|---|---|---|---|
+| CTRL-FSB-001 | Compact action size | QML/Layout | Compact add and remove buttons loaded | Inspect implicit size | Compact buttons use the shared compact action size from Theme |
+| CTRL-FSB-002 | Navigation action size | QML/Layout | Navigation buttons loaded | Inspect implicit size | Navigation buttons use the shared navigation width and minimum button height from Theme |
+| CTRL-FSB-003 | Disclosure state text | QML | Disclosure button loaded | Toggle expanded state | Disclosure glyph follows the expanded state |
+
+### IconButton
+
+| ID | Scope | Layer | Setup | Action | Expected |
+|---|---|---|---|---|---|
+| CTRL-IB-001 | Click signal | QML/Interaction | IconButton loaded | Activate button | Click signal is emitted |
+| CTRL-IB-002 | Active state | QML | IconButton loaded | Toggle active state | Active state updates deterministically |
+
+### SemanticButtons
+
+| ID | Scope | Layer | Setup | Action | Expected |
+|---|---|---|---|---|---|
+| CTRL-SBTN-001 | Add label | QML | AddButton loaded | Inspect text | AddButton uses the shared add label |
+| CTRL-SBTN-002 | Outlined variants | QML | SecondaryButton and DangerButton loaded | Inspect visual flags | Secondary and danger variants are bordered and unfilled |
+| CTRL-SBTN-003 | Success variant | QML | SuccessButton loaded | Inspect visual flags | Success variant is bordered and filled |
 
 ### Panel
 
@@ -830,13 +889,18 @@ ui/
 | CTRL-BB-001 | Content hosting | QML | BottomBar loaded | Add child controls | Child controls are laid out in a row |
 | CTRL-BB-002 | Theme binding | QML | Theme loaded | Inspect appearance | Radius, background and spacing follow theme |
 
+### AppMenu
+
+| ID | Scope | Layer | Setup | Action | Expected |
+|---|---|---|---|---|---|
+| CTRL-AM-001 | Section navigation | QML/Interaction | App menu has existing domain and booking selections | Navigate to sections through the menu | Domain selection is preserved while stale booking selection clears outside Booking |
+
 ### Toolbar
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
 | CTRL-TB-001 | Domain create-mode navigation | QML/Interaction | Toolbar has actor, property and contract selections | Navigate to each domain section through the toolbar | Domain selections are cleared so the target form opens in create mode |
 | CTRL-TB-002 | Booking and tool create-mode navigation | QML/Interaction | Toolbar has booking, analysis and annual selections | Navigate to those sections through the toolbar | Target selections are cleared so the target view opens in create mode |
-| CTRL-TB-003 | App menu preserves non-booking selection | QML/Interaction | App menu has existing domain and booking selections | Navigate to a section through the menu | Domain selection is preserved while stale booking selection clears outside Booking |
 
 ### RunLogList
 
@@ -845,7 +909,7 @@ ui/
 | CTRL-RL-001 | Log click | QML/Interaction | Log model available | Activate log row | Run click signal wiring is available for row interaction |
 | CTRL-RL-002 | Delete click | QML/Interaction | Log row available | Activate remove button | Delete click signal wiring is available for row interaction |
 | CTRL-RL-003 | Display role rendering | QML | Log model provides display roles | Inspect rendered labels | Time, title and detail text render from model-provided display roles |
-| CTRL-RL-004 | Draft id forwarding | QML/Interaction | Clickable draft log row | Activate log row with a real mouse click | Run click signal includes the draft id |
+| CTRL-RL-004 | Draft id forwarding | QML/Interaction | Clickable draft log row | Activate log row | Run click signal includes the draft id |
 | CTRL-RL-005 | Delegate click geometry | QML/Layout | Log model contains rows | Open run log list | Delegate rows expose a non-zero click height |
 | CTRL-RL-006 | Deleted run click guard | QML/Interaction | Log row has no draft or statement target | Open run log list | Row click area is disabled |
 | CTRL-RL-007 | Stable detail geometry | QML/Layout | One log has detail text and another does not | Open run log list | Delegate rows keep equal reserved detail height |

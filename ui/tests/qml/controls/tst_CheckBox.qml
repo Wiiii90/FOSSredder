@@ -47,6 +47,7 @@ TestCase {
         var root = createControl()
         var control = root.children[0]
         compare(control.Layout.fillWidth, true)
+        compare(control.Layout.alignment, Qt.AlignVCenter)
     }
 
 }

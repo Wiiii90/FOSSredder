@@ -144,10 +144,20 @@ TestCase {
         compare(emptyCard.height, filledCard.height)
     }
 
-    function test_CTRL_RL_001_modelIsAssigned() {
+    function test_CTRL_RL_001_logClickEmitsRunSignal() {
         const control = createControl()
-        verify(control.model !== null)
-        compare(control.model.length, 1)
+        let received = ({})
+        control.runClicked.connect(function(index, logId, draftAttached, statementId, draftId) {
+            received = { index: index, logId: logId, draftAttached: draftAttached, statementId: statementId, draftId: draftId }
+        })
+        wait(0)
+
+        const mouseArea = findRequired(control, "runLogRow_log-1")
+        mouseArea.clicked(null)
+
+        compare(received.index, 0)
+        compare(received.logId, "log-1")
+        compare(received.statementId, "statement-1")
     }
 
     function test_CTRL_RL_005_delegateHasClickableHeight() {

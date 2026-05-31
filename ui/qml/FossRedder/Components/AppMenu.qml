@@ -7,8 +7,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Effects
-import QtQuick.Layouts 1.3
 
 MenuBar {
     id: root
@@ -42,110 +40,6 @@ MenuBar {
         root.shellNavigationState.navigateToImportHome();
     }
 
-    component PopupFrame: Item {
-        implicitWidth: Math.max(root.theme.appMenuPopupMinWidth, frame.implicitWidth)
-        implicitHeight: frame.implicitHeight
-
-        Rectangle {
-            id: shadowSource
-            anchors.fill: frame
-            radius: frame.radius
-            color: root.theme.shadow
-            visible: false
-        }
-
-        MultiEffect {
-            anchors.fill: shadowSource
-            source: shadowSource
-            shadowEnabled: true
-            shadowBlur: 0.34
-            shadowColor: root.theme.shadow
-            shadowOpacity: root.theme.popupShadowOpacity * 0.55
-            shadowVerticalOffset: 3
-            shadowHorizontalOffset: 0
-        }
-
-        Rectangle {
-            id: frame
-            anchors.fill: parent
-            implicitWidth: root.theme.appMenuPopupMinWidth
-            implicitHeight: root.theme.appMenuItemHeight
-            radius: root.theme.appMenuPopupRadius
-            color: root.theme.appMenuPopupFill
-            border.width: root.theme.borderWidthThin
-            border.color: root.theme.appMenuPopupBorder
-        }
-    }
-
-    component StyledMenuItem: MenuItem {
-        id: item
-        implicitWidth: Math.max(root.theme.appMenuPopupMinWidth, itemContent.implicitWidth + leftPadding + rightPadding)
-        implicitHeight: root.theme.appMenuItemHeight
-        leftPadding: root.theme.appMenuPopupPadding + root.theme.appMenuItemHorizontalPadding
-        rightPadding: root.theme.appMenuPopupPadding + root.theme.appMenuItemHorizontalPadding
-        topPadding: 0
-        bottomPadding: 0
-        font.family: root.theme.fontFamily
-        font.pointSize: root.theme.appMenuFontSize
-
-        contentItem: RowLayout {
-            id: itemContent
-            spacing: root.theme.spacingSmall
-
-            Text {
-                text: item.checkable ? (item.checked ? "✓" : "") : ""
-                color: item.enabled ? root.theme.appMenuPopupText : root.theme.appMenuPopupMutedText
-                font.family: root.theme.fontFamily
-                font.pointSize: root.theme.appMenuFontSize
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                Layout.preferredWidth: root.theme.appMenuItemCheckWidth
-                Layout.fillHeight: true
-            }
-
-            Text {
-                text: item.text
-                color: item.enabled ? root.theme.appMenuPopupText : root.theme.appMenuPopupMutedText
-                font.family: root.theme.fontFamily
-                font.pointSize: root.theme.appMenuFontSize
-                verticalAlignment: Text.AlignVCenter
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-                Layout.minimumWidth: root.theme.menuItemMinWidth
-            }
-
-            Text {
-                text: item.action ? String(item.action.shortcut || "") : ""
-                color: item.enabled ? root.theme.appMenuPopupMutedText : root.theme.appMenuPopupMutedText
-                font.family: root.theme.fontFamily
-                font.pointSize: root.theme.appMenuFontSize
-                verticalAlignment: Text.AlignVCenter
-                visible: text.length > 0
-                Layout.leftMargin: root.theme.appMenuItemShortcutSpacing
-            }
-        }
-
-        background: Rectangle {
-            anchors.fill: parent
-            anchors.leftMargin: root.theme.appMenuPopupPadding
-            anchors.rightMargin: root.theme.appMenuPopupPadding
-            radius: root.theme.appMenuItemRadius
-            color: item.highlighted ? root.theme.appMenuPopupHoverFill : "transparent"
-        }
-    }
-
-    component StyledMenuSeparator: MenuSeparator {
-        leftPadding: 0
-        rightPadding: 0
-        topPadding: root.theme.spacingSmall
-        bottomPadding: root.theme.spacingSmall
-
-        contentItem: Rectangle {
-            implicitHeight: root.theme.borderWidthThin
-            color: root.theme.appMenuSeparator
-        }
-    }
-
     background: Rectangle {
         border.width: root.theme.borderWidthThin
         border.color: root.theme.toolbarBorder
@@ -176,8 +70,8 @@ MenuBar {
         bottomPadding: root.theme.appMenuPopupPadding
         leftPadding: 0
         rightPadding: 0
-        background: PopupFrame {}
-        delegate: StyledMenuItem {}
+        background: AppMenuPopupFrame { theme: root.theme }
+        delegate: AppMenuItem { theme: root.theme }
 
         Action {
             text: qsTr("New")
@@ -193,7 +87,7 @@ MenuBar {
                 root.actions.openFile()
         }
 
-        StyledMenuSeparator {}
+        AppMenuSeparator { theme: root.theme }
 
         Action {
             text: qsTr("Save")
@@ -209,7 +103,7 @@ MenuBar {
                 root.actions.saveFileAs()
         }
 
-        StyledMenuSeparator {}
+        AppMenuSeparator { theme: root.theme }
 
         Action {
             text: qsTr("Import...")
@@ -227,7 +121,7 @@ MenuBar {
             }
         }
 
-        StyledMenuSeparator {}
+        AppMenuSeparator { theme: root.theme }
 
         Action {
             text: qsTr("Quit")
@@ -247,8 +141,8 @@ MenuBar {
         bottomPadding: root.theme.appMenuPopupPadding
         leftPadding: 0
         rightPadding: 0
-        background: PopupFrame {}
-        delegate: StyledMenuItem {}
+        background: AppMenuPopupFrame { theme: root.theme }
+        delegate: AppMenuItem { theme: root.theme }
 
         Action {
             text: qsTr("Import")
@@ -274,7 +168,7 @@ MenuBar {
             text: qsTr("Contracts")
             onTriggered: root.navigateToSection(root.navContracts)
         }
-        StyledMenuSeparator {}
+        AppMenuSeparator { theme: root.theme }
         Action {
             text: qsTr("Analysis")
             onTriggered: root.navigateToSection(root.navAnalysis)
@@ -283,7 +177,7 @@ MenuBar {
             text: qsTr("Annual")
             onTriggered: root.navigateToSection(root.navAnnual)
         }
-        StyledMenuSeparator {}
+        AppMenuSeparator { theme: root.theme }
         Action {
             text: qsTr("Settings")
             onTriggered: root.navigateToSection(root.navSettings)
@@ -297,8 +191,8 @@ MenuBar {
         bottomPadding: root.theme.appMenuPopupPadding
         leftPadding: 0
         rightPadding: 0
-        background: PopupFrame {}
-        delegate: StyledMenuItem {}
+        background: AppMenuPopupFrame { theme: root.theme }
+        delegate: AppMenuItem { theme: root.theme }
 
         Instantiator {
             model: root.settingsState.languageOptions
@@ -332,8 +226,8 @@ MenuBar {
         bottomPadding: root.theme.appMenuPopupPadding
         leftPadding: 0
         rightPadding: 0
-        background: PopupFrame {}
-        delegate: StyledMenuItem {}
+        background: AppMenuPopupFrame { theme: root.theme }
+        delegate: AppMenuItem { theme: root.theme }
 
         Action {
             text: qsTr("About")

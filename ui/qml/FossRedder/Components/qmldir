@@ -1,9 +1,11 @@
 module FossRedder.Components
 depends QtQuick
-ListRow 1.0 ListRow.qml
 StatusChip 1.0 StatusChip.qml
 RunLogList 1.0 RunLogList.qml
 AppMenu 1.0 AppMenu.qml
+internal AppMenuItem AppMenuItem.qml
+internal AppMenuPopupFrame AppMenuPopupFrame.qml
+internal AppMenuSeparator AppMenuSeparator.qml
 Content 1.0 Content.qml
 ContentRouter 1.0 ContentRouter.qml
 Shell 1.0 Shell.qml
@@ -11,4 +13,6 @@ Sidebar 1.0 Sidebar.qml
 SidebarRouter 1.0 SidebarRouter.qml
 StatusBar 1.0 StatusBar.qml
 Toolbar 1.0 Toolbar.qml
+internal ToolbarDivider ToolbarDivider.qml
+internal ToolbarGroup ToolbarGroup.qml
 BottomBar 1.0 BottomBar.qml

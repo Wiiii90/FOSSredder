@@ -4,12 +4,12 @@
  */
 
 import QtQuick 2.15
-import QtQuick.Layouts 1.3
 import FossRedder 1.0
 pragma ComponentBehavior: Bound
 
-Button {
+FixedSizeButton {
     text: "◀"
     bordered: true
-    Layout.preferredWidth: Theme.viewNavigationButtonWidth
+    buttonWidth: Theme.viewNavigationButtonWidth
+    buttonHeight: Theme.buttonMinHeight
 }

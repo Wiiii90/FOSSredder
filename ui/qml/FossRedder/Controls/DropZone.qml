@@ -99,6 +99,7 @@ Item {
     }
 
     MouseArea {
+        objectName: "dropZoneMouseArea"
         anchors.fill: parent
         enabled: root.clickToBrowse && root.enabled
         cursorShape: Qt.PointingHandCursor

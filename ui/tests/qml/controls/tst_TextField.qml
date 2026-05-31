@@ -34,11 +34,12 @@ TestCase {
         compare(control.text, "Hello")
     }
 
-    function test_CTRL_TF_002_placeholderTextIsWritable() {
+    function test_CTRL_TF_002_focusCanBeActivatedForStyling() {
         var control = createControl()
-        control.placeholderText = "Enter value"
 
-        compare(control.placeholderText, "Enter value")
+        control.forceActiveFocus()
+
+        tryCompare(control, "activeFocus", true)
     }
 
 }

@@ -85,12 +85,6 @@ TestCase {
         property var languageService: QtObject { property var availableLanguages: [] }
     }
 
-    property var settingsState: QtObject {
-        property var languageOptions: []
-        property string language: ""
-        function selectLanguageAt(index) { }
-    }
-
     property var settingsViewModel: QtObject {
         property bool toolbarShowBooking: true
         property bool toolbarShowImport: true
@@ -138,22 +132,8 @@ TestCase {
         }
     }
 
-    Component {
-        id: appMenuComponent
-        AppMenu {
-            shellNavigationState: testCase.shellNavigationState
-            actions: testCase.appContext.actions
-            settingsState: testCase.settingsState
-            theme: testCase.theme
-        }
-    }
-
     function createToolbar() {
         return createTemporaryObject(toolbarComponent, testCase)
-    }
-
-    function createAppMenu() {
-        return createTemporaryObject(appMenuComponent, testCase)
     }
 
     function init() {
@@ -201,21 +181,4 @@ TestCase {
         compare(session.selectedAnnualId, "")
     }
 
-    function test_CTRL_TB_003_appMenuPreservesNonBookingSelection() {
-        const menu = createAppMenu()
-        session.selectedActorId = "actor-2"
-        session.selectedStatementId = "statement-2"
-        session.selectedTransactionId = "tx-2"
-
-        menu.navigateToSection(menu.navActors)
-        compare(session.selectedActorId, "actor-2")
-        compare(session.selectedStatementId, "")
-        compare(session.selectedTransactionId, "")
-
-        session.selectedStatementId = "statement-2"
-        session.selectedTransactionId = "tx-2"
-        menu.navigateToSection(menu.navBooking)
-        compare(session.selectedStatementId, "statement-2")
-        compare(session.selectedTransactionId, "tx-2")
-    }
 }

@@ -28,11 +28,18 @@ TestCase {
         return createTemporaryObject(dropdownComponent, testCase)
     }
 
-    function test_CTRL_DD_001_modelAndCurrentIndexAreApplied() {
+    function test_CTRL_DD_001_selectionSignalIsObservable() {
         var control = createControl()
+        var activatedIndex = -1
+        control.activated.connect(function(index) { activatedIndex = index })
 
         compare(control.model.length, 3)
         compare(control.currentIndex, 0)
+        control.currentIndex = 1
+        control.activated(1)
+
+        compare(control.currentIndex, 1)
+        compare(activatedIndex, 1)
     }
 
     function test_CTRL_DD_002_currentIndexCanChange() {

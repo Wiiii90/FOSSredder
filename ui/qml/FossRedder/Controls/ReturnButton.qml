@@ -4,14 +4,14 @@
  */
 
 import QtQuick 2.15
-import QtQuick.Layouts 1.3
 import FossRedder 1.0
 pragma ComponentBehavior: Bound
 
-Button {
+FixedSizeButton {
     text: "\u21A9"
     bordered: true
-    Layout.preferredWidth: Theme.viewNavigationButtonWidth
+    buttonWidth: Theme.viewNavigationButtonWidth
+    buttonHeight: Theme.buttonMinHeight
 
     Accessible.name: qsTr("Return")
 }
