@@ -19,20 +19,20 @@ GridLayout {
     rowSpacing: 0
 
     App.AnalysisState {
-        id: analysisState
+        id: analysisStateObject
         workspace: layoutRoot.appContext.workspaceFacade
         analysisWorkflow: layoutRoot.appContext.analysisWorkflow
         settingsViewModel: layoutRoot.appContext.settingsViewModel
     }
 
     App.AnnualState {
-        id: annualState
+        id: annualStateObject
         workspace: layoutRoot.appContext.workspaceFacade
         annualWorkflow: layoutRoot.appContext.annualWorkflow
     }
 
     App.ExportState {
-        id: exportState
+        id: exportStateObject
         workspace: layoutRoot.appContext.workspaceFacade
         exportWorkflow: layoutRoot.appContext.exportWorkflow
         actions: layoutRoot.appContext.actions
@@ -41,7 +41,7 @@ GridLayout {
     }
 
     App.ImportState {
-        id: importState
+        id: importStateObject
         importWorkflow: layoutRoot.appContext.importWorkflow
         navigation: layoutRoot.appContext.navigation
         workspace: layoutRoot.appContext.workspaceFacade
@@ -51,7 +51,7 @@ GridLayout {
     }
 
     App.SettingsState {
-        id: settingsState
+        id: settingsStateObject
         navigation: layoutRoot.appContext.navigation
         settingsViewModel: layoutRoot.appContext.settingsViewModel
         actions: layoutRoot.appContext.actions
@@ -61,12 +61,12 @@ GridLayout {
     Binding {
         target: layoutRoot.theme
         property: "mode"
-        value: settingsState.themeMode
+        value: settingsStateObject.themeMode
         restoreMode: Binding.RestoreBinding
     }
 
     App.ShellNavigationState {
-        id: shellNavigationState
+        id: shellNavigationStateObject
         navigation: layoutRoot.appContext.navigation
         workspace: layoutRoot.appContext.workspaceFacade
         importWorkflow: layoutRoot.appContext.importWorkflow
@@ -76,9 +76,9 @@ GridLayout {
         id: appMenu
         Layout.row: 0
         Layout.fillWidth: true
-        shellNavigationState: shellNavigationState
+        shellNavigationState: shellNavigationStateObject
         actions: layoutRoot.appContext.actions
-        settingsState: settingsState
+        settingsState: settingsStateObject
         theme: layoutRoot.theme
     }
 
@@ -88,7 +88,7 @@ GridLayout {
         Layout.preferredHeight: toolbar.implicitHeight
         Layout.minimumHeight: toolbar.implicitHeight
         Layout.fillWidth: true
-        shellNavigationState: shellNavigationState
+        shellNavigationState: shellNavigationStateObject
         settingsViewModel: layoutRoot.appContext.settingsViewModel
         theme: layoutRoot.theme
     }
@@ -110,16 +110,16 @@ GridLayout {
 
             SidebarRouter {
                 anchors.fill: parent
-                shellNavigationState: shellNavigationState
+                shellNavigationState: shellNavigationStateObject
                 actorState: layoutRoot.appContext.workspaceFacade.actorState
                 propertyState: layoutRoot.appContext.workspaceFacade.propertyState
                 contractState: layoutRoot.appContext.workspaceFacade.contractState
                 bookingState: layoutRoot.appContext.workspaceFacade.bookingState
-                importState: importState
-                analysisState: analysisState
-                annualState: annualState
-                exportState: exportState
-                settingsState: settingsState
+                importState: importStateObject
+                analysisState: analysisStateObject
+                annualState: annualStateObject
+                exportState: exportStateObject
+                settingsState: settingsStateObject
                 theme: layoutRoot.theme
             }
         }
@@ -132,16 +132,16 @@ GridLayout {
 
             ContentRouter {
                 anchors.fill: parent
-                shellNavigationState: shellNavigationState
+                shellNavigationState: shellNavigationStateObject
                 actorState: layoutRoot.appContext.workspaceFacade.actorState
                 propertyState: layoutRoot.appContext.workspaceFacade.propertyState
                 contractState: layoutRoot.appContext.workspaceFacade.contractState
                 bookingState: layoutRoot.appContext.workspaceFacade.bookingState
-                importState: importState
-                analysisState: analysisState
-                annualState: annualState
-                exportState: exportState
-                settingsState: settingsState
+                importState: importStateObject
+                analysisState: analysisStateObject
+                annualState: annualStateObject
+                exportState: exportStateObject
+                settingsState: settingsStateObject
                 theme: layoutRoot.theme
             }
         }

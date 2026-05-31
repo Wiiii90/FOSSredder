@@ -45,13 +45,9 @@ Item {
             Loader {
                 id: leftLoader
                 Layout.fillWidth: true
-                Layout.preferredHeight: item ? Math.max(root.theme.controlHeight, item.implicitHeight || 0) : root.theme.controlHeight
+                Layout.preferredHeight: Math.max(root.theme.controlHeight, implicitHeight)
                 Layout.alignment: Qt.AlignTop
                 sourceComponent: root.leftContent
-                onLoaded: if (item && item.hasOwnProperty("width"))
-                    item.width = width
-                onWidthChanged: if (item && item.hasOwnProperty("width"))
-                    item.width = width
             }
         }
 
@@ -71,13 +67,9 @@ Item {
             Loader {
                 id: rightLoader
                 Layout.fillWidth: true
-                Layout.preferredHeight: item ? Math.max(root.theme.controlHeight, item.implicitHeight || 0) : root.theme.controlHeight
+                Layout.preferredHeight: Math.max(root.theme.controlHeight, implicitHeight)
                 Layout.alignment: Qt.AlignTop
                 sourceComponent: root.rightContent
-                onLoaded: if (item && item.hasOwnProperty("width"))
-                    item.width = width
-                onWidthChanged: if (item && item.hasOwnProperty("width"))
-                    item.width = width
             }
         }
     }

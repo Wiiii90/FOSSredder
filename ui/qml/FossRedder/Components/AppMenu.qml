@@ -76,15 +76,19 @@ MenuBar {
         Action {
             text: qsTr("New")
             shortcut: StandardKey.New
-            onTriggered: if (root.actions)
-                root.actions.newFile()
+            onTriggered: {
+                if (root.actions)
+                    root.actions.newFile()
+            }
         }
 
         Action {
             text: qsTr("Open...")
             shortcut: StandardKey.Open
-            onTriggered: if (root.actions)
-                root.actions.openFile()
+            onTriggered: {
+                if (root.actions)
+                    root.actions.openFile()
+            }
         }
 
         AppMenuSeparator { theme: root.theme }
@@ -92,15 +96,19 @@ MenuBar {
         Action {
             text: qsTr("Save")
             shortcut: StandardKey.Save
-            onTriggered: if (root.actions)
-                root.actions.saveFile()
+            onTriggered: {
+                if (root.actions)
+                    root.actions.saveFile()
+            }
         }
 
         Action {
             text: qsTr("Save As...")
             shortcut: StandardKey.SaveAs
-            onTriggered: if (root.actions)
-                root.actions.saveFileAs()
+            onTriggered: {
+                if (root.actions)
+                    root.actions.saveFileAs()
+            }
         }
 
         AppMenuSeparator { theme: root.theme }
