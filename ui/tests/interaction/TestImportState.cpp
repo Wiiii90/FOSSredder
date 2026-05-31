@@ -45,6 +45,9 @@ TEST(ImportStateTest, OverviewStateAppliesDefaultPathAndFiltersManualFiles)
     EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/default.pdf"));
     EXPECT_TRUE(state.canStart());
 
+    settings.setImportDefaultPath(QStringLiteral("P:/imports/updated.pdf"));
+    EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/updated.pdf"));
+
     settings.setImportDefaultPath({});
     workflow.setSelectedFile({});
     state.setManualPathText(QStringLiteral("P:/imports/readme.txt"));
@@ -58,6 +61,9 @@ TEST(ImportStateTest, OverviewStateAppliesDefaultPathAndFiltersManualFiles)
 
     EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/statement.PDF"));
     EXPECT_TRUE(state.manualPathText().isEmpty());
+
+    settings.setImportDefaultPath(QStringLiteral("P:/imports/later-default.pdf"));
+    EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/statement.PDF"));
 }
 
 TEST(ImportStateTest, TogglePauseGatesProgressUpdates)

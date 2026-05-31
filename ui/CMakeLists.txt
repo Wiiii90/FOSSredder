@@ -56,6 +56,7 @@ set(UI_SOURCES
     src/state/import/StatementDraftState.cpp
     src/state/import/TransactionDraftState.cpp
     src/state/navigation/NavigationState.cpp
+    src/state/settings/SettingsState.cpp
     src/state/session/AnalysisState.cpp
     src/state/session/AnnualState.cpp
     src/state/session/ActorState.cpp
@@ -128,6 +129,7 @@ set(UI_HEADERS
     include/ui/state/import/StatementDraftState.h
     include/ui/state/import/TransactionDraftState.h
     include/ui/state/navigation/NavigationState.h
+    include/ui/state/settings/SettingsState.h
     include/ui/state/session/AnalysisState.h
     include/ui/state/session/AnnualState.h
     include/ui/state/session/ActorState.h
@@ -194,6 +196,7 @@ target_include_directories(fossredder_ui PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/mutation
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/navigation
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/selection
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/settings
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/session
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/status
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels
@@ -401,6 +404,7 @@ if(BUILD_UI_TESTS)
         tests/unit/TestImportSuggestionService.cpp
         tests/unit/TestNavigationState.cpp
         tests/unit/TestSelectionState.cpp
+        tests/unit/TestSettingsState.cpp
         tests/unit/TestSessionModels.cpp
         tests/unit/TestSessionMutationState.cpp
         tests/unit/TestWorkspaceStartupRehydration.cpp

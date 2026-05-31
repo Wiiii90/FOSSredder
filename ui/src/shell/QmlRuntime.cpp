@@ -20,6 +20,7 @@
 #include "ui/state/import/StatementDraftState.h"
 #include "ui/state/import/TransactionDraftState.h"
 #include "ui/state/navigation/NavigationState.h"
+#include "ui/state/settings/SettingsState.h"
 
 namespace ui::bootstrap {
 
@@ -56,6 +57,10 @@ void registerTypes()
                                      ui::qml::contracts::module::kMajorVersion,
                                      ui::qml::contracts::module::kMinorVersion,
                                      "ExportState");
+    qmlRegisterType<ui::SettingsState>(ui::qml::contracts::module::kName,
+                                       ui::qml::contracts::module::kMajorVersion,
+                                       ui::qml::contracts::module::kMinorVersion,
+                                       "SettingsState");
     qmlRegisterType<ui::StatementDraftState>(ui::qml::contracts::module::kName,
                                              ui::qml::contracts::module::kMajorVersion,
                                              ui::qml::contracts::module::kMinorVersion,

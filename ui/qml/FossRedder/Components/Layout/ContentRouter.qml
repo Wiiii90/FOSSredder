@@ -14,6 +14,7 @@ Item {
     required property var analysisState
     required property var annualState
     required property var exportState
+    required property var settingsState
     required property var theme
     readonly property var navigation: contentRouter.appContext ? contentRouter.appContext.navigation : null
     readonly property var session: contentRouter.appContext ? contentRouter.appContext.session : null
@@ -47,7 +48,7 @@ Item {
     Component { id: bookingViewComp; Views.BookingView { appContext: contentRouter.appContext; theme: contentRouter.theme } }
     Component { id: importViewComp; Views.ImportView { appContext: contentRouter.appContext; theme: contentRouter.theme } }
     Component { id: exportViewComp; Views.ExportView { exportState: contentRouter.exportState; theme: contentRouter.theme } }
-    Component { id: settingsViewComp; Views.SettingsView { appContext: contentRouter.appContext; theme: contentRouter.theme } }
+    Component { id: settingsViewComp; Views.SettingsView { settingsState: contentRouter.settingsState; theme: contentRouter.theme } }
     Component { id: analysisViewComp; Views.AnalysisView { appContext: contentRouter.appContext; analysisState: contentRouter.analysisState; theme: contentRouter.theme } }
     Component { id: annualViewComp; Views.AnnualView { annualState: contentRouter.annualState; theme: contentRouter.theme } }
     Component { id: placeholderViewComp; Views.PlaceholderView { } }

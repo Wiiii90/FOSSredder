@@ -9,16 +9,8 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var settingsState
     required property var theme
-    readonly property var navigation: root.appContext ? root.appContext.navigation : null
-
-    readonly property var categories: [
-        { cat: 0, text: qsTr("General") },
-        { cat: 1, text: qsTr("Import") },
-        { cat: 2, text: qsTr("Export") },
-        { cat: 3, text: qsTr("Miscellaneous") }
-    ]
 
     ColumnLayout {
         anchors.fill: parent
@@ -38,23 +30,22 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Repeater {
-                    model: root.categories
+                    model: root.settingsState.categoryRows
 
                     delegate: Rectangle {
                         id: settingsRow
                         required property var modelData
+                        objectName: "settingsSidebarCategory_" + settingsRow.modelData.category
                         width: settingsColumn.width
-                        height: 44
-                        radius: 6
-                        color: root.navigation && settingsRow.modelData.cat === root.navigation.settingsCategoryValue ? root.theme.selectionHighlight : "transparent"
+                        height: root.theme.viewSidebarRowHeight
+                        radius: root.theme.viewSidebarRowRadius
+                        color: settingsRow.modelData.selected ? root.theme.selectionHighlight : "transparent"
                         border.color: root.theme.borderSoft
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: {
-                                if (root.navigation) root.navigation.setSettingsCategoryValue(settingsRow.modelData.cat)
-                            }
+                            onClicked: root.settingsState.selectCategory(settingsRow.modelData.category)
                         }
 
                         Text {
@@ -73,4 +64,3 @@ Item {
         }
     }
 }
-

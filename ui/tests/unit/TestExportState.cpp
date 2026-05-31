@@ -11,6 +11,7 @@
 #include "support/FakeStorageManager.h"
 #include "support/WorkspaceTestData.h"
 #include "ui/state/export/ExportState.h"
+#include "ui/viewmodels/system/SettingsViewModel.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui {
@@ -146,6 +147,29 @@ TEST(ExportStateTest, EXP_ST_004_LoadItemsRoundTripsAnnualWithoutDuplicateAnalys
               QStringLiteral("analysis-plot"));
     EXPECT_EQ(analyses.at(1).toMap().value(QStringLiteral("exportType")).toString(),
               QStringLiteral("JPG"));
+}
+
+TEST(ExportStateTest, EXP_ST_005_SettingsDefaultsRefreshPristineExportForm)
+{
+    ExportState state;
+    SettingsViewModel settings;
+
+    settings.setExportDefaultDirectory(QStringLiteral("test:///exports/one"));
+    settings.setExportArchiveFormat(1);
+    state.setSettings(&settings);
+
+    EXPECT_EQ(state.targetDirectory(), QStringLiteral("test:///exports/one"));
+    EXPECT_EQ(state.packageFormatIndex(), 1);
+
+    settings.setExportDefaultDirectory(QStringLiteral("test:///exports/two"));
+    EXPECT_EQ(state.targetDirectory(), QStringLiteral("test:///exports/two"));
+
+    state.setTargetDirectory(QStringLiteral("test:///exports/manual"));
+    settings.setExportDefaultDirectory(QStringLiteral("test:///exports/three"));
+    EXPECT_EQ(state.targetDirectory(), QStringLiteral("test:///exports/manual"));
+
+    state.clearForm();
+    EXPECT_EQ(state.targetDirectory(), QStringLiteral("test:///exports/three"));
 }
 
 } // namespace ui

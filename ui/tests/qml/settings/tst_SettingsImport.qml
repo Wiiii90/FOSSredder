@@ -7,9 +7,10 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import FossRedder.Views.Settings 1.0 as Settings
 
 import "../Lookup.js" as Lookup
+import "../TestSupport.js" as TestSupport
 
 TestCase {
     id: testCase
@@ -18,29 +19,19 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsViewModel: QtObject {
+    property var settingsState: QtObject {
         property string importDefaultPath: ""
         property string importPoppler: ""
         property string importOpenCv: ""
         property string importTesseract: ""
         property string importParser: ""
         property string importMatcher: ""
-    }
-
-    property var actions: QtObject {
         property int browseCalls: 0
-        signal importFileSelected(string path)
-        signal importFilesSelected(var paths)
-        function browseImportPdf() { browseCalls += 1 }
-    }
 
-    property var appContext: QtObject {
-        property var settingsViewModel: testCase.settingsViewModel
-        property var actions: testCase.actions
+        function browseImportPath() { browseCalls += 1 }
     }
 
     property var theme: QtObject {
-        property int viewFormSpacing: 8
         property int spacingSmall: 6
         property int formLabelWidth: 120
         property color textPrimary: "#000000"
@@ -49,18 +40,12 @@ TestCase {
 
     Component {
         id: settingsImportComponent
-        SettingsImport {
+        Settings.SettingsImport {
             width: 900
             height: 560
-            appContext: testCase.appContext
+            settingsState: testCase.settingsState
             theme: testCase.theme
         }
-    }
-
-    function findRequired(root, objectName) {
-        var found = Lookup.findObject(root, objectName)
-        verify(found !== null, "Missing object: " + objectName)
-        return found
     }
 
     function createView() {
@@ -68,34 +53,47 @@ TestCase {
     }
 
     function init() {
-        settingsViewModel.importDefaultPath = ""
-        actions.browseCalls = 0
+        settingsState.importDefaultPath = ""
+        settingsState.importPoppler = ""
+        settingsState.importOpenCv = ""
+        settingsState.importTesseract = ""
+        settingsState.importParser = ""
+        settingsState.importMatcher = ""
+        settingsState.browseCalls = 0
     }
 
-    function test_SET_I_001_defaultPathFieldUpdatesSettings() {
-        var view = createView()
-        var pathField = findRequired(view, "settingsImportDefaultPathField")
+    function test_SET_I_001_defaultPathFieldUpdatesSettingsState() {
+        const view = createView()
+        const pathField = TestSupport.findRequired(Lookup, view, "settingsImportDefaultPathField")
 
         pathField.text = "test:///import/default.pdf"
 
-        compare(settingsViewModel.importDefaultPath, "test:///import/default.pdf")
+        compare(settingsState.importDefaultPath, "test:///import/default.pdf")
     }
 
-    function test_SET_I_002_browseButtonCallsAction() {
-        var view = createView()
-        var browseButton = findRequired(view, "settingsImportBrowseButton")
+    function test_SET_I_002_browseButtonDelegatesToSettingsState() {
+        const view = createView()
+        const browseButton = TestSupport.findRequired(Lookup, view, "settingsImportBrowseButton")
 
         browseButton.clicked()
 
-        compare(actions.browseCalls, 1)
+        compare(settingsState.browseCalls, 1)
     }
 
-    function test_SET_I_003_selectedFileSignalUpdatesDefaultPath() {
-        var view = createView()
+    function test_SET_I_003_pipelineFieldsUpdateSettingsState() {
+        const view = createView()
+        const fields = [
+            { objectName: "settingsImportPopplerField", propertyName: "importPoppler", value: "poppler" },
+            { objectName: "settingsImportOpenCvField", propertyName: "importOpenCv", value: "opencv" },
+            { objectName: "settingsImportTesseractField", propertyName: "importTesseract", value: "tesseract" },
+            { objectName: "settingsImportParserField", propertyName: "importParser", value: "parser" },
+            { objectName: "settingsImportMatcherField", propertyName: "importMatcher", value: "matcher" }
+        ]
 
-        actions.importFileSelected("test:///import/from-action.pdf")
-
-        compare(settingsViewModel.importDefaultPath, "test:///import/from-action.pdf")
+        for (const field of fields) {
+            const control = TestSupport.findRequired(Lookup, view, field.objectName)
+            control.text = field.value
+            compare(settingsState[field.propertyName], field.value)
+        }
     }
-
 }

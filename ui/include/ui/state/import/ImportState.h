@@ -147,6 +147,7 @@ private:
   bool pageActivated_ = false;
   QString manualPathText_;
   QStringList pendingFiles_;
+  QString appliedDefaultImportPath_;
 };
 
 } // namespace ui

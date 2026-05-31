@@ -6,12 +6,12 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
+pragma ComponentBehavior: Bound
 
 Flickable {
     id: root
-    required property var appContext
+    required property var settingsState
     required property var theme
-    readonly property var settingsViewModel: root.appContext ? root.appContext.settingsViewModel : null
     Layout.fillWidth: true
     Layout.fillHeight: true
     contentHeight: column.implicitHeight
@@ -22,39 +22,7 @@ Flickable {
         id: column
         anchors.fill: parent
         width: parent.width
-        spacing: root.theme.viewFormSpacing
-
-        Controls.Panel {
-            Layout.fillWidth: true
-            contentSpacing: root.theme.spacingSmall
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: root.theme.spacingSmall
-
-                Text {
-                    Layout.fillWidth: true
-                    text: qsTr("Workspace preferences let you reduce toolbar noise without removing navigation from the app menu.")
-                    color: root.theme.textPrimary
-                    wrapMode: Text.WordWrap
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Text {
-                        Layout.preferredWidth: root.theme.formLabelWidth
-                        text: qsTr("Toolbar visibility")
-                        color: root.theme.textPrimary
-                    }
-                    Text {
-                        Layout.fillWidth: true
-                        text: qsTr("Hide entries here to declutter the toolbar. All views remain available through the View menu in the app menu.")
-                        color: root.theme.textMuted
-                        wrapMode: Text.WordWrap
-                    }
-                }
-            }
-        }
+        spacing: root.theme.spacingSmall
 
         Controls.Panel {
             Layout.fillWidth: true
@@ -71,57 +39,66 @@ Flickable {
                     rowSpacing: root.theme.spacingSmall
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarBookingCheckBox"
                         text: qsTr("Booking")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowBooking : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowBooking = checked
+                        checked: root.settingsState.toolbarShowBooking
+                        onToggled: root.settingsState.toolbarShowBooking = checked
                     }
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarImportCheckBox"
                         text: qsTr("Import")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowImport : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowImport = checked
+                        checked: root.settingsState.toolbarShowImport
+                        onToggled: root.settingsState.toolbarShowImport = checked
                     }
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarActorsCheckBox"
                         text: qsTr("Actors")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowActors : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowActors = checked
+                        checked: root.settingsState.toolbarShowActors
+                        onToggled: root.settingsState.toolbarShowActors = checked
                     }
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarExportCheckBox"
                         text: qsTr("Export")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowExport : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowExport = checked
+                        checked: root.settingsState.toolbarShowExport
+                        onToggled: root.settingsState.toolbarShowExport = checked
                     }
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarPropertiesCheckBox"
                         text: qsTr("Properties")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowProperties : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowProperties = checked
+                        checked: root.settingsState.toolbarShowProperties
+                        onToggled: root.settingsState.toolbarShowProperties = checked
                     }
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarAnalysisCheckBox"
                         text: qsTr("Analysis")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowAnalysis : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowAnalysis = checked
+                        checked: root.settingsState.toolbarShowAnalysis
+                        onToggled: root.settingsState.toolbarShowAnalysis = checked
                     }
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarContractsCheckBox"
                         text: qsTr("Contracts")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowContracts : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowContracts = checked
+                        checked: root.settingsState.toolbarShowContracts
+                        onToggled: root.settingsState.toolbarShowContracts = checked
                     }
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarAnnualCheckBox"
                         text: qsTr("Annual")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowAnnual : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowAnnual = checked
+                        checked: root.settingsState.toolbarShowAnnual
+                        onToggled: root.settingsState.toolbarShowAnnual = checked
                     }
 
                     Controls.CheckBox {
+                        objectName: "settingsToolbarSettingsCheckBox"
                         text: qsTr("Settings")
-                        checked: root.settingsViewModel ? root.settingsViewModel.toolbarShowSettings : true
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.toolbarShowSettings = checked
+                        checked: root.settingsState.toolbarShowSettings
+                        onToggled: root.settingsState.toolbarShowSettings = checked
                     }
                 }
             }

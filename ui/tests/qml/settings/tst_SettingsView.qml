@@ -7,9 +7,10 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import FossRedder.Views.Settings 1.0 as Settings
 
 import "../Lookup.js" as Lookup
+import "../TestSupport.js" as TestSupport
 
 TestCase {
     id: testCase
@@ -18,17 +19,14 @@ TestCase {
     width: 960
     height: 640
 
-    property var navigation: QtObject {
-        property int settingsCategoryValue: 0
-        signal settingsCategoryChanged()
-        function setSettingsCategoryValue(value) {
-            settingsCategoryValue = value
-            settingsCategoryChanged()
-        }
-    }
-
-    property var settingsViewModel: QtObject {
-        property string language: "en"
+    property var settingsState: QtObject {
+        property int currentCategory: 0
+        property bool canNavigateCategories: true
+        property var languageOptions: [
+            { code: "en", label: "English", available: true },
+            { code: "de", label: "Deutsch", available: true }
+        ]
+        property int languageIndex: 0
         property string importDefaultPath: ""
         property string importPoppler: ""
         property string importOpenCv: ""
@@ -47,48 +45,22 @@ TestCase {
         property bool toolbarShowContracts: true
         property bool toolbarShowAnnual: true
         property bool toolbarShowSettings: true
+        property int activateCalls: 0
         property int saveCalls: 0
         property int resetCalls: 0
-        property int loadCalls: 0
-        function save() { saveCalls += 1 }
-        function resetToDefaults() { resetCalls += 1 }
-        function load() { loadCalls += 1 }
-    }
-
-    property var languageService: QtObject {
-        property var availableLanguages: [
-            { code: "en", label: "English", available: true },
-            { code: "de", label: "Deutsch", available: true }
-        ]
-        property string currentLanguage: "en"
-        property int applyCalls: 0
-        property string lastLanguage: ""
-        function applyLanguage(language) {
-            applyCalls += 1
-            lastLanguage = language
-            currentLanguage = language
+        function activate() { activateCalls += 1 }
+        function navigateCategory(delta) {
+            currentCategory = (currentCategory + delta + 4) % 4
         }
-    }
-
-    property var actions: QtObject {
-        signal importFileSelected(string path)
-        signal importFilesSelected(var paths)
-        signal exportDirectorySelected(string path)
-        function browseImportPdf() {}
+        function saveSettings() { saveCalls += 1 }
+        function resetSettings() { resetCalls += 1; currentCategory = 0 }
+        function selectLanguageAt(index) { languageIndex = index }
+        function browseImportPath() {}
         function browseExportDirectory() {}
-    }
-
-    property var appContext: QtObject {
-        property var navigation: testCase.navigation
-        property var settingsViewModel: testCase.settingsViewModel
-        property var languageService: testCase.languageService
-        property var actions: testCase.actions
     }
 
     property var theme: QtObject {
         property int pageContentMargin: 8
-        property int viewFormSpacing: 8
-        property int spacing: 8
         property int spacingSmall: 6
         property int spacingLarge: 20
         property int formLabelWidth: 120
@@ -107,18 +79,12 @@ TestCase {
 
     Component {
         id: settingsViewComponent
-        SettingsView {
+        Settings.SettingsView {
             width: 960
             height: 640
-            appContext: testCase.appContext
+            settingsState: testCase.settingsState
             theme: testCase.theme
         }
-    }
-
-    function findRequired(root, objectName) {
-        var found = Lookup.findObject(root, objectName)
-        verify(found !== null, "Missing object: " + objectName)
-        return found
     }
 
     function createView() {
@@ -126,63 +92,62 @@ TestCase {
     }
 
     function init() {
-        navigation.settingsCategoryValue = 0
-        settingsViewModel.saveCalls = 0
-        settingsViewModel.resetCalls = 0
-        settingsViewModel.loadCalls = 0
-        settingsViewModel.language = "en"
-        languageService.applyCalls = 0
-        languageService.lastLanguage = ""
+        settingsState.currentCategory = 0
+        settingsState.activateCalls = 0
+        settingsState.saveCalls = 0
+        settingsState.resetCalls = 0
     }
 
-    function test_SET_V_003_updateButtonSavesAndAppliesLanguage() {
-        var view = createView()
-        var updateButton = findRequired(view, "settingsUpdateButton")
+    function test_SET_V_001_mountsSettingsStackAndActivatesState() {
+        const view = createView()
+        const stack = TestSupport.findRequired(Lookup, view, "settingsLoader")
 
-        settingsViewModel.language = "de"
-        updateButton.clicked()
-
-        compare(settingsViewModel.saveCalls, 1)
-        compare(languageService.applyCalls, 1)
-        compare(languageService.lastLanguage, "de")
-    }
-
-    function test_SET_V_004_defaultButtonResetsSettingsAndCategory() {
-        navigation.settingsCategoryValue = 2
-        var view = createView()
-        var defaultButton = findRequired(view, "settingsDefaultButton")
-
-        defaultButton.clicked()
-
-        compare(settingsViewModel.resetCalls, 1)
-        compare(navigation.settingsCategoryValue, 0)
+        compare(stack.currentIndex, 0)
+        compare(settingsState.activateCalls, 1)
     }
 
     function test_SET_V_002_categoryNavigationButtonsAdvanceAndReturn() {
-        var view = createView()
-        var nextButton = findRequired(view, "settingsNextCategoryButton")
-        var prevButton = findRequired(view, "settingsPrevCategoryButton")
-        var loader = findRequired(view, "settingsLoader")
+        const view = createView()
+        const nextButton = TestSupport.findRequired(Lookup, view, "settingsNextCategoryButton")
+        const prevButton = TestSupport.findRequired(Lookup, view, "settingsPrevCategoryButton")
+        const stack = TestSupport.findRequired(Lookup, view, "settingsLoader")
 
         nextButton.clicked()
-        compare(navigation.settingsCategoryValue, 1)
-        verify(loader.item !== null)
+        compare(settingsState.currentCategory, 1)
+        compare(stack.currentIndex, 1)
 
         prevButton.clicked()
-        compare(navigation.settingsCategoryValue, 0)
-        verify(loader.item !== null)
+        compare(settingsState.currentCategory, 0)
+        compare(stack.currentIndex, 0)
+    }
+
+    function test_SET_V_003_updateButtonDelegatesToSettingsState() {
+        const view = createView()
+        TestSupport.findRequired(Lookup, view, "settingsUpdateButton").clicked()
+
+        compare(settingsState.saveCalls, 1)
+    }
+
+    function test_SET_V_004_defaultButtonResetsSettingsAndCategory() {
+        settingsState.currentCategory = 2
+        const view = createView()
+
+        TestSupport.findRequired(Lookup, view, "settingsDefaultButton").clicked()
+
+        compare(settingsState.resetCalls, 1)
+        compare(settingsState.currentCategory, 0)
     }
 
     function test_SET_V_005_categoryNavigationWrapsAtEdges() {
-        navigation.settingsCategoryValue = 3
-        var view = createView()
-        var nextButton = findRequired(view, "settingsNextCategoryButton")
-        var prevButton = findRequired(view, "settingsPrevCategoryButton")
+        settingsState.currentCategory = 3
+        const view = createView()
+        const nextButton = TestSupport.findRequired(Lookup, view, "settingsNextCategoryButton")
+        const prevButton = TestSupport.findRequired(Lookup, view, "settingsPrevCategoryButton")
 
         nextButton.clicked()
-        compare(navigation.settingsCategoryValue, 0)
+        compare(settingsState.currentCategory, 0)
 
         prevButton.clicked()
-        compare(navigation.settingsCategoryValue, 3)
+        compare(settingsState.currentCategory, 3)
     }
 }

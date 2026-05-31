@@ -55,6 +55,7 @@ ui/
       TestImportWorkflow.cpp
       TestNavigationState.cpp
       TestSelectionState.cpp
+      TestSettingsState.cpp
       TestSessionModels.cpp
       TestSessionMutationState.cpp
       TestWorkspaceFacade.cpp
@@ -154,6 +155,11 @@ too stateful for declarative QML.
 | EXP-ST-002 | Export annual item projection | Unit | ExportState in annual mode | Add pending annual entry | Export items contain the annual plus assigned analysis items with default export formats |
 | EXP-ST-003 | Export standalone analysis projection | Unit | ExportState in analysis mode with a plot analysis selected | Add pending analysis entry | The standalone analysis entry uses image export options and the default plot format |
 | EXP-ST-004 | Export item restoration | Unit | ExportState receives persisted annual and analysis export items | Load items | Annual entries are rebuilt without duplicate assigned analyses and preserve explicit export formats |
+| EXP-ST-005 | Export settings defaults | Unit | ExportState receives SettingsViewModel defaults | Change default export directory while the form still follows defaults, then after manual override | The pristine form refreshes immediately, while a manual target directory is preserved |
+| SET-ST-001 | Settings category navigation | Unit | SettingsState connected to NavigationState | Navigate past both category edges | Category navigation wraps deterministically |
+| SET-ST-002 | Settings category rows | Unit | SettingsState connected to NavigationState | Select a category and inspect rows | Category rows expose stable category values and selected state |
+| SET-ST-003 | Settings file selections | Unit | SettingsState connected to SettingsViewModel and Actions | Emit selected import and export paths | The settings view model receives the selected default paths |
+| SET-ST-004 | Settings property delegation | Unit | SettingsState connected to SettingsViewModel | Change export, import, and toolbar properties | Setters delegate to the settings view model |
 
 ### Boundary checks
 
@@ -233,7 +239,7 @@ binding the suite to QML rendering.
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
 | IMP-001 | Import workflow header remains usable | Interaction | Import workflow state header available | Include the workflow state header | The import workflow boundary remains buildable and accessible from the UI source layer |
-| IMP-002 | Import overview state selection | Interaction | ImportState with ImportWorkflow and SettingsViewModel | Apply default path, then commit manual non-PDF and PDF paths | Default path is selected, non-PDF input is ignored by the workflow, and PDF input becomes the selected import file |
+| IMP-002 | Import overview state selection | Interaction | ImportState with ImportWorkflow and SettingsViewModel | Apply and change default PDF path, then commit manual non-PDF and PDF paths | Default PDF changes refresh the pristine selection, non-PDF input is ignored, and a manual PDF selection is not overwritten by later default changes |
 
 ### Boundary checks
 
@@ -262,6 +268,7 @@ ui/
       TestImportWorkflow.cpp
       TestNavigationState.cpp
       TestSelectionState.cpp
+      TestSettingsState.cpp
       TestSessionModels.cpp
       TestSessionMutationState.cpp
       TestWorkspaceFacade.cpp

@@ -38,6 +38,14 @@ GridLayout {
         settings: layoutRoot.appContext ? layoutRoot.appContext.settingsViewModel : null
     }
 
+    App.SettingsState {
+        id: settingsState
+        navigation: layoutRoot.appContext ? layoutRoot.appContext.navigation : null
+        settingsViewModel: layoutRoot.appContext ? layoutRoot.appContext.settingsViewModel : null
+        actions: layoutRoot.appContext ? layoutRoot.appContext.actions : null
+        languageService: layoutRoot.appContext ? layoutRoot.appContext.languageService : null
+    }
+
     AppMenu {
         id: appMenu
         Layout.row: 0
@@ -81,6 +89,7 @@ GridLayout {
                 analysisState: analysisState
                 annualState: annualState
                 exportState: exportState
+                settingsState: settingsState
                 theme: layoutRoot.theme
             }
         }
@@ -97,6 +106,7 @@ GridLayout {
                 analysisState: analysisState
                 annualState: annualState
                 exportState: exportState
+                settingsState: settingsState
                 theme: layoutRoot.theme
             }
         }

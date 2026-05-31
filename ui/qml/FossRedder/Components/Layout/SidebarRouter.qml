@@ -14,6 +14,7 @@ Item {
     required property var analysisState
     required property var annualState
     required property var exportState
+    required property var settingsState
     required property var theme
     readonly property var navigation: sidebarLeft.appContext ? sidebarLeft.appContext.navigation : null
     readonly property var session: sidebarLeft.appContext ? sidebarLeft.appContext.session : null
@@ -126,7 +127,7 @@ Item {
     Component { id: exportSidebarComp; Views.ExportSidebar { exportState: sidebarLeft.exportState; theme: sidebarLeft.theme } }
     Component { id: analysisSidebarComp; Views.AnalysisSidebar { analysisState: sidebarLeft.analysisState; theme: sidebarLeft.theme } }
     Component { id: annualSidebarComp; Views.AnnualSidebar { annualState: sidebarLeft.annualState; theme: sidebarLeft.theme } }
-    Component { id: settingsSidebarComp; Views.SettingsSidebar { appContext: sidebarLeft.appContext; theme: sidebarLeft.theme } }
+    Component { id: settingsSidebarComp; Views.SettingsSidebar { settingsState: sidebarLeft.settingsState; theme: sidebarLeft.theme } }
     Component { id: placeholderSidebarComp; Views.PlaceholderSidebar { } }
 
     Sidebar {

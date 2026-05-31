@@ -7,9 +7,10 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import FossRedder.Views.Settings 1.0 as Settings
 
 import "../Lookup.js" as Lookup
+import "../TestSupport.js" as TestSupport
 
 TestCase {
     id: testCase
@@ -18,25 +19,26 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsViewModel: QtObject {
-        property string language: "en"
-    }
-
-    property var languageService: QtObject {
-        property var availableLanguages: [
+    property var settingsState: QtObject {
+        property var languageOptions: [
             { code: "en", label: "English", available: true },
             { code: "de", label: "Deutsch", available: true }
         ]
-        property string currentLanguage: "en"
-    }
+        property int languageIndex: 0
+        property string language: "en"
+        property int selectedLanguageIndex: -1
 
-    property var appContext: QtObject {
-        property var settingsViewModel: testCase.settingsViewModel
-        property var languageService: testCase.languageService
+        function selectLanguageAt(index) {
+            selectedLanguageIndex = index
+            const option = languageOptions[index]
+            if (!option || option.available === false)
+                return
+            language = option.code
+            languageIndex = index
+        }
     }
 
     property var theme: QtObject {
-        property int viewFormSpacing: 8
         property int spacingSmall: 6
         property int formLabelWidth: 120
         property color textPrimary: "#000000"
@@ -45,18 +47,12 @@ TestCase {
 
     Component {
         id: settingsGeneralComponent
-        SettingsGeneral {
+        Settings.SettingsGeneral {
             width: 900
             height: 560
-            appContext: testCase.appContext
+            settingsState: testCase.settingsState
             theme: testCase.theme
         }
-    }
-
-    function findRequired(root, objectName) {
-        var found = Lookup.findObject(root, objectName)
-        verify(found !== null, "Missing object: " + objectName)
-        return found
     }
 
     function createView() {
@@ -64,49 +60,49 @@ TestCase {
     }
 
     function init() {
-        languageService.availableLanguages = [
+        settingsState.languageOptions = [
             { code: "en", label: "English", available: true },
             { code: "de", label: "Deutsch", available: true }
         ]
-        settingsViewModel.language = "en"
-        languageService.currentLanguage = "en"
+        settingsState.language = "en"
+        settingsState.languageIndex = 0
+        settingsState.selectedLanguageIndex = -1
     }
 
-    function test_SET_G_003_languageDropdownReflectsSettingsLanguage() {
-        var view = createView()
-        var languageDropdown = findRequired(view, "settingsLanguageDropdown")
-
-        settingsViewModel.language = "de"
-        languageService.currentLanguage = "de"
-
-        tryCompare(languageDropdown, "currentIndex", 1)
-    }
-
-    function test_SET_G_001_languageSelectionUpdatesSettingsLanguage() {
-        var view = createView()
-        var languageDropdown = findRequired(view, "settingsLanguageDropdown")
+    function test_SET_G_001_languageSelectionDelegatesToSettingsState() {
+        const view = createView()
+        const languageDropdown = TestSupport.findRequired(Lookup, view, "settingsLanguageDropdown")
 
         languageDropdown.currentIndex = 1
         languageDropdown.activated(1)
 
-        compare(settingsViewModel.language, "de")
+        compare(settingsState.selectedLanguageIndex, 1)
+        compare(settingsState.language, "de")
     }
 
-    function test_SET_G_002_unavailableLanguageSelectionReverts() {
-        languageService.availableLanguages = [
+    function test_SET_G_002_unavailableLanguageSelectionStaysOnCurrentLanguage() {
+        settingsState.languageOptions = [
             { code: "en", label: "English", available: true },
             { code: "xx", label: "Unavailable", available: false }
         ]
-        settingsViewModel.language = "en"
 
-        var view = createView()
-        var languageDropdown = findRequired(view, "settingsLanguageDropdown")
+        const view = createView()
+        const languageDropdown = TestSupport.findRequired(Lookup, view, "settingsLanguageDropdown")
 
         languageDropdown.currentIndex = 1
         languageDropdown.activated(1)
 
-        compare(settingsViewModel.language, "en")
-        compare(languageDropdown.currentIndex, 0)
+        compare(settingsState.selectedLanguageIndex, 1)
+        compare(settingsState.language, "en")
     }
 
+    function test_SET_G_003_languageDropdownReflectsSettingsStateIndex() {
+        settingsState.language = "de"
+        settingsState.languageIndex = 1
+
+        const view = createView()
+        const languageDropdown = TestSupport.findRequired(Lookup, view, "settingsLanguageDropdown")
+
+        compare(languageDropdown.currentIndex, 1)
+    }
 }

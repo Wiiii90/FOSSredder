@@ -163,6 +163,7 @@ private:
   FileSystemBrowser *fileSystemBrowser_ = nullptr;
   SettingsViewModel *settings_ = nullptr;
   QString targetDirectory_;
+  QString appliedDefaultTargetDirectory_;
   int packageFormatIndex_ = 0;
   QString addMode_ = QStringLiteral("annual");
   QString pendingAnnualId_;

@@ -7,9 +7,10 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import FossRedder.Views.Settings 1.0 as Settings
 
 import "../Lookup.js" as Lookup
+import "../TestSupport.js" as TestSupport
 
 TestCase {
     id: testCase
@@ -18,25 +19,16 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsViewModel: QtObject {
+    property var settingsState: QtObject {
         property string exportDefaultDirectory: ""
         property int exportArchiveFormat: 0
         property bool exportIncludeFormulas: true
-    }
-
-    property var actions: QtObject {
-        signal exportDirectorySelected(string path)
         property int browseCalls: 0
+
         function browseExportDirectory() { browseCalls += 1 }
     }
 
-    property var appContext: QtObject {
-        property var settingsViewModel: testCase.settingsViewModel
-        property var actions: testCase.actions
-    }
-
     property var theme: QtObject {
-        property int viewFormSpacing: 8
         property int spacingSmall: 6
         property int formLabelWidth: 120
         property color textPrimary: "#000000"
@@ -45,18 +37,12 @@ TestCase {
 
     Component {
         id: settingsExportComponent
-        SettingsExport {
+        Settings.SettingsExport {
             width: 900
             height: 560
-            appContext: testCase.appContext
+            settingsState: testCase.settingsState
             theme: testCase.theme
         }
-    }
-
-    function findRequired(root, objectName) {
-        var found = Lookup.findObject(root, objectName)
-        verify(found !== null, "Missing object: " + objectName)
-        return found
     }
 
     function createView() {
@@ -64,50 +50,47 @@ TestCase {
     }
 
     function init() {
-        settingsViewModel.exportDefaultDirectory = ""
-        settingsViewModel.exportArchiveFormat = 0
-        settingsViewModel.exportIncludeFormulas = true
-        actions.browseCalls = 0
+        settingsState.exportDefaultDirectory = ""
+        settingsState.exportArchiveFormat = 0
+        settingsState.exportIncludeFormulas = true
+        settingsState.browseCalls = 0
     }
 
-    function test_SET_E_001_defaultDirectoryFieldUpdatesSettings() {
-        var view = createView()
-        var pathField = findRequired(view, "settingsExportDefaultDirectoryField")
+    function test_SET_E_001_defaultDirectoryFieldUpdatesSettingsState() {
+        const view = createView()
+        const pathField = TestSupport.findRequired(Lookup, view, "settingsExportDefaultDirectoryField")
 
         pathField.text = "test:///export/out"
 
-        compare(settingsViewModel.exportDefaultDirectory, "test:///export/out")
+        compare(settingsState.exportDefaultDirectory, "test:///export/out")
     }
 
-    function test_SET_E_002_archiveFormatSelectionUpdatesSettings() {
-        var view = createView()
-        var archiveCombo = findRequired(view, "settingsExportArchiveFormatComboBox")
+    function test_SET_E_002_archiveFormatSelectionUpdatesSettingsState() {
+        const view = createView()
+        const archiveCombo = TestSupport.findRequired(Lookup, view, "settingsExportArchiveFormatComboBox")
 
         archiveCombo.currentIndex = 1
         archiveCombo.activated(1)
 
-        compare(settingsViewModel.exportArchiveFormat, 1)
+        compare(settingsState.exportArchiveFormat, 1)
     }
 
-    function test_SET_E_003_includeFormulasToggleUpdatesSettings() {
-        var view = createView()
-        var formulasCheck = findRequired(view, "settingsExportIncludeFormulasCheckBox")
+    function test_SET_E_003_includeFormulasToggleUpdatesSettingsState() {
+        const view = createView()
+        const formulasCheck = TestSupport.findRequired(Lookup, view, "settingsExportIncludeFormulasCheckBox")
 
         formulasCheck.checked = false
-        formulasCheck.toggled()
+        formulasCheck.toggled(false)
 
-        compare(settingsViewModel.exportIncludeFormulas, false)
+        compare(settingsState.exportIncludeFormulas, false)
     }
 
-    function test_SET_E_004_browseButtonAndSelectedDirectorySignal() {
-        var view = createView()
-        var browseButton = findRequired(view, "settingsExportBrowseButton")
+    function test_SET_E_004_browseButtonDelegatesToSettingsState() {
+        const view = createView()
+        const browseButton = TestSupport.findRequired(Lookup, view, "settingsExportBrowseButton")
 
         browseButton.clicked()
-        compare(actions.browseCalls, 1)
 
-        actions.exportDirectorySelected("test:///export/from-action")
-        compare(settingsViewModel.exportDefaultDirectory, "test:///export/from-action")
+        compare(settingsState.browseCalls, 1)
     }
-
 }

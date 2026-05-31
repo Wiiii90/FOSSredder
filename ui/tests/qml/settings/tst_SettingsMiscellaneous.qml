@@ -7,7 +7,10 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import FossRedder.Views.Settings 1.0 as Settings
+
+import "../Lookup.js" as Lookup
+import "../TestSupport.js" as TestSupport
 
 TestCase {
     id: testCase
@@ -16,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsViewModel: QtObject {
+    property var settingsState: QtObject {
         property bool toolbarShowBooking: true
         property bool toolbarShowImport: true
         property bool toolbarShowActors: true
@@ -28,12 +31,7 @@ TestCase {
         property bool toolbarShowSettings: true
     }
 
-    property var appContext: QtObject {
-        property var settingsViewModel: testCase.settingsViewModel
-    }
-
     property var theme: QtObject {
-        property int viewFormSpacing: 8
         property int spacingSmall: 6
         property int spacingLarge: 20
         property int formLabelWidth: 120
@@ -43,10 +41,10 @@ TestCase {
 
     Component {
         id: settingsMiscComponent
-        SettingsMiscellaneous {
+        Settings.SettingsMiscellaneous {
             width: 900
             height: 560
-            appContext: testCase.appContext
+            settingsState: testCase.settingsState
             theme: testCase.theme
         }
     }
@@ -56,19 +54,32 @@ TestCase {
     }
 
     function init() {
-        settingsViewModel.toolbarShowBooking = true
-        settingsViewModel.toolbarShowImport = true
+        settingsState.toolbarShowBooking = true
+        settingsState.toolbarShowImport = true
+        settingsState.toolbarShowActors = true
+        settingsState.toolbarShowExport = true
+        settingsState.toolbarShowProperties = true
+        settingsState.toolbarShowAnalysis = true
+        settingsState.toolbarShowContracts = true
+        settingsState.toolbarShowAnnual = true
+        settingsState.toolbarShowSettings = true
     }
 
-    function test_SET_M_001_toolbarFlagsAreWritableThroughBoundControls() {
-        var view = createView()
-        verify(view !== null)
+    function test_SET_M_001_toolbarCheckboxesUpdateSettingsState() {
+        const view = createView()
+        const bookingCheck = TestSupport.findRequired(Lookup, view, "settingsToolbarBookingCheckBox")
+        const importCheck = TestSupport.findRequired(Lookup, view, "settingsToolbarImportCheckBox")
+        const settingsCheck = TestSupport.findRequired(Lookup, view, "settingsToolbarSettingsCheckBox")
 
-        settingsViewModel.toolbarShowBooking = false
-        settingsViewModel.toolbarShowImport = false
+        bookingCheck.checked = false
+        bookingCheck.toggled(false)
+        importCheck.checked = false
+        importCheck.toggled(false)
+        settingsCheck.checked = false
+        settingsCheck.toggled(false)
 
-        compare(settingsViewModel.toolbarShowBooking, false)
-        compare(settingsViewModel.toolbarShowImport, false)
+        compare(settingsState.toolbarShowBooking, false)
+        compare(settingsState.toolbarShowImport, false)
+        compare(settingsState.toolbarShowSettings, false)
     }
-
 }

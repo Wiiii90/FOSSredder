@@ -6,13 +6,12 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
+pragma ComponentBehavior: Bound
 
 Flickable {
     id: root
-    required property var appContext
+    required property var settingsState
     required property var theme
-    readonly property var settingsViewModel: root.appContext ? root.appContext.settingsViewModel : null
-    readonly property var actions: root.appContext ? root.appContext.actions : null
     Layout.fillWidth: true
     Layout.fillHeight: true
     contentHeight: column.implicitHeight
@@ -23,7 +22,7 @@ Flickable {
         id: column
         anchors.fill: parent
         width: parent.width
-        spacing: root.theme.viewFormSpacing
+        spacing: root.theme.spacingSmall
 
         Controls.Panel {
             Layout.fillWidth: true
@@ -35,84 +34,57 @@ Flickable {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: qsTr("Default output folder"); color: root.theme.textPrimary; Layout.preferredWidth: root.theme.formLabelWidth }
+                    Text {
+                        text: qsTr("Default output folder")
+                        color: root.theme.textPrimary
+                        Layout.preferredWidth: root.theme.formLabelWidth
+                    }
                     Controls.TextField {
                         objectName: "settingsExportDefaultDirectoryField"
                         Layout.fillWidth: true
                         placeholderText: qsTr("Select default output folder...")
-                        text: root.settingsViewModel ? root.settingsViewModel.exportDefaultDirectory : ""
-                        onTextChanged: if (root.settingsViewModel && root.settingsViewModel.exportDefaultDirectory !== text) root.settingsViewModel.exportDefaultDirectory = text
+                        text: root.settingsState.exportDefaultDirectory
+                        onTextChanged: root.settingsState.exportDefaultDirectory = text
                     }
                     Controls.SecondaryButton {
                         objectName: "settingsExportBrowseButton"
                         text: qsTr("Browse...")
-                        onClicked: if (root.actions) root.actions.browseExportDirectory()
+                        onClicked: root.settingsState.browseExportDirectory()
                     }
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: qsTr("Default archive"); color: root.theme.textPrimary; Layout.preferredWidth: root.theme.formLabelWidth }
+                    Text {
+                        text: qsTr("Default archive")
+                        color: root.theme.textPrimary
+                        Layout.preferredWidth: root.theme.formLabelWidth
+                    }
                     Controls.DropdownMenu {
                         objectName: "settingsExportArchiveFormatComboBox"
                         model: [qsTr("None"), qsTr("ZIP")]
-                        currentIndex: root.settingsViewModel ? root.settingsViewModel.exportArchiveFormat : 0
+                        currentIndex: root.settingsState.exportArchiveFormat
                         onActivated: function(index) {
-                            if (root.settingsViewModel)
-                                root.settingsViewModel.exportArchiveFormat = index
+                            root.settingsState.exportArchiveFormat = index
                         }
                     }
                 }
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: qsTr("XLSX formulas"); color: root.theme.textPrimary; Layout.preferredWidth: root.theme.formLabelWidth }
+                    Text {
+                        text: qsTr("XLSX formulas")
+                        color: root.theme.textPrimary
+                        Layout.preferredWidth: root.theme.formLabelWidth
+                    }
                     Controls.CheckBox {
                         objectName: "settingsExportIncludeFormulasCheckBox"
-                        checked: root.settingsViewModel ? root.settingsViewModel.exportIncludeFormulas : true
+                        checked: root.settingsState.exportIncludeFormulas
                         text: qsTr("Use Excel formulas for totals when possible")
-                        onToggled: if (root.settingsViewModel) root.settingsViewModel.exportIncludeFormulas = checked
-                    }
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Text { text: qsTr("Implementation status"); color: root.theme.textPrimary; Layout.preferredWidth: root.theme.formLabelWidth }
-                    Text {
-                        Layout.fillWidth: true
-                        text: qsTr("XLSX formula support is feasible and now mapped as a saved default. Totals can be written as formulas instead of static values in the spreadsheet.")
-                        color: root.theme.textMuted
-                        wrapMode: Text.WordWrap
+                        onToggled: root.settingsState.exportIncludeFormulas = checked
                     }
                 }
             }
         }
-
-        Controls.Panel {
-            Layout.fillWidth: true
-            contentSpacing: root.theme.spacingSmall
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: root.theme.spacingSmall
-
-                Text {
-                    Layout.fillWidth: true
-                    text: qsTr("Saved defaults are limited to the current export workflow: output folder, archive mode and XLSX formula handling.")
-                    color: root.theme.textMuted
-                    wrapMode: Text.WordWrap
-                }
-            }
-        }
-
-        Connections {
-            target: root.actions
-            function onExportDirectorySelected(path) {
-                if (!path || !root.settingsViewModel)
-                    return
-                root.settingsViewModel.exportDefaultDirectory = path
-            }
-        }
-
     }
 }

@@ -79,6 +79,7 @@ void ExportState::setFileSystemBrowser(FileSystemBrowser *value) {
   fileSystemBrowser_ = value;
   if (targetDirectory_.isEmpty()) {
     targetDirectory_ = defaultTargetDirectory();
+    appliedDefaultTargetDirectory_ = targetDirectory_;
   }
   emitChanged();
 }
@@ -88,8 +89,10 @@ void ExportState::setSettings(SettingsViewModel *value) {
     return;
   }
   bindSettings(value);
-  if (targetDirectory_.isEmpty()) {
+  if (targetDirectory_.isEmpty() ||
+      targetDirectory_ == appliedDefaultTargetDirectory_) {
     targetDirectory_ = defaultTargetDirectory();
+    appliedDefaultTargetDirectory_ = targetDirectory_;
   }
   packageFormatIndex_ = settings_ ? settings_->exportArchiveFormat() : 0;
   emitChanged();
@@ -186,6 +189,7 @@ ExportRunList *ExportState::runs() const {
 void ExportState::refreshFromWorkspace() {
   if (targetDirectory_.isEmpty()) {
     targetDirectory_ = defaultTargetDirectory();
+    appliedDefaultTargetDirectory_ = targetDirectory_;
   }
   if (settings_) {
     packageFormatIndex_ = settings_->exportArchiveFormat();
@@ -203,6 +207,7 @@ void ExportState::browseDirectory() {
 
 void ExportState::clearForm() {
   targetDirectory_ = defaultTargetDirectory();
+  appliedDefaultTargetDirectory_ = targetDirectory_;
   packageFormatIndex_ = settings_ ? settings_->exportArchiveFormat() : 0;
   exportEntries_.clear();
   ensurePendingSelection();
@@ -726,8 +731,10 @@ void ExportState::bindSettings(SettingsViewModel *value) {
   }
   connect(settings_, &SettingsViewModel::exportDefaultDirectoryChanged, this,
           [this]() {
-            if (targetDirectory_.isEmpty()) {
+            if (targetDirectory_.isEmpty() ||
+                targetDirectory_ == appliedDefaultTargetDirectory_) {
               targetDirectory_ = defaultTargetDirectory();
+              appliedDefaultTargetDirectory_ = targetDirectory_;
               emitChanged();
             }
           });

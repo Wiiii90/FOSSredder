@@ -202,15 +202,20 @@ void ImportState::applyDefaultImportSelection() {
   if (!importWorkflow_ || !settingsViewModel_ || importWorkflow_->isRunning()) {
     return;
   }
-  if (!importWorkflow_->selectedFile().isEmpty() ||
-      importWorkflow_->queuedCount() > 0) {
+  if (importWorkflow_->queuedCount() > 0) {
     return;
   }
-  if (!settingsViewModel_->importDefaultPath().isEmpty()) {
-    importWorkflow_->setSelectedFile(settingsViewModel_->importDefaultPath());
-    updateManualPathFromWorkflow();
-    emit changed();
+  const QString currentFile = importWorkflow_->selectedFile();
+  const QString defaultPath = settingsViewModel_->importDefaultPath();
+  const bool canReplaceSelection =
+      currentFile.isEmpty() || currentFile == appliedDefaultImportPath_;
+  if (!canReplaceSelection || currentFile == defaultPath) {
+    return;
   }
+  importWorkflow_->setSelectedFile(defaultPath);
+  appliedDefaultImportPath_ = defaultPath;
+  updateManualPathFromWorkflow();
+  emit changed();
 }
 
 void ImportState::browseImportPdf() {

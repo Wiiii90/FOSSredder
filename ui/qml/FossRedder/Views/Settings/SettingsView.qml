@@ -7,78 +7,45 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Components 1.0 as Components
 import FossRedder.Controls 1.0 as Controls
-import FossRedder.Views 1.0 as Views
+import FossRedder.Views.Settings 1.0 as Settings
 pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var settingsState
     required property var theme
-    readonly property var navigation: root.appContext ? root.appContext.navigation : null
-    readonly property var languageService: root.appContext ? root.appContext.languageService : null
-    readonly property var settingsViewModel: root.appContext ? root.appContext.settingsViewModel : null
-    readonly property Component generalPageComponent: generalComp
-    readonly property Component importPageComponent: importComp
-    readonly property Component exportPageComponent: exportComp
-    readonly property Component miscellaneousPageComponent: miscellaneousComp
-
-    readonly property int firstCategory: 0
-    readonly property int lastCategory: 3
-    readonly property int currentCategory: root.navigation ? root.navigation.settingsCategoryValue : root.firstCategory
-
-    function navigateCategory(delta) {
-        if (!root.navigation)
-            return
-        const total = root.lastCategory - root.firstCategory + 1
-        const offset = root.currentCategory - root.firstCategory
-        const nextCategory = root.firstCategory + ((offset + delta + total) % total)
-        if (nextCategory === root.currentCategory)
-            return
-        root.navigation.setSettingsCategoryValue(nextCategory)
-    }
-
-    function saveSettings() {
-        if (root.settingsViewModel)
-            root.settingsViewModel.save()
-        if (root.languageService && root.settingsViewModel)
-            root.languageService.applyLanguage(root.settingsViewModel.language)
-    }
-
-    function resetSettings() {
-        if (root.navigation)
-            root.navigation.setSettingsCategoryValue(0)
-        if (root.settingsViewModel)
-            root.settingsViewModel.resetToDefaults()
-    }
-
-    function componentForCategory(category) {
-        switch (category) {
-        case 1:
-            return root.importPageComponent
-        case 2:
-            return root.exportPageComponent
-        case 3:
-            return root.miscellaneousPageComponent
-        default:
-            return root.generalPageComponent
-        }
-    }
-
-    Layout.fillWidth: true
-    Layout.fillHeight: true
-    anchors.fill: parent
 
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: root.theme.pageContentMargin
-        spacing: root.theme.viewFormSpacing
+        spacing: root.theme.spacingSmall
 
-        Loader {
-            id: settingsLoader
+        StackLayout {
+            id: settingsStack
             objectName: "settingsLoader"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            sourceComponent: root.componentForCategory(root.navigation ? root.navigation.settingsCategoryValue : 0)
+            currentIndex: root.settingsState.currentCategory
+
+            Settings.SettingsGeneral {
+                theme: root.theme
+                settingsState: root.settingsState
+            }
+
+            Settings.SettingsImport {
+                theme: root.theme
+                settingsState: root.settingsState
+            }
+
+            Settings.SettingsExport {
+                theme: root.theme
+                settingsState: root.settingsState
+            }
+
+            Settings.SettingsMiscellaneous {
+                theme: root.theme
+                settingsState: root.settingsState
+            }
         }
 
         Components.BottomBar {
@@ -87,8 +54,8 @@ Item {
 
             Controls.PrevButton {
                 objectName: "settingsPrevCategoryButton"
-                enabled: root.lastCategory > root.firstCategory
-                onClicked: root.navigateCategory(-1)
+                enabled: root.settingsState.canNavigateCategories
+                onClicked: root.settingsState.navigateCategory(-1)
             }
 
             Item { Layout.fillWidth: true }
@@ -97,45 +64,25 @@ Item {
                 objectName: "settingsDefaultButton"
                 text: qsTr("Default")
                 Layout.preferredWidth: root.theme.viewActionButtonWidth
-                onClicked: root.resetSettings()
+                onClicked: root.settingsState.resetSettings()
             }
 
             Controls.SuccessButton {
                 objectName: "settingsUpdateButton"
                 text: qsTr("Update")
                 Layout.preferredWidth: root.theme.viewActionButtonWidth
-                onClicked: root.saveSettings()
+                onClicked: root.settingsState.saveSettings()
             }
 
             Item { Layout.fillWidth: true }
 
             Controls.NextButton {
                 objectName: "settingsNextCategoryButton"
-                enabled: root.lastCategory > root.firstCategory
-                onClicked: root.navigateCategory(1)
+                enabled: root.settingsState.canNavigateCategories
+                onClicked: root.settingsState.navigateCategory(1)
             }
-        }
-
-        Component { id: generalComp; Views.SettingsGeneral { appContext: root.appContext; theme: root.theme } }
-        Component { id: importComp; Views.SettingsImport { appContext: root.appContext; theme: root.theme } }
-        Component { id: exportComp; Views.SettingsExport { appContext: root.appContext; theme: root.theme } }
-        Component { id: miscellaneousComp; SettingsMiscellaneous { appContext: root.appContext; theme: root.theme } }
-
-        Connections {
-            target: root.navigation
-            function onSettingsCategoryChanged() {
-                if (!settingsLoader || !root.navigation) return
-                settingsLoader.sourceComponent = root.componentForCategory(root.navigation.settingsCategoryValue)
-            }
-        }
-
-        Component.onCompleted: {
-            if (root.settingsViewModel)
-                root.settingsViewModel.load()
-            if (root.navigation) {
-                root.navigation.setSettingsCategoryValue(root.navigation.settingsCategoryValue)
-            }
-            settingsLoader.sourceComponent = root.componentForCategory(root.navigation ? root.navigation.settingsCategoryValue : 0)
         }
     }
+
+    Component.onCompleted: root.settingsState.activate()
 }
