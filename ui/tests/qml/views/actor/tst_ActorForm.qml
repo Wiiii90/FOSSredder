@@ -30,13 +30,13 @@ TestCase {
         onSelectedActorIdChanged: {
             if (selectedActorId.length === 0) {
                 selectedActor = null
-                if (testCase.actorState)
-                    testCase.actorState.syncFromSelection(false)
+                if (testCase.actorViewModel)
+                    testCase.actorViewModel.syncFromSelection(false)
                 return
             }
             if (selectedActor && String(selectedActor.id || "") === selectedActorId) {
-                if (testCase.actorState)
-                    testCase.actorState.syncFromSelection(false)
+                if (testCase.actorViewModel)
+                    testCase.actorViewModel.syncFromSelection(false)
                 return
             }
 
@@ -50,8 +50,8 @@ TestCase {
                         aliases: row.aliases || [],
                         contractIds: row.contractIds || []
                     }
-                    if (testCase.actorState)
-                        testCase.actorState.syncFromSelection(false)
+                    if (testCase.actorViewModel)
+                        testCase.actorViewModel.syncFromSelection(false)
                     return
                 }
             }
@@ -62,11 +62,11 @@ TestCase {
                 aliases: [],
                 contractIds: []
             }
-            if (testCase.actorState)
-                testCase.actorState.syncFromSelection(false)
+            if (testCase.actorViewModel)
+                testCase.actorViewModel.syncFromSelection(false)
         }
-        onDataRevisionChanged: if (testCase.actorState) testCase.actorState.syncFromSelection(true)
-        onSelectedActorChanged: if (testCase.actorState) testCase.actorState.syncFromSelection(true)
+        onDataRevisionChanged: if (testCase.actorViewModel) testCase.actorViewModel.syncFromSelection(true)
+        onSelectedActorChanged: if (testCase.actorViewModel) testCase.actorViewModel.syncFromSelection(true)
 
         function basicFormState(name, aliases, selectedIds) {
             const aliasValues = aliases || []
@@ -229,7 +229,7 @@ TestCase {
         }
     }
 
-    property var actorState: QtObject {
+    property var actorViewModel: QtObject {
         property string currentOwnerId: ""
         property string name: ""
         property var aliases: []
@@ -407,7 +407,7 @@ TestCase {
     property var workspaceFacade: QtObject {
         property var actorRows: testCase.session.actors || []
         property var contractRows: testCase.session.contracts || []
-        property var actorState: testCase.actorState
+        property var actorViewModel: testCase.actorViewModel
         function saveActor(id, name, aliases, contractIds) { return testCase.actorController.saveActor(id, name, aliases, contractIds) }
         function deleteActor(id) { testCase.actorController.deleteActor(id) }
     }
@@ -443,7 +443,7 @@ TestCase {
         ActorView {
             width: 960
             height: 640
-            actorState: testCase.actorState
+            actorViewModel: testCase.actorViewModel
             theme: testCase.theme
         }
     }
@@ -482,7 +482,7 @@ TestCase {
         var addAliasButton = findRequired(form, "actorAddAliasButton")
         var checkBox = findRequired(form, "actorContractCheckBox")
 
-        form.actorState.name = "Alice"
+        form.actorViewModel.name = "Alice"
         aliasInput.text = "Alias One"
         addAliasButton.clicked()
         checkBox.checked = true
@@ -604,7 +604,7 @@ TestCase {
         var nameField = findRequired(form, "actorNameField")
         var updateButton = findRequired(form, "actorUpdateButton")
 
-        form.actorState.name = "New Name"
+        form.actorViewModel.name = "New Name"
         updateButton.clicked()
 
         compare(actorController.saveCalls, 1)
@@ -629,7 +629,7 @@ TestCase {
         addAliasButton.clicked()
         compare(form.aliases.length, 2)
         compare(form.aliases[1], "Alias Two")
-        form.actorState.name = "New Name"
+        form.actorViewModel.name = "New Name"
         actorController.saveActorOverride = function(id, name, aliases, contractIds) {
             var result = actorController.defaultSaveActor(id, name, aliases, contractIds)
             if (session.selectedActor && session.selectedActor["setState"])

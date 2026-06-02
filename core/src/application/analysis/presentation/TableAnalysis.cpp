@@ -4,12 +4,13 @@
 
 namespace core::application::analysis {
 
-AnalysisResult computeTableAnalysis(const core::domain::Analysis& analysis,
-                                    const core::domain::catalog::WorkspaceCatalog& state,
-                                    const AnalysisFilter& filter)
+core::ports::analysis::AnalysisResult
+computeTableAnalysis(const core::domain::Analysis& analysis,
+                     const core::domain::catalog::WorkspaceCatalog& state,
+                     const AnalysisFilter& filter)
 {
     (void)analysis;
-    AnalysisResult result;
+    core::ports::analysis::AnalysisResult result;
 
     for (const auto& transaction : collectAnalysisTransactions(state, filter)) {
         result.table.push_back({transaction->bookingDate(), transaction->name(), std::to_string(transaction->amount())});

@@ -13,6 +13,27 @@
 
 namespace core::application {
 
+namespace {
+
+core::ports::workspace::DeletionImpact toWorkspaceDeletionImpact(
+    const core::domain::DeletionImpact& impact) {
+    return {
+        impact.deletedActorIds,
+        impact.deletedPropertyIds,
+        impact.deletedContractIds,
+        impact.deletedStatementIds,
+        impact.deletedTransactionIds,
+        impact.deletedAnalysisIds,
+        impact.deletedAnnualIds,
+        impact.deletedStatementDraftIds,
+        impact.deletedTransactionDraftIds,
+        impact.deletedImportLogIds,
+        impact.deletedExportLogIds
+    };
+}
+
+} // namespace
+
 WorkspaceFacade::WorkspaceFacade(
     std::unique_ptr<core::ports::storage::IStorageManager> storageManager)
     : session_(std::make_unique<WorkspaceSession>(std::move(storageManager))),
@@ -30,19 +51,22 @@ WorkspaceFacade& WorkspaceFacade::operator=(WorkspaceFacade&&) noexcept = defaul
 
 void WorkspaceFacade::setSnapshotChangedCallback(SnapshotChanged cb) {
     onSnapshotChanged_ = std::move(cb);
-    session_->setStateChangedCallback(
-        [this](const core::application::workspace::WorkspaceSessionState&) {
-            if (onSnapshotChanged_) {
-                onSnapshotChanged_(workspaceSnapshot());
-            }
-        });
+    installStateChangedDispatcher();
 }
 
 void WorkspaceFacade::setStateChangedCallback(StateChanged cb) {
-    setSnapshotChangedCallback(
-        [this, cb = std::move(cb)](const core::ports::workspace::WorkspaceSnapshot&) {
-            if (cb) {
-                cb(state());
+    onStateChanged_ = std::move(cb);
+    installStateChangedDispatcher();
+}
+
+void WorkspaceFacade::installStateChangedDispatcher() {
+    session_->setStateChangedCallback(
+        [this](const core::application::workspace::WorkspaceSessionState& state) {
+            if (onSnapshotChanged_) {
+                onSnapshotChanged_(workspaceSnapshot());
+            }
+            if (onStateChanged_) {
+                onStateChanged_(state);
             }
         });
 }
@@ -59,8 +83,14 @@ void WorkspaceFacade::setAtomicStoreLoad(core::ports::storage::IStorageManager::
     session_->setAtomicStoreLoad(std::move(loadFn));
 }
 
-void WorkspaceFacade::setDeletionImpactCallback(core::ports::storage::IStorageManager::DeletionImpactCallback cb) {
-    session_->setDeletionImpactCallback(std::move(cb));
+void WorkspaceFacade::setDeletionImpactCallback(
+    core::ports::workspace::IWorkspaceWriter::DeletionImpactCallback cb) {
+    session_->setDeletionImpactCallback(
+        [callback = std::move(cb)](const core::domain::DeletionImpact& impact) {
+            if (callback) {
+                callback(toWorkspaceDeletionImpact(impact));
+            }
+        });
 }
 
 core::ports::workspace::WorkspaceSnapshot WorkspaceFacade::workspaceSnapshot() const {
@@ -200,8 +230,32 @@ void WorkspaceFacade::setImportLogs(const core::ports::workspace::ImportLogsComm
     workflows_->setImportLogs(command);
 }
 
+void WorkspaceFacade::saveImportLog(const core::ports::workspace::ImportLogCommand& command) {
+    workflows_->saveImportLog(command);
+}
+
+void WorkspaceFacade::deleteImportLog(const std::string& id) {
+    workflows_->deleteImportLog(id);
+}
+
+void WorkspaceFacade::clearImportLogs() {
+    workflows_->clearImportLogs();
+}
+
 void WorkspaceFacade::setExportLogs(const core::ports::workspace::ExportLogsCommand& command) {
     workflows_->setExportLogs(command);
+}
+
+void WorkspaceFacade::saveExportLog(const core::ports::workspace::ExportLogCommand& command) {
+    workflows_->saveExportLog(command);
+}
+
+void WorkspaceFacade::deleteExportLog(const std::string& id) {
+    workflows_->deleteExportLog(id);
+}
+
+void WorkspaceFacade::clearExportLogs() {
+    workflows_->clearExportLogs();
 }
 
 const core::application::workspace::WorkspaceSessionState& WorkspaceFacade::state() const noexcept {
@@ -212,7 +266,7 @@ const core::domain::catalog::WorkspaceCatalog& WorkspaceFacade::catalogState() c
     return session_->catalogState();
 }
 
-const std::string& WorkspaceFacade::currentPath() const noexcept {
+std::string WorkspaceFacade::currentPath() const {
     return queries_->currentPath();
 }
 

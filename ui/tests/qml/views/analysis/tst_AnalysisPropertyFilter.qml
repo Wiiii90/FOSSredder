@@ -33,7 +33,7 @@ TestCase {
         property color textPrimary: "#000000"
     }
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property var propertyFilterRows: [{ id: "property-1", name: "Lot" }, { id: "unassigned", name: "Unassigned" }]
         property var selectedPropertyIds: ["property-1", "unassigned"]
 
@@ -67,7 +67,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -76,23 +76,23 @@ TestCase {
     }
 
     function init() {
-        analysisState.selectedPropertyIds = ["property-1", "unassigned"]
+        analysisViewModel.selectedPropertyIds = ["property-1", "unassigned"]
     }
 
     function test_ANL_PF_001_propertyFilterActionsForwardSelectionToState() {
         const filter = createFilter()
 
         TestSupport.findRequired(Lookup, filter, "analysisPropertyFilterNoneButton").clicked()
-        compare(analysisState.selectedPropertyIds.length, 0)
+        compare(analysisViewModel.selectedPropertyIds.length, 0)
 
         TestSupport.findRequired(Lookup, filter, "analysisPropertyFilterAllButton").clicked()
-        compare(analysisState.selectedPropertyIds.length, 2)
-        compare(analysisState.selectedPropertyIds[0], "property-1")
+        compare(analysisViewModel.selectedPropertyIds.length, 2)
+        compare(analysisViewModel.selectedPropertyIds[0], "property-1")
 
         const checkBox = TestSupport.findRequired(Lookup, filter, "analysisPropertyFilterCheckBox")
         checkBox.checked = false
         checkBox.clicked()
-        compare(analysisState.selectedPropertyIds.length, 1)
-        compare(analysisState.selectedPropertyIds[0], "unassigned")
+        compare(analysisViewModel.selectedPropertyIds.length, 1)
+        compare(analysisViewModel.selectedPropertyIds[0], "unassigned")
     }
 }

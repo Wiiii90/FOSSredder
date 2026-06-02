@@ -28,7 +28,7 @@ TestCase {
         property int radius: 3
     }
 
-    property var exportState: QtObject {
+    property var exportViewModel: QtObject {
         property real progress: 0.0
         property string statusText: "Ready"
         property bool hasError: false
@@ -39,7 +39,7 @@ TestCase {
         Export.ExportProgressBar {
             width: 700
             theme: testCase.theme
-            exportState: testCase.exportState
+            exportViewModel: testCase.exportViewModel
         }
     }
 
@@ -48,14 +48,14 @@ TestCase {
     }
 
     function init() {
-        exportState.progress = 0.0
-        exportState.statusText = "Ready"
-        exportState.hasError = false
+        exportViewModel.progress = 0.0
+        exportViewModel.statusText = "Ready"
+        exportViewModel.hasError = false
     }
 
     function test_EXP_PB_001_progressAndStatusFollowExportState() {
-        exportState.progress = 0.65
-        exportState.statusText = "Exporting"
+        exportViewModel.progress = 0.65
+        exportViewModel.statusText = "Exporting"
 
         const view = createView()
         const bar = TestSupport.findRequired(Lookup, view, "exportProgressBar")
@@ -66,8 +66,8 @@ TestCase {
     }
 
     function test_EXP_PB_002_errorStateUsesDangerColor() {
-        exportState.statusText = "Disk full"
-        exportState.hasError = true
+        exportViewModel.statusText = "Disk full"
+        exportViewModel.hasError = true
 
         const view = createView()
         const statusLabel = TestSupport.findRequired(Lookup, view, "exportProgressStatusLabel")

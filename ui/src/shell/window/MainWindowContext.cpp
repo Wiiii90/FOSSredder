@@ -1,5 +1,5 @@
 /**
- * @file ui/src/window/MainWindowContext.cpp
+ * @file ui/src/shell/window/MainWindowContext.cpp
  * @brief Implements main window service wiring between widgets, QML and UI services.
  */
 
@@ -8,96 +8,35 @@
 #include <QAction>
 #include <QApplication>
 #include <QCoreApplication>
-#include <QQmlContext>
-#include <QVariant>
-#include <QWidget>
+#include <QQmlEngine>
 
 #include "MainWindow.h"
 #include "ui/shell/AppActions.h"
-#include "ui/shell/QmlContracts.h"
-#include "ui/platform/filesystem/FileSystemBrowser.h"
-#include "ui/platform/localization/LanguageService.h"
-#include "ui/platform/dialogs/FileDialogs.h"
+#include "ui/platform/FileSystemBrowser.h"
+#include "ui/platform/LanguageService.h"
+#include "ui/platform/FileDialogs.h"
 #include "ui/shared/observability/Origins.h"
-#include "ui/state/navigation/NavigationState.h"
-#include "ui/viewmodels/system/SettingsViewModel.h"
-#include "ui/state/status/StatusState.h"
+#include "ui/shell/NavigationState.h"
+#include "ui/shell/Settings.h"
+#include "ui/shell/StatusState.h"
 #include "ui/workspace/WorkspaceFacade.h"
 #include "ui/shared/text/Text.h"
 #include "ui/shell/window/MainWindowTrace.h"
 
 namespace ui::window {
 
-MainWindowServices installMainWindowContext(QQmlContext &qmlContext,
-                                            QWidget *parentWindow,
+MainWindowServices installMainWindowContext(QQmlEngine *qmlEngine,
                                             QObject *parent) {
   MainWindowServices services;
-  auto *mainWindow = qobject_cast<MainWindow *>(parentWindow);
   services.actions = new ui::Actions(parent);
   services.navigation = new ui::NavigationState(parent);
-  services.workspace = new ui::WorkspaceFacade(parent);
+  services.workspaceFacade = new ui::WorkspaceFacade(parent);
   services.fileSystemBrowser = new ui::FileSystemBrowser(parent);
   auto *application = qobject_cast<QApplication *>(QCoreApplication::instance());
-  services.languageService = new ui::LanguageService(application, qmlContext.engine(), parent);
-  services.settingsViewModel = new ui::SettingsViewModel(parent);
+  services.languageService = new ui::LanguageService(application, qmlEngine, parent);
+  services.settings = new ui::Settings(parent);
   services.status = new ui::StatusState(parent);
   services.status->setText(ui::text::status::ready());
-
-    if (mainWindow) {
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kActions,
-                                      services.actions);
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kNavigation,
-                                      services.navigation);
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kSession,
-                                      services.workspace);
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kWorkspace,
-                                      services.workspace);
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kWorkspaceFacade,
-                                      services.workspace);
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kFileSystemBrowser,
-                                      services.fileSystemBrowser);
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kLanguageService,
-                                      services.languageService);
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kSettingsViewModel,
-                                      services.settingsViewModel);
-    mainWindow->setQmlContextProperty(ui::qml::contracts::context::kStatus,
-                                      services.status);
-  } else {
-    qmlContext.setContextProperty(ui::qml::contracts::context::kActions,
-                                  services.actions);
-    qmlContext.setContextProperty(ui::qml::contracts::context::kNavigation,
-                                  services.navigation);
-    qmlContext.setContextProperty(ui::qml::contracts::context::kSession,
-                                  services.workspace);
-    qmlContext.setContextProperty(ui::qml::contracts::context::kWorkspace,
-                                  services.workspace);
-    qmlContext.setContextProperty(ui::qml::contracts::context::kWorkspaceFacade,
-                                  services.workspace);
-    qmlContext.setContextProperty(ui::qml::contracts::context::kFileSystemBrowser,
-                                  services.fileSystemBrowser);
-    qmlContext.setContextProperty(ui::qml::contracts::context::kLanguageService,
-                                  services.languageService);
-    qmlContext.setContextProperty(ui::qml::contracts::context::kSettingsViewModel,
-                                  services.settingsViewModel);
-    qmlContext.setContextProperty(ui::qml::contracts::context::kStatus,
-                                  services.status);
-  }
-
-#ifdef QT_DEBUG
-  if (mainWindow)
-    mainWindow->setQmlContextValue(ui::qml::contracts::context::kIsDebugBuild,
-                                   QVariant(true));
-  else
-    qmlContext.setContextProperty(ui::qml::contracts::context::kIsDebugBuild,
-                                  QVariant(true));
-#else
-  if (mainWindow)
-    mainWindow->setQmlContextValue(ui::qml::contracts::context::kIsDebugBuild,
-                                   QVariant(false));
-  else
-    qmlContext.setContextProperty(ui::qml::contracts::context::kIsDebugBuild,
-                                  QVariant(false));
-#endif
 
   return services;
 }

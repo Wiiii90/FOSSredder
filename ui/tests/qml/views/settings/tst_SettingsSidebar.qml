@@ -19,7 +19,7 @@ TestCase {
     width: 320
     height: 640
 
-    property var settingsState: QtObject {
+    property var settingsViewModel: QtObject {
         property var categoryRows: [
             { category: 0, text: "General", selected: true },
             { category: 1, text: "Import", selected: false },
@@ -47,7 +47,7 @@ TestCase {
         Settings.SettingsSidebar {
             width: 320
             height: 640
-            settingsState: testCase.settingsState
+            settingsViewModel: testCase.settingsViewModel
             theme: testCase.theme
         }
     }
@@ -57,7 +57,7 @@ TestCase {
     }
 
     function init() {
-        settingsState.selectedCategory = -1
+        settingsViewModel.selectedCategory = -1
     }
 
     function test_SET_S_001_categoryRowsDelegateSelectionToSettingsState() {
@@ -67,6 +67,6 @@ TestCase {
 
         importButton.clicked(null)
 
-        compare(settingsState.selectedCategory, 1)
+        compare(settingsViewModel.selectedCategory, 1)
     }
 }

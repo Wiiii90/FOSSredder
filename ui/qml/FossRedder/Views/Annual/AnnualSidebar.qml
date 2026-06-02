@@ -12,7 +12,7 @@ import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
-    required property var annualState
+    required property var annualViewModel
     required property var theme
     width: root.theme.shellSidebarPreferredWidth
 
@@ -44,7 +44,7 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Repeater {
-                    model: root.annualState.annualRows
+                    model: root.annualViewModel.annualRows
 
                     delegate: Rectangle {
                         id: annualRow
@@ -53,8 +53,8 @@ Item {
                         width: annualColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: annualRow.modelData.id === root.annualState.selectedAnnualId ? root.theme.selectionHighlight : (annualMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
-                        border.color: annualRow.modelData.id === root.annualState.selectedAnnualId ? root.theme.selectionBorder : (annualMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
+                        color: annualRow.modelData.id === root.annualViewModel.selectedAnnualId ? root.theme.selectionHighlight : (annualMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: annualRow.modelData.id === root.annualViewModel.selectedAnnualId ? root.theme.selectionBorder : (annualMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
@@ -63,7 +63,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.annualState.selectAnnual(annualRow.modelData.id)
+                            onClicked: root.annualViewModel.selectAnnual(annualRow.modelData.id)
                         }
 
                         Column {

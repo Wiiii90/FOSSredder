@@ -20,27 +20,26 @@ TestCase {
     height: 640
 
     property var importWorkflow: QtObject {
-        property var runs: []
-        property var draft: null
+        property var logs: []
     }
 
-    property var importState: QtObject {
+    property var importViewModel: QtObject {
         property var importWorkflow: testCase.importWorkflow
-        property var runModel: testCase.importWorkflow.runs
-        property string selectedRunLogId: testCase.importWorkflow.draft ? testCase.importWorkflow.draft.draftId : ""
+        property var importLogs: testCase.importWorkflow.logs
+        property string selectedDraftId: ""
         property int refreshCalls: 0
-        property int activateCalls: 0
+        property int openCalls: 0
         property int deleteCalls: 0
-        property var lastActivate: ({})
+        property var lastOpen: ({})
         property var lastDelete: ({})
-        function refreshFromWorkspace() { refreshCalls += 1 }
-        function activateRun(index, logId, draftAttached, statementId, draftId) {
-            activateCalls += 1
-            lastActivate = { index: index, logId: logId, draftAttached: draftAttached, statementId: statementId, draftId: draftId }
+        function refreshImportState() { refreshCalls += 1 }
+        function openImportLog(index, logId, draftAttached, statementId, draftId) {
+            openCalls += 1
+            lastOpen = { index: index, logId: logId, draftAttached: draftAttached, statementId: statementId, draftId: draftId }
         }
-        function deleteRun(index, draftAttached, draftId) {
+        function deleteImportLog(index, logId, draftAttached, draftId) {
             deleteCalls += 1
-            lastDelete = { index: index, draftAttached: draftAttached, draftId: draftId }
+            lastDelete = { index: index, logId: logId, draftAttached: draftAttached, draftId: draftId }
         }
     }
 
@@ -96,7 +95,7 @@ TestCase {
         Import.ImportSidebar {
             width: 960
             height: 640
-            importState: testCase.importState
+            importViewModel: testCase.importViewModel
             theme: testCase.theme
         }
     }
@@ -110,26 +109,25 @@ TestCase {
     }
 
     function init() {
-        importWorkflow.runs = [
+        importWorkflow.logs = [
             { logId: "import-1", time: "2026-05-16 10:00:00", status: "Success", file: "/tmp/import.pdf", message: "done", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "done", draftAttached: false, draftId: "", statementId: "statement-1" }
         ]
-        importWorkflow.draft = null
-        importState.refreshCalls = 0
-        importState.activateCalls = 0
-        importState.deleteCalls = 0
-        importState.lastActivate = ({})
-        importState.lastDelete = ({})
+        importViewModel.refreshCalls = 0
+        importViewModel.openCalls = 0
+        importViewModel.deleteCalls = 0
+        importViewModel.lastOpen = ({})
+        importViewModel.lastDelete = ({})
     }
 
-    function test_IMP_S_001_runLogBindingShowsImportedRuns() {
+    function test_IMP_S_001_importLogBindingShowsImportedLogs() {
         const sidebar = createSidebar()
 
         compare(findRequired(sidebar, "runLogList").count, 1)
-        compare(importState.refreshCalls, 1)
+        compare(importViewModel.refreshCalls, 1)
     }
 
-    function test_IMP_S_002_draftRunClickDelegatesRowPayload() {
-        importWorkflow.runs = [
+    function test_IMP_S_002_draftImportLogClickDelegatesRowPayload() {
+        importWorkflow.logs = [
             { logId: "import-2", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-2", statementId: "" }
         ]
         const sidebar = createSidebar()
@@ -137,14 +135,14 @@ TestCase {
 
         row.clicked(null)
 
-        compare(importState.activateCalls, 1)
-        compare(importState.lastActivate.logId, "import-2")
-        compare(importState.lastActivate.draftId, "draft-2")
-        compare(importState.lastActivate.draftAttached, true)
+        compare(importViewModel.openCalls, 1)
+        compare(importViewModel.lastOpen.logId, "import-2")
+        compare(importViewModel.lastOpen.draftId, "draft-2")
+        compare(importViewModel.lastOpen.draftAttached, true)
     }
 
-    function test_IMP_S_003_finalizedRunClickDelegatesStatementPayload() {
-        importWorkflow.runs = [
+    function test_IMP_S_003_finalizedImportLogClickDelegatesStatementPayload() {
+        importWorkflow.logs = [
             { logId: "import-3", time: "2026-05-16 10:00:00", status: "Finalized", file: "/tmp/import.pdf", message: "done", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "done", draftAttached: false, draftId: "", statementId: "statement-3" }
         ]
         const sidebar = createSidebar()
@@ -152,27 +150,28 @@ TestCase {
 
         row.clicked(null)
 
-        compare(importState.activateCalls, 1)
-        compare(importState.lastActivate.statementId, "statement-3")
+        compare(importViewModel.openCalls, 1)
+        compare(importViewModel.lastOpen.statementId, "statement-3")
     }
 
     function test_IMP_S_005_deleteDelegatesRowPayload() {
-        importWorkflow.runs = [
+        importWorkflow.logs = [
             { logId: "import-4", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-4", statementId: "" }
         ]
         const sidebar = createSidebar()
 
         findRequired(sidebar, "runLogDelete_import-4").clicked()
 
-        compare(importState.deleteCalls, 1)
-        compare(importState.lastDelete.draftId, "draft-4")
+        compare(importViewModel.deleteCalls, 1)
+        compare(importViewModel.lastDelete.logId, "import-4")
+        compare(importViewModel.lastDelete.draftId, "draft-4")
     }
 
-    function test_IMP_S_006_selectedDraftRunIsHighlighted() {
-        importWorkflow.runs = [
+    function test_IMP_S_006_selectedDraftImportLogIsHighlighted() {
+        importWorkflow.logs = [
             { logId: "import-5", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-5", statementId: "" }
         ]
-        importWorkflow.draft = ({ draftId: "draft-5" })
+        importViewModel.selectedDraftId = "draft-5"
 
         const sidebar = createSidebar()
         const selectedCard = findRequired(sidebar, "runLogCard_import-5")

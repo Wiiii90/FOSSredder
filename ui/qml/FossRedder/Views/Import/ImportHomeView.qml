@@ -13,7 +13,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var importState
+    required property var importViewModel
 
     ColumnLayout {
         anchors.fill: parent
@@ -38,7 +38,7 @@ Item {
                 Import.ImportForm {
                     Layout.fillWidth: true
                     theme: root.theme
-                    importState: root.importState
+                    importViewModel: root.importViewModel
                 }
 
                 Import.ImportPanel {
@@ -46,7 +46,7 @@ Item {
                     Layout.fillHeight: true
                     Layout.minimumHeight: 260
                     theme: root.theme
-                    importState: root.importState
+                    importViewModel: root.importViewModel
                 }
             }
         }
@@ -54,13 +54,13 @@ Item {
         Import.ImportProgressBar {
             Layout.fillWidth: true
             theme: root.theme
-            importState: root.importState
+            importViewModel: root.importViewModel
         }
 
         Import.ImportBottomBar {
             Layout.fillWidth: true
             theme: root.theme
-            importState: root.importState
+            importViewModel: root.importViewModel
         }
     }
 }

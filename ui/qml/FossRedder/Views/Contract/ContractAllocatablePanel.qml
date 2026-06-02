@@ -11,7 +11,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var contractState
+    required property var contractViewModel
 
     Layout.fillWidth: true
     contentSpacing: root.theme.spacingSmall
@@ -39,10 +39,10 @@ Controls.Panel {
             objectName: "contractAllocatableModeCombo"
             Layout.fillWidth: true
             model: [qsTr("Mixed"), qsTr("Always allocatable"), qsTr("Never allocatable")]
-            currentIndex: root.contractState && root.contractState.allocatableMode === "allocatable" ? 1 : (root.contractState && root.contractState.allocatableMode === "non-allocatable" ? 2 : 0)
+            currentIndex: root.contractViewModel && root.contractViewModel.allocatableMode === "allocatable" ? 1 : (root.contractViewModel && root.contractViewModel.allocatableMode === "non-allocatable" ? 2 : 0)
             onActivated: function (index) {
-                if (root.contractState)
-                    root.contractState.allocatableMode = index === 1 ? "allocatable" : (index === 2 ? "non-allocatable" : "mixed");
+                if (root.contractViewModel)
+                    root.contractViewModel.allocatableMode = index === 1 ? "allocatable" : (index === 2 ? "non-allocatable" : "mixed");
             }
         }
     }

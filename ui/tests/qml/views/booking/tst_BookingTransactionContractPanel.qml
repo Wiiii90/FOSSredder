@@ -27,7 +27,7 @@ TestCase {
         property color border: "#cccccc"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property var contractDisplayRows: [{ id: "", display: "No contract" }, { id: "contract-1", display: "Lease" }]
         property int selectedContractIndex: 0
         property int lastContractIndex: -1
@@ -36,7 +36,7 @@ TestCase {
 
     Component {
         id: panelComponent
-        Booking.BookingTransactionContractPanel { theme: testCase.theme; bookingState: testCase.bookingState }
+        Booking.BookingTransactionContractPanel { theme: testCase.theme; bookingViewModel: testCase.bookingViewModel }
     }
 
     function findRequired(root, objectName) {
@@ -50,6 +50,6 @@ TestCase {
 
         findRequired(panel, "bookingTransactionContractComboBox").activated(1)
 
-        compare(bookingState.lastContractIndex, 1)
+        compare(bookingViewModel.lastContractIndex, 1)
     }
 }

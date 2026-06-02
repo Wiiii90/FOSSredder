@@ -93,7 +93,7 @@ TestCase {
         }
     }
 
-    property var contractState: QtObject {
+    property var contractViewModel: QtObject {
         readonly property string currentId: testCase.session.selectedContractId
         property string name: ""
         property string type: ""
@@ -227,7 +227,7 @@ TestCase {
 
     Component {
         id: contractViewComponent
-        ContractView { width: 960; height: 640; contractState: testCase.contractState; theme: testCase.theme }
+        ContractView { width: 960; height: 640; contractViewModel: testCase.contractViewModel; theme: testCase.theme }
     }
 
     function findRequired(root, objectName) {
@@ -249,7 +249,7 @@ TestCase {
         ]
         session.actors = []
         session.properties = []
-        contractState.enterCreateMode()
+        contractViewModel.enterCreateMode()
     }
 
     function test_CON_V_005_navigationStaysEnabledWithSingleRow() {

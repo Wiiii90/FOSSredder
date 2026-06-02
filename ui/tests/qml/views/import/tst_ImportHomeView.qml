@@ -43,15 +43,15 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var importState: QtObject {
+    property var importViewModel: QtObject {
         property bool hasImportWorkflow: true
         property bool hasDraftNavigation: false
-        property bool canClear: false
+        property bool canClearImport: false
         property bool canCancel: false
-        property bool canCancelAll: false
         property bool canPause: false
         property bool canStart: false
         property bool importRunning: false
+        property bool importPaused: false
         property string pauseText: "Pause"
         property string manualPathText: ""
         property string progressText: ""
@@ -60,13 +60,14 @@ TestCase {
         property int queuedCount: 0
         property var importFiles: []
         function browseImportPdf() {}
-        function commitManualImportFiles() {}
-        function openPreviousDraft() {}
-        function openNextDraft() {}
-        function resetStatus() {}
-        function cancelImport() {}
+        function addSelectedImportFiles() {}
+        function selectPreviousDraft() {}
+        function selectNextDraft() {}
+        function clearImport() {}
+        function cancelCurrentImport() {}
         function cancelAllImports() {}
-        function togglePause() {}
+        function pauseImport() {}
+        function resumeImport() {}
         function startImport() {}
     }
 
@@ -76,7 +77,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            importState: testCase.importState
+            importViewModel: testCase.importViewModel
         }
     }
 

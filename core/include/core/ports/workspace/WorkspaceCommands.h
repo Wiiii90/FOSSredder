@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "core/domain/entities/Transaction.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 namespace core::ports::workspace {
@@ -50,7 +49,7 @@ struct TransactionCommand {
     double amount = 0.0;
     std::string statementId;
     std::string insertAfterTransactionId;
-    core::domain::Transaction::Status status = core::domain::Transaction::Status::Neutral;
+    int status = 0;
     std::string actorId;
     std::string contractId;
     bool allocatable = false;
@@ -89,8 +88,16 @@ struct ImportLogsCommand {
     std::vector<ImportLogSnapshot> logs;
 };
 
+struct ImportLogCommand {
+    ImportLogSnapshot log;
+};
+
 struct ExportLogsCommand {
     std::vector<ExportLogSnapshot> logs;
+};
+
+struct ExportLogCommand {
+    ExportLogSnapshot log;
 };
 
 } // namespace core::ports::workspace

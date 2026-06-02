@@ -126,12 +126,12 @@ TestCase {
             if (selectedProperty && selectedProperty["setState"])
                 selectedProperty["setState"](newId, newName, newAliases, newContractIds)
             selectedPropertyId = String(newId || "")
-            if (testCase.propertyState && testCase.propertyState["setState"])
-                testCase.propertyState["setState"](newId, newName, newAliases, newContractIds)
+            if (testCase.propertyViewModel && testCase.propertyViewModel["setState"])
+                testCase.propertyViewModel["setState"](newId, newName, newAliases, newContractIds)
         }
     }
 
-    property var propertyState: QtObject {
+    property var propertyViewModel: QtObject {
         signal changed()
         property string currentId: ""
         property string name: ""
@@ -268,7 +268,7 @@ TestCase {
         property var lastSave: ({})
         property string lastDeleteId: ""
         property var savePropertyOverride: null
-        property var propertyState: testCase.propertyState
+        property var propertyViewModel: testCase.propertyViewModel
         property var propertyRows: []
         property var contractRows: []
 
@@ -362,7 +362,7 @@ TestCase {
         PropertyView {
             width: 960
             height: 640
-            propertyState: testCase.propertyState
+            propertyViewModel: testCase.propertyViewModel
             theme: testCase.theme
         }
     }
@@ -407,7 +407,7 @@ TestCase {
         session.selectedPropertyId = propertyObject ? propertyObject.id : ""
         propertyController.propertyRows = session.properties || []
         propertyController.contractRows = session.contractRows()
-        propertyState["setState"](propertyObject ? propertyObject.id : "",
+        propertyViewModel["setState"](propertyObject ? propertyObject.id : "",
                                   propertyObject ? propertyObject.name : "",
                                   propertyObject ? propertyObject.aliases : [],
                                   propertyObject ? propertyObject.contractIds : [])
@@ -661,7 +661,7 @@ TestCase {
 
         compare(form.selectedContractIds.length, 1)
         compare(form.selectedContractIds[0], "contract-1")
-        compare(propertyState.hasChanges, true)
+        compare(propertyViewModel.hasChanges, true)
     }
 
     function test_PROP_F_012_navigationButtonsMoveSelectionId() {

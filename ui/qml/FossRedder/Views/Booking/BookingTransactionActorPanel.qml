@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var bookingState
+    required property var bookingViewModel
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -41,10 +41,10 @@ Controls.Panel {
             objectName: "bookingTransactionActorComboBox"
             Layout.fillWidth: true
             textRole: "display"
-            model: root.bookingState.actorDisplayRows
-            currentIndex: root.bookingState.selectedActorIndex
+            model: root.bookingViewModel.actorDisplayRows
+            currentIndex: root.bookingViewModel.selectedActorIndex
             onActivated: function (index) {
-                root.bookingState.selectActorIndex(index);
+                root.bookingViewModel.selectActorIndex(index);
             }
         }
     }

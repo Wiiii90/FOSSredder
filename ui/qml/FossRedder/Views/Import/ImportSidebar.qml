@@ -1,6 +1,6 @@
 /**
  * @file ui/qml/FossRedder/Views/Import/ImportSidebar.qml
- * @brief Provides the import run sidebar.
+ * @brief Provides the import log sidebar.
  */
 
 pragma ComponentBehavior: Bound
@@ -11,10 +11,8 @@ import FossRedder.Components 1.0 as Components
 
 Item {
     id: root
-    required property var importState
+    required property var importViewModel
     required property var theme
-
-    Component.onCompleted: root.importState.refreshFromWorkspace()
 
     ColumnLayout {
         anchors.fill: parent
@@ -32,13 +30,13 @@ Item {
             baseBorderColor: root.theme.borderSoft
             actionButtonSize: root.theme.viewCompactActionButtonSizeTiny
             headerTopInset: root.theme.spacingSmall
-            model: root.importState.runModel
-            selectedLogId: root.importState.selectedRunLogId
+            model: root.importViewModel.importLogs
+            selectedLogId: root.importViewModel.selectedDraftId
             onRunClicked: function (index, logId, draftAttached, statementId, draftId) {
-                root.importState.activateRun(index, logId, draftAttached, statementId, draftId);
+                root.importViewModel.openImportLog(logId, draftAttached, statementId, draftId);
             }
-            onDeleteClicked: function (index, draftAttached, draftId) {
-                root.importState.deleteRun(index, draftAttached, draftId);
+            onDeleteClicked: function (index, logId, draftAttached, draftId) {
+                root.importViewModel.deleteImportLog(logId, draftAttached, draftId);
             }
         }
     }

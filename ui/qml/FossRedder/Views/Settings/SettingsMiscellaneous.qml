@@ -11,7 +11,7 @@ pragma ComponentBehavior: Bound
 
 Flickable {
     id: root
-    required property var settingsState
+    required property var settingsViewModel
     required property var theme
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -49,64 +49,64 @@ Flickable {
                     Controls.CheckBox {
                         objectName: "settingsToolbarBookingCheckBox"
                         text: qsTr("Booking")
-                        checked: root.settingsState.toolbarShowBooking
-                        onToggled: root.settingsState.toolbarShowBooking = checked
+                        checked: root.settingsViewModel.toolbarShowBooking
+                        onToggled: root.settingsViewModel.toolbarShowBooking = checked
                     }
 
                     Controls.CheckBox {
                         objectName: "settingsToolbarImportCheckBox"
                         text: qsTr("Import")
-                        checked: root.settingsState.toolbarShowImport
-                        onToggled: root.settingsState.toolbarShowImport = checked
+                        checked: root.settingsViewModel.toolbarShowImport
+                        onToggled: root.settingsViewModel.toolbarShowImport = checked
                     }
 
                     Controls.CheckBox {
                         objectName: "settingsToolbarActorsCheckBox"
                         text: qsTr("Actors")
-                        checked: root.settingsState.toolbarShowActors
-                        onToggled: root.settingsState.toolbarShowActors = checked
+                        checked: root.settingsViewModel.toolbarShowActors
+                        onToggled: root.settingsViewModel.toolbarShowActors = checked
                     }
 
                     Controls.CheckBox {
                         objectName: "settingsToolbarExportCheckBox"
                         text: qsTr("Export")
-                        checked: root.settingsState.toolbarShowExport
-                        onToggled: root.settingsState.toolbarShowExport = checked
+                        checked: root.settingsViewModel.toolbarShowExport
+                        onToggled: root.settingsViewModel.toolbarShowExport = checked
                     }
 
                     Controls.CheckBox {
                         objectName: "settingsToolbarPropertiesCheckBox"
                         text: qsTr("Properties")
-                        checked: root.settingsState.toolbarShowProperties
-                        onToggled: root.settingsState.toolbarShowProperties = checked
+                        checked: root.settingsViewModel.toolbarShowProperties
+                        onToggled: root.settingsViewModel.toolbarShowProperties = checked
                     }
 
                     Controls.CheckBox {
                         objectName: "settingsToolbarAnalysisCheckBox"
                         text: qsTr("Analysis")
-                        checked: root.settingsState.toolbarShowAnalysis
-                        onToggled: root.settingsState.toolbarShowAnalysis = checked
+                        checked: root.settingsViewModel.toolbarShowAnalysis
+                        onToggled: root.settingsViewModel.toolbarShowAnalysis = checked
                     }
 
                     Controls.CheckBox {
                         objectName: "settingsToolbarContractsCheckBox"
                         text: qsTr("Contracts")
-                        checked: root.settingsState.toolbarShowContracts
-                        onToggled: root.settingsState.toolbarShowContracts = checked
+                        checked: root.settingsViewModel.toolbarShowContracts
+                        onToggled: root.settingsViewModel.toolbarShowContracts = checked
                     }
 
                     Controls.CheckBox {
                         objectName: "settingsToolbarAnnualCheckBox"
                         text: qsTr("Annual")
-                        checked: root.settingsState.toolbarShowAnnual
-                        onToggled: root.settingsState.toolbarShowAnnual = checked
+                        checked: root.settingsViewModel.toolbarShowAnnual
+                        onToggled: root.settingsViewModel.toolbarShowAnnual = checked
                     }
 
                     Controls.CheckBox {
                         objectName: "settingsToolbarSettingsCheckBox"
                         text: qsTr("Settings")
-                        checked: root.settingsState.toolbarShowSettings
-                        onToggled: root.settingsState.toolbarShowSettings = checked
+                        checked: root.settingsViewModel.toolbarShowSettings
+                        onToggled: root.settingsViewModel.toolbarShowSettings = checked
                     }
                 }
             }

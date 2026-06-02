@@ -25,7 +25,7 @@ public:
      */
     bool create(const std::filesystem::path& sourceDirectory,
                 const std::filesystem::path& outputArchive,
-                core::application::exporting::PackageFormat format) const override;
+                core::ports::exporting::PackageFormat format) const override;
 };
 
 } // namespace infra::archive

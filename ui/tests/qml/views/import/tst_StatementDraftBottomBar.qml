@@ -24,26 +24,28 @@ TestCase {
         property int viewNavigationButtonWidth: 42
     }
 
-    property var statementState: QtObject {
+    property var statementViewModel: QtObject {
         property bool hasDraft: true
-        property bool canOpenPreviousTransaction: true
-        property bool canOpenNextTransaction: true
-        property bool canOpenPreviousDraft: true
-        property bool canOpenNextDraft: true
+        property bool canSelectPreviousTransactionDraft: true
+        property bool canSelectNextTransactionDraft: true
         property int returnCalls: 0
         property int discardCalls: 0
         property int finalizeCalls: 0
         property int previousTransactionCalls: 0
         property int nextTransactionCalls: 0
+        function returnToImport() { returnCalls += 1 }
+        function discard() { discardCalls += 1 }
+        function finalize() { finalizeCalls += 1 }
+        function selectPreviousTransactionDraft() { previousTransactionCalls += 1 }
+        function selectNextTransactionDraft() { nextTransactionCalls += 1 }
+    }
+
+    property var importViewModel: QtObject {
+        property bool hasDraftNavigation: true
         property int previousDraftCalls: 0
         property int nextDraftCalls: 0
-        function returnToImport() { returnCalls += 1 }
-        function discardDraft() { discardCalls += 1 }
-        function finalizeDraft() { finalizeCalls += 1 }
-        function openPreviousTransaction() { previousTransactionCalls += 1 }
-        function openNextTransaction() { nextTransactionCalls += 1 }
-        function openPreviousDraft() { previousDraftCalls += 1 }
-        function openNextDraft() { nextDraftCalls += 1 }
+        function selectPreviousDraft() { previousDraftCalls += 1 }
+        function selectNextDraft() { nextDraftCalls += 1 }
     }
 
     Component {
@@ -51,7 +53,8 @@ TestCase {
         Import.StatementDraftBottomBar {
             width: testCase.width
             theme: testCase.theme
-            statementState: testCase.statementState
+            importViewModel: testCase.importViewModel
+            statementViewModel: testCase.statementViewModel
         }
     }
 
@@ -64,18 +67,17 @@ TestCase {
     }
 
     function init() {
-        statementState.hasDraft = true
-        statementState.canOpenPreviousTransaction = true
-        statementState.canOpenNextTransaction = true
-        statementState.canOpenPreviousDraft = true
-        statementState.canOpenNextDraft = true
-        statementState.returnCalls = 0
-        statementState.discardCalls = 0
-        statementState.finalizeCalls = 0
-        statementState.previousTransactionCalls = 0
-        statementState.nextTransactionCalls = 0
-        statementState.previousDraftCalls = 0
-        statementState.nextDraftCalls = 0
+        statementViewModel.hasDraft = true
+        statementViewModel.canSelectPreviousTransactionDraft = true
+        statementViewModel.canSelectNextTransactionDraft = true
+        importViewModel.hasDraftNavigation = true
+        statementViewModel.returnCalls = 0
+        statementViewModel.discardCalls = 0
+        statementViewModel.finalizeCalls = 0
+        statementViewModel.previousTransactionCalls = 0
+        statementViewModel.nextTransactionCalls = 0
+        importViewModel.previousDraftCalls = 0
+        importViewModel.nextDraftCalls = 0
     }
 
     function test_IMP_D_001_statementBottomBarReturnDelegatesToState() {
@@ -83,7 +85,7 @@ TestCase {
 
         findRequired(bar, "statementDraftReturnButton").clicked()
 
-        compare(statementState.returnCalls, 1)
+        compare(statementViewModel.returnCalls, 1)
     }
 
     function test_IMP_D_002_statementBottomBarDiscardDelegatesToState() {
@@ -91,7 +93,7 @@ TestCase {
 
         findRequired(bar, "statementDraftDiscardButton").clicked()
 
-        compare(statementState.discardCalls, 1)
+        compare(statementViewModel.discardCalls, 1)
     }
 
     function test_IMP_D_003_statementBottomBarFinalizeDelegatesToState() {
@@ -99,11 +101,11 @@ TestCase {
 
         findRequired(bar, "statementDraftFinalizeButton").clicked()
 
-        compare(statementState.finalizeCalls, 1)
+        compare(statementViewModel.finalizeCalls, 1)
     }
 
     function test_IMP_D_004_statementBottomBarDisablesLifecycleActionsWithoutDraft() {
-        statementState.hasDraft = false
+        statementViewModel.hasDraft = false
         const bar = createBar()
 
         compare(findRequired(bar, "statementDraftReturnButton").enabled, false)
@@ -119,17 +121,16 @@ TestCase {
         findRequired(bar, "statementDraftPrevPageButton").clicked()
         findRequired(bar, "statementDraftNextPageButton").clicked()
 
-        compare(statementState.previousTransactionCalls, 1)
-        compare(statementState.nextTransactionCalls, 1)
-        compare(statementState.previousDraftCalls, 1)
-        compare(statementState.nextDraftCalls, 1)
+        compare(statementViewModel.previousTransactionCalls, 1)
+        compare(statementViewModel.nextTransactionCalls, 1)
+        compare(importViewModel.previousDraftCalls, 1)
+        compare(importViewModel.nextDraftCalls, 1)
     }
 
     function test_IMP_D_007_statementBottomBarDisablesUnavailableNavigation() {
-        statementState.canOpenPreviousTransaction = false
-        statementState.canOpenNextTransaction = false
-        statementState.canOpenPreviousDraft = false
-        statementState.canOpenNextDraft = false
+        statementViewModel.canSelectPreviousTransactionDraft = false
+        statementViewModel.canSelectNextTransactionDraft = false
+        importViewModel.hasDraftNavigation = false
         const bar = createBar()
 
         compare(findRequired(bar, "statementDraftPrevTransactionButton").enabled, false)

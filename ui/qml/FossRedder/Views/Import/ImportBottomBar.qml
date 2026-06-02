@@ -12,7 +12,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var importState
+    required property var importViewModel
 
     implicitWidth: bar.implicitWidth
     implicitHeight: bar.implicitHeight
@@ -24,8 +24,8 @@ Item {
 
         Controls.PrevPageButton {
             objectName: "importPreviousDraftButton"
-            enabled: root.importState.hasDraftNavigation
-            onClicked: root.importState.openPreviousDraft()
+            enabled: root.importViewModel.hasDraftNavigation
+            onClicked: root.importViewModel.selectPreviousDraft()
         }
 
         Item { Layout.fillWidth: true }
@@ -34,53 +34,57 @@ Item {
             objectName: "importClearButton"
             text: qsTr("Clear")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: root.importState.canClear
-            enabled: root.importState.canClear
-            onClicked: root.importState.resetStatus()
+            visible: root.importViewModel.canClearImport
+            enabled: root.importViewModel.canClearImport
+            onClicked: root.importViewModel.clearImport()
         }
 
         Controls.DangerButton {
             objectName: "importCancelButton"
             text: qsTr("Cancel")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: root.importState.canCancel
-            enabled: root.importState.canCancel
-            onClicked: root.importState.cancelImport()
+            visible: root.importViewModel.canCancel
+            enabled: root.importViewModel.canCancel
+            onClicked: root.importViewModel.cancelCurrentImport()
         }
 
         Controls.DangerButton {
             objectName: "importCancelAllButton"
             text: qsTr("Cancel all")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: root.importState.canCancelAll
-            enabled: root.importState.canCancelAll
-            onClicked: root.importState.cancelAllImports()
+            visible: root.importViewModel.canCancel
+                     && root.importViewModel.queuedCount > 0
+            enabled: root.importViewModel.canCancel
+                     && root.importViewModel.queuedCount > 0
+            onClicked: root.importViewModel.cancelAllImports()
         }
 
         Controls.SuccessButton {
             objectName: "importPauseButton"
-            text: root.importState.pauseText
+            text: root.importViewModel.pauseText
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: root.importState.canPause
-            enabled: root.importState.canPause
-            onClicked: root.importState.togglePause()
+            visible: root.importViewModel.canPause
+            enabled: root.importViewModel.canPause
+            onClicked: root.importViewModel.importPaused
+                       ? root.importViewModel.resumeImport()
+                       : root.importViewModel.pauseImport()
         }
 
         Controls.SuccessButton {
             objectName: "importStartButton"
             text: qsTr("Start")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: !root.importState.importRunning
-            enabled: root.importState.canStart
-            onClicked: root.importState.startImport()
+            visible: !root.importViewModel.importRunning
+            enabled: root.importViewModel.canStart
+            onClicked: root.importViewModel.startImport()
         }
 
         Item { Layout.fillWidth: true }
 
         Controls.NextPageButton {
             objectName: "importNextDraftButton"
-            enabled: root.importState.hasDraftNavigation
-            onClicked: root.importState.openNextDraft()
+            enabled: root.importViewModel.hasDraftNavigation
+            onClicked: root.importViewModel.selectNextDraft()
         }
     }
 }

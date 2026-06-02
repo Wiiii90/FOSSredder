@@ -24,8 +24,8 @@ std::filesystem::path makeTempDir(const std::string& stem) {
 
 class OpenCvAnalysisImageRendererAdapterTest : public ::testing::TestWithParam<std::string> {
 protected:
-    static core::domain::AnalysisResult makeResult(const std::string& type) {
-        core::domain::AnalysisResult result;
+    static core::ports::analysis::AnalysisResult makeResult(const std::string& type) {
+        core::ports::analysis::AnalysisResult result;
         result.type = type;
         if (type == core::constants::analysis::plotTypes::kPie) {
             result.table = {
@@ -67,7 +67,7 @@ TEST(OpenCvAnalysisImageRendererAdapterStandaloneTest, PieUsesDistinctAdjacentSl
     const auto tempDir = makeTempDir("fossredder_analysis_image_renderer_palette_test");
     const auto outputPath = tempDir / "pie_palette.png";
 
-    core::domain::AnalysisResult result;
+    core::ports::analysis::AnalysisResult result;
     result.type = core::constants::analysis::plotTypes::kPie;
     result.table = {
         {"A", "1.0"},

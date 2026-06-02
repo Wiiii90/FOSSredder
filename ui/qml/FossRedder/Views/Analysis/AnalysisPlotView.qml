@@ -11,8 +11,8 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var analysisState
-    signal exportStateChanged(string exportStateJson)
+    required property var analysisViewModel
+    signal exportViewModelChanged(string exportStateJson)
 
     ColumnLayout {
         anchors.fill: root
@@ -21,12 +21,12 @@ Item {
         Image {
             id: renderedPreviewImage
             objectName: "analysisPreviewImage"
-            visible: root.analysisState.renderedPreviewSource.length > 0
+            visible: root.analysisViewModel.renderedPreviewSource.length > 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: root.theme.chartPlotMinimumHeight
             Layout.preferredHeight: root.theme.chartPlotPreferredHeight
-            source: root.analysisState.renderedPreviewSource
+            source: root.analysisViewModel.renderedPreviewSource
             fillMode: Image.PreserveAspectFit
             horizontalAlignment: Image.AlignLeft
             verticalAlignment: Image.AlignTop
@@ -37,7 +37,7 @@ Item {
         }
 
         Rectangle {
-            visible: root.analysisState.renderedPreviewSource.length === 0
+            visible: root.analysisViewModel.renderedPreviewSource.length === 0
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: root.theme.chartPlotMinimumHeight

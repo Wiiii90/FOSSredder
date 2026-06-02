@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var analysisState
+    required property var analysisViewModel
     property string mode: "all"
     property bool initialized: false
 
@@ -39,7 +39,7 @@ Controls.Panel {
             onCurrentIndexChanged: {
                 if (!root.initialized)
                     return;
-                root.analysisState.setAllocatableModeIndex(currentIndex);
+                root.analysisViewModel.setAllocatableModeIndex(currentIndex);
             }
         }
 

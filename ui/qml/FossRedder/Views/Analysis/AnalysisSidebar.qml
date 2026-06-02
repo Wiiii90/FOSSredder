@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Item {
     id: root
     required property var theme
-    required property var analysisState
+    required property var analysisViewModel
     width: root.theme.shellSidebarPreferredWidth
 
     ColumnLayout {
@@ -44,7 +44,7 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Repeater {
-                    model: root.analysisState.analysisRows
+                    model: root.analysisViewModel.analysisRows
 
                     delegate: Rectangle {
                         id: analysisRow
@@ -53,8 +53,8 @@ Item {
                         width: analysisColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: analysisRow.modelData.id === root.analysisState.selectedAnalysisId ? root.theme.selectionHighlight : (analysisMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
-                        border.color: analysisRow.modelData.id === root.analysisState.selectedAnalysisId ? root.theme.selectionBorder : (analysisMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
+                        color: analysisRow.modelData.id === root.analysisViewModel.selectedAnalysisId ? root.theme.selectionHighlight : (analysisMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: analysisRow.modelData.id === root.analysisViewModel.selectedAnalysisId ? root.theme.selectionBorder : (analysisMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
@@ -63,7 +63,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.analysisState.selectAnalysis(analysisRow.modelData.id)
+                            onClicked: root.analysisViewModel.selectAnalysis(analysisRow.modelData.id)
                         }
 
                         Column {

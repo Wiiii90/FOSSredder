@@ -1,5 +1,5 @@
 /**
- * @file ui/src/bootstrap/AppContext.cpp
+ * @file ui/src/shell/AppContext.cpp
  * @brief Implements the QML application context for the UI boundary.
  */
 
@@ -7,99 +7,95 @@
 
 namespace ui::bootstrap {
 
-AppContext::AppContext(QObject* parent)
-    : QObject(parent)
-{
-}
+AppContext::AppContext(QObject *parent) : QObject(parent) {}
 
 namespace {
 
 template <typename TSignal, typename TValue>
-void assignIfChanged(TValue*& target, TValue* value, AppContext* self, TSignal signal)
-{
-    if (target == value) return;
-    target = value;
-    emit (self->*signal)();
+void assignIfChanged(TValue *&target, TValue *value, AppContext *self,
+                     TSignal signal) {
+  if (target == value)
+    return;
+  target = value;
+  emit(self->*signal)();
 }
 
 } // namespace
 
-void AppContext::setActions(ui::Actions* value)
-{
-    assignIfChanged(actions_, value, this, &AppContext::actionsChanged);
+void AppContext::setActions(ui::Actions *value) {
+  assignIfChanged(actions_, value, this, &AppContext::actionsChanged);
 }
 
-void AppContext::setNavigation(ui::NavigationState* value)
-{
-    assignIfChanged(navigation_, value, this, &AppContext::navigationChanged);
+void AppContext::setNavigation(ui::NavigationState *value) {
+  assignIfChanged(navigation_, value, this, &AppContext::navigationChanged);
 }
 
-void AppContext::setSession(ui::WorkspaceFacade* value)
-{
-    if (session_ == value) return;
-    session_ = value;
-    sessionState_ = session_ ? session_->session() : nullptr;
-    emit sessionChanged();
-    emit sessionStateChanged();
-    emit workspaceChanged();
-    emit workspaceFacadeChanged();
+void AppContext::setWorkspaceFacade(ui::WorkspaceFacade *value) {
+  assignIfChanged(workspaceFacade_, value, this,
+                  &AppContext::workspaceFacadeChanged);
 }
 
-void AppContext::setWorkspace(ui::WorkspaceFacade* value)
-{
-    setSession(value);
+void AppContext::setFileSystemBrowser(ui::FileSystemBrowser *value) {
+  assignIfChanged(fileSystemBrowser_, value, this,
+                  &AppContext::fileSystemBrowserChanged);
 }
 
-void AppContext::setWorkspaceFacade(ui::WorkspaceFacade* value)
-{
-    setSession(value);
+void AppContext::setStatus(ui::StatusState *value) {
+  assignIfChanged(status_, value, this, &AppContext::statusChanged);
 }
 
-void AppContext::setFileSystemBrowser(ui::FileSystemBrowser* value)
-{
-    assignIfChanged(fileSystemBrowser_, value, this, &AppContext::fileSystemBrowserChanged);
+void AppContext::setActorViewModel(ui::ActorViewModel *value) {
+  assignIfChanged(actorViewModel_, value, this,
+                  &AppContext::actorViewModelChanged);
 }
 
-void AppContext::setStatus(ui::StatusState* value)
-{
-    assignIfChanged(status_, value, this, &AppContext::statusChanged);
+void AppContext::setBookingViewModel(ui::BookingViewModel *value) {
+  assignIfChanged(bookingViewModel_, value, this,
+                  &AppContext::bookingViewModelChanged);
 }
 
-void AppContext::setAnalysisWorkflow(ui::AnalysisWorkflow* value)
-{
-    assignIfChanged(analysisWorkflow_, value, this, &AppContext::analysisWorkflowChanged);
+void AppContext::setContractViewModel(ui::ContractViewModel *value) {
+  assignIfChanged(contractViewModel_, value, this,
+                  &AppContext::contractViewModelChanged);
 }
 
-void AppContext::setAnnualWorkflow(ui::AnnualWorkflow* value)
-{
-    assignIfChanged(annualWorkflow_, value, this, &AppContext::annualWorkflowChanged);
+void AppContext::setPropertyViewModel(ui::PropertyViewModel *value) {
+  assignIfChanged(propertyViewModel_, value, this,
+                  &AppContext::propertyViewModelChanged);
 }
 
-void AppContext::setExportWorkflow(ui::ExportWorkflow* value)
-{
-    assignIfChanged(exportWorkflow_, value, this, &AppContext::exportWorkflowChanged);
+void AppContext::setAnalysisViewModel(ui::AnalysisViewModel *value) {
+  assignIfChanged(analysisViewModel_, value, this,
+                  &AppContext::analysisViewModelChanged);
 }
 
-void AppContext::setImportWorkflow(ui::ImportWorkflow* value)
-{
-    assignIfChanged(importWorkflow_, value, this, &AppContext::importWorkflowChanged);
+void AppContext::setAnnualViewModel(ui::AnnualViewModel *value) {
+  assignIfChanged(annualViewModel_, value, this, &AppContext::annualViewModelChanged);
 }
 
-void AppContext::setLanguageService(ui::LanguageService* value)
-{
-    assignIfChanged(languageService_, value, this, &AppContext::languageServiceChanged);
+void AppContext::setExportViewModel(ui::ExportViewModel *value) {
+  assignIfChanged(exportViewModel_, value, this, &AppContext::exportViewModelChanged);
 }
 
-void AppContext::setSettingsViewModel(ui::SettingsViewModel* value)
-{
-    assignIfChanged(settingsViewModel_, value, this, &AppContext::settingsViewModelChanged);
+void AppContext::setImportViewModel(ui::ImportViewModel *value) {
+  assignIfChanged(importViewModel_, value, this, &AppContext::importViewModelChanged);
 }
 
-void AppContext::setIsDebugBuild(bool value)
-{
-    if (isDebugBuild_ == value) return;
-    isDebugBuild_ = value;
-    emit isDebugBuildChanged();
+void AppContext::setSettingsViewModel(ui::SettingsViewModel *value) {
+  assignIfChanged(settingsViewModel_, value, this,
+                  &AppContext::settingsViewModelChanged);
+}
+
+void AppContext::setLanguageService(ui::LanguageService *value) {
+  assignIfChanged(languageService_, value, this,
+                  &AppContext::languageServiceChanged);
+}
+
+void AppContext::setIsDebugBuild(bool value) {
+  if (isDebugBuild_ == value)
+    return;
+  isDebugBuild_ = value;
+  emit isDebugBuildChanged();
 }
 
 } // namespace ui::bootstrap

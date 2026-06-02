@@ -1,6 +1,6 @@
 /**
  * @file core/include/core/application/import/transaction/AmountParser.h
- * @brief Declares helpers for parsing transaction amount strings.
+ * @brief Declares helpers for parsing imported transaction amount strings.
  */
 
 #pragma once
@@ -10,17 +10,6 @@
 
 namespace core::application::importing::transaction {
 
-/**
- * @brief Parses a free-form amount string into a numeric value.
- * @param s Input amount text.
- * @return Parsed amount when the string can be interpreted, otherwise an empty optional.
- */
-std::optional<double> parseAmountString(const std::string& s);
+[[nodiscard]] std::optional<double> parseAmountString(const std::string& s);
 
-}
-
-namespace core {
-namespace parser {
-using application::importing::transaction::parseAmountString;
-}
-}
+} // namespace core::application::importing::transaction

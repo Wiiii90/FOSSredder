@@ -19,7 +19,7 @@ TestCase {
     width: 720
     height: 160
 
-    property var exportState: QtObject {
+    property var exportViewModel: QtObject {
         property bool showClear: true
         property bool showCancel: false
         property bool showPause: false
@@ -46,7 +46,7 @@ TestCase {
         Export.ExportBottomBar {
             width: 720
             height: 64
-            exportState: testCase.exportState
+            exportViewModel: testCase.exportViewModel
             theme: testCase.theme
         }
     }
@@ -56,15 +56,15 @@ TestCase {
     }
 
     function init() {
-        exportState.showClear = true
-        exportState.showCancel = false
-        exportState.showPause = false
-        exportState.canStart = true
-        exportState.pauseText = "Pause"
-        exportState.clearCalls = 0
-        exportState.startCalls = 0
-        exportState.cancelCalls = 0
-        exportState.pauseCalls = 0
+        exportViewModel.showClear = true
+        exportViewModel.showCancel = false
+        exportViewModel.showPause = false
+        exportViewModel.canStart = true
+        exportViewModel.pauseText = "Pause"
+        exportViewModel.clearCalls = 0
+        exportViewModel.startCalls = 0
+        exportViewModel.cancelCalls = 0
+        exportViewModel.pauseCalls = 0
     }
 
     function test_EXP_BB_001_createModeButtonsDelegateToExportState() {
@@ -73,21 +73,21 @@ TestCase {
         TestSupport.findRequired(Lookup, view, "exportClearButton").clicked()
         TestSupport.findRequired(Lookup, view, "exportStartButton").clicked()
 
-        compare(exportState.clearCalls, 1)
-        compare(exportState.startCalls, 1)
+        compare(exportViewModel.clearCalls, 1)
+        compare(exportViewModel.startCalls, 1)
     }
 
     function test_EXP_BB_002_progressModeButtonsDelegateToExportState() {
-        exportState.showClear = false
-        exportState.showCancel = true
-        exportState.showPause = true
+        exportViewModel.showClear = false
+        exportViewModel.showCancel = true
+        exportViewModel.showPause = true
 
         const view = createView()
 
         TestSupport.findRequired(Lookup, view, "exportCancelButton").clicked()
         TestSupport.findRequired(Lookup, view, "exportTogglePauseButton").clicked()
 
-        compare(exportState.cancelCalls, 1)
-        compare(exportState.pauseCalls, 1)
+        compare(exportViewModel.cancelCalls, 1)
+        compare(exportViewModel.pauseCalls, 1)
     }
 }

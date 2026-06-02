@@ -10,12 +10,12 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var analysisState
+    required property var analysisViewModel
     required property var theme
 
     onVisibleChanged: {
         if (visible)
-            root.analysisState.refreshFromSelection()
+            root.analysisViewModel.refreshFromSelection()
     }
 
     ColumnLayout {
@@ -26,7 +26,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             theme: root.theme
-            analysisState: root.analysisState
+            analysisViewModel: root.analysisViewModel
         }
 
         Analysis.AnalysisBottomBar {
@@ -35,9 +35,9 @@ Item {
             Layout.rightMargin: root.theme.pageContentMargin
             Layout.bottomMargin: root.theme.pageContentMargin
             theme: root.theme
-            analysisState: root.analysisState
+            analysisViewModel: root.analysisViewModel
         }
     }
 
-    Component.onCompleted: root.analysisState.refreshFromSelection()
+    Component.onCompleted: root.analysisViewModel.refreshFromSelection()
 }

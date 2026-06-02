@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var exportState: QtObject {
+    property var exportViewModel: QtObject {
         property string addMode: "annual"
         property var annualRows: [
             { id: "annual-1", name: "Annual 1", display: "Annual 1" },
@@ -138,7 +138,7 @@ TestCase {
         Export.ExportPanel {
             width: 920
             height: 560
-            exportState: testCase.exportState
+            exportViewModel: testCase.exportViewModel
             theme: testCase.theme
         }
     }
@@ -148,25 +148,25 @@ TestCase {
     }
 
     function init() {
-        exportState.addMode = "annual"
-        exportState.pendingIndex = 0
-        exportState.exportEntries = []
-        exportState.addCalls = 0
-        exportState.removeCalls = 0
-        exportState.selectCalls = 0
-        exportState.updateAnnualCalls = 0
-        exportState.updateStandaloneCalls = 0
-        exportState.updateExportTypeCalls = 0
-        exportState.collapseCalls = 0
+        exportViewModel.addMode = "annual"
+        exportViewModel.pendingIndex = 0
+        exportViewModel.exportEntries = []
+        exportViewModel.addCalls = 0
+        exportViewModel.removeCalls = 0
+        exportViewModel.selectCalls = 0
+        exportViewModel.updateAnnualCalls = 0
+        exportViewModel.updateStandaloneCalls = 0
+        exportViewModel.updateExportTypeCalls = 0
+        exportViewModel.collapseCalls = 0
     }
 
     function test_EXP_P_001_addAnnualDelegatesToExportState() {
         const view = createView()
         TestSupport.findRequired(Lookup, view, "exportAddEntryButton").clicked()
 
-        compare(exportState.addCalls, 1)
-        compare(exportState.exportEntries.length, 1)
-        compare(exportState.exportEntries[0].isAnnual, true)
+        compare(exportViewModel.addCalls, 1)
+        compare(exportViewModel.exportEntries.length, 1)
+        compare(exportViewModel.exportEntries[0].isAnnual, true)
     }
 
     function test_EXP_P_002_addAnalysisModeDelegatesToExportState() {
@@ -174,9 +174,9 @@ TestCase {
         TestSupport.findRequired(Lookup, view, "exportAddAnalysisModeButton").clicked()
         TestSupport.findRequired(Lookup, view, "exportAddEntryButton").clicked()
 
-        compare(exportState.addMode, "analysis")
-        compare(exportState.exportEntries.length, 1)
-        compare(exportState.exportEntries[0].isAnnual, false)
+        compare(exportViewModel.addMode, "analysis")
+        compare(exportViewModel.exportEntries.length, 1)
+        compare(exportViewModel.exportEntries[0].isAnnual, false)
     }
 
     function test_EXP_P_003_removeEntryDelegatesToExportState() {
@@ -185,8 +185,8 @@ TestCase {
         wait(0)
         TestSupport.findRequired(Lookup, view, "exportRemoveAnnualButton").clicked()
 
-        compare(exportState.removeCalls, 1)
-        compare(exportState.exportEntries.length, 0)
+        compare(exportViewModel.removeCalls, 1)
+        compare(exportViewModel.exportEntries.length, 0)
     }
 
     function test_EXP_P_004_disclosureButtonDelegatesCollapseState() {
@@ -195,8 +195,8 @@ TestCase {
         wait(0)
         TestSupport.findRequired(Lookup, view, "exportAnnualCollapseButton").clicked()
 
-        compare(exportState.collapseCalls, 1)
-        compare(exportState.exportEntries[0].collapsed, true)
+        compare(exportViewModel.collapseCalls, 1)
+        compare(exportViewModel.exportEntries[0].collapsed, true)
     }
 
     function test_EXP_P_005_exportTypeDropdownDelegatesSelection() {
@@ -210,7 +210,7 @@ TestCase {
         exportTypeCombo.currentIndex = 1
         exportTypeCombo.activated(1)
 
-        compare(exportState.updateExportTypeCalls, 1)
-        compare(exportState.exportEntries[0].exportType, "JPG")
+        compare(exportViewModel.updateExportTypeCalls, 1)
+        compare(exportViewModel.exportEntries[0].exportType, "JPG")
     }
 }

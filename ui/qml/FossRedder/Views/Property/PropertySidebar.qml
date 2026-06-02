@@ -12,10 +12,10 @@ import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
-    required property var propertyState
+    required property var propertyViewModel
     required property var theme
 
-    readonly property var propertyRows: root.propertyState.propertyRows
+    readonly property var propertyRows: root.propertyViewModel.propertyRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -56,8 +56,8 @@ Item {
                         width: propertyColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: propertyRow.propertyId === root.propertyState.currentId ? root.theme.selectionHighlight : (propertyMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
-                        border.color: propertyRow.propertyId === root.propertyState.currentId ? root.theme.selectionBorder : (propertyMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
+                        color: propertyRow.propertyId === root.propertyViewModel.currentId ? root.theme.selectionHighlight : (propertyMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: propertyRow.propertyId === root.propertyViewModel.currentId ? root.theme.selectionBorder : (propertyMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
@@ -66,7 +66,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.propertyState.selectProperty(propertyRow.propertyId)
+                            onClicked: root.propertyViewModel.selectProperty(propertyRow.propertyId)
                         }
 
                         Column {

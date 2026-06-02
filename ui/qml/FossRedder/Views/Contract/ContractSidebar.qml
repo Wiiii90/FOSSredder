@@ -12,10 +12,10 @@ import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
-    required property var contractState
+    required property var contractViewModel
     required property var theme
 
-    readonly property var contractRows: root.contractState.contractRows
+    readonly property var contractRows: root.contractViewModel.contractRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -56,8 +56,8 @@ Item {
                         width: contractColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: contractRow.contractId === root.contractState.currentId ? root.theme.selectionHighlight : (contractMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
-                        border.color: contractRow.contractId === root.contractState.currentId ? root.theme.selectionBorder : (contractMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
+                        color: contractRow.contractId === root.contractViewModel.currentId ? root.theme.selectionHighlight : (contractMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: contractRow.contractId === root.contractViewModel.currentId ? root.theme.selectionBorder : (contractMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
@@ -67,7 +67,7 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             preventStealing: true
-                            onClicked: root.contractState.selectContract(contractRow.contractId)
+                            onClicked: root.contractViewModel.selectContract(contractRow.contractId)
                         }
 
                         Column {

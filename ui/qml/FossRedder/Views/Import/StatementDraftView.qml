@@ -15,24 +15,20 @@ import FossRedder.Views.Import 1.0 as Import
 Item {
     id: root
     required property var theme
-    required property var importState
-    property var draft
+    required property var importViewModel
 
-    App.StatementDraftState {
-        id: statementState
-        objectName: "statementDraftState"
-        importWorkflow: root.importState.importWorkflow
-        navigation: root.importState.navigation
-        draft: root.draft
-        transactionState: transactionState
+    App.StatementDraftViewModel {
+        id: statementViewModel
+        objectName: "statementDraftViewModel"
+        importWorkflow: root.importViewModel.importWorkflow
+        workspace: root.importViewModel.workspace
     }
 
-    App.TransactionDraftState {
-        id: transactionState
-        objectName: "transactionDraftState"
-        importWorkflow: root.importState.importWorkflow
-        workspace: root.importState.workspace
-        draft: root.draft
+    App.TransactionDraftViewModel {
+        id: transactionViewModel
+        objectName: "transactionDraftViewModel"
+        importWorkflow: root.importViewModel.importWorkflow
+        workspace: root.importViewModel.workspace
     }
 
     ColumnLayout {
@@ -43,7 +39,7 @@ Item {
         Label {
             color: root.theme.textPrimary
             objectName: "statementDraftEmptyLabel"
-            visible: !statementState.hasDraft
+            visible: !statementViewModel.hasDraft
             text: qsTr("No drafts available!")
             horizontalAlignment: Text.AlignHCenter
             font.pointSize: 14
@@ -52,14 +48,14 @@ Item {
         }
 
         Import.StatementDraftForm {
-            visible: statementState.hasDraft
+            visible: statementViewModel.hasDraft
             Layout.fillWidth: true
             theme: root.theme
-            statementState: statementState
+            statementViewModel: statementViewModel
         }
 
         Controls.Panel {
-            visible: statementState.hasDraft
+            visible: statementViewModel.hasDraft
             Layout.fillWidth: true
             Layout.fillHeight: true
             contentSpacing: 0
@@ -79,7 +75,7 @@ Item {
                     id: transactionDraftContent
                     width: Math.max(0, txScroll.width - root.theme.scrollBarGutterWidth)
                     theme: root.theme
-                    transactionState: transactionState
+                    transactionViewModel: transactionViewModel
                 }
             }
         }
@@ -87,7 +83,8 @@ Item {
         Import.StatementDraftBottomBar {
             Layout.fillWidth: true
             theme: root.theme
-            statementState: statementState
+            importViewModel: root.importViewModel
+            statementViewModel: statementViewModel
         }
     }
 }

@@ -10,30 +10,29 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var importState
+    required property var importViewModel
     required property var theme
 
-    Component.onCompleted: Qt.callLater(root.importState.activatePage)
+    Component.onCompleted: Qt.callLater(root.importViewModel.initializeImportView)
 
     StackLayout {
         objectName: "importContentStack"
         anchors.fill: parent
         anchors.margins: root.theme.pageContentMargin
-        currentIndex: root.importState.contentIndex
+        currentIndex: root.importViewModel.contentIndex
 
         Import.ImportHomeView {
             Layout.fillWidth: true
             Layout.fillHeight: true
             theme: root.theme
-            importState: root.importState
+            importViewModel: root.importViewModel
         }
 
         Import.StatementDraftView {
             Layout.fillWidth: true
             Layout.fillHeight: true
             theme: root.theme
-            importState: root.importState
-            draft: root.importState.currentDraft
+            importViewModel: root.importViewModel
         }
     }
 }

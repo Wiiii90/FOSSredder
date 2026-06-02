@@ -35,7 +35,7 @@ TestCase {
         property color border: "#cccccc"
     }
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property bool isEdit: false
         property bool filterEditMode: true
         property bool canSubmit: true
@@ -54,7 +54,7 @@ TestCase {
         Analysis.AnalysisBottomBar {
             width: testCase.width
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -68,7 +68,7 @@ TestCase {
         deleteCalls = 0
         resetCalls = 0
         navigateCalls = 0
-        analysisState.isEdit = false
+        analysisViewModel.isEdit = false
     }
 
     function test_ANL_BB_001_createModeActionsForwardToState() {
@@ -84,7 +84,7 @@ TestCase {
     }
 
     function test_ANL_BB_002_editModeActionsForwardToState() {
-        analysisState.isEdit = true
+        analysisViewModel.isEdit = true
         const bar = createBar()
 
         TestSupport.findRequired(Lookup, bar, "analysisUpdateButton").clicked()

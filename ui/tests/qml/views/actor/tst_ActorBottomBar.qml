@@ -24,7 +24,7 @@ TestCase {
         property color textMuted: "#666666"
     }
 
-    property var actorState: QtObject {
+    property var actorViewModel: QtObject {
         property bool isEdit: false
         property bool hasChanges: false
         readonly property bool canSubmit: name.trim().length > 0
@@ -53,7 +53,7 @@ TestCase {
             width: 960
             height: 64
             theme: testCase.theme
-            actorState: testCase.actorState
+            actorViewModel: testCase.actorViewModel
             actorRows: testCase.actorRows
         }
     }
@@ -72,31 +72,31 @@ TestCase {
         var bar = createBar()
         findRequired(bar, "actorPreviousButton").clicked()
         findRequired(bar, "actorNextButton").clicked()
-        compare(actorState.previousCalls, 1)
-        compare(actorState.nextCalls, 1)
+        compare(actorViewModel.previousCalls, 1)
+        compare(actorViewModel.nextCalls, 1)
     }
 
     function test_ACT_BB_002_createModeButtonsSwitchState() {
         var bar = createBar()
-        actorState.isEdit = false
-        actorState.name = "Alice"
+        actorViewModel.isEdit = false
+        actorViewModel.name = "Alice"
         findRequired(bar, "actorClearButton").clicked()
         findRequired(bar, "actorCreateButton").clicked()
-        compare(actorState.clearCalls, 1)
-        compare(actorState.submitCalls, 1)
+        compare(actorViewModel.clearCalls, 1)
+        compare(actorViewModel.submitCalls, 1)
     }
 
     function test_ACT_BB_003_editModeButtonsSwitchState() {
         var bar = createBar()
-        actorState.isEdit = true
-        actorState.hasChanges = true
-        actorState.name = "Alice"
+        actorViewModel.isEdit = true
+        actorViewModel.hasChanges = true
+        actorViewModel.name = "Alice"
         findRequired(bar, "actorCreateModeButton").clicked()
         findRequired(bar, "actorDeleteButton").clicked()
-        actorState.submitCalls = 0
+        actorViewModel.submitCalls = 0
         findRequired(bar, "actorUpdateButton").clicked()
-        compare(actorState.enterCreateModeCalls, 1)
-        compare(actorState.deleteCurrentCalls, 1)
-        compare(actorState.submitCalls, 1)
+        compare(actorViewModel.enterCreateModeCalls, 1)
+        compare(actorViewModel.deleteCurrentCalls, 1)
+        compare(actorViewModel.submitCalls, 1)
     }
 }

@@ -13,7 +13,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var actorState
+    required property var actorViewModel
     required property var actorRows
 
     implicitWidth: bar.implicitWidth
@@ -27,7 +27,7 @@ Item {
         Controls.PrevButton {
             objectName: "actorPreviousButton"
             enabled: root.actorRows.length > 0
-            onClicked: if (root.actorState) root.actorState.previous()
+            onClicked: if (root.actorViewModel) root.actorViewModel.previous()
         }
 
         Item {
@@ -36,44 +36,44 @@ Item {
 
         Controls.DangerButton {
             objectName: "actorClearButton"
-            visible: root.actorState ? !root.actorState.isEdit : false
+            visible: root.actorViewModel ? !root.actorViewModel.isEdit : false
             text: qsTr("Clear")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.actorState) root.actorState.clear()
+            onClicked: if (root.actorViewModel) root.actorViewModel.clear()
         }
 
         Controls.SuccessButton {
             objectName: "actorCreateButton"
-            visible: root.actorState ? !root.actorState.isEdit : false
+            visible: root.actorViewModel ? !root.actorViewModel.isEdit : false
             text: qsTr("Create")
-            enabled: root.actorState ? root.actorState.canSubmit : false
+            enabled: root.actorViewModel ? root.actorViewModel.canSubmit : false
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.actorState) root.actorState.submit()
+            onClicked: if (root.actorViewModel) root.actorViewModel.submit()
         }
 
         Controls.DangerButton {
             objectName: "actorDeleteButton"
-            visible: root.actorState ? root.actorState.isEdit : false
+            visible: root.actorViewModel ? root.actorViewModel.isEdit : false
             text: qsTr("Delete")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.actorState) root.actorState.deleteCurrent()
+            onClicked: if (root.actorViewModel) root.actorViewModel.deleteCurrent()
         }
 
         Controls.SecondaryButton {
             objectName: "actorCreateModeButton"
-            visible: root.actorState ? root.actorState.isEdit : false
+            visible: root.actorViewModel ? root.actorViewModel.isEdit : false
             text: qsTr("New")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.actorState) root.actorState.enterCreateMode()
+            onClicked: if (root.actorViewModel) root.actorViewModel.enterCreateMode()
         }
 
         Controls.SuccessButton {
             objectName: "actorUpdateButton"
-            visible: root.actorState ? root.actorState.isEdit : false
+            visible: root.actorViewModel ? root.actorViewModel.isEdit : false
             text: qsTr("Update")
-            enabled: root.actorState ? (root.actorState.hasChanges && root.actorState.canSubmit) : false
+            enabled: root.actorViewModel ? (root.actorViewModel.hasChanges && root.actorViewModel.canSubmit) : false
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.actorState) root.actorState.submit()
+            onClicked: if (root.actorViewModel) root.actorViewModel.submit()
         }
 
         Item {
@@ -83,7 +83,7 @@ Item {
         Controls.NextButton {
             objectName: "actorNextButton"
             enabled: root.actorRows.length > 0
-            onClicked: if (root.actorState) root.actorState.next()
+            onClicked: if (root.actorViewModel) root.actorViewModel.next()
         }
     }
 }

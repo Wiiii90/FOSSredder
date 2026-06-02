@@ -1,5 +1,5 @@
 /**
- * @file ui/src/window/CloseWorkflow.cpp
+ * @file ui/src/shell/window/CloseWorkflow.cpp
  * @brief Implementation of the UI CloseWorkflow component.
  */
 

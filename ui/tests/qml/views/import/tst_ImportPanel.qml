@@ -36,7 +36,7 @@ TestCase {
         property color textMuted: "#666666"
     }
 
-    property var importState: QtObject {
+    property var importViewModel: QtObject {
         property bool hasImportWorkflow: true
         property bool importRunning: false
         property string manualPathText: ""
@@ -45,7 +45,7 @@ TestCase {
         property int browseCalls: 0
         property int commitManualCalls: 0
         function browseImportPdf() { browseCalls += 1 }
-        function commitManualImportFiles() { commitManualCalls += 1 }
+        function addSelectedImportFiles() { commitManualCalls += 1 }
     }
 
     Component {
@@ -54,7 +54,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            importState: testCase.importState
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -67,13 +67,13 @@ TestCase {
     }
 
     function init() {
-        importState.hasImportWorkflow = true
-        importState.importRunning = false
-        importState.manualPathText = ""
-        importState.queuedCount = 0
-        importState.importFiles = []
-        importState.browseCalls = 0
-        importState.commitManualCalls = 0
+        importViewModel.hasImportWorkflow = true
+        importViewModel.importRunning = false
+        importViewModel.manualPathText = ""
+        importViewModel.queuedCount = 0
+        importViewModel.importFiles = []
+        importViewModel.browseCalls = 0
+        importViewModel.commitManualCalls = 0
     }
 
     function test_IMP_P_001_manualPathEditingAndAddDelegatesToImportState() {
@@ -84,8 +84,8 @@ TestCase {
         field.textEdited()
         findRequired(panel, "importAddFileButton").clicked()
 
-        compare(importState.manualPathText, "P:/imports/statement.pdf")
-        compare(importState.commitManualCalls, 1)
+        compare(importViewModel.manualPathText, "P:/imports/statement.pdf")
+        compare(importViewModel.commitManualCalls, 1)
     }
 
     function test_IMP_P_002_browseDelegatesToImportState() {
@@ -93,6 +93,6 @@ TestCase {
 
         findRequired(panel, "importBrowseFileButton").clicked()
 
-        compare(importState.browseCalls, 1)
+        compare(importViewModel.browseCalls, 1)
     }
 }

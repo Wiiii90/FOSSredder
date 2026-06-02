@@ -40,7 +40,7 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionState: QtObject {
+    property var transactionViewModel: QtObject {
         property string nameText: "Tx 1"
         property string bookingDateText: "2026-05-16"
         property string valutaText: "2026-05-17"
@@ -49,21 +49,21 @@ TestCase {
         property int statusIndex: 0
         property string metadataText: "Metadata"
         property string proofSource: ""
-        property var actorChoiceModel: [{ id: "", display: "" }]
-        property int selectedActorIndex: 0
-        property string actorText: ""
+        property var actorOptions: [{ id: "", display: "" }]
+        property int selectedActorOptionIndex: 0
+        property string actorName: ""
         property bool canAddActor: false
-        property var contractChoiceModel: [{ id: "", display: "" }]
-        property int selectedContractIndex: 0
-        property string contractNameText: ""
-        property string contractTypeText: ""
+        property var contractOptions: [{ id: "", display: "" }]
+        property int selectedContractOptionIndex: 0
+        property string contractName: ""
+        property string contractType: ""
         property string contractNamePlaceholder: ""
         property var contractAllocatableModes: [{ label: "Mixed", value: "mixed" }]
         property int contractAllocatableModeIndex: 0
         property string selectedContractType: ""
         property bool canAddContract: false
-        property var propertyRows: []
-        property string newPropertyName: ""
+        property var propertyOptions: []
+        property string propertyName: ""
         property bool canAddProperty: false
         property bool effectiveAllocatable: false
         property real actorSuggestionConfidence: 0
@@ -78,15 +78,15 @@ TestCase {
         function commitBookingDateText() {}
         function commitValutaText() {}
         function commitAmountText() {}
-        function setStatusByIndex(index) {}
+        function selectStatusAtIndex(index) {}
         function suggestionTone(confidence) { return 0 }
-        function selectActorIndex(index) {}
-        function addActorFromText() {}
-        function selectContractIndex(index) {}
-        function addContractFromFields() {}
+        function selectActorAtIndex(index) {}
+        function addActor() {}
+        function selectContractAtIndex(index) {}
+        function addContract() {}
         function isPropertySelected(propertyId) { return false }
         function setPropertySelected(propertyId, selected) {}
-        function addPropertyFromInput() {}
+        function addProperty() {}
         function toggleAllocatable() {}
     }
 
@@ -95,7 +95,7 @@ TestCase {
         Import.TransactionDraftView {
             width: testCase.width
             theme: testCase.theme
-            transactionState: testCase.transactionState
+            transactionViewModel: testCase.transactionViewModel
         }
     }
 

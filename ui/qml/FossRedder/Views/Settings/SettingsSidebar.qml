@@ -12,7 +12,7 @@ import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
-    required property var settingsState
+    required property var settingsViewModel
     required property var theme
 
     ColumnLayout {
@@ -43,7 +43,7 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Repeater {
-                    model: root.settingsState.categoryRows
+                    model: root.settingsViewModel.categoryRows
 
                     delegate: Rectangle {
                         id: settingsRow
@@ -62,7 +62,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.settingsState.selectCategory(settingsRow.modelData.category)
+                            onClicked: root.settingsViewModel.selectCategory(settingsRow.modelData.category)
                         }
 
                         Text {

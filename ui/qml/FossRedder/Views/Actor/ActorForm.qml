@@ -13,12 +13,12 @@ import FossRedder.Views.Actor 1.0 as Actor
 
 Item {
     id: root
-    required property var actorState
+    required property var actorViewModel
     required property var theme
 
-    readonly property var aliases: root.actorState ? root.actorState.aliases : []
-    readonly property int aliasIndex: root.actorState ? root.actorState.aliasIndex : -1
-    readonly property var contractRows: root.actorState.contractRows
+    readonly property var aliases: root.actorViewModel ? root.actorViewModel.aliases : []
+    readonly property int aliasIndex: root.actorViewModel ? root.actorViewModel.aliasIndex : -1
+    readonly property var contractRows: root.actorViewModel.contractRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -55,12 +55,12 @@ Item {
                         id: nameField
                         objectName: "actorNameField"
                         placeholderText: ""
-                        text: root.actorState ? root.actorState.name : ""
+                        text: root.actorViewModel ? root.actorViewModel.name : ""
                         Layout.fillWidth: true
-                        onTextChanged: if (root.actorState)
-                            root.actorState.name = text
-                        onTextEdited: if (root.actorState)
-                            root.actorState.name = text
+                        onTextChanged: if (root.actorViewModel)
+                            root.actorViewModel.name = text
+                        onTextEdited: if (root.actorViewModel)
+                            root.actorViewModel.name = text
                     }
                 }
 
@@ -83,25 +83,25 @@ Item {
                             objectName: "actorAliasInput"
                             Layout.fillWidth: true
                             placeholderText: ""
-                            text: root.actorState ? root.actorState.aliasInputText : ""
-                            onTextChanged: if (root.actorState)
-                                root.actorState.aliasInputText = text
-                            onTextEdited: if (root.actorState)
-                                root.actorState.aliasInputText = text
+                            text: root.actorViewModel ? root.actorViewModel.aliasInputText : ""
+                            onTextChanged: if (root.actorViewModel)
+                                root.actorViewModel.aliasInputText = text
+                            onTextEdited: if (root.actorViewModel)
+                                root.actorViewModel.aliasInputText = text
                         }
 
                         Controls.CompactAddButton {
                             objectName: "actorAddAliasButton"
-                            enabled: root.actorState ? root.actorState.canAddAlias(actorAliasInput.text) : false
-                            onClicked: if (root.actorState)
-                                root.actorState.addAlias(actorAliasInput.text)
+                            enabled: root.actorViewModel ? root.actorViewModel.canAddAlias(actorAliasInput.text) : false
+                            onClicked: if (root.actorViewModel)
+                                root.actorViewModel.addAlias(actorAliasInput.text)
                         }
 
                         Controls.CompactRemoveButton {
                             objectName: "actorRemoveAliasButton"
                             enabled: root.aliasIndex >= 0 && root.aliasIndex < root.aliases.length
-                            onClicked: if (root.actorState)
-                                root.actorState.requestRemoveSelectedAlias()
+                            onClicked: if (root.actorViewModel)
+                                root.actorViewModel.requestRemoveSelectedAlias()
                         }
                     }
 
@@ -163,10 +163,10 @@ Item {
                                             objectName: "actorAliasMouse_" + actorAliasChip.index
                                             anchors.fill: parent
                                             preventStealing: true
-                                            onPressed: if (root.actorState)
-                                                root.actorState.aliasIndex = actorAliasChip.index
-                                            onClicked: if (root.actorState)
-                                                root.actorState.aliasIndex = actorAliasChip.index
+                                            onPressed: if (root.actorViewModel)
+                                                root.actorViewModel.aliasIndex = actorAliasChip.index
+                                            onClicked: if (root.actorViewModel)
+                                                root.actorViewModel.aliasIndex = actorAliasChip.index
                                         }
                                     }
                                 }
@@ -178,7 +178,7 @@ Item {
                 Actor.ActorContractPanel {
                     Layout.fillWidth: true
                     theme: root.theme
-                    actorState: root.actorState
+                    actorViewModel: root.actorViewModel
                     contractRows: root.contractRows
                 }
             }

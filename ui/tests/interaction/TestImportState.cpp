@@ -1,19 +1,15 @@
 /**
  * @file ui/tests/interaction/TestImportState.cpp
- * @brief Smoke tests for the import state workflow.
+ * @brief Smoke tests for the import overview view model.
  */
 
 #include <gtest/gtest.h>
 
-#include <QRegularExpression>
-
-#include "core/application/import/ImportLog.h"
-#include "core/application/workspace/WorkspaceSessionState.h"
 #include "core/errors/IErrorReporter.h"
-#include "ui/state/import/ImportState.h"
-#include "ui/viewmodels/system/SettingsViewModel.h"
+#include "ui/adapters/ImportAdapter.h"
+#include "ui/shell/Settings.h"
+#include "ui/viewmodels/ImportViewModel.h"
 #include "ui/workflows/import/ImportWorkflow.h"
-#include "ui/workflows/import/ImportWorkflowState.h"
 
 namespace ui {
 
@@ -21,132 +17,215 @@ namespace {
 
 class NoopErrorReporter final : public core::errors::IErrorReporter {
 public:
-    void report(const core::errors::ErrorEvent&) override {}
+  void report(const core::errors::ErrorEvent &) override {}
+};
+
+class ImportRunnerStub final : public core::ports::importing::IImportRunner {
+public:
+  core::ports::importing::StatementImportHandle startStatementImport(
+      const core::ports::importing::StatementImportStartRequest &,
+      core::ports::importing::StatementImportEventCallback) override {
+    return {};
+  }
+  void unsubscribe(
+      const core::ports::importing::StatementImportHandle &) override {}
+  void cancel(const core::ports::importing::StatementImportHandle &) override {}
+  void pause(const core::ports::importing::StatementImportHandle &) override {}
+  void resume(const core::ports::importing::StatementImportHandle &) override {}
+  core::ports::importing::ImportResult importResult(
+      const core::ports::importing::StatementImportHandle &) override {
+    return {};
+  }
+  core::ports::importing::draft::DraftImportSuggestions buildImportSuggestions(
+      const core::ports::workspace::WorkspaceSnapshot &,
+      const core::ports::importing::draft::TransactionDraft &) const override {
+    return {};
+  }
+  core::ports::importing::draft::DraftTextSignals buildDraftTextSignals(
+      const core::ports::workspace::WorkspaceSnapshot &,
+      const core::ports::importing::draft::TransactionDraft &) const override {
+    return {};
+  }
+  core::ports::importing::draft::DraftDerivedState
+  buildDraftDerivedState(const core::ports::workspace::WorkspaceSnapshot &,
+                         const core::ports::importing::draft::DraftLinkSelection
+                             &) const override {
+    return {};
+  }
+  bool applyDerivedSelections(
+      core::ports::importing::draft::TransactionDraft &,
+      const core::ports::importing::draft::DraftDerivedState &,
+      core::ports::importing::draft::DraftAutoSelectionMode) const override {
+    return false;
+  }
+  bool applyActorSelection(
+      core::ports::importing::draft::TransactionDraft &,
+      const std::string &) const override {
+    return false;
+  }
+  bool clearActorSelection(
+      core::ports::importing::draft::TransactionDraft &) const override {
+    return false;
+  }
+  bool applyPropertySelection(
+      core::ports::importing::draft::TransactionDraft &,
+      const std::string &) const override {
+    return false;
+  }
+  bool setPropertySelected(
+      core::ports::importing::draft::TransactionDraft &,
+      const std::string &,
+      bool) const override {
+    return false;
+  }
+  bool applyContractSelection(
+      core::ports::importing::draft::TransactionDraft &,
+      const core::ports::importing::draft::DraftChoiceRow &) const override {
+    return false;
+  }
+  bool applyContractSelection(
+      core::ports::importing::draft::TransactionDraft &,
+      const core::ports::workspace::WorkspaceSnapshot &,
+      const std::string &) const override {
+    return false;
+  }
+  bool clearContractSelection(
+      core::ports::importing::draft::TransactionDraft &) const override {
+    return false;
+  }
+  bool applyTransactionPatch(
+      core::ports::importing::draft::TransactionDraft &,
+      const core::ports::importing::draft::TransactionDraftPatch &) const override {
+    return false;
+  }
+  int insertTransactionAfter(
+      core::ports::importing::draft::StatementDraft &,
+      int) const override {
+    return -1;
+  }
+  int removeTransactionAt(core::ports::importing::draft::StatementDraft &,
+                          int) const override {
+    return -1;
+  }
+  bool renameStatementDraft(
+      core::ports::importing::draft::StatementDraft &,
+      const std::string &) const override {
+    return false;
+  }
+  core::ports::importing::draft::StatementDraft buildStatementDraft(
+      const std::string &,
+      const core::ports::workspace::StatementSnapshot &,
+      const core::ports::workspace::WorkspaceSnapshot &,
+      const std::vector<core::ports::importing::draft::TransactionDraft> &,
+      const std::string &) const override {
+    return {};
+  }
+  core::ports::workspace::StatementDraftSnapshot
+  buildImportedStatementDraftSnapshot(
+      const std::string &,
+      const std::string &,
+      const core::ports::workspace::StatementSnapshot &,
+      const std::vector<core::ports::importing::draft::TransactionDraft> &)
+      const override {
+    return {};
+  }
+  core::ports::importing::draft::StatementDraft restoreStatementDraft(
+      const core::ports::workspace::StatementDraftSnapshot &) const override {
+    return {};
+  }
+  core::ports::workspace::StatementDraftSnapshot buildStatementDraftSnapshot(
+      const core::ports::importing::draft::StatementDraft &,
+      const core::ports::workspace::WorkspaceSnapshot &) const override {
+    return {};
+  }
+  std::string resolveActorId(const core::ports::workspace::WorkspaceSnapshot &,
+                             const std::string &) const override {
+    return {};
+  }
+  std::string
+  resolveContractId(const core::ports::workspace::WorkspaceSnapshot &,
+                    const std::string &) const override {
+    return {};
+  }
+  bool
+  contractIsFullyAllocatable(const core::ports::workspace::WorkspaceSnapshot &,
+                             const std::string &) const override {
+    return false;
+  }
+  core::ports::workspace::WorkspaceSnapshot mergeWorkspaceState(
+      core::ports::workspace::WorkspaceSnapshot primary,
+      const core::ports::workspace::WorkspaceSnapshot &) const override {
+    return primary;
+  }
+  std::vector<std::string>
+  referenceAliasesFromMetadata(const std::string &) const override {
+    return {};
+  }
 };
 
 } // namespace
 
-TEST(ImportStateTest, HeaderIsUsable) {
-    SUCCEED();
+TEST(ImportStateTest, HeaderIsUsable) { SUCCEED(); }
+
+TEST(ImportStateTest, OverviewStateAppliesDefaultPathAndFiltersManualFiles) {
+  const auto reporter = std::make_shared<NoopErrorReporter>();
+  const auto runner = std::make_shared<ImportRunnerStub>();
+  const auto adapter = std::make_shared<adapters::ImportAdapter>(nullptr, runner);
+  ImportWorkflow workflow(adapter, reporter);
+  Settings settings;
+  ImportViewModel state;
+
+  settings.setImportDefaultPath(QStringLiteral("P:/imports/default.pdf"));
+  state.setSettings(&settings);
+  state.setImportWorkflow(&workflow);
+
+  EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/default.pdf"));
+  EXPECT_TRUE(state.canStart());
+
+  settings.setImportDefaultPath(QStringLiteral("P:/imports/updated.pdf"));
+  EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/updated.pdf"));
+
+  settings.setImportDefaultPath({});
+  workflow.setSelectedFile({});
+  state.setManualPathText(QStringLiteral("P:/imports/readme.txt"));
+  state.addSelectedImportFiles();
+
+  EXPECT_TRUE(workflow.selectedFile().isEmpty());
+  EXPECT_TRUE(workflow.queuedFiles().isEmpty());
+
+  state.setManualPathText(QStringLiteral("P:/imports/statement.PDF"));
+  state.addSelectedImportFiles();
+
+  EXPECT_EQ(workflow.selectedFile(),
+            QStringLiteral("P:/imports/statement.PDF"));
+  EXPECT_EQ(state.importFileSummary(),
+            QStringLiteral("Selected: statement.PDF"));
+  EXPECT_TRUE(state.manualPathText().isEmpty());
+
+  settings.setImportDefaultPath(QStringLiteral("P:/imports/later-default.pdf"));
+  EXPECT_EQ(workflow.selectedFile(),
+            QStringLiteral("P:/imports/statement.PDF"));
 }
 
-TEST(ImportStateTest, OverviewStateAppliesDefaultPathAndFiltersManualFiles)
-{
-    ImportWorkflow workflow(
-        []() { return std::shared_ptr<core::jobs::JobSystem>{}; },
-        std::make_shared<NoopErrorReporter>());
-    SettingsViewModel settings;
-    ImportState state;
+TEST(ImportStateTest, PauseGatesProgressUpdates) {
+  importing::ImportWorkflowState state;
+  state.beginImport(QStringLiteral("statement.pdf"));
 
-    settings.setImportDefaultPath(QStringLiteral("P:/imports/default.pdf"));
-    state.setSettingsViewModel(&settings);
-    state.setImportWorkflow(&workflow);
+  EXPECT_TRUE(state.setPaused(true));
+  EXPECT_TRUE(state.isPaused());
+  EXPECT_EQ(state.phase(), QStringLiteral("Paused"));
 
-    EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/default.pdf"));
-    EXPECT_TRUE(state.canStart());
+  state.updateProgress(0.5, QStringLiteral("halfway"));
+  EXPECT_DOUBLE_EQ(state.progress(), 0.01);
+  EXPECT_EQ(state.phase(), QStringLiteral("Paused"));
 
-    settings.setImportDefaultPath(QStringLiteral("P:/imports/updated.pdf"));
-    EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/updated.pdf"));
+  EXPECT_TRUE(state.setPaused(false));
+  EXPECT_FALSE(state.isPaused());
+  EXPECT_EQ(state.phase(), QStringLiteral("Running import..."));
 
-    settings.setImportDefaultPath({});
-    workflow.setSelectedFile({});
-    state.setManualPathText(QStringLiteral("P:/imports/readme.txt"));
-    state.commitManualImportFiles();
-
-    EXPECT_TRUE(workflow.selectedFile().isEmpty());
-    EXPECT_TRUE(workflow.queuedFiles().isEmpty());
-
-    state.setManualPathText(QStringLiteral("P:/imports/statement.PDF"));
-    state.commitManualImportFiles();
-
-    EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/statement.PDF"));
-    EXPECT_EQ(state.importFileSummary(), QStringLiteral("Selected: statement.PDF"));
-    EXPECT_TRUE(state.manualPathText().isEmpty());
-
-    settings.setImportDefaultPath(QStringLiteral("P:/imports/later-default.pdf"));
-    EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/statement.PDF"));
-}
-
-TEST(ImportStateTest, TogglePauseGatesProgressUpdates)
-{
-    importing::ImportWorkflowState state;
-    state.beginImport(QStringLiteral("statement.pdf"));
-
-    EXPECT_TRUE(state.togglePause());
-    EXPECT_TRUE(state.isPaused());
-    EXPECT_EQ(state.phase(), QStringLiteral("Paused"));
-
-    state.updateProgress(0.5, QStringLiteral("halfway"), QRegularExpression{});
-    EXPECT_DOUBLE_EQ(state.progress(), 0.01);
-    EXPECT_EQ(state.phase(), QStringLiteral("Paused"));
-
-    EXPECT_TRUE(state.togglePause());
-    EXPECT_FALSE(state.isPaused());
-    EXPECT_EQ(state.phase(), QStringLiteral("Running import..."));
-
-    state.updateProgress(0.5, QStringLiteral("halfway"), QRegularExpression{});
-    EXPECT_DOUBLE_EQ(state.progress(), 0.5);
-    EXPECT_EQ(state.phase(), QStringLiteral("halfway"));
-}
-
-TEST(ImportStateTest, InterleavedRunsKeepFinalizeMappedToContextDraft)
-{
-    core::application::workspace::WorkspaceSessionState snapshot;
-
-    auto first = std::make_shared<core::application::importing::ImportLog>();
-    first->id = "draft-1";
-    first->time = "2026-05-15 10:00:00";
-    first->type = "statement";
-    first->file = "/tmp/Januar 2025.pdf";
-    first->status = "Draft";
-    first->message = "Draft ready";
-    first->draftAttached = true;
-    first->draftId = "draft-1";
-    snapshot.workflow.importLogs.push_back(first);
-
-    auto second = std::make_shared<core::application::importing::ImportLog>();
-    second->id = "draft-2";
-    second->time = "2026-05-15 11:00:00";
-    second->type = "statement";
-    second->file = "/tmp/Maerz 2025.pdf";
-    second->status = "Draft";
-    second->message = "Draft ready";
-    second->draftAttached = true;
-    second->draftId = "draft-2";
-    snapshot.workflow.importLogs.push_back(second);
-
-    ImportWorkflow workflow(
-        []() { return std::shared_ptr<core::jobs::JobSystem>{}; },
-        std::make_shared<NoopErrorReporter>());
-
-    workflow.setStateSnapshotProvider([snapshot]() { return snapshot; });
-    ASSERT_NE(workflow.runs(), nullptr);
-    ASSERT_EQ(workflow.runs()->rowCount(), 2);
-
-    // Stress-like interleaving: switch active runs and write mixed notes.
-    workflow.activateRunAt(0);
-    workflow.addRunNote(QStringLiteral("Paused"), QStringLiteral("Import paused."),
-                        false);
-    workflow.addRunNote(QStringLiteral("Canceled"), QStringLiteral("Import canceled."),
-                        false);
-
-    workflow.activateRunAt(1);
-    workflow.addRunNote(QStringLiteral("Draft"), QStringLiteral("Draft paused."),
-                        true, {}, QStringLiteral("draft-2"));
-
-    workflow.activateRunAt(0);
-    workflow.addRunNote(QStringLiteral("Finalized"),
-                        QStringLiteral("Draft was finalized into a statement."),
-                        false, QStringLiteral("statement-2"),
-                        QStringLiteral("draft-2"));
-
-    EXPECT_EQ(workflow.runs()->at(0).logId, QStringLiteral("draft-1"));
-    EXPECT_NE(workflow.runs()->at(0).status, QStringLiteral("Finalized"));
-    EXPECT_TRUE(workflow.runs()->at(0).statementId.isEmpty());
-
-    EXPECT_EQ(workflow.runs()->at(1).logId, QStringLiteral("draft-2"));
-    EXPECT_EQ(workflow.runs()->at(1).status, QStringLiteral("Finalized"));
-    EXPECT_EQ(workflow.runs()->at(1).statementId, QStringLiteral("statement-2"));
+  state.updateProgress(0.5, QStringLiteral("halfway"));
+  EXPECT_DOUBLE_EQ(state.progress(), 0.5);
+  EXPECT_EQ(state.phase(), QStringLiteral("halfway"));
 }
 
 } // namespace ui

@@ -26,9 +26,9 @@ TestCase {
         property var contracts: []
         property var actors: []
         property var properties: []
-        onSelectedContractIdChanged: if (testCase.contractState) testCase.contractState.syncFromSelection(false)
-        onSelectedContractChanged: if (testCase.contractState) testCase.contractState.syncFromSelection(true)
-        onDataRevisionChanged: if (testCase.contractState) testCase.contractState.syncFromSelection(true)
+        onSelectedContractIdChanged: if (testCase.contractViewModel) testCase.contractViewModel.syncFromSelection(false)
+        onSelectedContractChanged: if (testCase.contractViewModel) testCase.contractViewModel.syncFromSelection(true)
+        onDataRevisionChanged: if (testCase.contractViewModel) testCase.contractViewModel.syncFromSelection(true)
 
         function contractFormState(name, type, selectedActorIds, selectedPropertyIds, aliases) {
             var aliasValues = aliases || []
@@ -148,8 +148,8 @@ TestCase {
             if (selectedContract && selectedContract["setState"])
                 selectedContract["setState"](newId, newName, newType, newActorIds, newPropertyIds, newAliases)
             selectedContractId = String(newId || "")
-            if (testCase.contractState && testCase.contractState["syncFromSelection"])
-                testCase.contractState["syncFromSelection"](true)
+            if (testCase.contractViewModel && testCase.contractViewModel["syncFromSelection"])
+                testCase.contractViewModel["syncFromSelection"](true)
         }
     }
 
@@ -220,7 +220,7 @@ TestCase {
         }
     }
 
-    property var contractState: QtObject {
+    property var contractViewModel: QtObject {
         readonly property string currentId: testCase.session.selectedContractId
         property string currentOwnerId: ""
         property string name: ""
@@ -393,7 +393,7 @@ TestCase {
     }
 
     property var workspaceFacade: QtObject {
-        property var contractState: testCase.contractState
+        property var contractViewModel: testCase.contractViewModel
         property var session: testCase.session
         property var contractRows: testCase.session.contracts
         property var actorRows: testCase.session.actors
@@ -434,7 +434,7 @@ TestCase {
         ContractView {
             width: 960
             height: 640
-            contractState: testCase.contractState
+            contractViewModel: testCase.contractViewModel
             theme: testCase.theme
         }
     }
@@ -451,7 +451,7 @@ TestCase {
         var contractObject = createContractObject(selectedContract)
         session.selectedContract = contractObject
         session.selectedContractId = contractObject ? contractObject.id : ""
-        contractState.syncFromSelection(true)
+        contractViewModel.syncFromSelection(true)
         return createTemporaryObject(contractFormComponent, testCase)
     }
 
@@ -462,7 +462,7 @@ TestCase {
         session.contracts = []
         session.actors = []
         session.properties = []
-        contractState.clear()
+        contractViewModel.clear()
     }
 
     function test_CON_F_001_createModeSavesContractAndSelectsNewId() {
@@ -856,7 +856,7 @@ TestCase {
         typeField.textEdited()
 
         compare(createButton.enabled, false)
-        contractState.selectedActorIds = ["actor-1"]
+        contractViewModel.selectedActorIds = ["actor-1"]
         compare(createButton.enabled, true)
     }
 

@@ -14,7 +14,7 @@ import FossRedder.Views.Annual 1.0 as Annual
 Item {
     id: root
     required property var theme
-    required property var annualState
+    required property var annualViewModel
 
     ColumnLayout {
         anchors.fill: root
@@ -51,8 +51,8 @@ Item {
                     Controls.TextField {
                         objectName: "annualNameField"
                         Layout.fillWidth: true
-                        text: root.annualState.name
-                        onTextChanged: root.annualState.name = text
+                        text: root.annualViewModel.name
+                        onTextChanged: root.annualViewModel.name = text
                     }
                 }
 
@@ -76,7 +76,7 @@ Item {
                             Layout.minimumWidth: root.theme.controlHeight
                             Layout.maximumWidth: root.theme.controlHeight
                             text: "\u25BC"
-                            onClicked: root.annualState.stepYear(-1)
+                            onClicked: root.annualViewModel.stepYear(-1)
                         }
 
                         Rectangle {
@@ -92,7 +92,7 @@ Item {
                                 anchors.fill: parent
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
-                                text: String(root.annualState.year)
+                                text: String(root.annualViewModel.year)
                                 color: root.theme.textPrimary
                             }
                         }
@@ -104,7 +104,7 @@ Item {
                             Layout.minimumWidth: root.theme.controlHeight
                             Layout.maximumWidth: root.theme.controlHeight
                             text: "\u25B2"
-                            onClicked: root.annualState.stepYear(1)
+                            onClicked: root.annualViewModel.stepYear(1)
                         }
                     }
                 }
@@ -113,28 +113,28 @@ Item {
                     id: annualWorkspaceStack
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    currentIndex: root.annualState.workspaceIndex
+                    currentIndex: root.annualViewModel.workspaceIndex
 
                     Annual.AnnualAnalysesPanel {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         Layout.bottomMargin: root.theme.spacingSmall
                         theme: root.theme
-                        annualState: root.annualState
+                        annualViewModel: root.annualViewModel
                     }
 
                     Annual.AnnualTransactionsPanel {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         theme: root.theme
-                        annualState: root.annualState
+                        annualViewModel: root.annualViewModel
                     }
                 }
 
                 Annual.AnnualVerificationPanel {
                     Layout.fillWidth: true
                     theme: root.theme
-                    annualState: root.annualState
+                    annualViewModel: root.annualViewModel
                 }
             }
         }

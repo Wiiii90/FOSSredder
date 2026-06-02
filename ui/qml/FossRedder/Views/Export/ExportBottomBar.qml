@@ -12,7 +12,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var exportState
+    required property var exportViewModel
 
     implicitWidth: bar.implicitWidth
     implicitHeight: bar.implicitHeight
@@ -26,38 +26,38 @@ Item {
             objectName: "exportClearButton"
             text: qsTr("Clear")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: root.exportState.showClear
-            enabled: root.exportState.showClear
-            onClicked: root.exportState.clearForm()
+            visible: root.exportViewModel.showClear
+            enabled: root.exportViewModel.showClear
+            onClicked: root.exportViewModel.clearForm()
         }
 
         Controls.DangerButton {
             objectName: "exportCancelButton"
             text: qsTr("Cancel")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: root.exportState.showCancel
-            enabled: root.exportState.showCancel
-            onClicked: root.exportState.cancelExport()
+            visible: root.exportViewModel.showCancel
+            enabled: root.exportViewModel.showCancel
+            onClicked: root.exportViewModel.cancelExport()
         }
 
         Item { Layout.fillWidth: true }
 
         Controls.SuccessButton {
             objectName: "exportTogglePauseButton"
-            text: root.exportState.pauseText
+            text: root.exportViewModel.pauseText
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: root.exportState.showPause
-            enabled: root.exportState.showPause
-            onClicked: root.exportState.togglePause()
+            visible: root.exportViewModel.showPause
+            enabled: root.exportViewModel.showPause
+            onClicked: root.exportViewModel.togglePause()
         }
 
         Controls.SuccessButton {
             objectName: "exportStartButton"
             text: qsTr("Start")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            visible: root.exportState.showClear
-            enabled: root.exportState.canStart
-            onClicked: root.exportState.startExport()
+            visible: root.exportViewModel.showClear
+            enabled: root.exportViewModel.canStart
+            onClicked: root.exportViewModel.startExport()
         }
     }
 }

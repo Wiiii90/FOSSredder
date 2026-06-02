@@ -14,14 +14,14 @@ import FossRedder.Views.Analysis 1.0 as Analysis
 Item {
     id: root
     required property var theme
-    required property var analysisState
+    required property var analysisViewModel
 
-    readonly property bool isEdit: root.analysisState.isEdit
-    readonly property int filterWorkspaceIndex: root.analysisState.filterWorkspaceIndex
-    readonly property string allocatableMode: root.analysisState.allocatableMode
-    readonly property var selectedPropertyIds: root.analysisState.selectedPropertyIds
-    readonly property var selectedContractTypes: root.analysisState.selectedContractTypes
-    readonly property string pendingAdjustmentsJson: root.analysisState.pendingAdjustmentsJson
+    readonly property bool isEdit: root.analysisViewModel.isEdit
+    readonly property int filterWorkspaceIndex: root.analysisViewModel.filterWorkspaceIndex
+    readonly property string allocatableMode: root.analysisViewModel.allocatableMode
+    readonly property var selectedPropertyIds: root.analysisViewModel.selectedPropertyIds
+    readonly property var selectedContractTypes: root.analysisViewModel.selectedContractTypes
+    readonly property string pendingAdjustmentsJson: root.analysisViewModel.pendingAdjustmentsJson
 
     ColumnLayout {
         anchors.fill: root
@@ -32,12 +32,12 @@ Item {
         Flickable {
             id: analysisScroll
             Layout.fillWidth: true
-            Layout.fillHeight: root.analysisState.isEdit
+            Layout.fillHeight: root.analysisViewModel.isEdit
             Layout.minimumHeight: 0
-            Layout.preferredHeight: root.analysisState.isEdit ? -1 : analysisContent.implicitHeight
+            Layout.preferredHeight: root.analysisViewModel.isEdit ? -1 : analysisContent.implicitHeight
             clip: true
             contentWidth: width
-            contentHeight: root.analysisState.isEdit ? height : analysisContent.implicitHeight
+            contentHeight: root.analysisViewModel.isEdit ? height : analysisContent.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
 
             ScrollBar.vertical: Controls.AppScrollBar { hidden: true }
@@ -45,7 +45,7 @@ Item {
             ColumnLayout {
                 id: analysisContent
                 width: analysisScroll.width
-                height: root.analysisState.isEdit ? analysisScroll.height : implicitHeight
+                height: root.analysisViewModel.isEdit ? analysisScroll.height : implicitHeight
                 spacing: root.theme.spacingSmall
 
                 RowLayout {
@@ -61,13 +61,13 @@ Item {
                         id: nameField
                         objectName: "analysisNameField"
                         Layout.fillWidth: true
-                        text: root.analysisState.name
-                        onTextChanged: root.analysisState.name = text
+                        text: root.analysisViewModel.name
+                        onTextChanged: root.analysisViewModel.name = text
                     }
                 }
 
                 Controls.Panel {
-                    visible: !root.analysisState.isEdit
+                    visible: !root.analysisViewModel.isEdit
                     Layout.fillWidth: true
                     Layout.preferredHeight: analysisTypeColumn.implicitHeight + (root.theme.panelPadding * 2)
 
@@ -90,13 +90,13 @@ Item {
                                 objectName: "analysisMainTypeComboBox"
                                 Layout.fillWidth: true
                                 model: [qsTr("Plot"), qsTr("Table")]
-                                currentIndex: root.analysisState.mainTypeIndex
-                                onActivated: root.analysisState.mainTypeIndex = currentIndex
+                                currentIndex: root.analysisViewModel.mainTypeIndex
+                                onActivated: root.analysisViewModel.mainTypeIndex = currentIndex
                             }
                         }
 
                         RowLayout {
-                            visible: root.analysisState.mainTypeIndex === 0
+                            visible: root.analysisViewModel.mainTypeIndex === 0
                             Layout.fillWidth: true
 
                             Label {
@@ -110,17 +110,17 @@ Item {
                                 objectName: "analysisPlotSubtypeComboBox"
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: root.width - root.theme.formLabelWidth - root.theme.panelContentSafeWidthOffset
-                                model: root.analysisState.plotTypeOptions
+                                model: root.analysisViewModel.plotTypeOptions
                                 textRole: "label"
-                                currentIndex: root.analysisState.plotSubtypeIndex
-                                onActivated: root.analysisState.plotSubtypeIndex = currentIndex
+                                currentIndex: root.analysisViewModel.plotSubtypeIndex
+                                onActivated: root.analysisViewModel.plotSubtypeIndex = currentIndex
                             }
                         }
                     }
                 }
 
                 Controls.Panel {
-                    visible: root.analysisState.isEdit
+                    visible: root.analysisViewModel.isEdit
                     Layout.fillWidth: true
                     Layout.preferredHeight: exportOptionsColumn.implicitHeight + (root.theme.panelPadding * 2)
 
@@ -142,10 +142,10 @@ Item {
                                 id: exportFormatCombo
                                 objectName: "analysisExportFormatComboBox"
                                 Layout.preferredWidth: root.theme.formFieldWidth
-                                model: root.analysisState.exportFormatOptions
+                                model: root.analysisViewModel.exportFormatOptions
                                 textRole: "label"
-                                currentIndex: root.analysisState.exportFormatIndex
-                                onActivated: root.analysisState.exportFormatIndex = currentIndex
+                                currentIndex: root.analysisViewModel.exportFormatIndex
+                                onActivated: root.analysisViewModel.exportFormatIndex = currentIndex
                             }
 
                             Item {
@@ -167,7 +167,7 @@ Item {
                                     objectName: "analysisIncludeCalcAdjustmentsCheckBox"
                                     Layout.fillWidth: false
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                    checked: root.analysisState.includeCalcAdjustments
+                                    checked: root.analysisViewModel.includeCalcAdjustments
                                 }
 
                                 Label {
@@ -186,14 +186,14 @@ Item {
                                 objectName: "analysisIncludeCalcAdjustmentsMouseArea"
                                 anchors.fill: parent
                                 z: 1
-                                onClicked: root.analysisState.includeCalcAdjustments = !root.analysisState.includeCalcAdjustments
+                                onClicked: root.analysisViewModel.includeCalcAdjustments = !root.analysisViewModel.includeCalcAdjustments
                             }
                         }
                     }
                 }
 
                 Controls.Panel {
-                    visible: root.analysisState.isEdit
+                    visible: root.analysisViewModel.isEdit
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.minimumHeight: 0
@@ -202,14 +202,14 @@ Item {
                     Loader {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        sourceComponent: root.analysisState.currentResultIsTable ? tableComp : plotComp
+                        sourceComponent: root.analysisViewModel.currentResultIsTable ? tableComp : plotComp
                     }
                 }
             }
         }
 
         Controls.Panel {
-            visible: !root.analysisState.isEdit && root.analysisState.filterEditMode
+            visible: !root.analysisViewModel.isEdit && root.analysisViewModel.filterEditMode
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight + root.theme.controlHeight + root.theme.spacingSmall * 3
@@ -217,7 +217,7 @@ Item {
             StackLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                currentIndex: root.analysisState.filterWorkspaceIndex
+                currentIndex: root.analysisViewModel.filterWorkspaceIndex
 
                 Item {
                     Layout.fillWidth: true
@@ -246,28 +246,28 @@ Item {
                             Analysis.AnalysisDateFilter {
                                 id: dateFilter
                                 theme: root.theme
-                                analysisState: root.analysisState
+                                analysisViewModel: root.analysisViewModel
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: dateFilter.implicitHeight
                             }
 
                             Analysis.AnalysisPropertyFilter {
                                 theme: root.theme
-                                analysisState: root.analysisState
+                                analysisViewModel: root.analysisViewModel
                                 Layout.fillWidth: true
                             }
 
                             Analysis.AnalysisContractTypeFilter {
                                 theme: root.theme
-                                analysisState: root.analysisState
+                                analysisViewModel: root.analysisViewModel
                                 Layout.fillWidth: true
                             }
 
                             Analysis.AnalysisAllocatableFilter {
                                 id: allocatableFilterPanel
                                 theme: root.theme
-                                analysisState: root.analysisState
-                                mode: root.analysisState.allocatableMode
+                                analysisViewModel: root.analysisViewModel
+                                mode: root.analysisViewModel.allocatableMode
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: allocatableFilterPanel.implicitHeight
                             }
@@ -282,7 +282,7 @@ Item {
 
                 Analysis.AnalysisTransactionsPanel {
                     theme: root.theme
-                    analysisState: root.analysisState
+                    analysisViewModel: root.analysisViewModel
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                 }
@@ -295,7 +295,7 @@ Item {
 
         Analysis.AnalysisPlotView {
             theme: root.theme
-            analysisState: root.analysisState
+            analysisViewModel: root.analysisViewModel
         }
     }
 
@@ -304,7 +304,7 @@ Item {
 
         Analysis.AnalysisTableView {
             theme: root.theme
-            analysisState: root.analysisState
+            analysisViewModel: root.analysisViewModel
         }
     }
 }

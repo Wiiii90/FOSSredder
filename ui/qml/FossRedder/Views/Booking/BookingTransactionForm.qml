@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Item {
     id: root
     required property var theme
-    required property var bookingState
+    required property var bookingViewModel
 
     implicitWidth: formLayout.implicitWidth
     implicitHeight: formLayout.implicitHeight
@@ -42,8 +42,8 @@ Item {
                     objectName: "bookingTransactionNameField"
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.theme.controlHeight
-                    text: root.bookingState.transactionName
-                    onTextEdited: root.bookingState.transactionName = text
+                    text: root.bookingViewModel.transactionName
+                    onTextEdited: root.bookingViewModel.transactionName = text
                 }
             }
 
@@ -63,10 +63,10 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.theme.controlHeight
                     textRole: "label"
-                    model: root.bookingState.transactionStatusOptions
-                    currentIndex: root.bookingState.transactionStatusIndex
+                    model: root.bookingViewModel.transactionStatusOptions
+                    currentIndex: root.bookingViewModel.transactionStatusIndex
                     onActivated: function (index) {
-                        root.bookingState.transactionStatusIndex = index;
+                        root.bookingViewModel.transactionStatusIndex = index;
                     }
                 }
             }
@@ -91,8 +91,8 @@ Item {
                     objectName: "bookingTransactionBookingDateField"
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.theme.controlHeight
-                    text: root.bookingState.transactionBookingDate
-                    onTextEdited: root.bookingState.transactionBookingDate = text
+                    text: root.bookingViewModel.transactionBookingDate
+                    onTextEdited: root.bookingViewModel.transactionBookingDate = text
                 }
             }
 
@@ -111,8 +111,8 @@ Item {
                     objectName: "bookingTransactionValutaField"
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.theme.controlHeight
-                    text: root.bookingState.transactionValuta
-                    onTextEdited: root.bookingState.transactionValuta = text
+                    text: root.bookingViewModel.transactionValuta
+                    onTextEdited: root.bookingViewModel.transactionValuta = text
                 }
             }
         }
@@ -131,8 +131,8 @@ Item {
                 objectName: "bookingTransactionAmountField"
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.theme.controlHeight
-                text: root.bookingState.transactionAmountText
-                onTextEdited: root.bookingState.transactionAmountText = text
+                text: root.bookingViewModel.transactionAmountText
+                onTextEdited: root.bookingViewModel.transactionAmountText = text
             }
         }
     }

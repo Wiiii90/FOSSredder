@@ -12,7 +12,8 @@
 
 namespace core::storage {
 
-StorageManager::StorageManager(std::shared_ptr<IRegistry> registry)
+StorageManager::StorageManager(
+    std::shared_ptr<core::ports::storage::IRegistry> registry)
     : registry_(std::move(registry)) {
 }
 

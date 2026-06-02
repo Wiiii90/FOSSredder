@@ -6,7 +6,7 @@
 #pragma once
 
 #include "TransactionParserTypes.h"
-#include "AmountParser.h"
+#include "core/application/import/transaction/AmountParser.h"
 
 #include <string>
 

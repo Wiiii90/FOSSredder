@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var propertyState
+    required property var propertyViewModel
     property var contractRows: []
 
     Layout.fillWidth: true
@@ -56,9 +56,9 @@ Controls.Panel {
                         objectName: "propertyContractCheckBox"
                         Layout.fillWidth: false
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                        checked: root.propertyState && root.propertyState.selectedContractIds ? root.propertyState.selectedContractIds.indexOf(contractRow.contractId) !== -1 : false
-                        onToggled: if (root.propertyState)
-                            root.propertyState.setContractSelected(contractRow.contractId, checked)
+                        checked: root.propertyViewModel && root.propertyViewModel.selectedContractIds ? root.propertyViewModel.selectedContractIds.indexOf(contractRow.contractId) !== -1 : false
+                        onToggled: if (root.propertyViewModel)
+                            root.propertyViewModel.setContractSelected(contractRow.contractId, checked)
                     }
 
                     Label {

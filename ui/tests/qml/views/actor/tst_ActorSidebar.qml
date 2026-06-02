@@ -22,7 +22,7 @@ TestCase {
     property var session: QtObject {
         property string selectedActorId: ""
         property var actorRows: []
-        property var actorState: QtObject {
+        property var actorViewModel: QtObject {
             readonly property string currentId: testCase.session.selectedActorId
             property var actorRows: testCase.session.actorRows
             property string lastSelectedId: ""
@@ -56,7 +56,7 @@ TestCase {
         ActorSidebar {
             width: 320
             height: 240
-            actorState: testCase.session.actorState
+            actorViewModel: testCase.session.actorViewModel
             theme: testCase.theme
         }
     }
@@ -97,7 +97,7 @@ TestCase {
         mouseArea.clicked(null)
 
         compare(session.selectedActorId, "actor-2")
-        compare(session.actorState.lastSelectedId, "actor-2")
+        compare(session.actorViewModel.lastSelectedId, "actor-2")
     }
 
     function test_ACT_S_003_selectedRowUsesThemeHighlight() {

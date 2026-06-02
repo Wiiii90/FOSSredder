@@ -33,7 +33,7 @@ TestCase {
         property color textPrimary: "#000000"
     }
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property var contractTypeRows: [{ value: "lease", label: "lease" }, { value: "unassigned", label: "Unassigned" }]
         property var selectedContractTypes: ["lease", "unassigned"]
 
@@ -67,7 +67,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -76,23 +76,23 @@ TestCase {
     }
 
     function init() {
-        analysisState.selectedContractTypes = ["lease", "unassigned"]
+        analysisViewModel.selectedContractTypes = ["lease", "unassigned"]
     }
 
     function test_ANL_CTF_001_contractTypeFilterActionsForwardSelectionToState() {
         const filter = createFilter()
 
         TestSupport.findRequired(Lookup, filter, "analysisContractTypeFilterNoneButton").clicked()
-        compare(analysisState.selectedContractTypes.length, 0)
+        compare(analysisViewModel.selectedContractTypes.length, 0)
 
         TestSupport.findRequired(Lookup, filter, "analysisContractTypeFilterAllButton").clicked()
-        compare(analysisState.selectedContractTypes.length, 2)
-        compare(analysisState.selectedContractTypes[0], "lease")
+        compare(analysisViewModel.selectedContractTypes.length, 2)
+        compare(analysisViewModel.selectedContractTypes[0], "lease")
 
         const checkBox = TestSupport.findRequired(Lookup, filter, "analysisContractTypeFilterCheckBox")
         checkBox.checked = false
         checkBox.clicked()
-        compare(analysisState.selectedContractTypes.length, 1)
-        compare(analysisState.selectedContractTypes[0], "unassigned")
+        compare(analysisViewModel.selectedContractTypes.length, 1)
+        compare(analysisViewModel.selectedContractTypes[0], "unassigned")
     }
 }

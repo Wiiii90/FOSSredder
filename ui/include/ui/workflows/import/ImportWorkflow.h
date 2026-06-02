@@ -1,183 +1,169 @@
 /**
  * @file ui/include/ui/workflows/import/ImportWorkflow.h
- * @brief Declares the import workflow exposed to QML.
+ * @brief Coordinates asynchronous statement imports and in-memory draft sessions.
  */
 
 #pragma once
 
-#include <QObject>
 #include <QHash>
+#include <QObject>
 #include <QString>
 #include <QStringList>
-#include <QVariantMap>
-#include <exception>
-#include <functional>
+#include <map>
 #include <memory>
-#include <qqmlintegration.h>
+#include <vector>
 
-#include "core/application/import/ImportLog.h"
-#include "core/application/import/draft/IImportMatcherService.h"
-#include "core/application/import/draft/StatementDraft.h"
-#include "core/application/workspace/WorkspaceSessionState.h"
 #include "core/errors/IErrorReporter.h"
-#include "core/jobs/ImportJobSpec.h"
-#include "core/jobs/JobTypes.h"
-#include "core/ports/presenters/IImportPresenter.h"
-#include "core/ports/workspace/IWorkspaceWriter.h"
-#include "ui/workflows/import/ImportJobBridge.h"
-#include "ui/workflows/import/ImportWorkflowState.h"
-#include "ui/viewmodels/import/ImportRunListModel.h"
-#include "ui/viewmodels/import/StatementDraftViewModel.h"
-#include "ui/viewmodels/import/TransactionDraftViewModel.h"
-
-namespace core::jobs {
-class JobSystem;
-}
+#include "core/ports/import/IImportRunner.h"
+#include "core/ports/import/ImportDraft.h"
+#include "core/ports/workspace/WorkspaceSnapshot.h"
+#include "ui/adapters/ImportAdapter.h"
 
 namespace ui {
 
+class WorkspaceFacade;
+
+namespace importing {
+
+class ImportWorkflowState {
+public:
+  ImportWorkflowState() = default;
+
+  bool isRunning() const noexcept { return isRunning_; }
+  bool isPaused() const noexcept { return paused_; }
+  double progress() const noexcept { return progress_; }
+  const QString &phase() const noexcept { return phase_; }
+  const QString &error() const noexcept { return error_; }
+  const QString &selectedFile() const noexcept { return selectedFile_; }
+  const QStringList &queuedFiles() const noexcept { return queuedFiles_; }
+  bool hasDraft() const noexcept { return hasDraft_; }
+  core::ports::importing::draft::StatementDraft *draft() noexcept {
+    return hasDraft_ ? &draft_ : nullptr;
+  }
+  const core::ports::importing::draft::StatementDraft *draft() const noexcept {
+    return hasDraft_ ? &draft_ : nullptr;
+  }
+  const core::ports::workspace::WorkspaceSnapshot &
+  catalogSnapshot() const noexcept {
+    return catalogSnapshot_;
+  }
+  int currentTransactionIndex() const noexcept {
+    return currentTransactionIndex_;
+  }
+  void setCurrentTransactionIndex(int index);
+  int artifactCount() const noexcept { return artifactCount_; }
+  bool cancelRequested() const noexcept { return canceled_; }
+
+  bool setSelectedFile(const QString &path);
+  bool addFiles(const QStringList &paths);
+  bool resetStatus();
+  bool clearDraft();
+
+  QString currentImportFile() const;
+  QString takeSelectedFileForStart();
+  bool takeNextQueuedFile(QString &nextFile);
+
+  void beginImport(const QString &path);
+  void rejectStart(const QString &errorMessage);
+  void beginCancel(bool clearQueue);
+  bool setPaused(bool paused);
+  void recordCanceled();
+  void recordFailed(const QString &errorMessage);
+  void recordFinished();
+  bool populateDraft(
+      const core::ports::importing::draft::StatementDraft &draft,
+      const core::ports::workspace::WorkspaceSnapshot &state,
+      const std::map<std::string, std::vector<uint8_t>> &artifacts,
+      int currentTransactionIndex);
+  bool restoreDraft(
+      const core::ports::importing::draft::StatementDraft &draft,
+      const core::ports::workspace::WorkspaceSnapshot &state,
+      const QString &draftId, int currentTransactionIndex);
+  void updateProgress(double progress, const QString &phase);
+
+private:
+  void clearDraftState();
+  void clearTransientImportState();
+  void resetCancellationState();
+
+  bool isRunning_ = false;
+  double progress_ = 0.0;
+  QString phase_;
+  QString error_;
+  QString selectedFile_;
+  QStringList queuedFiles_;
+  core::ports::importing::draft::StatementDraft draft_;
+  bool hasDraft_ = false;
+  int currentTransactionIndex_ = 0;
+  core::ports::workspace::WorkspaceSnapshot catalogSnapshot_;
+  int artifactCount_ = 0;
+  bool canceled_ = false;
+  bool paused_ = false;
+  bool cancelClearsQueue_ = false;
+  QString currentImportFile_;
+};
+
+} // namespace importing
+
 /**
- * @brief Coordinates asynchronous statement imports, progress reporting, and
- * draft creation for QML.
+ * @brief Runs PDF imports and holds the active in-memory statement draft session.
  */
 class ImportWorkflow : public QObject {
   Q_OBJECT
-  QML_NAMED_ELEMENT(ImportWorkflow)
-  QML_UNCREATABLE("ImportWorkflow is provided by the application context")
-
-  Q_PROPERTY(bool isRunning READ isRunning NOTIFY stateChanged)
-  Q_PROPERTY(bool isPaused READ isPaused NOTIFY stateChanged)
-  Q_PROPERTY(double progress READ progress NOTIFY stateChanged)
-  Q_PROPERTY(QString phase READ phase NOTIFY stateChanged)
-  Q_PROPERTY(QString error READ error NOTIFY stateChanged)
-  Q_PROPERTY(int currentPage READ currentPage NOTIFY stateChanged)
-  Q_PROPERTY(int pageCount READ pageCount NOTIFY stateChanged)
-  Q_PROPERTY(QString selectedFile READ selectedFile WRITE setSelectedFile NOTIFY
-                 stateChanged)
-  Q_PROPERTY(int queuedCount READ queuedCount NOTIFY stateChanged)
-  Q_PROPERTY(QStringList queuedFiles READ queuedFiles NOTIFY stateChanged)
-  Q_PROPERTY(ui::ImportRunList *runs READ runs CONSTANT)
-  Q_PROPERTY(ui::StatementDraft *draft READ draft NOTIFY stateChanged)
-  Q_PROPERTY(bool hasPrevDraft READ hasPrevDraft NOTIFY stateChanged)
-  Q_PROPERTY(bool hasNextDraft READ hasNextDraft NOTIFY stateChanged)
-  Q_PROPERTY(bool hasDraftStack READ hasDraftStack NOTIFY stateChanged)
 
 public:
-  using JobSystemFactory =
-      std::function<std::shared_ptr<core::jobs::JobSystem>()>;
-  using StateSnapshotProvider =
-      std::function<core::application::workspace::WorkspaceSessionState()>;
-  using ImportLogsStore = std::function<void(
-      const std::vector<core::application::importing::ImportLog> &)>;
-  using StatementDraftStore = std::function<void(
-      const core::application::importing::draft::StatementDraft &)>;
-
   explicit ImportWorkflow(
-      JobSystemFactory jobSystemFactory,
+      std::shared_ptr<ui::adapters::ImportAdapter> importAdapter,
       std::shared_ptr<core::errors::IErrorReporter> errorReporter,
-      std::shared_ptr<core::ports::presenters::IImportPresenter>
-          importPresenter = {},
-      std::shared_ptr<
-          core::application::importing::draft::IImportMatcherService>
-          importMatcherService = {},
-      core::ports::workspace::IWorkspaceWriter *workspaceWriter = nullptr,
-      QObject *parent = nullptr);
+      WorkspaceFacade *workspace = nullptr, QObject *parent = nullptr);
 
-  /** @brief Provide a snapshot callback used when creating UI drafts from
-   * import results.
-   *  @param provider Snapshot provider callback
-   */
-  void setStateSnapshotProvider(StateSnapshotProvider provider);
-  void setImportLogsStore(ImportLogsStore store);
-  void setStatementDraftStore(StatementDraftStore store);
-  Q_INVOKABLE void refreshFromStateSnapshot();
+  void setWorkspace(WorkspaceFacade *workspace);
 
   bool isRunning() const noexcept { return state_.isRunning(); }
   bool isPaused() const noexcept { return state_.isPaused(); }
   double progress() const noexcept { return state_.progress(); }
   QString phase() const { return state_.phase(); }
   QString error() const { return state_.error(); }
-  int currentPage() const noexcept { return state_.currentPage(); }
-  int pageCount() const noexcept { return state_.pageCount(); }
   QString selectedFile() const;
   void setSelectedFile(const QString &path);
-  int queuedCount() const noexcept { return state_.queuedFiles().size(); }
+  int queuedCount() const noexcept {
+    return static_cast<int>(state_.queuedFiles().size());
+  }
   QStringList queuedFiles() const;
-  StatementDraft *draft() const noexcept;
-  bool hasPrevDraft() const;
-  bool hasNextDraft() const;
-  bool hasDraftStack() const;
+  bool hasDraft() const noexcept { return state_.hasDraft(); }
+  QString currentDraftId() const;
+  int currentTransactionIndex() const noexcept {
+    return state_.currentTransactionIndex();
+  }
+  void setCurrentTransactionIndex(int index);
+  int transactionCount() const noexcept;
 
-  /** @brief Start importing the selected file or the next queued file. */
-  Q_INVOKABLE void startStatementImport();
+  std::shared_ptr<adapters::ImportAdapter> importAdapter() const noexcept {
+    return importAdapter_;
+  }
+  core::ports::importing::draft::StatementDraft *statementDraft() noexcept {
+    return state_.draft();
+  }
+  const core::ports::importing::draft::StatementDraft *
+  statementDraft() const noexcept {
+    return state_.draft();
+  }
+  core::ports::importing::draft::TransactionDraft *currentTransactionDraft();
+  const core::ports::importing::draft::TransactionDraft *
+  currentTransactionDraft() const;
+  core::ports::workspace::WorkspaceSnapshot catalogSnapshotForDraft() const;
+  void notifyDraftChanged();
 
-  /** @brief Append files to the import selection and queue.
-   *  @param paths File paths to add
-   */
-  Q_INVOKABLE void addFiles(const QStringList &paths);
-
-  /** @brief Clear transient import status once no import is running. */
-  Q_INVOKABLE void resetStatus();
-
-  /** @brief Clear the current statement draft and continue with queued imports
-   * if needed. */
-  Q_INVOKABLE void clearDraft();
-
-  /** @brief Reopen a persisted statement draft from workspace state when
-   * available. */
-  Q_INVOKABLE bool openPersistedDraft(const QString &logId = {});
-
-  /** @brief Indicates whether a persisted statement draft is currently
-   * available. */
-  Q_INVOKABLE bool hasPersistedDraft() const;
-
-  /** @brief Append a UI-side import run note for draft lifecycle actions. */
-  Q_INVOKABLE void addRunNote(const QString &status, const QString &message,
-                              bool draftAttached = false,
-                              const QString &statementId = {},
-                              const QString &contextDraftId = {});
-  Q_INVOKABLE void removeRunAt(int index);
-  Q_INVOKABLE void activateRunAt(int index);
-  Q_INVOKABLE bool openPrevDraft();
-  Q_INVOKABLE bool openNextDraft();
-
-  /** @brief Finalizes the current statement draft into persistent workspace state. */
-  Q_INVOKABLE QString finalizeStatementDraft(StatementDraft *draft);
-  Q_INVOKABLE void persistStatementDraft(StatementDraft *draft);
-  Q_INVOKABLE void clearPersistedStatementDraft(const QString &draftId = {});
-  Q_INVOKABLE QVariantMap currentTransactionViewState(StatementDraft *draft) const;
-  Q_INVOKABLE QVariantMap findChoiceRowByText(const QVariantList &rows,
-                                             const QString &text) const;
-  Q_INVOKABLE void syncCurrentTransactionDraft(StatementDraft *draft);
-  Q_INVOKABLE void selectCurrentActorChoice(StatementDraft *draft,
-                                            const QVariantMap &row);
-  Q_INVOKABLE QVariantMap createActorChoiceForCurrentDraft(
-      StatementDraft *draft, const QString &actorName);
-  Q_INVOKABLE QVariantMap createPropertyChoiceForCurrentDraft(
-      StatementDraft *draft, const QString &propertyName);
-  Q_INVOKABLE QVariantMap createOrSelectContractChoiceForCurrentDraft(
-      StatementDraft *draft, const QString &contractName,
-      const QString &contractType, const QString &allocatableMode);
-  Q_INVOKABLE void selectCurrentContractChoice(StatementDraft *draft,
-                                               const QVariantMap &row);
-  Q_INVOKABLE void setCurrentPropertySelected(StatementDraft *draft,
-                                              const QString &propertyId,
-                                              bool selected);
-  Q_INVOKABLE void updateCurrentAmount(StatementDraft *draft,
-                                       const QString &text);
-
-  /** @brief Request cancellation of the active import. */
-  Q_INVOKABLE void cancelImport();
-
-  /** @brief Request cancellation of the active import and clear the remaining
-   * queue. */
-  Q_INVOKABLE void cancelAllImports();
-
-  /** @brief Toggle the user-visible pause gate for the active import. */
-  Q_INVOKABLE void togglePause();
-
-  /** @brief Return the model that tracks persisted import-run entries. */
-  ImportRunList *runs() noexcept;
+  void startStatementImport();
+  void addFiles(const QStringList &paths);
+  void resetStatus();
+  void clearDraft();
+  bool openPersistedDraft(const QString &draftId = {});
+  void rememberCurrentDraftTransactionIndex();
+  void cancelImport();
+  void cancelQueuedImports();
+  void pauseImport();
+  void resumeImport();
 
 signals:
   void stateChanged();
@@ -186,74 +172,50 @@ signals:
   void importFailed(const QString &error);
 
 private slots:
-  void updateProgress(double p, const QString &phase);
-  void onJobTerminal(core::jobs::JobState state, const QString &message);
+  void updateProgress(double progress, const QString &phase);
+  void onJobTerminal(core::ports::importing::StatementImportState state,
+                     const QString &message);
 
 private:
-  bool ensureJobBridge();
+  bool hasActiveImportHandle() const noexcept;
+  void clearActiveImportSubscription();
   void rejectImportStart(const QString &errorMessage, const char *traceMessage);
   void requestImportCancellation(bool clearQueue, const char *origin,
                                  const char *traceMessage);
-  void handleJobEvent(const core::jobs::JobEvent &event);
-  void handleImportCanceled(const QString &now);
-  void handleImportFailed(const QString &now, const QString &errorMessage,
+  void setImportPaused(bool paused);
+  void
+  handleImportEvent(const core::ports::importing::StatementImportEvent &event);
+  void handleImportCanceled();
+  void handleImportFailed(const QString &errorMessage,
                           const char *traceMessage);
-  bool populateDraftFromResult(const QString &now);
-  std::unique_ptr<ImportRunList> runs_;
-  importing::ImportWorkflowState state_;
-  JobSystemFactory jobSystemFactory_;
-  StateSnapshotProvider stateSnapshotProvider_;
-  ImportLogsStore importLogsStore_;
-  std::unique_ptr<importing::ImportJobBridge> jobBridge_;
-  std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
-  std::shared_ptr<core::ports::presenters::IImportPresenter> importPresenter_;
-  std::shared_ptr<core::application::importing::draft::IImportMatcherService>
-      importMatcherService_;
-  core::ports::workspace::IWorkspaceWriter *workspaceWriter_ = nullptr;
-
+  bool populateDraftFromResult();
   void startNextQueuedImport();
   void startImportForFile(const QString &path);
   void reportException(const char *origin, std::exception_ptr exception) const;
+  void saveRunLog(const QString &logId, const QString &status,
+                  const QString &message, bool draftAttached = false,
+                  const QString &draftId = {},
+                  const QString &statementId = {});
   bool restoreDraftFromState(
-      const core::application::workspace::WorkspaceSessionState &snapshot);
-  QStringList draftStackIds() const;
-  int activeDraftStackIndex() const;
-  void rememberCurrentDraftTransactionIndex();
+      const core::ports::workspace::WorkspaceSnapshot &snapshot);
+  QString resolveDraftContextId() const;
   int rememberedDraftTransactionIndex(const QString &draftId) const;
-  void restoreRunsFromSnapshot(
-      const core::application::workspace::WorkspaceSessionState &snapshot);
-  void persistRuns();
-  QString resolveDraftContextLogId() const;
-  ImportRunRow upsertRunById(const QString &logId, const QString &status,
-                             const QString &message, bool draftAttached,
-                             const QString &draftId = {},
-                             const QString &statementId = {});
-  ImportRunRow upsertActiveDraftRun(const QString &status,
-                                    const QString &message, bool draftAttached,
-                                    const QString &statementId = {},
-                                    const QString &contextDraftId = {});
-  bool saveImportedDraft(
-      const QString &draftId,
-      const std::shared_ptr<core::domain::Statement> &statement,
-      const std::vector<core::application::importing::draft::TransactionDraft>
-          &transactions) const;
-  core::domain::catalog::WorkspaceCatalog matchingCatalogForDraft(
-      const StatementDraft *draft) const;
-  core::application::importing::draft::StatementDraft buildFinalizationInput(
-      StatementDraft *draft) const;
-  void syncCurrentTransactionDraftImpl(StatementDraft *draft);
 
-  QString activeDraftLogId_;
+  importing::ImportWorkflowState state_;
+  std::shared_ptr<ui::adapters::ImportAdapter> importAdapter_;
+  WorkspaceFacade *workspace_ = nullptr;
+  std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
+
+  QString activeDraftId_;
   QHash<QString, int> draftTransactionIndexByDraftId_;
-  QString activeRunLogId_;
-  QString activeRunDraftId_;
-  mutable QHash<QString, QVariantMap> suggestionSnapshotByTransactionKey_;
-  bool activeRunTerminalHandled_ = false;
+  QString activeImportLogId_;
+  bool activeImportTerminalHandled_ = false;
   bool hasPendingTerminalEvent_ = false;
-  core::jobs::JobState pendingTerminalState_ = core::jobs::JobState::Pending;
+  bool hasActiveImportHandle_ = false;
+  core::ports::importing::StatementImportHandle activeImportHandle_;
+  core::ports::importing::StatementImportState pendingTerminalState_ =
+      core::ports::importing::StatementImportState::Pending;
   QString pendingTerminalMessage_;
-  StatementDraftStore statementDraftStore_;
 };
 
 } // namespace ui
-

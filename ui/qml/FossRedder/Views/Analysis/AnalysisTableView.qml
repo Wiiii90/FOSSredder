@@ -14,7 +14,7 @@ Item {
     id: root
     objectName: "analysisTablePreview"
     required property var theme
-    required property var analysisState
+    required property var analysisViewModel
 
     ColumnLayout {
         anchors.fill: root
@@ -35,11 +35,11 @@ Item {
 
             ColumnLayout {
                 id: matrixContent
-                width: Math.max(Math.max(0, matrixViewport.width - root.theme.scrollBarGutterWidth), root.theme.analysis.table.propertyColumnWidth + Math.max(1, root.analysisState.tableContractTypes.length) * root.theme.analysis.table.amountColumnWidth + root.theme.analysis.table.totalColumnWidth)
+                width: Math.max(Math.max(0, matrixViewport.width - root.theme.scrollBarGutterWidth), root.theme.analysis.table.propertyColumnWidth + Math.max(1, root.analysisViewModel.tableContractTypes.length) * root.theme.analysis.table.amountColumnWidth + root.theme.analysis.table.totalColumnWidth)
                 spacing: 0
 
                 Rectangle {
-                    visible: root.analysisState.tablePropertyRows.length > 0
+                    visible: root.analysisViewModel.tablePropertyRows.length > 0
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.theme.analysis.table.rowHeight
                     color: root.theme.surfaceAlt
@@ -59,7 +59,7 @@ Item {
                         }
 
                         Repeater {
-                            model: root.analysisState.tableContractTypes
+                            model: root.analysisViewModel.tableContractTypes
 
                             Label {
                                 color: root.theme.textPrimary
@@ -85,8 +85,8 @@ Item {
                 }
 
                 Repeater {
-                    visible: root.analysisState.tablePropertyRows.length > 0
-                    model: root.analysisState.tablePropertyRows
+                    visible: root.analysisViewModel.tablePropertyRows.length > 0
+                    model: root.analysisViewModel.tablePropertyRows
 
                     Rectangle {
                         id: rowContainer
@@ -157,7 +157,7 @@ Item {
                 }
 
                 Rectangle {
-                    visible: root.analysisState.tablePropertyRows.length > 0
+                    visible: root.analysisViewModel.tablePropertyRows.length > 0
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.theme.analysis.table.rowHeight
                     color: root.theme.surfaceAlt
@@ -178,7 +178,7 @@ Item {
                         }
 
                         Repeater {
-                            model: root.analysisState.tableContractTypes.length
+                            model: root.analysisViewModel.tableContractTypes.length
 
                             Rectangle {
                                 Layout.preferredWidth: root.theme.analysis.table.amountColumnWidth
@@ -207,7 +207,7 @@ Item {
                             Label {
                                 color: root.theme.textPrimary
                                 anchors.fill: parent
-                                text: root.analysisState.tableGrandTotal.toFixed(2)
+                                text: root.analysisViewModel.tableGrandTotal.toFixed(2)
                                 rightPadding: root.theme.spacingSmall
                                 horizontalAlignment: Text.AlignRight
                                 verticalAlignment: Text.AlignVCenter
@@ -218,7 +218,7 @@ Item {
                 }
 
                 Rectangle {
-                    visible: root.analysisState.tablePropertyRows.length === 0
+                    visible: root.analysisViewModel.tablePropertyRows.length === 0
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.theme.analysis.table.rowHeight * 2
                     color: root.theme.surfaceAlt

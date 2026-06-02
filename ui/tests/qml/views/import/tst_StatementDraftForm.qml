@@ -24,7 +24,7 @@ TestCase {
         property int formLabelWidth: 120
     }
 
-    property var statementState: QtObject {
+    property var statementViewModel: QtObject {
         property bool hasDraft: true
         property string statementName: "Draft Name"
         property string transactionInfoText: "Transaction 1 of 2"
@@ -40,7 +40,7 @@ TestCase {
         Import.StatementDraftForm {
             width: testCase.width
             theme: testCase.theme
-            statementState: testCase.statementState
+            statementViewModel: testCase.statementViewModel
         }
     }
 
@@ -53,11 +53,11 @@ TestCase {
     }
 
     function init() {
-        statementState.hasDraft = true
-        statementState.statementName = "Draft Name"
-        statementState.canDeleteTransaction = true
-        statementState.addTransactionCalls = 0
-        statementState.deleteTransactionCalls = 0
+        statementViewModel.hasDraft = true
+        statementViewModel.statementName = "Draft Name"
+        statementViewModel.canDeleteTransaction = true
+        statementViewModel.addTransactionCalls = 0
+        statementViewModel.deleteTransactionCalls = 0
     }
 
     function test_IMP_D_006_statementFormDeleteTransactionDelegatesToState() {
@@ -65,7 +65,7 @@ TestCase {
 
         findRequired(form, "statementDraftDeleteTransactionButton").clicked()
 
-        compare(statementState.deleteTransactionCalls, 1)
+        compare(statementViewModel.deleteTransactionCalls, 1)
     }
 
     function test_IMP_D_009_statementFormNameAndAddTransactionDelegateToState() {
@@ -76,7 +76,7 @@ TestCase {
         nameField.textEdited()
         findRequired(form, "statementDraftAddTransactionButton").clicked()
 
-        compare(statementState.statementName, "New Statement")
-        compare(statementState.addTransactionCalls, 1)
+        compare(statementViewModel.statementName, "New Statement")
+        compare(statementViewModel.addTransactionCalls, 1)
     }
 }

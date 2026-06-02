@@ -10,12 +10,12 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var annualState
+    required property var annualViewModel
     required property var theme
 
     onVisibleChanged: {
         if (visible)
-            root.annualState.refreshFromSelection()
+            root.annualViewModel.refreshFromSelection()
     }
 
     ColumnLayout {
@@ -26,7 +26,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             theme: root.theme
-            annualState: root.annualState
+            annualViewModel: root.annualViewModel
         }
 
         Annual.AnnualBottomBar {
@@ -35,7 +35,7 @@ Item {
             Layout.rightMargin: root.theme.pageContentMargin
             Layout.bottomMargin: root.theme.pageContentMargin
             theme: root.theme
-            annualState: root.annualState
+            annualViewModel: root.annualViewModel
         }
     }
 }

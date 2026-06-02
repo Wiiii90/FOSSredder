@@ -139,6 +139,22 @@ public:
 
         if (!all.empty()) {
             out.data = std::make_shared<Statement>();
+            auto statementName = std::filesystem::path(req.sourcePath).stem().string();
+            if (statementName.empty()) {
+                statementName = std::filesystem::path(req.sourcePath).filename().string();
+            }
+            if (statementName.empty()) {
+                statementName = "Imported statement";
+            }
+            out.data->rename(statementName);
+            std::vector<std::string> transactionIds;
+            transactionIds.reserve(all.size());
+            for (const auto& transaction : all) {
+                if (!transaction.id.empty()) {
+                    transactionIds.push_back(transaction.id);
+                }
+            }
+            out.data->setTransactionIds(std::move(transactionIds));
             out.transactions = std::move(all);
         }
 

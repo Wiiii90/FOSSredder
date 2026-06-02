@@ -42,7 +42,7 @@ TestCase {
         property color buttonText: "#111111"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property string statementName: "Statement"
         property string transactionInfoText: "Transaction 1 / 1"
         property bool canDeleteTransaction: true
@@ -82,7 +82,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            bookingState: testCase.bookingState
+            bookingViewModel: testCase.bookingViewModel
         }
     }
 
@@ -97,13 +97,13 @@ TestCase {
     }
 
     function init() {
-        bookingState.statementName = "Statement"
-        bookingState.transactionInfoText = "Transaction 1 / 1"
-        bookingState.canAddTransaction = true
-        bookingState.canDeleteTransaction = true
-        bookingState.transactionName = "Rent"
-        bookingState.addCalls = 0
-        bookingState.deleteCalls = 0
+        bookingViewModel.statementName = "Statement"
+        bookingViewModel.transactionInfoText = "Transaction 1 / 1"
+        bookingViewModel.canAddTransaction = true
+        bookingViewModel.canDeleteTransaction = true
+        bookingViewModel.transactionName = "Rent"
+        bookingViewModel.addCalls = 0
+        bookingViewModel.deleteCalls = 0
     }
 
     function test_BKG_SF_001_statementNameWritesDirectlyToBookingState() {
@@ -113,7 +113,7 @@ TestCase {
         nameField.text = "Statement Updated"
         nameField.textEdited()
 
-        compare(bookingState.statementName, "Statement Updated")
+        compare(bookingViewModel.statementName, "Statement Updated")
     }
 
     function test_BKG_SF_002_transactionCommandButtonsCallBookingState() {
@@ -122,8 +122,8 @@ TestCase {
         findRequired(form, "bookingStatementAddTransactionButton").clicked()
         findRequired(form, "bookingStatementRemoveTransactionButton").clicked()
 
-        compare(bookingState.addCalls, 1)
-        compare(bookingState.deleteCalls, 1)
+        compare(bookingViewModel.addCalls, 1)
+        compare(bookingViewModel.deleteCalls, 1)
     }
 
     function test_BKG_SF_003_transactionViewIsComposedInsideStatementPanel() {

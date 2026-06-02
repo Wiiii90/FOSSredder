@@ -12,7 +12,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var analysisState
+    required property var analysisViewModel
 
     implicitWidth: bar.implicitWidth
     implicitHeight: bar.implicitHeight
@@ -24,60 +24,60 @@ Item {
 
         Controls.PrevButton {
             objectName: "analysisPreviousButton"
-            enabled: root.analysisState.hasRows
-            onClicked: root.analysisState.navigate(-1)
+            enabled: root.analysisViewModel.hasRows
+            onClicked: root.analysisViewModel.navigate(-1)
         }
 
         Item { Layout.fillWidth: true }
 
         Controls.SecondaryButton {
             objectName: "analysisToggleWorkspaceButton"
-            visible: !root.analysisState.isEdit && root.analysisState.filterEditMode
+            visible: !root.analysisViewModel.isEdit && root.analysisViewModel.filterEditMode
             text: "⇆"
             Layout.preferredWidth: 48
-            onClicked: root.analysisState.toggleFilterWorkspace()
+            onClicked: root.analysisViewModel.toggleFilterWorkspace()
         }
 
         Controls.DangerButton {
             objectName: "analysisResetButton"
-            visible: !root.analysisState.isEdit
+            visible: !root.analysisViewModel.isEdit
             text: qsTr("Reset")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.analysisState.clearFilters()
+            onClicked: root.analysisViewModel.clearFilters()
         }
 
         Controls.SuccessButton {
             objectName: "analysisCreateButton"
-            visible: !root.analysisState.isEdit
+            visible: !root.analysisViewModel.isEdit
             text: qsTr("Create")
-            enabled: root.analysisState.canSubmit
+            enabled: root.analysisViewModel.canSubmit
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.analysisState.submitCreate()
+            onClicked: root.analysisViewModel.submitCreate()
         }
 
         Controls.DangerButton {
             objectName: "analysisDeleteButton"
-            visible: root.analysisState.isEdit
+            visible: root.analysisViewModel.isEdit
             text: qsTr("Delete")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.analysisState.deleteCurrent()
+            onClicked: root.analysisViewModel.deleteCurrent()
         }
 
         Controls.SuccessButton {
             objectName: "analysisUpdateButton"
-            visible: root.analysisState.isEdit
+            visible: root.analysisViewModel.isEdit
             text: qsTr("Update")
-            enabled: root.analysisState.canSubmit
+            enabled: root.analysisViewModel.canSubmit
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.analysisState.submitUpdate()
+            onClicked: root.analysisViewModel.submitUpdate()
         }
 
         Item { Layout.fillWidth: true }
 
         Controls.NextButton {
             objectName: "analysisNextButton"
-            enabled: root.analysisState.hasRows
-            onClicked: root.analysisState.navigate(1)
+            enabled: root.analysisViewModel.hasRows
+            onClicked: root.analysisViewModel.navigate(1)
         }
     }
 }

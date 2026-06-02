@@ -5,10 +5,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
-
-#include "core/domain/entities/Transaction.h"
 
 namespace core::ports::workspace {
 
@@ -66,7 +65,7 @@ struct TransactionSnapshot {
     std::string bookingDate;
     std::string valuta;
     double amount = 0.0;
-    core::domain::Transaction::Status status = core::domain::Transaction::Status::Neutral;
+    int status = 0;
     std::string contractId;
     std::string actorId;
     std::string statementId;
@@ -170,6 +169,28 @@ struct WorkspaceSnapshot {
         return !hasCurrentPath && actors.empty() && properties.empty() && contracts.empty() &&
                statements.empty() && transactions.empty() && analyses.empty() && annuals.empty() &&
                statementDrafts.empty() && importLogs.empty() && exportLogs.empty();
+    }
+};
+
+struct DeletionImpact {
+    std::vector<std::string> deletedActorIds;
+    std::vector<std::string> deletedPropertyIds;
+    std::vector<std::string> deletedContractIds;
+    std::vector<std::string> deletedStatementIds;
+    std::vector<std::string> deletedTransactionIds;
+    std::vector<std::string> deletedAnalysisIds;
+    std::vector<std::string> deletedAnnualIds;
+    std::vector<std::string> deletedStatementDraftIds;
+    std::vector<std::string> deletedTransactionDraftIds;
+    std::vector<std::string> deletedImportLogIds;
+    std::vector<std::string> deletedExportLogIds;
+
+    [[nodiscard]] bool empty() const noexcept {
+        return deletedActorIds.empty() && deletedPropertyIds.empty() && deletedContractIds.empty() &&
+               deletedStatementIds.empty() && deletedTransactionIds.empty() &&
+               deletedAnalysisIds.empty() && deletedAnnualIds.empty() &&
+               deletedStatementDraftIds.empty() && deletedTransactionDraftIds.empty() &&
+               deletedImportLogIds.empty() && deletedExportLogIds.empty();
     }
 };
 

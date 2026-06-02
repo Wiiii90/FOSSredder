@@ -44,13 +44,12 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var importState: QtObject {
+    property var importViewModel: QtObject {
         property var importWorkflow: null
         property var navigation: null
         property var workspace: null
         property int contentIndex: 0
-        property var currentDraft: null
-        function activatePage() {}
+        function initializeImportView() {}
     }
 
     Component {
@@ -58,7 +57,7 @@ TestCase {
         Import.ImportView {
             width: testCase.width
             height: testCase.height
-            importState: testCase.importState
+            importViewModel: testCase.importViewModel
             theme: testCase.theme
         }
     }

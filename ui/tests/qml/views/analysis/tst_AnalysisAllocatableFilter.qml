@@ -31,7 +31,7 @@ TestCase {
         property color border: "#cccccc"
     }
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         function setAllocatableModeIndex(index) {
             testCase.lastAllocatableIndex = index
         }
@@ -43,7 +43,7 @@ TestCase {
         Analysis.AnalysisAllocatableFilter {
             width: testCase.width
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
             mode: "all"
         }
     }

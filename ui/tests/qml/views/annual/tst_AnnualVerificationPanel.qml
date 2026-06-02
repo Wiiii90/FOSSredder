@@ -16,7 +16,7 @@ TestCase {
     width: 640
     height: 320
 
-    property var annualState: QtObject {
+    property var annualViewModel: QtObject {
         property var verificationRows: [
             { label: "Included transactions", value: 2, tone: "primary" },
             { label: "Transactions from a different year than selected", value: 0, tone: "success" }
@@ -42,7 +42,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            annualState: testCase.annualState
+            annualViewModel: testCase.annualViewModel
         }
     }
 

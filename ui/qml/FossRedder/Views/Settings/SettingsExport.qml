@@ -11,7 +11,7 @@ pragma ComponentBehavior: Bound
 
 Flickable {
     id: root
-    required property var settingsState
+    required property var settingsViewModel
     required property var theme
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -50,13 +50,13 @@ Flickable {
                         objectName: "settingsExportDefaultDirectoryField"
                         Layout.fillWidth: true
                         placeholderText: qsTr("Select default output folder...")
-                        text: root.settingsState.exportDefaultDirectory
-                        onTextChanged: root.settingsState.exportDefaultDirectory = text
+                        text: root.settingsViewModel.exportDefaultDirectory
+                        onTextChanged: root.settingsViewModel.exportDefaultDirectory = text
                     }
                     Controls.SecondaryButton {
                         objectName: "settingsExportBrowseButton"
                         text: qsTr("Browse...")
-                        onClicked: root.settingsState.browseExportDirectory()
+                        onClicked: root.settingsViewModel.browseExportDirectory()
                     }
                 }
 
@@ -70,9 +70,9 @@ Flickable {
                     Controls.DropdownMenu {
                         objectName: "settingsExportArchiveFormatComboBox"
                         model: [qsTr("None"), qsTr("ZIP")]
-                        currentIndex: root.settingsState.exportArchiveFormat
+                        currentIndex: root.settingsViewModel.exportArchiveFormat
                         onActivated: function(index) {
-                            root.settingsState.exportArchiveFormat = index
+                            root.settingsViewModel.exportArchiveFormat = index
                         }
                     }
                 }
@@ -86,9 +86,9 @@ Flickable {
                     }
                     Controls.CheckBox {
                         objectName: "settingsExportIncludeFormulasCheckBox"
-                        checked: root.settingsState.exportIncludeFormulas
+                        checked: root.settingsViewModel.exportIncludeFormulas
                         text: qsTr("Use Excel formulas for totals when possible")
-                        onToggled: root.settingsState.exportIncludeFormulas = checked
+                        onToggled: root.settingsViewModel.exportIncludeFormulas = checked
                     }
                 }
             }

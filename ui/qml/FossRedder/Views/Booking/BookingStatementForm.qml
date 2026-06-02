@@ -15,7 +15,7 @@ Item {
     id: root
 
     required property var theme
-    required property var bookingState
+    required property var bookingViewModel
     property bool readOnly: false
 
     Layout.fillWidth: true
@@ -38,8 +38,8 @@ Item {
                 objectName: "bookingStatementNameField"
                 Layout.fillWidth: true
                 readOnly: root.readOnly
-                text: root.bookingState.statementName
-                onTextEdited: root.bookingState.statementName = text
+                text: root.bookingViewModel.statementName
+                onTextEdited: root.bookingViewModel.statementName = text
             }
         }
 
@@ -48,7 +48,7 @@ Item {
 
             Label {
                 objectName: "bookingTransactionInfoLabel"
-                text: root.bookingState.transactionInfoText
+                text: root.bookingViewModel.transactionInfoText
                 color: root.theme.textMuted
             }
 
@@ -58,16 +58,16 @@ Item {
 
             Controls.CompactAddButton {
                 objectName: "bookingStatementAddTransactionButton"
-                visible: root.bookingState.canAddTransaction
-                enabled: root.bookingState.canAddTransaction
-                onClicked: root.bookingState.addTransactionAfterCurrent()
+                visible: root.bookingViewModel.canAddTransaction
+                enabled: root.bookingViewModel.canAddTransaction
+                onClicked: root.bookingViewModel.addTransactionAfterCurrent()
             }
 
             Controls.CompactRemoveButton {
                 objectName: "bookingStatementRemoveTransactionButton"
                 visible: true
-                enabled: root.bookingState.canDeleteTransaction
-                onClicked: root.bookingState.deleteCurrentTransaction()
+                enabled: root.bookingViewModel.canDeleteTransaction
+                onClicked: root.bookingViewModel.deleteCurrentTransaction()
             }
         }
 
@@ -100,7 +100,7 @@ Item {
                     Booking.BookingTransactionView {
                         Layout.fillWidth: true
                         theme: root.theme
-                        bookingState: root.bookingState
+                        bookingViewModel: root.bookingViewModel
                     }
                 }
             }

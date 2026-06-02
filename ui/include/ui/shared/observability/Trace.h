@@ -1,5 +1,5 @@
 /**
- * @file ui/include/ui/observability/Trace.h
+ * @file ui/include/ui/shared/observability/Trace.h
  * @brief Declarations for the UI Trace component.
  */
 
@@ -33,31 +33,20 @@ inline constexpr auto kRunRoot = "runRoot";
 inline constexpr auto kStatus = "status";
 inline constexpr auto kUrl = "url";
 
+} // namespace context
+
+inline void reportFlow(core::errors::ErrorSeverity severity, const char *code,
+                       const char *origin, std::string message,
+                       core::errors::ErrorContext context = {}) {
+  core::errors::report(severity, code, origin, std::move(message),
+                       std::move(context));
 }
 
-inline void reportFlow(core::errors::ErrorSeverity severity,
-                       const char* code,
-                       const char* origin,
+inline void reportFlow(core::errors::ErrorSeverity severity, const char *origin,
                        std::string message,
-                       core::errors::ErrorContext context = {})
-{
-    core::errors::report(severity,
-                         code,
-                         origin,
-                         std::move(message),
-                         std::move(context));
+                       core::errors::ErrorContext context = {}) {
+  reportFlow(severity, core::errors::codes::GenericError, origin,
+             std::move(message), std::move(context));
 }
 
-inline void reportFlow(core::errors::ErrorSeverity severity,
-                       const char* origin,
-                       std::string message,
-                       core::errors::ErrorContext context = {})
-{
-    reportFlow(severity,
-               core::errors::codes::GenericError,
-               origin,
-               std::move(message),
-               std::move(context));
-}
-
-}
+} // namespace ui::observability

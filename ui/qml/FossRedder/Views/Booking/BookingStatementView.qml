@@ -10,11 +10,11 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var bookingState
+    required property var bookingViewModel
 
     Booking.BookingStatementForm {
         anchors.fill: root
         theme: root.theme
-        bookingState: root.bookingState
+        bookingViewModel: root.bookingViewModel
     }
 }

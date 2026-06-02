@@ -12,7 +12,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var annualState
+    required property var annualViewModel
 
     implicitWidth: bar.implicitWidth
     implicitHeight: bar.implicitHeight
@@ -24,8 +24,8 @@ Item {
 
         Controls.PrevButton {
             objectName: "annualPreviousButton"
-            enabled: root.annualState.hasRows
-            onClicked: root.annualState.navigate(-1)
+            enabled: root.annualViewModel.hasRows
+            onClicked: root.annualViewModel.navigate(-1)
         }
 
         Item { Layout.fillWidth: true }
@@ -34,49 +34,49 @@ Item {
             objectName: "annualToggleWorkspaceButton"
             text: "⇆"
             Layout.preferredWidth: root.theme.viewNavigationButtonWidth
-            onClicked: root.annualState.toggleWorkspace()
+            onClicked: root.annualViewModel.toggleWorkspace()
         }
 
         Controls.DangerButton {
             objectName: "annualClearButton"
-            visible: !root.annualState.isEdit
+            visible: !root.annualViewModel.isEdit
             text: qsTr("Clear")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.annualState.resetCreateState()
+            onClicked: root.annualViewModel.resetCreateState()
         }
 
         Controls.SuccessButton {
             objectName: "annualCreateButton"
-            visible: !root.annualState.isEdit
+            visible: !root.annualViewModel.isEdit
             text: qsTr("Create")
-            enabled: root.annualState.canSubmit
+            enabled: root.annualViewModel.canSubmit
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.annualState.submitCreate()
+            onClicked: root.annualViewModel.submitCreate()
         }
 
         Controls.DangerButton {
             objectName: "annualDeleteButton"
-            visible: root.annualState.isEdit
+            visible: root.annualViewModel.isEdit
             text: qsTr("Delete")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.annualState.deleteCurrent()
+            onClicked: root.annualViewModel.deleteCurrent()
         }
 
         Controls.SuccessButton {
             objectName: "annualUpdateButton"
-            visible: root.annualState.isEdit
+            visible: root.annualViewModel.isEdit
             text: qsTr("Update")
-            enabled: root.annualState.canSubmit && root.annualState.hasChanges
+            enabled: root.annualViewModel.canSubmit && root.annualViewModel.hasChanges
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.annualState.submitUpdate()
+            onClicked: root.annualViewModel.submitUpdate()
         }
 
         Item { Layout.fillWidth: true }
 
         Controls.NextButton {
             objectName: "annualNextButton"
-            enabled: root.annualState.hasRows
-            onClicked: root.annualState.navigate(1)
+            enabled: root.annualViewModel.hasRows
+            onClicked: root.annualViewModel.navigate(1)
         }
     }
 }

@@ -18,10 +18,7 @@ TestCase {
 
     property var navigation: QtObject {
         property int sectionValue: -1
-        function setSectionValue(value) { sectionValue = value }
-    }
-
-    property var shellNavigationState: QtObject {
+        property int activeSection: sectionValue
         property int actorSection: 0
         property int propertySection: 1
         property int contractSection: 2
@@ -31,30 +28,8 @@ TestCase {
         property int settingsSection: 6
         property int analysisSection: 7
         property int annualSection: 8
-        property int activeSection: testCase.navigation.sectionValue
-        function navigateToSection(section, clearWorkspaceSelection) {
-            if (clearWorkspaceSelection) {
-                testCase.session.selectedActorId = ""
-                testCase.session.selectedPropertyId = ""
-                testCase.session.selectedContractId = ""
-                testCase.session.selectedStatementId = ""
-                testCase.session.selectedTransactionId = ""
-                testCase.session.selectedAnalysisId = ""
-                testCase.session.selectedAnnualId = ""
-            } else if (section !== bookingSection) {
-                testCase.session.selectedStatementId = ""
-                testCase.session.selectedTransactionId = ""
-            }
-            testCase.navigation.setSectionValue(section)
-        }
-        function navigateToImportHome() {
-            navigateToSection(importSection, false)
-        }
-        function navigateToBookingCreate() {
-            testCase.session.selectedStatementId = ""
-            testCase.session.selectedTransactionId = ""
-            navigateToSection(bookingSection, false)
-        }
+        function setSectionValue(value) { sectionValue = value }
+        function navigateToSection(section) { sectionValue = section }
     }
 
     property var session: QtObject {
@@ -97,6 +72,31 @@ TestCase {
         property bool toolbarShowSettings: true
     }
 
+    property var actorViewModel: QtObject {
+        property int enterCreateModeCalls: 0
+        function enterCreateMode() { enterCreateModeCalls += 1 }
+    }
+
+    property var propertyViewModel: QtObject {
+        property int enterCreateModeCalls: 0
+        function enterCreateMode() { enterCreateModeCalls += 1 }
+    }
+
+    property var contractViewModel: QtObject {
+        property int enterCreateModeCalls: 0
+        function enterCreateMode() { enterCreateModeCalls += 1 }
+    }
+
+    property var analysisViewModel: QtObject {
+        property string selectedId: "analysis-2"
+        function selectAnalysis(id) { selectedId = id }
+    }
+
+    property var annualViewModel: QtObject {
+        property int resetCreateStateCalls: 0
+        function resetCreateState() { resetCreateStateCalls += 1 }
+    }
+
     property var theme: QtObject {
         property int toolbarHeight: 96
         property int toolbarIconButtonWidth: 64
@@ -126,7 +126,12 @@ TestCase {
         Toolbar {
             width: 960
             height: 120
-            shellNavigationState: testCase.shellNavigationState
+            navigation: testCase.navigation
+            actorViewModel: testCase.actorViewModel
+            propertyViewModel: testCase.propertyViewModel
+            contractViewModel: testCase.contractViewModel
+            analysisViewModel: testCase.analysisViewModel
+            annualViewModel: testCase.annualViewModel
             settingsViewModel: testCase.settingsViewModel
             theme: testCase.theme
         }
@@ -145,40 +150,42 @@ TestCase {
         session.selectedTransactionId = ""
         session.selectedAnalysisId = ""
         session.selectedAnnualId = ""
+        actorViewModel.enterCreateModeCalls = 0
+        propertyViewModel.enterCreateModeCalls = 0
+        contractViewModel.enterCreateModeCalls = 0
+        analysisViewModel.selectedId = "analysis-2"
+        annualViewModel.resetCreateStateCalls = 0
     }
 
-    function test_CTRL_TB_001_domainCreateModeNavigation() {
+    function test_CTRL_TB_001_domainNavigation() {
         const toolbar = createToolbar()
-        session.selectedActorId = "actor-2"
-        session.selectedPropertyId = "property-2"
-        session.selectedContractId = "contract-2"
 
         toolbar.navigateTo(toolbar.navActors, true)
-        compare(session.selectedActorId, "")
+        compare(navigation.sectionValue, navigation.actorSection)
+        compare(actorViewModel.enterCreateModeCalls, 1)
 
         toolbar.navigateTo(toolbar.navProperties, true)
-        compare(session.selectedPropertyId, "")
+        compare(navigation.sectionValue, navigation.propertySection)
+        compare(propertyViewModel.enterCreateModeCalls, 1)
 
         toolbar.navigateTo(toolbar.navContracts, true)
-        compare(session.selectedContractId, "")
+        compare(navigation.sectionValue, navigation.contractSection)
+        compare(contractViewModel.enterCreateModeCalls, 1)
     }
 
-    function test_CTRL_TB_002_bookingAndToolCreateModeNavigation() {
+    function test_CTRL_TB_002_bookingAndToolNavigation() {
         const toolbar = createToolbar()
-        session.selectedStatementId = "statement-2"
-        session.selectedTransactionId = "tx-2"
-        session.selectedAnalysisId = "analysis-2"
-        session.selectedAnnualId = "annual-2"
 
-        toolbar.navigateToBookingCreate()
-        compare(session.selectedStatementId, "")
-        compare(session.selectedTransactionId, "")
+        toolbar.navigateTo(toolbar.navBooking, false)
+        compare(navigation.sectionValue, navigation.bookingSection)
 
         toolbar.navigateTo(toolbar.navAnalysis, true)
-        compare(session.selectedAnalysisId, "")
+        compare(navigation.sectionValue, navigation.analysisSection)
+        compare(analysisViewModel.selectedId, "")
 
         toolbar.navigateTo(toolbar.navAnnual, true)
-        compare(session.selectedAnnualId, "")
+        compare(navigation.sectionValue, navigation.annualSection)
+        compare(annualViewModel.resetCreateStateCalls, 1)
     }
 
 }

@@ -13,7 +13,7 @@ class OpenCvAnalysisImageRendererAdapter final : public core::ports::analysis_im
 public:
     bool writeAnalysisImage(const std::filesystem::path& outputPath,
                             const std::string& title,
-                            const core::domain::AnalysisResult& result) const override;
+                            const core::ports::analysis::AnalysisResult& result) const override;
 };
 
 } // namespace infra::analysis_image_renderer

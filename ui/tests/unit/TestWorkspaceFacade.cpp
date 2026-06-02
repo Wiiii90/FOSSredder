@@ -6,340 +6,307 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <memory>
 #include <vector>
 
-#include "core/domain/entities/Actor.h"
-#include "core/domain/entities/Contract.h"
-#include "core/domain/entities/Property.h"
-#include "core/application/workspace/WorkspaceFacade.h"
-#include "support/FakeStorageManager.h"
+#include "support/WorkspacePortFakes.h"
 #include "support/WorkspaceTestData.h"
-#include "ui/adapters/core/WorkspaceRowProjector.h"
+#include "ui/workspace/WorkspaceRowProjector.h"
+#include "ui/shared/payload/PayloadKeys.h"
+#include "ui/workspace/RowSelectionSupport.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 namespace {
 
-template <typename Entity>
-QStringList aliasValues(const std::shared_ptr<Entity>& entity)
-{
-    QStringList values;
-    if (!entity) {
-        return values;
-    }
-
-    for (const auto& alias : entity->aliases()) {
-        values.push_back(QString::fromStdString(alias.value()));
-    }
-    return values;
+QStringList
+aliasValues(const std::vector<core::ports::workspace::AliasSnapshot> &aliases) {
+  QStringList values;
+  for (const auto &alias : aliases) {
+    values.push_back(QString::fromStdString(alias.value));
+  }
+  return values;
 }
 
-template <typename Entity>
-std::shared_ptr<Entity> findById(const std::vector<std::shared_ptr<Entity>>& items, const std::string& id)
-{
-    const auto it = std::find_if(items.begin(), items.end(), [&](const auto& item) {
-        return item && item->id() == id;
-    });
-    return it == items.end() ? nullptr : *it;
+template <typename Row>
+const Row *findById(const std::vector<Row> &items, const std::string &id) {
+  const auto it = std::find_if(items.begin(), items.end(),
+                               [&](const auto &item) { return item.id == id; });
+  return it == items.end() ? nullptr : &*it;
 }
 
 } // namespace
 
 namespace ui {
 
-TEST(WorkspaceFacadeTest, LoadsTheWorkspaceProjectionAndSelectionState)
-{
-    auto storage = std::make_unique<tests::support::FakeStorageManager>();
-    auto* storagePtr = storage.get();
-    auto coreFacade = std::make_unique<core::application::WorkspaceFacade>(std::move(storage));
-    WorkspaceFacade facade(coreFacade.get());
+TEST(WorkspaceFacadeTest, LoadsTheWorkspaceProjectionAndSelectionIds) {
+  tests::support::InMemoryWorkspace workspace;
+  WorkspaceFacade facade(&workspace, &workspace);
 
-    const int initialRevision = facade.dataRevision();
-    facade.loadFromState(tests::support::makeWorkspaceCatalog());
-    EXPECT_GT(facade.dataRevision(), initialRevision);
+  const int initialRevision = facade.dataRevision();
+  facade.loadFromState(tests::support::makeWorkspaceSnapshot());
+  auto &models = facade.cache()->models();
+  EXPECT_GT(facade.dataRevision(), initialRevision);
 
-    EXPECT_EQ(facade.actors()->rowCount(), 1);
-    EXPECT_EQ(facade.properties()->rowCount(), 1);
-    EXPECT_EQ(facade.contracts()->rowCount(), 1);
-    EXPECT_EQ(facade.statements()->rowCount(), 1);
-    EXPECT_EQ(facade.transactions()->rowCount(), 2);
-    EXPECT_EQ(facade.analyses()->rowCount(), 1);
-    EXPECT_EQ(facade.annuals()->rowCount(), 1);
+  EXPECT_EQ(facade.actorRows().size(), 1);
+  EXPECT_EQ(facade.propertyRows().size(), 1);
+  EXPECT_EQ(facade.contractRows().size(), 1);
+  EXPECT_EQ(models.statements().rowCount(), 1);
+  EXPECT_EQ(models.transactions().rowCount(), 2);
+  EXPECT_EQ(models.analyses().rowCount(), 1);
+  EXPECT_EQ(models.annuals().rowCount(), 1);
 
-    facade.setSelectedActorId(QStringLiteral("actor-1"));
-    facade.setSelectedPropertyId(QStringLiteral("property-1"));
-    facade.setSelectedContractId(QStringLiteral("contract-1"));
-    facade.setSelectedStatementId(QStringLiteral("statement-1"));
-    facade.setSelectedTransactionId(QStringLiteral("tx-1"));
-    facade.setSelectedAnalysisId(QStringLiteral("analysis-1"));
-    facade.setSelectedAnnualId(QStringLiteral("annual-1"));
+  auto *selection = facade.selection();
+  selection->setSelectedActorId(QStringLiteral("actor-1"));
+  selection->setSelectedPropertyId(QStringLiteral("property-1"));
+  selection->setSelectedContractId(QStringLiteral("contract-1"));
+  selection->setSelectedStatementId(QStringLiteral("statement-1"));
+  selection->setSelectedTransactionId(QStringLiteral("tx-1"));
+  selection->setSelectedAnalysisId(QStringLiteral("analysis-1"));
+  selection->setSelectedAnnualId(QStringLiteral("annual-1"));
 
-    ASSERT_NE(facade.selectedActor(), nullptr);
-    ASSERT_NE(facade.selectedTransaction(), nullptr);
-    ASSERT_NE(facade.selectedAnalysis(), nullptr);
-    EXPECT_EQ(facade.selectedActor()->id(), QStringLiteral("actor-1"));
-    EXPECT_EQ(facade.selectedActor()->name(), QStringLiteral("Main Actor"));
-    EXPECT_EQ(facade.selectedTransaction()->id(), QStringLiteral("tx-1"));
-    EXPECT_EQ(facade.selectedTransaction()->statementId(), QStringLiteral("statement-1"));
-    EXPECT_EQ(facade.selectedAnalysis()->id(), QStringLiteral("analysis-1"));
+  EXPECT_EQ(selection->selectedActorId(), QStringLiteral("actor-1"));
+  EXPECT_EQ(selection->selectedPropertyId(), QStringLiteral("property-1"));
+  EXPECT_EQ(selection->selectedContractId(), QStringLiteral("contract-1"));
+  EXPECT_EQ(selection->selectedStatementId(), QStringLiteral("statement-1"));
+  EXPECT_EQ(selection->selectedTransactionId(), QStringLiteral("tx-1"));
+  EXPECT_EQ(selection->selectedAnalysisId(), QStringLiteral("analysis-1"));
+  EXPECT_EQ(selection->selectedAnnualId(), QStringLiteral("annual-1"));
 
-    EXPECT_EQ(facade.statementTransactionIds(QStringLiteral("statement-1")),
-              QVariantList({QStringLiteral("tx-1"), QStringLiteral("tx-2")}));
-    const QVariantMap txPayload = facade.transaction(QStringLiteral("tx-1"));
-    EXPECT_EQ(txPayload.value(QStringLiteral("id")).toString(),
-              QStringLiteral("tx-1"));
-    EXPECT_EQ(txPayload.value(QStringLiteral("contractId")).toString(),
-              QStringLiteral("contract-1"));
-    EXPECT_EQ(facade.annual(QStringLiteral("annual-1")).value(QStringLiteral("id")).toString(),
-              QStringLiteral("annual-1"));
+  const QVariantList transactionRows = buildStatementTransactionRows(
+      *facade.cache(), QStringLiteral("statement-1"));
+  ASSERT_EQ(transactionRows.size(), 2);
+  EXPECT_EQ(
+      transactionRows.at(0).toMap().value(QStringLiteral("id")).toString(),
+      QStringLiteral("tx-1"));
+  EXPECT_EQ(
+      transactionRows.at(1).toMap().value(QStringLiteral("id")).toString(),
+      QStringLiteral("tx-2"));
+  const int txRow = models.transactions().findRowById(QStringLiteral("tx-1"));
+  ASSERT_GE(txRow, 0);
+  const QVariantMap txPayload = models.transactions().get(txRow);
+  EXPECT_EQ(txPayload.value(QStringLiteral("id")).toString(),
+            QStringLiteral("tx-1"));
+  EXPECT_EQ(txPayload.value(QStringLiteral("contractId")).toString(),
+            QStringLiteral("contract-1"));
+  const QVariantList annualRows = buildAnnualRows(*facade.cache());
+  ASSERT_EQ(annualRows.size(), 1);
+  EXPECT_EQ(annualRows.first().toMap().value(QStringLiteral("id")).toString(),
+            QStringLiteral("annual-1"));
 
-    const QVariantList rows{
-        QVariantMap{{QStringLiteral("id"), QStringLiteral("a")}, {QStringLiteral("display"), QStringLiteral("Alpha")}},
-        QVariantMap{{QStringLiteral("id"), QStringLiteral("b")}, {QStringLiteral("display"), QStringLiteral("Beta")}},
-        QVariantMap{{QStringLiteral("id"), QStringLiteral("c")}, {QStringLiteral("display"), QStringLiteral("Gamma")}}
-    };
-    const QVariantMap orderedSelection = ui::orderedSelectionState(rows,
-                                                                   QVariantList{QStringLiteral("c"), QStringLiteral("a")},
-                                                                   1,
-                                                                   QStringLiteral("b"));
-    EXPECT_EQ(orderedSelection.value(QStringLiteral("orderIds")).toList(),
-              QVariantList({QStringLiteral("c"), QStringLiteral("a"), QStringLiteral("b")}));
-    EXPECT_EQ(orderedSelection.value(QStringLiteral("index")).toInt(), 2);
-    EXPECT_EQ(orderedSelection.value(QStringLiteral("id")).toString(), QStringLiteral("b"));
-    EXPECT_EQ(orderedSelection.value(QStringLiteral("currentId")).toString(), QStringLiteral("b"));
+  const QVariantList rows{
+      QVariantMap{{QStringLiteral("id"), QStringLiteral("a")},
+                  {QStringLiteral("display"), QStringLiteral("Alpha")}},
+      QVariantMap{{QStringLiteral("id"), QStringLiteral("b")},
+                  {QStringLiteral("display"), QStringLiteral("Beta")}},
+      QVariantMap{{QStringLiteral("id"), QStringLiteral("c")},
+                  {QStringLiteral("display"), QStringLiteral("Gamma")}}};
+  const QVariantMap orderedSelection = ui::orderedSelectionState(
+      rows, QVariantList{QStringLiteral("c"), QStringLiteral("a")}, 1,
+      QStringLiteral("b"));
+  EXPECT_EQ(orderedSelection.value(QStringLiteral("orderIds")).toList(),
+            QVariantList({QStringLiteral("c"), QStringLiteral("a"),
+                          QStringLiteral("b")}));
+  EXPECT_EQ(orderedSelection.value(QStringLiteral("index")).toInt(), 2);
+  EXPECT_EQ(orderedSelection.value(QStringLiteral("id")).toString(),
+            QStringLiteral("b"));
+  EXPECT_EQ(orderedSelection.value(QStringLiteral("currentId")).toString(),
+            QStringLiteral("b"));
 
-    EXPECT_EQ(storagePtr->currentPath(), std::string());
-    facade.newFile(QStringLiteral("workspace-a.fr"));
-    EXPECT_EQ(facade.currentPath(), QStringLiteral("workspace-a.fr"));
-    EXPECT_EQ(storagePtr->currentPath(), std::string("workspace-a.fr"));
+  EXPECT_EQ(workspace.currentPath(), std::string());
+  facade.newFile(QStringLiteral("workspace-a.fr"));
+  EXPECT_EQ(facade.currentPath(), QStringLiteral("workspace-a.fr"));
+  EXPECT_EQ(workspace.currentPath(), std::string("workspace-a.fr"));
 }
 
-TEST(WorkspaceFacadeTest, RoutesMutationsThroughTheCoreBoundaryAndRefreshesUIRows)
-{
-    auto storage = std::make_unique<tests::support::FakeStorageManager>();
-    auto coreFacade = std::make_unique<core::application::WorkspaceFacade>(std::move(storage));
-    WorkspaceFacade facade(coreFacade.get());
+TEST(WorkspaceFacadeTest,
+     RoutesMutationsThroughTheCoreBoundaryAndRefreshesUIRows) {
+  tests::support::InMemoryWorkspace workspace;
+  WorkspaceFacade facade(&workspace, &workspace);
+  auto &models = facade.cache()->models();
 
-    const int initialRevision = facade.dataRevision();
-    EXPECT_EQ(facade.actors()->rowCount(), 0);
+  const int initialRevision = facade.dataRevision();
+  EXPECT_EQ(facade.actorRows().size(), 0);
 
-    const QString createdId = facade.addActor(QStringLiteral("Second Actor"),
-                                              QStringList{QStringLiteral("Actor Two")});
-    ASSERT_FALSE(createdId.isEmpty());
-    EXPECT_GT(facade.dataRevision(), initialRevision);
-    EXPECT_EQ(facade.actors()->rowCount(), 1);
-    EXPECT_EQ(facade.actorRows().size(), 1);
-    EXPECT_EQ(facade.actors()->data(facade.actors()->index(0, 0), ActorList::NameRole).toString(),
-              QStringLiteral("Second Actor"));
+  const QString createdId =
+      facade.saveActor(QString(), QStringLiteral("Second Actor"),
+                       QStringList{QStringLiteral("Actor Two")});
+  ASSERT_FALSE(createdId.isEmpty());
+  EXPECT_GT(facade.dataRevision(), initialRevision);
+  EXPECT_EQ(facade.actorRows().size(), 1);
+  EXPECT_EQ(facade.actorRows()
+                .at(0)
+                .toMap()
+                .value(payload::keys::common::kName)
+                .toString(),
+            QStringLiteral("Second Actor"));
 
-    const QString thirdId = facade.addActor(QStringLiteral("Third Actor"));
-    ASSERT_FALSE(thirdId.isEmpty());
-    EXPECT_EQ(facade.actors()->rowCount(), 2);
-    const int revisionAfterSecondAdd = facade.dataRevision();
+  const QString thirdId =
+      facade.saveActor(QString(), QStringLiteral("Third Actor"));
+  ASSERT_FALSE(thirdId.isEmpty());
+  EXPECT_EQ(facade.actorRows().size(), 2);
+  const int revisionAfterSecondAdd = facade.dataRevision();
 
-    facade.updateActor(thirdId, QStringLiteral("Third Actor Updated"));
-    EXPECT_GT(facade.dataRevision(), revisionAfterSecondAdd);
-    EXPECT_EQ(facade.actors()->data(facade.actors()->index(1, 0), ActorList::NameRole).toString(),
-              QStringLiteral("Third Actor Updated"));
+  facade.saveActor(thirdId, QStringLiteral("Third Actor Updated"));
+  EXPECT_GT(facade.dataRevision(), revisionAfterSecondAdd);
+  EXPECT_EQ(facade.actorRows()
+                .at(1)
+                .toMap()
+                .value(payload::keys::common::kName)
+                .toString(),
+            QStringLiteral("Third Actor Updated"));
 
-    const int revisionAfterUpdate = facade.dataRevision();
-    facade.deleteActor(createdId);
-    EXPECT_GT(facade.dataRevision(), revisionAfterUpdate);
-    EXPECT_EQ(facade.actors()->rowCount(), 1);
-    EXPECT_EQ(facade.actors()->data(facade.actors()->index(0, 0), ActorList::NameRole).toString(),
-              QStringLiteral("Third Actor Updated"));
+  const int revisionAfterUpdate = facade.dataRevision();
+  facade.deleteActor(createdId);
+  EXPECT_GT(facade.dataRevision(), revisionAfterUpdate);
+  EXPECT_EQ(facade.actorRows().size(), 1);
+  EXPECT_EQ(facade.actorRows()
+                .at(0)
+                .toMap()
+                .value(payload::keys::common::kName)
+                .toString(),
+            QStringLiteral("Third Actor Updated"));
 
-    const int revisionBeforeContract = facade.dataRevision();
-    const QString contractId = facade.addContract(QStringLiteral("Lease Agreement"),
-                                                  QStringLiteral("lease"));
-    ASSERT_FALSE(contractId.isEmpty());
-    EXPECT_GT(facade.dataRevision(), revisionBeforeContract);
-    EXPECT_EQ(facade.contracts()->rowCount(), 1);
+  const int revisionBeforeContract = facade.dataRevision();
+  const QString contractId = facade.saveContract(
+      QString(), QStringLiteral("Lease Agreement"), QStringLiteral("lease"));
+  ASSERT_FALSE(contractId.isEmpty());
+  EXPECT_GT(facade.dataRevision(), revisionBeforeContract);
+  EXPECT_EQ(facade.contractRows().size(), 1);
 
-    const int revisionBeforeContractDelete = facade.dataRevision();
-    facade.deleteContract(contractId);
-    EXPECT_GT(facade.dataRevision(), revisionBeforeContractDelete);
-    EXPECT_EQ(facade.contracts()->rowCount(), 0);
+  const int revisionBeforeContractDelete = facade.dataRevision();
+  facade.deleteContract(contractId);
+  EXPECT_GT(facade.dataRevision(), revisionBeforeContractDelete);
+  EXPECT_EQ(facade.contractRows().size(), 0);
 }
 
-TEST(WorkspaceFacadeTest, AnalysisUpdatePreservesOrReplacesCalculationAdjustments)
-{
-    auto storage = std::make_unique<tests::support::FakeStorageManager>();
-    auto* storagePtr = storage.get();
-    auto coreFacade = std::make_unique<core::application::WorkspaceFacade>(std::move(storage));
-    WorkspaceFacade facade(coreFacade.get());
-    storagePtr->loadedState_.catalog = tests::support::makeWorkspaceCatalog();
-    coreFacade->openFile("workspace-analysis.fr");
+TEST(WorkspaceFacadeTest, PersistsActorAliasesAcrossSelectionChanges) {
+  tests::support::InMemoryWorkspace workspace;
+  WorkspaceFacade facade(&workspace, &workspace);
 
-    facade.updateAnalysis(QStringLiteral("analysis-1"),
-                          QStringLiteral("Monthly Analysis Updated"),
-                          QStringLiteral("tabular"),
-                          QStringLiteral("{\"groupBy\":\"month\"}"),
-                          QStringLiteral("{}"),
-                          QStringLiteral("csv"),
-                          true,
-                          QStringLiteral("{}"),
-                          QStringLiteral("[\"tx-1\"]"));
+  facade.newFile(QStringLiteral("workspace-actor.fr"));
 
-    auto snapshot = coreFacade->workspaceSnapshot();
-    ASSERT_EQ(snapshot.analyses.size(), 1U);
-    ASSERT_EQ(snapshot.analyses.front().adjustments.size(), 1U);
-    EXPECT_EQ(snapshot.analyses.front().adjustments.front().first, std::string("actor-1"));
-    EXPECT_DOUBLE_EQ(snapshot.analyses.front().adjustments.front().second, 19.25);
+  const QString actorId =
+      facade.saveActor(QString(), QStringLiteral("Main Actor"),
+                       QStringList{QStringLiteral("Primary Actor"),
+                                   QStringLiteral("Main Actor")});
+  const QString otherActorId =
+      facade.saveActor(QString(), QStringLiteral("Backup Actor"),
+                       QStringList{QStringLiteral("Backup Actor")});
+  ASSERT_FALSE(actorId.isEmpty());
+  ASSERT_FALSE(otherActorId.isEmpty());
 
-    facade.updateAnalysis(QStringLiteral("analysis-1"),
-                          QStringLiteral("Monthly Analysis Updated"),
-                          QStringLiteral("tabular"),
-                          QStringLiteral("{\"groupBy\":\"month\"}"),
-                          QStringLiteral("{}"),
-                          QStringLiteral("csv"),
-                          false,
-                          QStringLiteral("{}"),
-                          QStringLiteral("[\"tx-1\"]"),
-                          QStringLiteral("{\"tx-1\":1500.0}"));
+  facade.selection()->setSelectedActorId(actorId);
 
-    snapshot = coreFacade->workspaceSnapshot();
-    ASSERT_EQ(snapshot.analyses.size(), 1U);
-    ASSERT_EQ(snapshot.analyses.front().adjustments.size(), 1U);
-    EXPECT_EQ(snapshot.analyses.front().adjustments.front().first, std::string("tx-1"));
-    EXPECT_DOUBLE_EQ(snapshot.analyses.front().adjustments.front().second, 1500.0);
-    EXPECT_FALSE(snapshot.analyses.front().includeCalculationAdjustments);
+  const QStringList updatedAliases{QStringLiteral("Primary Actor"),
+                                   QStringLiteral("Main Actor"),
+                                   QStringLiteral("Actor Fresh Alias")};
+
+  const QString savedId = facade.saveActor(
+      actorId, QStringLiteral("Main Actor"), updatedAliases, QStringList{});
+  EXPECT_EQ(savedId, actorId);
+
+  const auto snapshot = workspace.workspaceSnapshot();
+  const auto savedActor = findById(snapshot.actors, actorId.toStdString());
+  ASSERT_NE(savedActor, nullptr);
+  EXPECT_EQ(aliasValues(savedActor->aliases), updatedAliases);
+
+  const QVariantMap otherActor =
+      rowById(buildActorRows(*facade.cache()), otherActorId);
+  EXPECT_EQ(otherActor.value(payload::keys::actor::kAliases).toList(),
+            QVariantList({QStringLiteral("Backup Actor")}));
+
+  const QVariantMap updatedActor =
+      rowById(buildActorRows(*facade.cache()), actorId);
+  EXPECT_EQ(updatedActor.value(payload::keys::actor::kAliases).toList(),
+            QVariantList({QStringLiteral("Primary Actor"),
+                          QStringLiteral("Main Actor"),
+                          QStringLiteral("Actor Fresh Alias")}));
 }
 
-TEST(WorkspaceFacadeTest, PersistsActorAliasesAcrossSelectionChanges)
-{
-    auto storage = std::make_unique<tests::support::FakeStorageManager>();
-    auto* storagePtr = storage.get();
-    auto coreFacade = std::make_unique<core::application::WorkspaceFacade>(std::move(storage));
-    WorkspaceFacade facade(coreFacade.get());
+TEST(WorkspaceFacadeTest, PersistsPropertyAliasesAcrossSelectionChanges) {
+  tests::support::InMemoryWorkspace workspace;
+  WorkspaceFacade facade(&workspace, &workspace);
 
-    facade.newFile(QStringLiteral("workspace-actor.fr"));
+  facade.newFile(QStringLiteral("workspace-property.fr"));
 
-    const QString actorId = facade.addActor(QStringLiteral("Main Actor"),
-                                            QStringList{QStringLiteral("Primary Actor"),
-                                                        QStringLiteral("Main Actor")});
-    const QString otherActorId = facade.addActor(QStringLiteral("Backup Actor"),
-                                                 QStringList{QStringLiteral("Backup Actor")});
-    ASSERT_FALSE(actorId.isEmpty());
-    ASSERT_FALSE(otherActorId.isEmpty());
+  const QString propertyId =
+      facade.saveProperty(QString(), QStringLiteral("Primary Property"),
+                          QStringList{QStringLiteral("Property Alias")});
+  const QString otherPropertyId =
+      facade.saveProperty(QString(), QStringLiteral("Backup Property"),
+                          QStringList{QStringLiteral("Backup Property")});
+  ASSERT_FALSE(propertyId.isEmpty());
+  ASSERT_FALSE(otherPropertyId.isEmpty());
 
-    facade.setSelectedActorId(actorId);
+  facade.selection()->setSelectedPropertyId(propertyId);
 
-    const QStringList updatedAliases{
-        QStringLiteral("Primary Actor"),
-        QStringLiteral("Main Actor"),
-        QStringLiteral("Actor Fresh Alias")
-    };
+  const QStringList updatedAliases{QStringLiteral("Property Alias"),
+                                   QStringLiteral("Property Fresh Alias")};
 
-    const QString savedId = facade.saveActor(actorId,
-                                             QStringLiteral("Main Actor"),
-                                             updatedAliases,
-                                             QStringList{});
-    EXPECT_EQ(savedId, actorId);
+  const QString savedId =
+      facade.saveProperty(propertyId, QStringLiteral("Primary Property"),
+                          updatedAliases, QStringList{});
+  EXPECT_EQ(savedId, propertyId);
 
-    const auto savedActor = findById(storagePtr->savedState_.catalog.actors(), actorId.toStdString());
-    ASSERT_NE(savedActor, nullptr);
-    EXPECT_EQ(aliasValues(savedActor), updatedAliases);
+  const auto snapshot = workspace.workspaceSnapshot();
+  const auto savedProperty =
+      findById(snapshot.properties, propertyId.toStdString());
+  ASSERT_NE(savedProperty, nullptr);
+  EXPECT_EQ(aliasValues(savedProperty->aliases), updatedAliases);
 
-    facade.setSelectedActorId(otherActorId);
-    ASSERT_NE(facade.selectedActor(), nullptr);
-    EXPECT_EQ(facade.selectedActor()->aliases(), QStringList({QStringLiteral("Backup Actor")}));
+  const QVariantMap otherProperty =
+      rowById(buildPropertyRows(*facade.cache()), otherPropertyId);
+  EXPECT_EQ(otherProperty.value(payload::keys::property::kAliases).toList(),
+            QVariantList({QStringLiteral("Backup Property")}));
 
-    facade.setSelectedActorId(actorId);
-    ASSERT_NE(facade.selectedActor(), nullptr);
-    EXPECT_EQ(facade.selectedActor()->aliases(), updatedAliases);
+  const QVariantMap updatedProperty =
+      rowById(buildPropertyRows(*facade.cache()), propertyId);
+  EXPECT_EQ(updatedProperty.value(payload::keys::property::kAliases).toList(),
+            QVariantList({QStringLiteral("Property Alias"),
+                          QStringLiteral("Property Fresh Alias")}));
 }
 
-TEST(WorkspaceFacadeTest, PersistsPropertyAliasesAcrossSelectionChanges)
-{
-    auto storage = std::make_unique<tests::support::FakeStorageManager>();
-    auto* storagePtr = storage.get();
-    auto coreFacade = std::make_unique<core::application::WorkspaceFacade>(std::move(storage));
-    WorkspaceFacade facade(coreFacade.get());
+TEST(WorkspaceFacadeTest, PersistsContractAliasesAcrossSelectionChanges) {
+  tests::support::InMemoryWorkspace workspace;
+  WorkspaceFacade facade(&workspace, &workspace);
 
-    facade.newFile(QStringLiteral("workspace-property.fr"));
+  facade.newFile(QStringLiteral("workspace-contract.fr"));
 
-    const QString propertyId = facade.addProperty(QStringLiteral("Primary Property"),
-                                                  QStringList{QStringLiteral("Property Alias")});
-    const QString otherPropertyId = facade.addProperty(QStringLiteral("Backup Property"),
-                                                       QStringList{QStringLiteral("Backup Property")});
-    ASSERT_FALSE(propertyId.isEmpty());
-    ASSERT_FALSE(otherPropertyId.isEmpty());
+  const QString contractId = facade.saveContract(
+      QString(), QStringLiteral("Lease Contract"), QStringLiteral("lease"),
+      QStringList{}, QStringList{}, QStringList{QStringLiteral("Lease")});
+  const QString otherContractId =
+      facade.saveContract(QString(), QStringLiteral("Backup Contract"),
+                          QStringLiteral("lease"), QStringList{}, QStringList{},
+                          QStringList{QStringLiteral("Backup Contract")});
+  ASSERT_FALSE(contractId.isEmpty());
+  ASSERT_FALSE(otherContractId.isEmpty());
 
-    facade.setSelectedPropertyId(propertyId);
+  facade.selection()->setSelectedContractId(contractId);
 
-    const QStringList updatedAliases{
-        QStringLiteral("Property Alias"),
-        QStringLiteral("Property Fresh Alias")
-    };
+  const QStringList updatedAliases{QStringLiteral("Lease"),
+                                   QStringLiteral("Lease Fresh Alias")};
 
-    const QString savedId = facade.saveProperty(propertyId,
-                                                QStringLiteral("Primary Property"),
-                                                updatedAliases,
-                                                QStringList{});
-    EXPECT_EQ(savedId, propertyId);
+  const QString savedId = facade.saveContract(
+      contractId, QStringLiteral("Lease Contract"), QStringLiteral("lease"),
+      QStringList{}, QStringList{}, updatedAliases);
+  EXPECT_EQ(savedId, contractId);
 
-    const auto savedProperty = findById(storagePtr->savedState_.catalog.properties(), propertyId.toStdString());
-    ASSERT_NE(savedProperty, nullptr);
-    EXPECT_EQ(aliasValues(savedProperty), updatedAliases);
+  const auto snapshot = workspace.workspaceSnapshot();
+  const auto savedContract =
+      findById(snapshot.contracts, contractId.toStdString());
+  ASSERT_NE(savedContract, nullptr);
+  EXPECT_EQ(aliasValues(savedContract->aliases), updatedAliases);
 
-    facade.setSelectedPropertyId(otherPropertyId);
-    ASSERT_NE(facade.selectedProperty(), nullptr);
-    EXPECT_EQ(facade.selectedProperty()->aliases(), QStringList({QStringLiteral("Backup Property")}));
+  const QVariantMap otherContract =
+      rowById(buildContractRows(*facade.cache()), otherContractId);
+  EXPECT_EQ(otherContract.value(payload::keys::contract::kAliases).toList(),
+            QVariantList({QStringLiteral("Backup Contract")}));
 
-    facade.setSelectedPropertyId(propertyId);
-    ASSERT_NE(facade.selectedProperty(), nullptr);
-    EXPECT_EQ(facade.selectedProperty()->aliases(), updatedAliases);
-}
-
-TEST(WorkspaceFacadeTest, PersistsContractAliasesAcrossSelectionChanges)
-{
-    auto storage = std::make_unique<tests::support::FakeStorageManager>();
-    auto* storagePtr = storage.get();
-    auto coreFacade = std::make_unique<core::application::WorkspaceFacade>(std::move(storage));
-    WorkspaceFacade facade(coreFacade.get());
-
-    facade.newFile(QStringLiteral("workspace-contract.fr"));
-
-    const QString contractId = facade.addContract(QStringLiteral("Lease Contract"),
-                                                  QStringLiteral("lease"),
-                                                  QStringList{},
-                                                  QStringList{},
-                                                  QStringList{QStringLiteral("Lease")});
-    const QString otherContractId = facade.addContract(QStringLiteral("Backup Contract"),
-                                                       QStringLiteral("lease"),
-                                                       QStringList{},
-                                                       QStringList{},
-                                                       QStringList{QStringLiteral("Backup Contract")});
-    ASSERT_FALSE(contractId.isEmpty());
-    ASSERT_FALSE(otherContractId.isEmpty());
-
-    facade.setSelectedContractId(contractId);
-
-    const QStringList updatedAliases{
-        QStringLiteral("Lease"),
-        QStringLiteral("Lease Fresh Alias")
-    };
-
-    const QString savedId = facade.saveContract(contractId,
-                                                QStringLiteral("Lease Contract"),
-                                                QStringLiteral("lease"),
-                                                QStringList{},
-                                                QStringList{},
-                                                updatedAliases);
-    EXPECT_EQ(savedId, contractId);
-
-    const auto savedContract = findById(storagePtr->savedState_.catalog.contracts(), contractId.toStdString());
-    ASSERT_NE(savedContract, nullptr);
-    EXPECT_EQ(aliasValues(savedContract), updatedAliases);
-
-    facade.setSelectedContractId(otherContractId);
-    ASSERT_NE(facade.selectedContract(), nullptr);
-    EXPECT_EQ(facade.selectedContract()->aliases(), QStringList({QStringLiteral("Backup Contract")}));
-
-    facade.setSelectedContractId(contractId);
-    ASSERT_NE(facade.selectedContract(), nullptr);
-    EXPECT_EQ(facade.selectedContract()->aliases(), updatedAliases);
+  const QVariantMap updatedContract =
+      rowById(buildContractRows(*facade.cache()), contractId);
+  EXPECT_EQ(updatedContract.value(payload::keys::contract::kAliases).toList(),
+            QVariantList({QStringLiteral("Lease"),
+                          QStringLiteral("Lease Fresh Alias")}));
 }
 
 } // namespace ui

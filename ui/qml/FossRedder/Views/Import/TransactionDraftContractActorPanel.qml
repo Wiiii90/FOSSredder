@@ -11,11 +11,11 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var transactionState
+    required property var transactionViewModel
     required property var theme
     property bool embedded: false
 
-    readonly property int suggestionTone: root.transactionState.suggestionTone(root.transactionState.actorSuggestionConfidence)
+    readonly property int suggestionTone: root.transactionViewModel.suggestionTone(root.transactionViewModel.actorSuggestionConfidence)
     readonly property color suggestionColor: root.suggestionTone === 2 ? root.theme.successStrong : (root.suggestionTone === 1 ? root.theme.warning : root.theme.danger)
 
     Layout.fillWidth: true
@@ -59,12 +59,12 @@ Item {
 
                     leftContent: Component {
                         Controls.DropdownMenu {
-                            objectName: "transactionDraftActorChoiceCombo"
+                            objectName: "transactionDraftActorCombo"
                             Layout.fillWidth: true
                             textRole: "display"
-                            model: root.transactionState.actorChoiceModel
-                            currentIndex: root.transactionState.selectedActorIndex
-                            onActivated: function(index) { root.transactionState.selectActorIndex(index) }
+                            model: root.transactionViewModel.actorOptions
+                            currentIndex: root.transactionViewModel.selectedActorOptionIndex
+                            onActivated: function(index) { root.transactionViewModel.selectActorAtIndex(index) }
                         }
                     }
 
@@ -73,20 +73,20 @@ Item {
                             spacing: root.theme.spacingSmall
 
                             Controls.TextField {
-                                objectName: "transactionDraftActorTextField"
+                                objectName: "transactionDraftActorNameField"
                                 Layout.fillWidth: true
                                 placeholderText: ""
-                                text: root.transactionState.actorText
-                                onTextEdited: root.transactionState.actorText = text
-                                onAccepted: root.transactionState.actorText = text
-                                onEditingFinished: root.transactionState.actorText = text
-                                onActiveFocusChanged: if (!activeFocus) root.transactionState.actorText = text
+                                text: root.transactionViewModel.actorName
+                                onTextEdited: root.transactionViewModel.actorName = text
+                                onAccepted: root.transactionViewModel.actorName = text
+                                onEditingFinished: root.transactionViewModel.actorName = text
+                                onActiveFocusChanged: if (!activeFocus) root.transactionViewModel.actorName = text
                             }
 
                             Controls.CompactAddButton {
                                 objectName: "transactionDraftActorAddFromTextButton"
-                                enabled: root.transactionState.canAddActor
-                                onClicked: root.transactionState.addActorFromText()
+                                enabled: root.transactionViewModel.canAddActor
+                                onClicked: root.transactionViewModel.addActor()
                             }
                         }
                     }
@@ -96,7 +96,7 @@ Item {
 
         Label {
             objectName: "transactionDraftActorSuggestionLabel"
-            text: root.transactionState.actorSuggestionSummary
+            text: root.transactionViewModel.actorSuggestionSummary
             color: root.suggestionColor
             Layout.fillWidth: true
         }

@@ -12,15 +12,14 @@ class QEvent;
 namespace ui::window {
 
 struct DropEventOutcome {
-    bool handled = false;
-    bool accepted = false;
-    QStringList files;
+  bool handled = false;
+  bool accepted = false;
+  QStringList files;
 };
 
 class DropHandler {
 public:
-    DropEventOutcome handle(QEvent* event) const;
+  DropEventOutcome handle(QEvent *event) const;
 };
 
-}
-
+} // namespace ui::window

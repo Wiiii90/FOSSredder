@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsState: QtObject {
+    property var settingsViewModel: QtObject {
         property var languageOptions: [
             { code: "en", label: "English", available: true },
             { code: "de", label: "Deutsch", available: true }
@@ -66,7 +66,7 @@ TestCase {
         Settings.SettingsGeneral {
             width: 900
             height: 560
-            settingsState: testCase.settingsState
+            settingsViewModel: testCase.settingsViewModel
             theme: testCase.theme
         }
     }
@@ -76,16 +76,16 @@ TestCase {
     }
 
     function init() {
-        settingsState.languageOptions = [
+        settingsViewModel.languageOptions = [
             { code: "en", label: "English", available: true },
             { code: "de", label: "Deutsch", available: true }
         ]
-        settingsState.language = "en"
-        settingsState.languageIndex = 0
-        settingsState.selectedLanguageIndex = -1
-        settingsState.themeMode = "light"
-        settingsState.themeModeIndex = 0
-        settingsState.selectedThemeModeIndex = -1
+        settingsViewModel.language = "en"
+        settingsViewModel.languageIndex = 0
+        settingsViewModel.selectedLanguageIndex = -1
+        settingsViewModel.themeMode = "light"
+        settingsViewModel.themeModeIndex = 0
+        settingsViewModel.selectedThemeModeIndex = -1
     }
 
     function test_SET_G_001_languageSelectionDelegatesToSettingsState() {
@@ -95,12 +95,12 @@ TestCase {
         languageDropdown.currentIndex = 1
         languageDropdown.activated(1)
 
-        compare(settingsState.selectedLanguageIndex, 1)
-        compare(settingsState.language, "de")
+        compare(settingsViewModel.selectedLanguageIndex, 1)
+        compare(settingsViewModel.language, "de")
     }
 
     function test_SET_G_002_unavailableLanguageSelectionStaysOnCurrentLanguage() {
-        settingsState.languageOptions = [
+        settingsViewModel.languageOptions = [
             { code: "en", label: "English", available: true },
             { code: "xx", label: "Unavailable", available: false }
         ]
@@ -111,13 +111,13 @@ TestCase {
         languageDropdown.currentIndex = 1
         languageDropdown.activated(1)
 
-        compare(settingsState.selectedLanguageIndex, 1)
-        compare(settingsState.language, "en")
+        compare(settingsViewModel.selectedLanguageIndex, 1)
+        compare(settingsViewModel.language, "en")
     }
 
     function test_SET_G_003_languageDropdownReflectsSettingsStateIndex() {
-        settingsState.language = "de"
-        settingsState.languageIndex = 1
+        settingsViewModel.language = "de"
+        settingsViewModel.languageIndex = 1
 
         const view = createView()
         const languageDropdown = TestSupport.findRequired(Lookup, view, "settingsLanguageDropdown")
@@ -132,7 +132,7 @@ TestCase {
         themeModeDropdown.currentIndex = 1
         themeModeDropdown.activated(1)
 
-        compare(settingsState.selectedThemeModeIndex, 1)
-        compare(settingsState.themeMode, "dark")
+        compare(settingsViewModel.selectedThemeModeIndex, 1)
+        compare(settingsViewModel.themeMode, "dark")
     }
 }

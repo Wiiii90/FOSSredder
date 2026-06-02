@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/application/analysis/AnalysisResult.h"
+#include "core/ports/analysis/AnalysisResult.h"
 
 #include <filesystem>
 #include <string>
@@ -18,7 +18,7 @@ public:
 
     virtual bool writeAnalysisImage(const std::filesystem::path& outputPath,
                                     const std::string& title,
-                                    const core::domain::AnalysisResult& result) const = 0;
+                                    const core::ports::analysis::AnalysisResult& result) const = 0;
 };
 
 } // namespace core::ports::analysis_image_renderer

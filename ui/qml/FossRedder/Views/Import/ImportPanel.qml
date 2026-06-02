@@ -11,7 +11,7 @@ pragma ComponentBehavior: Bound
 Controls.Panel {
     id: root
     required property var theme
-    required property var importState
+    required property var importViewModel
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -28,26 +28,26 @@ Controls.Panel {
             objectName: "importManualPathField"
             Layout.fillWidth: true
             placeholderText: qsTr("Enter file path...")
-            enabled: root.importState.hasImportWorkflow && !root.importState.importRunning
-            text: root.importState.manualPathText
-            onTextEdited: root.importState.manualPathText = text
+            enabled: root.importViewModel.hasImportWorkflow && !root.importViewModel.importRunning
+            text: root.importViewModel.manualPathText
+            onTextEdited: root.importViewModel.manualPathText = text
         }
 
         Controls.AddButton {
             objectName: "importAddFileButton"
             Layout.preferredHeight: parent.actionButtonHeight
-            enabled: root.importState.hasImportWorkflow
-                     && !root.importState.importRunning
-                     && root.importState.manualPathText.trim().length > 0
-            onClicked: root.importState.commitManualImportFiles()
+            enabled: root.importViewModel.hasImportWorkflow
+                     && !root.importViewModel.importRunning
+                     && root.importViewModel.manualPathText.trim().length > 0
+            onClicked: root.importViewModel.addSelectedImportFiles()
         }
 
         Controls.SecondaryButton {
             objectName: "importBrowseFileButton"
             text: qsTr("Browse...")
             Layout.preferredHeight: parent.actionButtonHeight
-            enabled: root.importState.hasImportWorkflow && !root.importState.importRunning
-            onClicked: root.importState.browseImportPdf()
+            enabled: root.importViewModel.hasImportWorkflow && !root.importViewModel.importRunning
+            onClicked: root.importViewModel.browseImportPdf()
         }
     }
 
@@ -55,14 +55,14 @@ Controls.Panel {
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.minimumHeight: 160
-        enabled: root.importState.hasImportWorkflow && !root.importState.importRunning
+        enabled: root.importViewModel.hasImportWorkflow && !root.importViewModel.importRunning
         title: qsTr("Drop PDFs here")
         subtitle: ""
         allowBrowse: false
         clickToBrowse: true
-        queuedCount: root.importState.queuedCount
-        files: root.importState.importFiles
-        fileSummary: root.importState.importFileSummary
-        onBrowseRequested: root.importState.browseImportPdf()
+        queuedCount: root.importViewModel.queuedCount
+        files: root.importViewModel.importFiles
+        fileSummary: root.importViewModel.importFileSummary
+        onBrowseRequested: root.importViewModel.browseImportPdf()
     }
 }

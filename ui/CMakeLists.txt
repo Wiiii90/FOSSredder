@@ -16,61 +16,48 @@ endif()
 set(UI_SOURCES
     src/MainWindow.cpp
     src/shell/AppActions.cpp
-    src/adapters/core/AnalysisRequestMapper.cpp
-    src/adapters/core/AnalysisResultMapper.cpp
-    src/adapters/core/AnnualRequestMapper.cpp
-    src/adapters/core/AnnualResultMapper.cpp
     src/shell/AppContext.cpp
+    src/shell/Composition.cpp
     src/shell/QmlRuntime.cpp
     src/workflows/analysis/AnalysisWorkflow.cpp
     src/workflows/annual/AnnualWorkflow.cpp
     src/workflows/export/ExportWorkflow.cpp
-    src/platform/filesystem/FileSystemBrowser.cpp
+    src/platform/FileSystemBrowser.cpp
     src/workflows/import/ImportWorkflow.cpp
-    src/platform/localization/LanguageService.cpp
-    src/viewmodels/system/SettingsViewModel.cpp
-    src/platform/dialogs/FileDialogs.cpp
-    src/workflows/export/WorkspaceSnapshot.cpp
-    src/workflows/export/ExportRunner.cpp
-    src/adapters/core/DraftViewMapper.cpp
-    src/adapters/core/ImportDraftMapper.cpp
-    src/workflows/import/ImportJobBridge.cpp
-    src/workflows/import/ImportRunStore.cpp
-    src/adapters/core/ImportSuggestionMapper.cpp
-    src/workflows/import/ImportWorkflowState.cpp
-    src/viewmodels/catalog/ActorListModel.cpp
-    src/viewmodels/reporting/AnalysisListModel.cpp
-    src/viewmodels/reporting/AnnualListModel.cpp
-    src/viewmodels/catalog/ContractListModel.cpp
-    src/viewmodels/export/ExportRunListModel.cpp
-    src/viewmodels/import/ImportRunListModel.cpp
-    src/viewmodels/catalog/PropertyListModel.cpp
-    src/viewmodels/import/StatementDraftViewModel.cpp
-    src/viewmodels/booking/StatementListModel.cpp
-    src/viewmodels/import/TransactionDraftListModel.cpp
-    src/viewmodels/booking/TransactionFilterModel.cpp
-    src/viewmodels/booking/TransactionListModel.cpp
-    src/state/filters/FilterState.cpp
-    src/state/export/ExportState.cpp
-    src/state/import/ImportState.cpp
-    src/state/import/StatementDraftState.cpp
-    src/state/import/TransactionDraftState.cpp
-    src/state/navigation/NavigationState.cpp
-    src/state/settings/SettingsState.cpp
-    src/state/shell/ShellNavigationState.cpp
-    src/state/session/AnalysisState.cpp
-    src/state/session/AnnualState.cpp
-    src/state/session/ActorState.cpp
-    src/state/session/BookingState.cpp
-    src/state/session/ContractState.cpp
-    src/state/session/PropertyState.cpp
-    src/state/session/WorkspaceSessionSelection.cpp
-    src/state/selection/SelectionState.cpp
-    src/adapters/core/WorkspaceRowProjector.cpp
-    src/state/session/WorkspaceSessionModels.cpp
-    src/state/session/WorkspaceSessionState.cpp
-    src/state/mutation/SessionMutationState.cpp
+    src/platform/LanguageService.cpp
+    src/adapters/AnalysisAdapter.cpp
+    src/adapters/AnnualAdapter.cpp
+    src/adapters/ExportAdapter.cpp
+    src/adapters/ImportAdapter.cpp
+    src/shell/Settings.cpp
+    src/platform/FileDialogs.cpp
+    src/workspace/AnalysisListModel.cpp
+    src/workspace/AnnualListModel.cpp
+    src/viewmodels/StatementDraftViewModel.cpp
+    src/workspace/StatementViewModel.cpp
+    src/workspace/TransactionFilterModel.cpp
+    src/workspace/TransactionViewModel.cpp
+    src/workspace/WorkspaceFilterState.cpp
+    "src/viewmodels/ActorViewModel.cpp"
+    src/viewmodels/ContractViewModel.cpp
+    src/viewmodels/PropertyViewModel.cpp
+    src/viewmodels/ExportViewModel.cpp
+    src/viewmodels/ImportViewModel.cpp
+    src/viewmodels/TransactionDraftViewModel.cpp
+    src/shell/NavigationState.cpp
+    src/viewmodels/SettingsViewModel.cpp
+    src/viewmodels/AnalysisViewModel.cpp
+    src/viewmodels/AnnualViewModel.cpp
+    src/viewmodels/BookingViewModel.cpp
+    src/workspace/WorkspaceSelection.cpp
+    src/workspace/RowSelectionSupport.cpp
+    src/workspace/WorkspaceRowProjector.cpp
+    src/workspace/WorkspaceCacheModels.cpp
+    src/workspace/WorkspaceCache.cpp
     src/workspace/WorkspaceFacade.cpp
+    src/workspace/WorkspaceFacadeCatalog.cpp
+    src/workspace/WorkspaceFacadeReporting.cpp
+    src/workspace/WorkspaceFacadeStorage.cpp
     src/shell/window/CloseWorkflow.cpp
     src/shell/window/DropHandler.cpp
     src/shell/window/MainWindowContext.cpp
@@ -80,79 +67,62 @@ set(UI_HEADERS
     include/MainWindow.h
     include/ui/pch.h
     include/ui/shell/AppActions.h
-    include/ui/adapters/core/AnalysisRequestMapper.h
-    include/ui/adapters/core/AnalysisResultMapper.h
-    include/ui/adapters/core/AnnualRequestMapper.h
-    include/ui/adapters/core/AnnualResultMapper.h
     include/ui/shell/AppContext.h
+    include/ui/shell/Composition.h
     include/ui/shell/QmlContracts.h
     include/ui/shell/QmlRuntime.h
     include/ui/shared/config/Defaults.h
     include/ui/workflows/analysis/AnalysisWorkflow.h
     include/ui/workflows/annual/AnnualWorkflow.h
     include/ui/workflows/export/ExportWorkflow.h
-    include/ui/platform/filesystem/FileSystemBrowser.h
+    include/ui/platform/FileSystemBrowser.h
     include/ui/workflows/import/ImportWorkflow.h
-    include/ui/platform/localization/LanguageService.h
-    include/ui/viewmodels/system/SettingsViewModel.h
-    include/ui/platform/dialogs/FileDialogs.h
-    include/ui/workflows/export/WorkspaceSnapshot.h
-    include/ui/workflows/export/ExportRunner.h
-    include/ui/adapters/core/DraftViewMapper.h
-    include/ui/adapters/core/ImportDraftMapper.h
-    include/ui/workflows/import/ImportJobBridge.h
-    include/ui/workflows/import/ImportRunStore.h
-    include/ui/adapters/core/ImportSuggestionMapper.h
-    include/ui/workflows/import/ImportWorkflowState.h
-    include/ui/viewmodels/catalog/ActorListModel.h
-    include/ui/viewmodels/reporting/AnalysisListModel.h
-    include/ui/viewmodels/reporting/AnnualListModel.h
-    include/ui/viewmodels/catalog/ContractListModel.h
-    include/ui/viewmodels/export/ExportRunListModel.h
-    include/ui/viewmodels/import/ImportRunListModel.h
-    include/ui/viewmodels/import/ImportSuggestionViewModel.h
-    include/ui/viewmodels/base/IndexedListModel.h
-    include/ui/viewmodels/catalog/PropertyListModel.h
-    include/ui/viewmodels/base/RowListModel.h
-    include/ui/viewmodels/import/StatementDraftViewModel.h
-    include/ui/viewmodels/booking/StatementListModel.h
-    include/ui/viewmodels/import/TransactionDraftViewModel.h
-    include/ui/viewmodels/import/TransactionDraftListModel.h
-    include/ui/viewmodels/booking/TransactionFilterModel.h
-    include/ui/viewmodels/booking/TransactionListModel.h
+    include/ui/platform/LanguageService.h
+    include/ui/shell/Settings.h
+    "include/ui/platform/FileDialogs.h"
+    include/ui/adapters/AnalysisAdapter.h
+    include/ui/adapters/AnnualAdapter.h
+    include/ui/adapters/ExportAdapter.h
+    include/ui/adapters/ImportAdapter.h
+    include/ui/workspace/AnalysisListModel.h
+    include/ui/workspace/AnnualListModel.h
+    include/ui/workspace/IndexedListModel.h
+    include/ui/workspace/RowListModel.h
+    include/ui/workspace/WorkflowRunListModel.h
+    include/ui/workspace/StatementViewModel.h
+    include/ui/workspace/TransactionFilterModel.h
+    include/ui/workspace/TransactionViewModel.h
     include/ui/shared/observability/Origins.h
     include/ui/shared/observability/Trace.h
     include/ui/shared/payload/PayloadKeys.h
     include/ui/shared/payload/PayloadMapper.h
-    include/ui/state/filters/FilterState.h
-    include/ui/state/export/ExportState.h
-    include/ui/state/import/ImportState.h
-    include/ui/state/import/StatementDraftState.h
-    include/ui/state/import/TransactionDraftState.h
-    include/ui/state/navigation/NavigationState.h
-    include/ui/state/settings/SettingsState.h
-    include/ui/state/shell/ShellNavigationState.h
-    include/ui/state/session/AnalysisState.h
-    include/ui/state/session/AnnualState.h
-    include/ui/state/session/ActorState.h
-    include/ui/state/session/BookingState.h
-    include/ui/state/session/ContractState.h
-    include/ui/state/session/PropertyState.h
-    include/ui/state/session/WorkspaceSessionSelection.h
-    include/ui/state/selection/SelectionState.h
-    include/ui/state/session/WorkspaceSessionModels.h
-    include/ui/state/session/WorkspaceSessionState.h
-    include/ui/state/mutation/SessionMutationState.h
-    include/ui/adapters/core/WorkspaceRowProjector.h
-    include/ui/workspace/WorkspaceFacade.h
-    include/ui/state/status/StatusState.h
+    include/ui/shared/observability/ErrorCodes.h
     include/ui/shared/text/Text.h
+    include/ui/shared/util/StringConversions.h
+    include/ui/workspace/WorkspaceFilterState.h
+    include/ui/viewmodels/ActorViewModel.h
+    include/ui/viewmodels/ContractViewModel.h
+    include/ui/viewmodels/PropertyViewModel.h
+    include/ui/viewmodels/ExportViewModel.h
+    include/ui/viewmodels/ImportViewModel.h
+    include/ui/viewmodels/StatementDraftViewModel.h
+    include/ui/viewmodels/TransactionDraftViewModel.h
+    include/ui/shell/NavigationState.h
+    include/ui/viewmodels/SettingsViewModel.h
+    include/ui/viewmodels/AnalysisViewModel.h
+    include/ui/viewmodels/AnnualViewModel.h
+    include/ui/viewmodels/BookingViewModel.h
+    include/ui/workspace/WorkspaceSelection.h
+    include/ui/workspace/RowSelectionSupport.h
+    include/ui/workspace/WorkspaceCacheModels.h
+    include/ui/workspace/WorkspaceCache.h
+    include/ui/workspace/WorkspaceRowProjector.h
+    include/ui/workspace/WorkspaceFacade.h
+    include/ui/shell/StatusState.h
     include/ui/shell/window/CloseWorkflow.h
     include/ui/shell/window/DropHandler.h
     include/ui/shell/window/MainWindowContext.h
     include/ui/shell/window/MainWindowTrace.h
-    include/ui/shared/util/CoreFacadeGuard.h
-    include/ui/shared/util/StringConversions.h
 )
 
 add_library(fossredder_ui STATIC ${UI_SOURCES} ${UI_HEADERS})
@@ -178,11 +148,7 @@ target_include_directories(fossredder_ui PUBLIC
 target_include_directories(fossredder_ui PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/adapters
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/adapters/core
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/platform
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/platform/dialogs
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/platform/filesystem
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/platform/localization
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared/config
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared/observability
@@ -191,25 +157,7 @@ target_include_directories(fossredder_ui PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared/util
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shell
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shell/window
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/export
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/filters
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/import
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/mutation
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/navigation
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/selection
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/settings
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/shell
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/session
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/state/status
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels/base
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels/booking
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels/catalog
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels/export
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels/import
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels/reporting
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels/system
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows/analysis
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows/annual
@@ -367,7 +315,7 @@ endif()
 if(TARGET Qt6::Concurrent)
     target_link_libraries(fossredder_ui PUBLIC Qt6::Concurrent)
 else()
-    message(WARNING "Qt6 Concurrent not found; QtConcurrent features may be unavailable")
+    message(WARNING "Qt6 Concurrent not found; Qt Concurrent features may be unavailable")
 endif()
 
 if(TARGET Qt6::Svg)
@@ -396,28 +344,21 @@ if(BUILD_UI_TESTS)
     file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tests/qml" UI_QML_TEST_SOURCE_DIR)
 
     set(UI_UNIT_TEST_SRCS
-        tests/unit/TestAnalysisPayloadMapper.cpp
         tests/unit/TestAnalysisState.cpp
         tests/unit/TestAnalysisWorkflow.cpp
         tests/unit/TestAnnualState.cpp
         tests/unit/TestAnnualWorkflow.cpp
-        tests/unit/TestBookingState.cpp
         tests/unit/TestExportState.cpp
         tests/unit/TestExportWorkflow.cpp
         tests/unit/TestImportWorkflow.cpp
-        tests/unit/TestImportSuggestionService.cpp
         tests/unit/TestNavigationState.cpp
-        tests/unit/TestRunListModels.cpp
-        tests/unit/TestSelectionState.cpp
         tests/unit/TestSettingsState.cpp
-        tests/unit/TestShellNavigationState.cpp
-        tests/unit/TestSessionModels.cpp
-        tests/unit/TestSessionMutationState.cpp
+        tests/unit/TestWorkspaceCacheModels.cpp
         tests/unit/TestWorkspaceStartupRehydration.cpp
         tests/unit/TestWorkspaceFacade.cpp
         tests/unit/TestWorkspaceRowProjector.cpp
-        tests/unit/TestWorkspaceSessionSelection.cpp
-        tests/unit/TestWorkspaceSessionState.cpp
+        tests/unit/TestWorkspaceSelection.cpp
+        tests/unit/TestWorkspaceCache.cpp
     )
 
     add_executable(ui_unit_tests ${UI_UNIT_TEST_SRCS})
@@ -428,6 +369,9 @@ if(BUILD_UI_TESTS)
     )
     target_include_directories(ui_unit_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    target_compile_definitions(ui_unit_tests PRIVATE
+        FOSSREDDER_UI_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_compile_features(ui_unit_tests PRIVATE cxx_std_20)
     fossredder_set_runtime_output_dirs(ui_unit_tests)

@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var annualState: QtObject {
+    property var annualViewModel: QtObject {
         property bool isEdit: false
         property string name: ""
         property int year: 2026
@@ -99,7 +99,7 @@ TestCase {
         Annual.AnnualForm {
             width: 960
             height: 640
-            annualState: testCase.annualState
+            annualViewModel: testCase.annualViewModel
             theme: testCase.theme
         }
     }
@@ -109,11 +109,11 @@ TestCase {
     }
 
     function init() {
-        annualState.name = ""
-        annualState.year = 2026
-        annualState.workspaceIndex = 0
-        annualState.assignedAnalysisRows = []
-        annualState.availableAnalysisRows = [
+        annualViewModel.name = ""
+        annualViewModel.year = 2026
+        annualViewModel.workspaceIndex = 0
+        annualViewModel.assignedAnalysisRows = []
+        annualViewModel.availableAnalysisRows = [
             { id: "analysis-1", display: "Analysis 1", typeLabel: "Table", exportFormatOptions: ["XLSX", "CSV"], exportFormatIndex: 0 }
         ]
     }
@@ -124,17 +124,17 @@ TestCase {
         const yearField = TestSupport.findRequired(Lookup, form, "annualYearField")
 
         nameField.text = "Annual 2026"
-        compare(annualState.name, "Annual 2026")
+        compare(annualViewModel.name, "Annual 2026")
 
         TestSupport.findRequired(Lookup, form, "annualYearIncreaseButton").clicked()
-        compare(annualState.year, 2027)
+        compare(annualViewModel.year, 2027)
     }
 
     function test_ANN_F_002_workspaceStackFollowsAnnualState() {
         const form = createForm()
         verify(TestSupport.findRequired(Lookup, form, "annualAddAnalysisComboBox") !== null)
 
-        annualState.workspaceIndex = 1
+        annualViewModel.workspaceIndex = 1
         wait(0)
         verify(Lookup.findObject(form, "annualTransactionsSectionToggle_deduplicated") !== null)
     }

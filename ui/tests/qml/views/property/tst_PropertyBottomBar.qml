@@ -25,7 +25,7 @@ TestCase {
         property color textMuted: "#666666"
     }
 
-    property var propertyState: QtObject {
+    property var propertyViewModel: QtObject {
         property bool isEdit: false
         property bool hasChanges: false
         property string name: ""
@@ -54,7 +54,7 @@ TestCase {
             width: 960
             height: 64
             theme: testCase.theme
-            propertyState: testCase.propertyState
+            propertyViewModel: testCase.propertyViewModel
             propertyRows: testCase.propertyRows
         }
     }
@@ -71,31 +71,31 @@ TestCase {
         const bar = createBar()
         findRequired(bar, "propertyPreviousButton").clicked()
         findRequired(bar, "propertyNextButton").clicked()
-        compare(propertyState.previousCalls, 1)
-        compare(propertyState.nextCalls, 1)
+        compare(propertyViewModel.previousCalls, 1)
+        compare(propertyViewModel.nextCalls, 1)
     }
 
     function test_PROP_BB_002_createModeButtonsSwitchState() {
         const bar = createBar()
-        propertyState.isEdit = false
-        propertyState.name = "Flat"
+        propertyViewModel.isEdit = false
+        propertyViewModel.name = "Flat"
         findRequired(bar, "propertyClearButton").clicked()
         findRequired(bar, "propertyCreateButton").clicked()
-        compare(propertyState.clearCalls, 1)
-        compare(propertyState.submitCalls, 1)
+        compare(propertyViewModel.clearCalls, 1)
+        compare(propertyViewModel.submitCalls, 1)
     }
 
     function test_PROP_BB_003_editModeButtonsSwitchState() {
         const bar = createBar()
-        propertyState.isEdit = true
-        propertyState.hasChanges = true
-        propertyState.name = "Flat"
+        propertyViewModel.isEdit = true
+        propertyViewModel.hasChanges = true
+        propertyViewModel.name = "Flat"
         findRequired(bar, "propertyCreateModeButton").clicked()
         findRequired(bar, "propertyDeleteButton").clicked()
-        propertyState.submitCalls = 0
+        propertyViewModel.submitCalls = 0
         findRequired(bar, "propertyUpdateButton").clicked()
-        compare(propertyState.enterCreateModeCalls, 1)
-        compare(propertyState.deleteCurrentCalls, 1)
-        compare(propertyState.submitCalls, 1)
+        compare(propertyViewModel.enterCreateModeCalls, 1)
+        compare(propertyViewModel.deleteCurrentCalls, 1)
+        compare(propertyViewModel.submitCalls, 1)
     }
 }

@@ -12,7 +12,7 @@ Item {
     id: root
     objectName: "bookingTransactionViewRoot"
     required property var theme
-    required property var bookingState
+    required property var bookingViewModel
 
     implicitHeight: txLayout.implicitHeight
 
@@ -24,27 +24,27 @@ Item {
         Booking.BookingTransactionForm {
             Layout.fillWidth: true
             theme: root.theme
-            bookingState: root.bookingState
+            bookingViewModel: root.bookingViewModel
         }
 
         Booking.BookingTransactionActorPanel {
             theme: root.theme
-            bookingState: root.bookingState
+            bookingViewModel: root.bookingViewModel
         }
 
         Booking.BookingTransactionContractPanel {
             theme: root.theme
-            bookingState: root.bookingState
+            bookingViewModel: root.bookingViewModel
         }
 
         Booking.BookingTransactionPropertyPanel {
             theme: root.theme
-            bookingState: root.bookingState
+            bookingViewModel: root.bookingViewModel
         }
 
         Booking.BookingTransactionAllocatablePanel {
             theme: root.theme
-            bookingState: root.bookingState
+            bookingViewModel: root.bookingViewModel
         }
     }
 }

@@ -12,7 +12,7 @@ import FossRedder.Controls 1.0 as Controls
 
 Flickable {
     id: root
-    required property var settingsState
+    required property var settingsViewModel
     required property var theme
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -46,11 +46,11 @@ Flickable {
                     Controls.DropdownMenu {
                         id: themeMode
                         objectName: "settingsThemeModeDropdown"
-                        model: root.settingsState.themeModeOptions
+                        model: root.settingsViewModel.themeModeOptions
                         textRole: "label"
-                        currentIndex: root.settingsState.themeModeIndex
+                        currentIndex: root.settingsViewModel.themeModeIndex
                         onActivated: function (index) {
-                            root.settingsState.selectThemeModeAt(index);
+                            root.settingsViewModel.selectThemeModeAt(index);
                         }
                     }
                 }
@@ -65,11 +65,11 @@ Flickable {
                     Controls.DropdownMenu {
                         id: language
                         objectName: "settingsLanguageDropdown"
-                        model: root.settingsState.languageOptions
+                        model: root.settingsViewModel.languageOptions
                         textRole: "label"
-                        currentIndex: root.settingsState.languageIndex
+                        currentIndex: root.settingsViewModel.languageIndex
                         onActivated: function (index) {
-                            root.settingsState.selectLanguageAt(index);
+                            root.settingsViewModel.selectLanguageAt(index);
                         }
                     }
                 }

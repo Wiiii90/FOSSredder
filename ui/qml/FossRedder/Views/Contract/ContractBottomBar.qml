@@ -13,7 +13,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var contractState
+    required property var contractViewModel
     required property var contractRows
 
     implicitWidth: bar.implicitWidth
@@ -27,7 +27,7 @@ Item {
         Controls.PrevButton {
             objectName: "contractPreviousButton"
             enabled: root.contractRows.length > 0
-            onClicked: if (root.contractState) root.contractState.previous()
+            onClicked: if (root.contractViewModel) root.contractViewModel.previous()
         }
 
         Item {
@@ -36,44 +36,44 @@ Item {
 
         Controls.DangerButton {
             objectName: "contractClearButton"
-            visible: root.contractState ? !root.contractState.isEdit : false
+            visible: root.contractViewModel ? !root.contractViewModel.isEdit : false
             text: qsTr("Clear")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.contractState) root.contractState.clear()
+            onClicked: if (root.contractViewModel) root.contractViewModel.clear()
         }
 
         Controls.SuccessButton {
             objectName: "contractCreateButton"
-            visible: root.contractState ? !root.contractState.isEdit : false
+            visible: root.contractViewModel ? !root.contractViewModel.isEdit : false
             text: qsTr("Create")
-            enabled: root.contractState ? root.contractState.canSubmit : false
+            enabled: root.contractViewModel ? root.contractViewModel.canSubmit : false
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.contractState) root.contractState.submit()
+            onClicked: if (root.contractViewModel) root.contractViewModel.submit()
         }
 
         Controls.DangerButton {
             objectName: "contractDeleteButton"
-            visible: root.contractState ? root.contractState.isEdit : false
+            visible: root.contractViewModel ? root.contractViewModel.isEdit : false
             text: qsTr("Delete")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.contractState) root.contractState.deleteCurrent()
+            onClicked: if (root.contractViewModel) root.contractViewModel.deleteCurrent()
         }
 
         Controls.SecondaryButton {
             objectName: "contractCreateModeButton"
-            visible: root.contractState ? root.contractState.isEdit : false
+            visible: root.contractViewModel ? root.contractViewModel.isEdit : false
             text: qsTr("New")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.contractState) root.contractState.enterCreateMode()
+            onClicked: if (root.contractViewModel) root.contractViewModel.enterCreateMode()
         }
 
         Controls.SuccessButton {
             objectName: "contractUpdateButton"
-            visible: root.contractState ? root.contractState.isEdit : false
+            visible: root.contractViewModel ? root.contractViewModel.isEdit : false
             text: qsTr("Update")
-            enabled: root.contractState ? (root.contractState.hasChanges && root.contractState.canSubmit) : false
+            enabled: root.contractViewModel ? (root.contractViewModel.hasChanges && root.contractViewModel.canSubmit) : false
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.contractState) root.contractState.submit()
+            onClicked: if (root.contractViewModel) root.contractViewModel.submit()
         }
 
         Item {
@@ -83,7 +83,7 @@ Item {
         Controls.NextButton {
             objectName: "contractNextButton"
             enabled: root.contractRows.length > 0
-            onClicked: if (root.contractState) root.contractState.next()
+            onClicked: if (root.contractViewModel) root.contractViewModel.next()
         }
     }
 }

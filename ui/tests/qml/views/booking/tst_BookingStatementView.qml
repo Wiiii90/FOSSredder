@@ -42,7 +42,7 @@ TestCase {
         property color buttonText: "#111111"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property string statementName: "Statement"
         property string transactionInfoText: "Transaction 1 / 1"
         property bool canDeleteTransaction: true
@@ -82,7 +82,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            bookingState: testCase.bookingState
+            bookingViewModel: testCase.bookingViewModel
         }
     }
 
@@ -97,10 +97,10 @@ TestCase {
     }
 
     function init() {
-        bookingState.statementName = "Statement"
-        bookingState.transactionName = "Rent"
-        bookingState.addCalls = 0
-        bookingState.deleteCalls = 0
+        bookingViewModel.statementName = "Statement"
+        bookingViewModel.transactionName = "Rent"
+        bookingViewModel.addCalls = 0
+        bookingViewModel.deleteCalls = 0
     }
 
     function test_BKG_SV_001_statementNameFieldWritesToBookingState() {
@@ -110,7 +110,7 @@ TestCase {
         field.text = "Updated Statement"
         field.textEdited()
 
-        compare(bookingState.statementName, "Updated Statement")
+        compare(bookingViewModel.statementName, "Updated Statement")
     }
 
     function test_BKG_SV_002_transactionButtonsCallBookingState() {
@@ -119,7 +119,7 @@ TestCase {
         findRequired(view, "bookingStatementAddTransactionButton").clicked()
         findRequired(view, "bookingStatementRemoveTransactionButton").clicked()
 
-        compare(bookingState.addCalls, 1)
-        compare(bookingState.deleteCalls, 1)
+        compare(bookingViewModel.addCalls, 1)
+        compare(bookingViewModel.deleteCalls, 1)
     }
 }

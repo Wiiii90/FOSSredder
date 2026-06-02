@@ -37,7 +37,7 @@ TestCase {
         property color buttonText: "#111111"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property string transactionName: "Rent"
         property string transactionBookingDate: ""
         property string transactionValuta: ""
@@ -68,7 +68,7 @@ TestCase {
         Booking.BookingTransactionView {
             width: testCase.width
             theme: testCase.theme
-            bookingState: testCase.bookingState
+            bookingViewModel: testCase.bookingViewModel
         }
     }
 

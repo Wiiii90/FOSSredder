@@ -19,7 +19,7 @@ TestCase {
     width: 640
     height: 160
 
-    property var contractState: QtObject {
+    property var contractViewModel: QtObject {
         property string allocatableMode: "mixed"
     }
 
@@ -38,7 +38,7 @@ TestCase {
             width: 640
             height: 160
             theme: testCase.theme
-            contractState: testCase.contractState
+            contractViewModel: testCase.contractViewModel
         }
     }
 
@@ -52,15 +52,15 @@ TestCase {
 
         combo.currentIndex = 1
         combo.activated(1)
-        compare(contractState.allocatableMode, "allocatable")
+        compare(contractViewModel.allocatableMode, "allocatable")
 
         combo.currentIndex = 2
         combo.activated(2)
-        compare(contractState.allocatableMode, "non-allocatable")
+        compare(contractViewModel.allocatableMode, "non-allocatable")
     }
 
     function test_CON_ALP_002_comboRendersState() {
-        contractState.allocatableMode = "non-allocatable"
+        contractViewModel.allocatableMode = "non-allocatable"
         const panel = createTemporaryObject(panelComponent, testCase)
 
         compare(findRequired(panel, "contractAllocatableModeCombo").currentIndex, 2)

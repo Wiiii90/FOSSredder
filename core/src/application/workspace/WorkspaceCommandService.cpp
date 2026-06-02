@@ -769,7 +769,7 @@ std::string WorkspaceCommandService::addTransaction(const core::ports::workspace
     input.amount = command.amount;
     input.statementId = command.statementId;
     input.insertAfterTransactionId = command.insertAfterTransactionId;
-    input.status = command.status;
+    input.status = static_cast<core::domain::Transaction::Status>(command.status);
     input.actorId = command.actorId;
     input.contractId = command.contractId;
     input.allocatable = command.allocatable;
@@ -784,7 +784,7 @@ void WorkspaceCommandService::updateTransaction(const core::ports::workspace::Tr
     input.valuta = command.valuta;
     input.amount = command.amount;
     input.statementId = command.statementId;
-    input.status = command.status;
+    input.status = static_cast<core::domain::Transaction::Status>(command.status);
     input.actorId = command.actorId;
     input.contractId = command.contractId;
     input.allocatable = command.allocatable;

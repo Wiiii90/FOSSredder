@@ -14,7 +14,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var annualState
+    required property var annualViewModel
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -56,7 +56,7 @@ Controls.Panel {
                     spacing: root.theme.spacingSmall
 
                     Repeater {
-                        model: root.annualState.transactionSections
+                        model: root.annualViewModel.transactionSections
 
                         delegate: Column {
                             id: sectionColumn
@@ -89,7 +89,7 @@ Controls.Panel {
                                     objectName: "annualTransactionsSectionMouseArea_" + String(sectionColumn.modelData.key)
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.annualState.toggleTransactionSection(sectionColumn.modelData.key)
+                                    onClicked: root.annualViewModel.toggleTransactionSection(sectionColumn.modelData.key)
                                 }
                             }
 
@@ -176,7 +176,7 @@ Controls.Panel {
                     }
 
                     Label {
-                        visible: root.annualState.annualTransactions.length === 0
+                        visible: root.annualViewModel.annualTransactions.length === 0
                         text: qsTr("No annual transactions")
                         color: root.theme.textMuted
                         width: txRows.width

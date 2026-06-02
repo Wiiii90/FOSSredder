@@ -59,9 +59,9 @@ bool createZipArchive(const std::filesystem::path& sourceDir,
 
 bool ZipArchiveAdapter::create(const std::filesystem::path& sourceDirectory,
                                const std::filesystem::path& outputArchive,
-                               core::application::exporting::PackageFormat format) const
+                               core::ports::exporting::PackageFormat format) const
 {
-    if (format != core::application::exporting::PackageFormat::Zip) {
+    if (format != core::ports::exporting::PackageFormat::Zip) {
         return false;
     }
     return createZipArchive(sourceDirectory, outputArchive);

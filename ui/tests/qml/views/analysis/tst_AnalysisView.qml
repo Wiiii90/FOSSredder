@@ -78,7 +78,7 @@ TestCase {
         }
     }
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property bool isEdit: false
         property string selectedAnalysisId: ""
         property var analysisRows: [{ id: "analysis-1", name: "A1" }]
@@ -152,7 +152,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -166,9 +166,9 @@ TestCase {
         refreshCalls = 0
         submitCreateCalls = 0
         navigateCalls = 0
-        analysisState.isEdit = false
-        analysisState.name = ""
-        analysisState.filterWorkspaceIndex = 0
+        analysisViewModel.isEdit = false
+        analysisViewModel.name = ""
+        analysisViewModel.filterWorkspaceIndex = 0
     }
 
     function test_ANL_V_001_containerRefreshCallsState() {

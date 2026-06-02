@@ -19,6 +19,9 @@ public:
     /** @brief Returns the full immutable workspace snapshot. */
     [[nodiscard]] virtual WorkspaceSnapshot workspaceSnapshot() const = 0;
 
+    /** @brief Returns the current workspace path, or an empty string when none is open. */
+    [[nodiscard]] virtual std::string currentPath() const = 0;
+
     /**
      * @brief Returns one statement draft snapshot.
      * @param draftId Optional draft identifier; when empty, the first draft is used.

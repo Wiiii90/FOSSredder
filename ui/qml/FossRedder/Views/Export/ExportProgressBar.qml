@@ -12,7 +12,7 @@ pragma ComponentBehavior: Bound
 Controls.Panel {
     id: root
     required property var theme
-    required property var exportState
+    required property var exportViewModel
 
     Layout.fillWidth: true
     contentSpacing: root.theme.spacingSmall
@@ -20,14 +20,14 @@ Controls.Panel {
     Controls.ProgressBar {
         objectName: "exportProgressBar"
         Layout.fillWidth: true
-        value: root.exportState.progress
+        value: root.exportViewModel.progress
     }
 
     Label {
         objectName: "exportProgressStatusLabel"
         Layout.fillWidth: true
-        text: root.exportState.statusText
-        color: root.exportState.hasError ? root.theme.danger : root.theme.textPrimary
+        text: root.exportViewModel.statusText
+        color: root.exportViewModel.hasError ? root.theme.danger : root.theme.textPrimary
         wrapMode: Text.WordWrap
     }
 }

@@ -40,22 +40,22 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionState: QtObject {
-        property string actorText: ""
-        property var actorChoiceModel: [{ id: "", display: "" }]
-        property int selectedActorIndex: 0
+    property var transactionViewModel: QtObject {
+        property string actorName: ""
+        property var actorOptions: [{ id: "", display: "" }]
+        property int selectedActorOptionIndex: 0
         property bool canAddActor: true
-        property var contractChoiceModel: [{ id: "", display: "" }, { id: "contract-1", display: "Lease", type: "Rent" }]
-        property int selectedContractIndex: 0
-        property string contractNameText: ""
-        property string contractTypeText: "Lease"
+        property var contractOptions: [{ id: "", display: "" }, { id: "contract-1", display: "Lease", type: "Rent" }]
+        property int selectedContractOptionIndex: 0
+        property string contractName: ""
+        property string contractType: "Lease"
         property string contractNamePlaceholder: "Contract 1"
         property var contractAllocatableModes: [{ label: "Mixed", value: "mixed" }, { label: "Yes", value: "true" }]
         property int contractAllocatableModeIndex: 0
         property string selectedContractType: ""
         property bool canAddContract: true
-        property var propertyRows: []
-        property string newPropertyName: ""
+        property var propertyOptions: []
+        property string propertyName: ""
         property bool canAddProperty: false
         property bool effectiveAllocatable: false
         property real actorSuggestionConfidence: 0.8
@@ -68,13 +68,13 @@ TestCase {
         property string allocatableSuggestionText: "Allocatable suggestion"
         property int addContractCalls: 0
         function suggestionTone(confidence) { return confidence >= 0.75 ? 2 : 0 }
-        function selectActorIndex(index) { selectedActorIndex = index }
-        function addActorFromText() {}
-        function selectContractIndex(index) { selectedContractIndex = index }
-        function addContractFromFields() { addContractCalls += 1 }
+        function selectActorAtIndex(index) { selectedActorOptionIndex = index }
+        function addActor() {}
+        function selectContractAtIndex(index) { selectedContractOptionIndex = index }
+        function addContract() { addContractCalls += 1 }
         function isPropertySelected(propertyId) { return false }
         function setPropertySelected(propertyId, selected) {}
-        function addPropertyFromInput() {}
+        function addProperty() {}
         function toggleAllocatable() { effectiveAllocatable = !effectiveAllocatable }
     }
 
@@ -83,7 +83,7 @@ TestCase {
         Import.TransactionDraftContractPanel {
             width: testCase.width
             theme: testCase.theme
-            transactionState: testCase.transactionState
+            transactionViewModel: testCase.transactionViewModel
         }
     }
 
@@ -102,8 +102,8 @@ TestCase {
         typeField.textEdited()
         findRequired(panel, "transactionDraftContractAddButton").clicked()
 
-        compare(transactionState.contractNameText, "Office Rent")
-        compare(transactionState.contractTypeText, "Rent")
-        compare(transactionState.addContractCalls, 1)
+        compare(transactionViewModel.contractName, "Office Rent")
+        compare(transactionViewModel.contractType, "Rent")
+        compare(transactionViewModel.addContractCalls, 1)
     }
 }

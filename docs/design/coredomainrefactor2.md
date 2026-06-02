@@ -290,7 +290,7 @@ Relevant UI mapping stays:
 
 | Current | Target |
 | --- | --- |
-| `ui/src/state/StateFacadeProjection.cpp` | `ui/src/adapters/core/WorkspaceRowProjector.cpp` |
+| `ui/src/state/StateFacadeProjection.cpp` | `ui/src/adapters/WorkspaceRowProjector.cpp` |
 | `ui/src/state/WorkspaceClone.*` | `ui/src/application/snapshots/WorkspaceSnapshotFactory.*` or remove if core snapshot is sufficient |
 | `ui/src/import/ImportJobBridge.*` | `ui/src/application/jobs/ImportStatementJobClient.*` |
 | `ui/src/import/ImportRunStore.*` | `ui/src/application/runs/RunArtifactStore.*` |

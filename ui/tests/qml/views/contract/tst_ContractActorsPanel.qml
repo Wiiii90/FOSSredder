@@ -24,7 +24,7 @@ TestCase {
         { id: "actor-2", name: "Bob" }
     ]
 
-    property var contractState: QtObject {
+    property var contractViewModel: QtObject {
         property var selectedActorIds: []
         readonly property var actorDisplayRows: [
             { id: "", display: "No actor" },
@@ -60,7 +60,7 @@ TestCase {
             width: 960
             height: 120
             theme: testCase.theme
-            contractState: testCase.contractState
+            contractViewModel: testCase.contractViewModel
         }
     }
 
@@ -73,7 +73,7 @@ TestCase {
     }
 
     function init() {
-        contractState.selectedActorIds = []
+        contractViewModel.selectedActorIds = []
     }
 
     function test_CON_AP_001_dropdownSelectionWritesSelectedActorId() {
@@ -83,12 +83,12 @@ TestCase {
         comboBox.currentIndex = 1
         comboBox.activated(1)
 
-        compare(contractState.selectedActorIds.length, 1)
-        compare(contractState.selectedActorIds[0], "actor-1")
+        compare(contractViewModel.selectedActorIds.length, 1)
+        compare(contractViewModel.selectedActorIds[0], "actor-1")
     }
 
     function test_CON_AP_002_existingSelectionIsRendered() {
-        contractState.selectedActorIds = ["actor-2"]
+        contractViewModel.selectedActorIds = ["actor-2"]
         var panel = createPanel()
         var comboBox = findRequired(panel, "contractActorComboBox")
 

@@ -19,7 +19,7 @@ TestCase {
     height: 640
 
     readonly property string previewImageDataUrl: "data:image/svg+xml,%3Csvg width='1' height='1' viewBox='0 0 1 1'%3E%3Crect width='1' height='1' fill='red'/%3E%3C/svg%3E"
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property string renderedPreviewSource: testCase.previewImageDataUrl
     }
 
@@ -67,7 +67,7 @@ TestCase {
             width: 960
             height: 640
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -82,7 +82,7 @@ TestCase {
     }
 
     function init() {
-        analysisState.renderedPreviewSource = previewImageDataUrl
+        analysisViewModel.renderedPreviewSource = previewImageDataUrl
     }
 
     function test_ANL_PV_001_renderedArtifactImageTakesOverPreview() {

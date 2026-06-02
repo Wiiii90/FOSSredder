@@ -12,10 +12,10 @@ import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
-    required property var actorState
+    required property var actorViewModel
     required property var theme
 
-    readonly property var actorRows: root.actorState.actorRows
+    readonly property var actorRows: root.actorViewModel.actorRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -56,8 +56,8 @@ Item {
                         width: actorColumn.width
                         height: root.theme.viewSidebarRowHeight
                         radius: root.theme.viewSidebarRowRadius
-                        color: actorRow.actorId === root.actorState.currentId ? root.theme.selectionHighlight : (actorMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
-                        border.color: actorRow.actorId === root.actorState.currentId ? root.theme.selectionBorder : (actorMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
+                        color: actorRow.actorId === root.actorViewModel.currentId ? root.theme.selectionHighlight : (actorMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                        border.color: actorRow.actorId === root.actorViewModel.currentId ? root.theme.selectionBorder : (actorMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                         border.width: root.theme.borderWidthThin
 
                         MouseArea {
@@ -67,7 +67,7 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             preventStealing: true
-                            onClicked: root.actorState.selectActor(actorRow.actorId)
+                            onClicked: root.actorViewModel.selectActor(actorRow.actorId)
                         }
 
                         Column {

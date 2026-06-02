@@ -35,7 +35,7 @@ TestCase {
         property color textMuted: "#666666"
     }
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property string selectedAnalysisId: testCase.selectedId
         property var analysisRows: [
             { id: "analysis-1", name: "Income", type: "plot" },
@@ -54,7 +54,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 

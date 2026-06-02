@@ -13,8 +13,8 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var bookingState
-    readonly property var selectedPropertyIds: root.bookingState.selectedPropertyIds
+    required property var bookingViewModel
+    readonly property var selectedPropertyIds: root.bookingViewModel.selectedPropertyIds
 
     Layout.fillWidth: true
     Layout.fillHeight: false
@@ -49,7 +49,7 @@ Controls.Panel {
                 spacing: root.theme.spacingSmall
 
                 Repeater {
-                    model: root.bookingState.propertyRows
+                    model: root.bookingViewModel.propertyRows
 
                     delegate: RowLayout {
                         id: propertyDelegate
@@ -65,7 +65,7 @@ Controls.Panel {
                             Layout.fillWidth: false
                             Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                             checked: root.selectedPropertyIds.indexOf(propertyDelegate.propertyId) !== -1
-                            onToggled: root.bookingState.setPropertySelected(propertyDelegate.propertyId, checked)
+                            onToggled: root.bookingViewModel.setPropertySelected(propertyDelegate.propertyId, checked)
                         }
 
                         Label {

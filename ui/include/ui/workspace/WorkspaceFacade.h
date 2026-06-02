@@ -7,29 +7,19 @@
 
 #include <QObject>
 #include <QStringList>
-#include <QVariant>
-#include <qqmlintegration.h>
+#include <QVariantList>
+#include <QVariantMap>
 
+#include <functional>
 #include <memory>
+#include <optional>
+#include <vector>
 
-#include "core/application/storage/DeletionImpact.h"
-#include "core/application/workspace/WorkspaceFacade.h"
-#include "core/application/workspace/WorkspaceSessionState.h"
-#include "core/domain/catalog/WorkspaceCatalog.h"
-#include "ui/state/session/ActorState.h"
-#include "ui/state/session/BookingState.h"
-#include "ui/state/session/ContractState.h"
-#include "ui/state/session/PropertyState.h"
-#include "ui/state/session/WorkspaceSessionSelection.h"
-#include "ui/state/session/WorkspaceSessionState.h"
-#include "ui/viewmodels/booking/StatementListModel.h"
-#include "ui/viewmodels/booking/TransactionFilterModel.h"
-#include "ui/viewmodels/booking/TransactionListModel.h"
-#include "ui/viewmodels/catalog/ActorListModel.h"
-#include "ui/viewmodels/catalog/ContractListModel.h"
-#include "ui/viewmodels/catalog/PropertyListModel.h"
-#include "ui/viewmodels/reporting/AnalysisListModel.h"
-#include "ui/viewmodels/reporting/AnnualListModel.h"
+#include "core/ports/workspace/IWorkspaceReader.h"
+#include "core/ports/workspace/IWorkspaceWriter.h"
+#include "core/ports/workspace/WorkspaceSnapshot.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceCache.h"
 
 namespace ui {
 
@@ -38,194 +28,67 @@ namespace ui {
  */
 class WorkspaceFacade : public QObject {
   Q_OBJECT
-  QML_NAMED_ELEMENT(WorkspaceFacade)
-  QML_UNCREATABLE("WorkspaceFacade is provided by the application context")
-  Q_PROPERTY(SessionState *session READ session CONSTANT)
-  Q_PROPERTY(SessionSelection *selection READ selection CONSTANT)
-  Q_PROPERTY(ActorList *actors READ actors CONSTANT)
-  Q_PROPERTY(PropertyList *properties READ properties CONSTANT)
-  Q_PROPERTY(ContractList *contracts READ contracts CONSTANT)
-  Q_PROPERTY(StatementList *statements READ statements CONSTANT)
-  Q_PROPERTY(TransactionList *transactions READ transactions CONSTANT)
-  Q_PROPERTY(AnalysisList *analyses READ analyses CONSTANT)
-  Q_PROPERTY(AnnualList *annuals READ annuals CONSTANT)
-  Q_PROPERTY(QVariantList actorRows READ actorRows NOTIFY dataRevisionChanged)
-  Q_PROPERTY(
-      QVariantList propertyRows READ propertyRows NOTIFY dataRevisionChanged)
-  Q_PROPERTY(
-      QVariantList contractRows READ contractRows NOTIFY dataRevisionChanged)
-
-  Q_PROPERTY(QString selectedActorId READ selectedActorId WRITE
-                 setSelectedActorId NOTIFY selectedActorIdChanged)
-  Q_PROPERTY(QString selectedPropertyId READ selectedPropertyId WRITE
-                 setSelectedPropertyId NOTIFY selectedPropertyIdChanged)
-  Q_PROPERTY(QString selectedContractId READ selectedContractId WRITE
-                 setSelectedContractId NOTIFY selectedContractIdChanged)
-  Q_PROPERTY(QString selectedStatementId READ selectedStatementId WRITE
-                 setSelectedStatementId NOTIFY selectedStatementIdChanged)
-  Q_PROPERTY(QString selectedTransactionId READ selectedTransactionId WRITE
-                 setSelectedTransactionId NOTIFY selectedTransactionIdChanged)
-  Q_PROPERTY(QString selectedAnalysisId READ selectedAnalysisId WRITE
-                 setSelectedAnalysisId NOTIFY selectedAnalysisIdChanged)
-  Q_PROPERTY(QString selectedAnnualId READ selectedAnnualId WRITE
-                 setSelectedAnnualId NOTIFY selectedAnnualIdChanged)
-
-  Q_PROPERTY(ActorSelection *selectedActor READ selectedActor CONSTANT)
-  Q_PROPERTY(PropertySelection *selectedProperty READ selectedProperty CONSTANT)
-  Q_PROPERTY(ContractSelection *selectedContract READ selectedContract CONSTANT)
-  Q_PROPERTY(
-      StatementSelection *selectedStatement READ selectedStatement CONSTANT)
-  Q_PROPERTY(TransactionSelection *selectedTransaction READ selectedTransaction
-                 CONSTANT)
-  Q_PROPERTY(AnalysisSelection *selectedAnalysis READ selectedAnalysis CONSTANT)
-  Q_PROPERTY(AnnualSelection *selectedAnnual READ selectedAnnual CONSTANT)
-
-  Q_PROPERTY(QVariant lastAnalysisResult READ lastAnalysisResult WRITE
-                 setLastAnalysisResult NOTIFY lastAnalysisResultChanged)
-  Q_PROPERTY(ActorState *actorState READ actorState CONSTANT)
-  Q_PROPERTY(BookingState *bookingState READ bookingState CONSTANT)
-  Q_PROPERTY(PropertyState *propertyState READ propertyState CONSTANT)
-  Q_PROPERTY(ContractState *contractState READ contractState CONSTANT)
-  Q_PROPERTY(int dataRevision READ dataRevision NOTIFY dataRevisionChanged)
 
 public:
   /** @brief Creates the facade and its owned workspace state objects. */
   explicit WorkspaceFacade(QObject *parent = nullptr);
-  /** @brief Creates the facade and binds it to the application workspace
-   * facade. */
-  explicit WorkspaceFacade(core::application::WorkspaceFacade *coreFacade,
-                           QObject *parent = nullptr);
+  /** @brief Creates the facade and binds it to workspace read/write ports. */
+  explicit WorkspaceFacade(
+      core::ports::workspace::IWorkspaceWriter *workspaceWriter,
+      core::ports::workspace::IWorkspaceReader *workspaceReader,
+      QObject *parent = nullptr);
 
-  /** @brief Returns the session store that owns UI model collections and
+  /** @brief Returns the workspace cache that owns UI model collections and
    * metrics. */
-  SessionState *session() noexcept;
-  /** @brief Returns the selection state synchronized with the current session
+  WorkspaceCache *cache() noexcept;
+  /** @brief Returns the selection state synchronized with the current cache
    * models. */
-  SessionSelection *selection() noexcept;
+  WorkspaceSelection *selection() noexcept;
 
-  ActorList *actors() noexcept;
-  PropertyList *properties() noexcept;
-  ContractList *contracts() noexcept;
-  StatementList *statements() noexcept;
-  TransactionList *transactions() noexcept;
-  AnalysisList *analyses() noexcept;
-  AnnualList *annuals() noexcept;
-
-  /** @brief Loads the UI session from the supplied application state snapshot.
+  /** @brief Loads the UI cache from the supplied application state snapshot.
    */
-  void loadFromState(const core::domain::catalog::WorkspaceCatalog &state);
-  /** @brief Loads the UI session from the full application workspace state. */
-  void loadFromState(
-      const core::application::workspace::WorkspaceSessionState &state);
-  /** @brief Binds the facade to the application workspace facade used for
-   * writes and storage. */
-  void setCoreFacade(core::application::WorkspaceFacade *coreFacade) noexcept;
-  /** @brief Returns the bound application workspace facade, when available. */
-  core::application::WorkspaceFacade *coreFacade() const noexcept;
+  void loadFromState(const core::ports::workspace::WorkspaceSnapshot &state);
+  /** @brief Binds the facade to workspace ports used for writes and snapshots.
+   */
+  void
+  setWorkspacePorts(core::ports::workspace::IWorkspaceWriter *workspaceWriter,
+                    core::ports::workspace::IWorkspaceReader *workspaceReader);
 
-  Q_INVOKABLE QString currentPath() const;
-  Q_INVOKABLE void newFile(const QString &path);
-  Q_INVOKABLE void openFile(const QString &path);
-  Q_INVOKABLE void saveFile();
-  Q_INVOKABLE void saveFileAs(const QString &path);
-
-  Q_INVOKABLE QString addActor(const QString &name,
-                               const QStringList &aliases = {},
-                               const QStringList &contractIds = {});
-  Q_INVOKABLE void updateActor(const QString &id, const QString &name,
-                               const QStringList &aliases = {},
-                               const QStringList &contractIds = {});
-  Q_INVOKABLE QString saveActor(const QString &id, const QString &name,
-                                const QStringList &aliases = {},
-                                const QStringList &contractIds = {});
-  Q_INVOKABLE void deleteActor(const QString &id);
-
-  Q_INVOKABLE QString addProperty(const QString &name,
-                                  const QStringList &aliases = {},
-                                  const QStringList &contractIds = {});
-  Q_INVOKABLE void updateProperty(const QString &id, const QString &name,
-                                  const QStringList &aliases = {},
-                                  const QStringList &contractIds = {});
-  Q_INVOKABLE QString saveProperty(const QString &id, const QString &name,
-                                   const QStringList &aliases = {},
-                                   const QStringList &contractIds = {});
-  Q_INVOKABLE void deleteProperty(const QString &id);
-
-  Q_INVOKABLE QString addContract(
-      const QString &name, const QString &type,
-      const QStringList &actorIds = {}, const QStringList &propertyIds = {},
-      const QStringList &aliases = {},
-      const QString &allocatableMode = QStringLiteral("mixed"));
-  Q_INVOKABLE void
-  updateContract(const QString &id, const QString &name, const QString &type,
-                 const QStringList &actorIds = {},
-                 const QStringList &propertyIds = {},
-                 const QStringList &aliases = {},
-                 const QString &allocatableMode = QStringLiteral("mixed"));
-  Q_INVOKABLE QString saveContract(
-      const QString &id, const QString &name, const QString &type,
-      const QStringList &actorIds = {}, const QStringList &propertyIds = {},
-      const QStringList &aliases = {},
-      const QString &allocatableMode = QStringLiteral("mixed"));
-  Q_INVOKABLE void deleteContract(const QString &id);
-
-  Q_INVOKABLE QString addStatement(const QString &name);
-  Q_INVOKABLE void updateStatement(const QString &id, const QString &name);
-  Q_INVOKABLE QString saveStatement(const QString &id, const QString &name);
-  Q_INVOKABLE void deleteStatement(const QString &id);
-
-  Q_INVOKABLE QString addTransaction(
-      const QString &name, const QString &bookingDate, const QString &valuta,
-      double amount, const QString &statementId, int status = 0,
-      const QString &actorId = QString(), const QString &contractId = QString(),
-      bool allocatable = false, const QStringList &propertyIds = {});
-  Q_INVOKABLE QString insertTransactionAfter(
-      const QString &afterTransactionId, const QString &name,
-      const QString &bookingDate, const QString &valuta, double amount,
-      const QString &statementId, int status = 0,
-      const QString &actorId = QString(), const QString &contractId = QString(),
-      bool allocatable = false, const QStringList &propertyIds = {});
-  Q_INVOKABLE void
-  updateTransaction(const QString &id, const QString &name,
-                    const QString &bookingDate, const QString &valuta,
-                    double amount, const QString &statementId, int status,
-                    const QString &actorId, const QString &contractId,
-                    bool allocatable, const QStringList &propertyIds);
-  Q_INVOKABLE QString saveTransaction(
-      const QString &id, const QString &name, const QString &bookingDate,
-      const QString &valuta, double amount, const QString &statementId,
-      int status, const QString &actorId, const QString &contractId,
-      bool allocatable, const QStringList &propertyIds);
-  Q_INVOKABLE void deleteTransaction(const QString &id);
-
-  Q_INVOKABLE QString addAnalysis(const QString &name, const QString &type,
-                                  const QString &configJson,
-                                  const QString &filterSpec,
-                                  const QString &exportFormat,
-                                  bool includeCalculationAdjustments,
-                                  const QString &exportStateJson,
-                                  const QString &snapshotTransactionsJson);
-  Q_INVOKABLE void updateAnalysis(
-      const QString &id, const QString &name, const QString &type,
-      const QString &configJson, const QString &filterSpec,
-      const QString &exportFormat, bool includeCalculationAdjustments,
-      const QString &exportStateJson, const QString &snapshotTransactionsJson);
-  Q_INVOKABLE void updateAnalysis(
-      const QString &id, const QString &name, const QString &type,
-      const QString &configJson, const QString &filterSpec,
-      const QString &exportFormat, bool includeCalculationAdjustments,
-      const QString &exportStateJson, const QString &snapshotTransactionsJson,
-      const QString &adjustmentsJson);
-  Q_INVOKABLE void deleteAnalysis(const QString &id);
-
-  Q_INVOKABLE QString addAnnual(const QString &name, int year,
-                                const QStringList &analysisIds = {});
-  Q_INVOKABLE void updateAnnual(const QString &id, const QString &name,
-                                int year, const QStringList &analysisIds = {});
-  Q_INVOKABLE QString saveAnnual(const QString &id, const QString &name,
-                                 int year, const QStringList &analysisIds = {});
-  Q_INVOKABLE void deleteAnnual(const QString &id);
-
+  QString currentPath() const;
+  core::ports::workspace::WorkspaceSnapshot workspaceSnapshot() const;
+  std::optional<core::ports::workspace::StatementDraftSnapshot>
+  statementDraftSnapshot(const QString &draftId = {}) const;
+  QString finalizeStatementDraft(
+      const core::ports::workspace::StatementDraftSnapshot &draft);
+  void saveStatementDraft(
+      const core::ports::workspace::StatementDraftSnapshot &draft);
+  void clearStatementDraft(const QString &draftId = {});
+  void saveImportLog(const core::ports::workspace::ImportLogSnapshot &log);
+  void upsertImportLog(const QString &logId, const QString &status,
+                       const QString &message, bool draftAttached,
+                       const QString &draftId = {},
+                       const QString &statementId = {},
+                       const QString &importFile = {});
+  void deleteImportLog(const QString &id);
+  void clearImportLogs();
+  /** @brief Returns import logs projected as QML sidebar rows. */
+  QVariantList importLogRows() const;
+  /** @brief Returns draft ids for import logs that still have an attached draft.
+   */
+  QStringList attachedImportDraftIds() const;
+  void saveExportLog(const core::ports::workspace::ExportLogSnapshot &log);
+  void deleteExportLog(const QString &id);
+  void deleteExportLogAt(int index);
+  void clearExportLogs();
+  /** @brief Returns export logs projected as QML sidebar rows. */
+  QVariantList exportLogRows() const;
+  QString exportLogTargetPath(const QString &id, int fallbackIndex = -1) const;
+  QVariantMap actorIdentityByName(const QString &name) const;
+  QVariantMap propertyIdentityByName(const QString &name) const;
+  QVariantMap contractIdentityBySignature(
+      const QString &name, const QString &type, const QStringList &actorIds,
+      const QStringList &propertyIds) const;
+  QString nextContractName() const;
   QString selectedActorId() const;
   QString selectedPropertyId() const;
   QString selectedContractId() const;
@@ -233,78 +96,112 @@ public:
   QString selectedTransactionId() const;
   QString selectedAnalysisId() const;
   QString selectedAnnualId() const;
-
-  void setSelectedActorId(const QString &id);
-  void setSelectedPropertyId(const QString &id);
-  void setSelectedContractId(const QString &id);
-  void setSelectedStatementId(const QString &id);
-  void setSelectedTransactionId(const QString &id);
-  void setSelectedAnalysisId(const QString &id);
-  void setSelectedAnnualId(const QString &id);
-
-  ActorSelection *selectedActor();
-  PropertySelection *selectedProperty();
-  ContractSelection *selectedContract();
-  StatementSelection *selectedStatement();
-  TransactionSelection *selectedTransaction();
-  AnalysisSelection *selectedAnalysis();
-  AnnualSelection *selectedAnnual();
-
-  /** @brief Returns transaction ids that belong to the given statement. */
-  Q_INVOKABLE QVariantList
-  statementTransactionIds(const QString &statementId) const;
+  QVariant lastAnalysisResult() const;
+  void selectActor(const QString &id);
+  void selectProperty(const QString &id);
+  void selectContract(const QString &id);
+  void selectStatement(const QString &id);
+  void selectTransaction(const QString &statementId, const QString &id);
+  void selectAnalysis(const QString &id);
+  void selectAnnual(const QString &id);
+  void setLastAnalysisResult(const QVariant &value);
   QVariantList actorRows() const;
-  Q_INVOKABLE QVariantList propertyRows() const;
+  QVariantList propertyRows() const;
   QVariantList contractRows() const;
-  Q_INVOKABLE QVariantList analysisRows() const;
-  Q_INVOKABLE QVariantList annualRows() const;
-  Q_INVOKABLE QVariantList statementRows() const;
-  Q_INVOKABLE QVariantList
-  statementTransactionRows(const QString &statementId) const;
-  Q_INVOKABLE QVariantList transactionRows() const;
-  Q_INVOKABLE QVariantMap transaction(const QString &id) const;
-  Q_INVOKABLE QVariantMap annual(const QString &id) const;
-  Q_INVOKABLE QVariantMap annualResultState(const QString &annualId) const;
-  Q_INVOKABLE QVariantMap annualResultStatePreview(const QString &annualId,
-                                                   const QVariant &selectedIds,
-                                                   int year) const;
-  Q_INVOKABLE QString analysisIdFromRow(const QVariant &row) const;
-  Q_INVOKABLE QStringList normalizeAnalysisIds(const QVariant &values) const;
-  Q_INVOKABLE QVariantList assignedAnnualAnalysisRows(
-      const QVariantList &allRows, const QVariant &selectedIds) const;
-  Q_INVOKABLE QVariantList availableAnnualAnalysisRows(
-      const QVariantList &allRows, const QVariant &selectedIds) const;
-  /** @brief Returns a live filter over transactions that belong to the given
-   * statement. */
-  Q_INVOKABLE TransactionFilter *
-  statementTransactions(const QString &statementId);
-  /** @brief Returns a live filter over transactions assigned to the given
-   * property. */
-  Q_INVOKABLE TransactionFilter *
-  propertyTransactions(const QString &propertyId);
+  QVariantList analysisRows() const;
+  QVariantList annualRows() const;
+  QVariantList statementRows() const;
+  QVariantList statementRowsWithTransactions() const;
+  QVariantList statementTransactionRows(const QString &statementId) const;
+  QVariantMap transactionRowById(const QString &id) const;
+  QVariantList actorDropdownRows() const;
+  QVariantList propertyDropdownRows() const;
+  QVariantList contractDropdownRows() const;
+  double amountForTransactionCommit(const QVariant &rawAmount,
+                                    const QString &transactionId,
+                                    double fallbackAmount) const;
+  void setTransactionPropertyIdsImmediate(const QString &transactionId,
+                                          const QStringList &propertyIds);
+  void newFile(const QString &path);
+  void openFile(const QString &path);
+  void saveFile();
+  void saveFileAs(const QString &path);
+
+  QString saveActor(const QString &id, const QString &name,
+                    const QStringList &aliases = {},
+                    const QStringList &contractIds = {});
+  void deleteActor(const QString &id);
+
+  QString saveProperty(const QString &id, const QString &name,
+                       const QStringList &aliases = {},
+                       const QStringList &contractIds = {});
+  void deleteProperty(const QString &id);
+
+  QString
+  saveContract(const QString &id, const QString &name, const QString &type,
+               const QStringList &actorIds = {},
+               const QStringList &propertyIds = {},
+               const QStringList &aliases = {},
+               const QString &allocatableMode = QStringLiteral("mixed"));
+  void deleteContract(const QString &id);
+
+  QString addStatement(const QString &name);
+  void updateStatement(const QString &id, const QString &name);
+  void deleteStatement(const QString &id);
+
+  QString addTransaction(const QString &name, const QString &bookingDate,
+                         const QString &valuta, double amount,
+                         const QString &statementId, int status = 0,
+                         const QString &actorId = QString(),
+                         const QString &contractId = QString(),
+                         bool allocatable = false,
+                         const QStringList &propertyIds = {});
+  QString insertTransactionAfter(
+      const QString &afterTransactionId, const QString &name,
+      const QString &bookingDate, const QString &valuta, double amount,
+      const QString &statementId, int status = 0,
+      const QString &actorId = QString(), const QString &contractId = QString(),
+      bool allocatable = false, const QStringList &propertyIds = {});
+  void updateTransaction(const QString &id, const QString &name,
+                         const QString &bookingDate, const QString &valuta,
+                         double amount, const QString &statementId, int status,
+                         const QString &actorId, const QString &contractId,
+                         bool allocatable, const QStringList &propertyIds);
+  void deleteTransaction(const QString &id);
+
+  QString addAnalysis(const QString &name, const QString &type,
+                      const QString &configJson, const QString &filterSpec,
+                      const QString &exportFormat,
+                      bool includeCalcAdjustments,
+                      const QString &exportStateJson,
+                      const QString &snapshotTransactionsJson,
+                      const QString &adjustmentsJson = QStringLiteral("{}"));
+  void updateAnalysis(const QString &id, const QString &name,
+                      const QString &type, const QString &configJson,
+                      const QString &filterSpec,
+                      const QString &exportFormat,
+                      bool includeCalcAdjustments,
+                      const QString &exportStateJson,
+                      const QString &snapshotTransactionsJson,
+                      const QString &adjustmentsJson = QStringLiteral("{}"));
+  void deleteAnalysis(const QString &id);
+
+  QString addAnnual(const QString &name, int year,
+                    const QStringList &analysisIds = {});
+  void updateAnnual(const QString &id, const QString &name, int year,
+                    const QStringList &analysisIds = {});
+  void deleteAnnual(const QString &id);
+  void updateAnalysisExportFormat(const QString &analysisId,
+                                  const QString &exportFormat);
 
   /** @brief Applies deletion side effects from the domain layer to UI state. */
-  Q_INVOKABLE void
-  applyDeletionImpact(const core::domain::DeletionImpact &impact);
-  /** @brief Updates property assignments for a transaction without a full
-   * reload. */
-  Q_INVOKABLE void
-  setTransactionPropertyIdsImmediate(const QString &txId,
-                                     const QStringList &propertyIds);
+  void
+  applyDeletionImpact(const core::ports::workspace::DeletionImpact &impact);
 
-  QVariant lastAnalysisResult() const {
-    return selection_->lastAnalysisResult();
-  }
-  void setLastAnalysisResult(const QVariant &value) {
-    selection_->setLastAnalysisResult(value);
-  }
-  ActorState *actorState() noexcept;
-  BookingState *bookingState() noexcept;
-  PropertyState *propertyState() noexcept;
-  ContractState *contractState() noexcept;
   int dataRevision() const noexcept { return dataRevision_; }
 
 signals:
+  void dataRevisionChanged();
   void selectedActorIdChanged();
   void selectedPropertyIdChanged();
   void selectedContractIdChanged();
@@ -313,20 +210,18 @@ signals:
   void selectedAnalysisIdChanged();
   void selectedAnnualIdChanged();
   void lastAnalysisResultChanged();
-  void dataRevisionChanged();
   void operationSucceeded(const QString &operation);
   void operationFailed(const QString &operation, const QString &error);
 
 private:
   void bumpDataRevision();
+  void runStorageOperation(const QString &operation,
+                           const std::function<void()> &action);
 
-  std::unique_ptr<SessionState> session_;
-  std::unique_ptr<SessionSelection> selection_;
-  std::unique_ptr<ActorState> actorState_;
-  std::unique_ptr<BookingState> bookingState_;
-  std::unique_ptr<PropertyState> propertyState_;
-  std::unique_ptr<ContractState> contractState_;
-  core::application::WorkspaceFacade *coreFacade_ = nullptr;
+  std::unique_ptr<WorkspaceCache> cache_;
+  std::unique_ptr<WorkspaceSelection> selection_;
+  core::ports::workspace::IWorkspaceWriter *workspaceWriter_ = nullptr;
+  core::ports::workspace::IWorkspaceReader *workspaceReader_ = nullptr;
   int dataRevision_ = 0;
 };
 

@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsState: QtObject {
+    property var settingsViewModel: QtObject {
         property bool toolbarShowBooking: true
         property bool toolbarShowImport: true
         property bool toolbarShowActors: true
@@ -44,7 +44,7 @@ TestCase {
         Settings.SettingsMiscellaneous {
             width: 900
             height: 560
-            settingsState: testCase.settingsState
+            settingsViewModel: testCase.settingsViewModel
             theme: testCase.theme
         }
     }
@@ -54,15 +54,15 @@ TestCase {
     }
 
     function init() {
-        settingsState.toolbarShowBooking = true
-        settingsState.toolbarShowImport = true
-        settingsState.toolbarShowActors = true
-        settingsState.toolbarShowExport = true
-        settingsState.toolbarShowProperties = true
-        settingsState.toolbarShowAnalysis = true
-        settingsState.toolbarShowContracts = true
-        settingsState.toolbarShowAnnual = true
-        settingsState.toolbarShowSettings = true
+        settingsViewModel.toolbarShowBooking = true
+        settingsViewModel.toolbarShowImport = true
+        settingsViewModel.toolbarShowActors = true
+        settingsViewModel.toolbarShowExport = true
+        settingsViewModel.toolbarShowProperties = true
+        settingsViewModel.toolbarShowAnalysis = true
+        settingsViewModel.toolbarShowContracts = true
+        settingsViewModel.toolbarShowAnnual = true
+        settingsViewModel.toolbarShowSettings = true
     }
 
     function test_SET_M_001_toolbarCheckboxesUpdateSettingsState() {
@@ -78,8 +78,8 @@ TestCase {
         settingsCheck.checked = false
         settingsCheck.toggled(false)
 
-        compare(settingsState.toolbarShowBooking, false)
-        compare(settingsState.toolbarShowImport, false)
-        compare(settingsState.toolbarShowSettings, false)
+        compare(settingsViewModel.toolbarShowBooking, false)
+        compare(settingsViewModel.toolbarShowImport, false)
+        compare(settingsViewModel.toolbarShowSettings, false)
     }
 }

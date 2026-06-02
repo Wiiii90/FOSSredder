@@ -7,19 +7,21 @@
 
 #include <string>
 
-#include "core/application/annual/AnnualRequest.h"
-#include "core/application/annual/AnnualResult.h"
+#include "core/ports/annual/AnnualRequest.h"
+#include "core/ports/annual/AnnualResult.h"
+#include "core/ports/annual/IAnnualRunner.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 namespace core::application::annual {
 
-class AnnualService {
+class AnnualService : public core::ports::annual::IAnnualRunner {
 public:
-    [[nodiscard]] AnnualResult runAnnual(const core::ports::workspace::WorkspaceSnapshot& workspace,
-                                         const AnnualRequest& request) const;
-    [[nodiscard]] AnnualResult buildAnnualResult(
-        const core::ports::workspace::WorkspaceSnapshot& workspace,
-        const std::string& annualId) const;
+  [[nodiscard]] core::ports::annual::AnnualResult
+  runAnnual(const core::ports::workspace::WorkspaceSnapshot &workspace,
+            const core::ports::annual::AnnualRequest &request) const override;
+  [[nodiscard]] core::ports::annual::AnnualResult
+  buildAnnualResult(const core::ports::workspace::WorkspaceSnapshot &workspace,
+                    const std::string &annualId) const;
 };
 
 } // namespace core::application::annual

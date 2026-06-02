@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var exportState: QtObject {
+    property var exportViewModel: QtObject {
         property string targetDirectory: "test:///export/default"
         property int packageFormatIndex: 0
         property string addMode: "annual"
@@ -102,7 +102,7 @@ TestCase {
         Export.ExportView {
             width: 960
             height: 640
-            exportState: testCase.exportState
+            exportViewModel: testCase.exportViewModel
             theme: testCase.theme
         }
     }
@@ -112,9 +112,9 @@ TestCase {
     }
 
     function init() {
-        exportState.refreshCalls = 0
-        exportState.startCalls = 0
-        exportState.browseCalls = 0
+        exportViewModel.refreshCalls = 0
+        exportViewModel.startCalls = 0
+        exportViewModel.browseCalls = 0
     }
 
     function test_EXP_V_001_mountsExportCompositionWithExportState() {
@@ -122,7 +122,7 @@ TestCase {
 
         verify(TestSupport.findRequired(Lookup, view, "exportFormPanel") !== null)
         verify(TestSupport.findRequired(Lookup, view, "exportObjectsPanel") !== null)
-        compare(exportState.refreshCalls, 1)
+        compare(exportViewModel.refreshCalls, 1)
     }
 
     function test_EXP_V_002_commandsFlowThroughInjectedExportState() {
@@ -131,7 +131,7 @@ TestCase {
         TestSupport.findRequired(Lookup, view, "exportBrowseDirectoryButton").clicked()
         TestSupport.findRequired(Lookup, view, "exportStartButton").clicked()
 
-        compare(exportState.browseCalls, 1)
-        compare(exportState.startCalls, 1)
+        compare(exportViewModel.browseCalls, 1)
+        compare(exportViewModel.startCalls, 1)
     }
 }

@@ -78,7 +78,7 @@ TestCase {
         }
     }
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property bool isEdit: false
         property string name: ""
         property int mainTypeIndex: 0
@@ -159,7 +159,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -170,11 +170,11 @@ TestCase {
     }
 
     function init() {
-        analysisState.isEdit = false
-        analysisState.name = ""
-        analysisState.mainTypeIndex = 0
-        analysisState.selectedPropertyIds = ["property-1", "unassigned"]
-        analysisState.selectedContractTypes = ["lease", "unassigned"]
+        analysisViewModel.isEdit = false
+        analysisViewModel.name = ""
+        analysisViewModel.mainTypeIndex = 0
+        analysisViewModel.selectedPropertyIds = ["property-1", "unassigned"]
+        analysisViewModel.selectedContractTypes = ["lease", "unassigned"]
     }
 
     function test_ANL_F_001_nameFieldWritesState() {
@@ -182,7 +182,7 @@ TestCase {
 
         TestSupport.findRequired(Lookup, form, "analysisNameField").text = "Analysis"
 
-        compare(analysisState.name, "Analysis")
+        compare(analysisViewModel.name, "Analysis")
     }
 
     function test_ANL_F_002_filterPanelsForwardSelectionToState() {
@@ -192,42 +192,42 @@ TestCase {
         checkBox.checked = false
         checkBox.clicked()
 
-        compare(analysisState.selectedPropertyIds.length, 1)
-        compare(analysisState.selectedPropertyIds[0], "unassigned")
+        compare(analysisViewModel.selectedPropertyIds.length, 1)
+        compare(analysisViewModel.selectedPropertyIds[0], "unassigned")
 
         TestSupport.findRequired(Lookup, form, "analysisPropertyFilterAllButton").clicked()
-        compare(analysisState.selectedPropertyIds.length, 2)
-        compare(analysisState.selectedPropertyIds[0], "property-1")
+        compare(analysisViewModel.selectedPropertyIds.length, 2)
+        compare(analysisViewModel.selectedPropertyIds[0], "property-1")
 
         TestSupport.findRequired(Lookup, form, "analysisPropertyFilterNoneButton").clicked()
-        compare(analysisState.selectedPropertyIds.length, 0)
+        compare(analysisViewModel.selectedPropertyIds.length, 0)
 
         TestSupport.findRequired(Lookup, form, "analysisContractTypeFilterNoneButton").clicked()
-        compare(analysisState.selectedContractTypes.length, 0)
+        compare(analysisViewModel.selectedContractTypes.length, 0)
 
         TestSupport.findRequired(Lookup, form, "analysisContractTypeFilterAllButton").clicked()
-        compare(analysisState.selectedContractTypes.length, 2)
-        compare(analysisState.selectedContractTypes[0], "lease")
+        compare(analysisViewModel.selectedContractTypes.length, 2)
+        compare(analysisViewModel.selectedContractTypes[0], "lease")
     }
 
     function test_ANL_F_003_editModeShowsResultPanel() {
-        analysisState.isEdit = true
-        analysisState.renderedPreviewSource = "data:image/svg+xml,%3Csvg width='1' height='1' viewBox='0 0 1 1'%3E%3Crect width='1' height='1' fill='red'/%3E%3C/svg%3E"
+        analysisViewModel.isEdit = true
+        analysisViewModel.renderedPreviewSource = "data:image/svg+xml,%3Csvg width='1' height='1' viewBox='0 0 1 1'%3E%3Crect width='1' height='1' fill='red'/%3E%3C/svg%3E"
         const form = createForm()
 
         verify(TestSupport.findRequired(Lookup, form, "analysisPreviewImage") !== null)
     }
 
     function test_ANL_F_004_includeCalcToggleWritesState() {
-        analysisState.isEdit = true
-        analysisState.includeCalcAdjustments = true
+        analysisViewModel.isEdit = true
+        analysisViewModel.includeCalcAdjustments = true
         const form = createForm()
         compare(form.isEdit, true)
 
         const includeCalcMouseArea = TestSupport.findRequired(Lookup, form, "analysisIncludeCalcAdjustmentsMouseArea")
         includeCalcMouseArea.clicked(null)
 
-        compare(analysisState.includeCalcAdjustments, false)
+        compare(analysisViewModel.includeCalcAdjustments, false)
         const includeCalcCheckBox = TestSupport.findRequired(Lookup, form, "analysisIncludeCalcAdjustmentsCheckBox")
         compare(includeCalcCheckBox.checked, false)
     }

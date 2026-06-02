@@ -52,7 +52,6 @@ ExportProgressBar 1.0 Export/ExportProgressBar.qml
 ExportView 1.0 Export/ExportView.qml
 ImportSidebar 1.0 Import/ImportSidebar.qml
 ImportBottomBar 1.0 Import/ImportBottomBar.qml
-ImportForm 1.0 Import/ImportForm.qml
 ImportHomeView 1.0 Import/ImportHomeView.qml
 ImportPanel 1.0 Import/ImportPanel.qml
 ImportProgressBar 1.0 Import/ImportProgressBar.qml

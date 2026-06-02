@@ -25,7 +25,7 @@ TestCase {
         property color textPrimary: "#000000"
     }
 
-    property var importState: QtObject {
+    property var importViewModel: QtObject {
         property string progressText: ""
         property bool progressHasError: false
         property real progressValue: 0
@@ -36,7 +36,7 @@ TestCase {
         Import.ImportProgressBar {
             width: testCase.width
             theme: testCase.theme
-            importState: testCase.importState
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -45,8 +45,8 @@ TestCase {
     }
 
     function test_IMP_PB_001_progressBindingUsesImportState() {
-        importState.progressValue = 0.42
-        importState.progressText = "Parsing page 4"
+        importViewModel.progressValue = 0.42
+        importViewModel.progressText = "Parsing page 4"
         const progress = createTemporaryObject(progressComponent, testCase)
 
         compare(findRequired(progress, "importProgressBar").value, 0.42)

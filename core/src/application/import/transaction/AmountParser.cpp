@@ -47,6 +47,22 @@ std::optional<double> parseAmountInternal(const std::string& line)
     s = std::move(clean);
 
     try {
+        std::string direct = s;
+        direct.erase(std::remove_if(direct.begin(), direct.end(), [](unsigned char c) {
+            return std::isspace(c);
+        }), direct.end());
+        if (!direct.empty()) {
+            size_t parsedChars = 0;
+            const double value = std::stod(direct, &parsedChars);
+            if (parsedChars == direct.size() && std::isfinite(value)) {
+                return value;
+            }
+        }
+    } catch (...) {
+        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::direct", std::current_exception());
+    }
+
+    try {
         static const std::regex splitDec(R"((\d{1,3}[\.,]\d)\s+(\d{1,2}-?))");
         std::smatch m;
         std::string tmp = s;
@@ -66,7 +82,7 @@ std::optional<double> parseAmountInternal(const std::string& line)
         for (std::sregex_iterator it(s.begin(), s.end(), re), end; it != end; ++it) {
             try {
                 std::string token = (*it).str(1);
-                if (core::parser::helpers::containsShortDate(token)) continue;
+                if (core::application::importing::internal::hasShortDateToken(token)) continue;
 
                 bool negative = false;
                 if (!token.empty() && token.front() == '(' && token.back() == ')') { negative = true; token = token.substr(1, token.size() - 2); }
@@ -104,7 +120,7 @@ std::optional<double> parseAmountInternal(const std::string& line)
         for (std::sregex_iterator it(s.begin(), s.end(), re2), end; it != end; ++it) {
             try {
                 std::string token = (*it).str(1);
-                if (core::parser::helpers::containsShortDate(token)) continue;
+                if (core::application::importing::internal::hasShortDateToken(token)) continue;
                 bool negative = false;
                 if (!token.empty() && token.front() == '(' && token.back() == ')') { negative = true; token = token.substr(1, token.size() - 2); }
                 if (!token.empty() && token.front() == '-') { negative = true; token = token.substr(1); }
@@ -142,4 +158,4 @@ std::optional<double> parseAmountString(const std::string& line)
     return parseAmountInternal(line);
 }
 
-}
+} // namespace core::application::importing::transaction

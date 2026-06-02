@@ -1,64 +1,73 @@
 /**
  * @file ui/src/workflows/annual/AnnualWorkflow.cpp
- * @brief Implements the UI workflow for annual result computation.
+ * @brief Orchestrates annual UI flows via core helpers and the annual adapter.
  */
 
 #include "ui/workflows/annual/AnnualWorkflow.h"
 
-#include <utility>
+#include "core/application/annual/AnnualWorkflowSupport.h"
+#include "core/ports/annual/AnnualRequest.h"
+#include "ui/adapters/AnnualAdapter.h"
+#include "ui/shared/util/StringConversions.h"
 
-#include "core/application/annual/AnnualService.h"
-#include "ui/adapters/core/AnnualRequestMapper.h"
-#include "ui/adapters/core/AnnualResultMapper.h"
+#include <utility>
 
 namespace ui {
 
 AnnualWorkflow::AnnualWorkflow(
     StateSnapshotProvider stateSnapshotProvider,
-    std::shared_ptr<core::application::annual::AnnualService> annualService,
-    QObject *parent)
-    : QObject(parent),
-      stateSnapshotProvider_(std::move(stateSnapshotProvider)),
-      annualService_(std::move(annualService)) {}
+    std::shared_ptr<ui::adapters::AnnualAdapter> annualAdapter, QObject *parent)
+    : QObject(parent), stateSnapshotProvider_(std::move(stateSnapshotProvider)),
+      annualAdapter_(std::move(annualAdapter)) {}
 
 QVariantMap AnnualWorkflow::computeAnnual(const QString &annualId) const {
-  if (!annualService_ || annualId.trimmed().isEmpty()) {
+  if (!annualAdapter_ || annualId.trimmed().isEmpty()) {
     return {};
   }
   try {
-    return annual::toPayload(annualService_->runAnnual(
-        stateSnapshot(), annual::toRequest(annualId.trimmed())));
+    core::ports::annual::AnnualRequest request;
+    request.annualId = strings::toStdString(annualId.trimmed());
+    return annualAdapter_->mapAnnualResult(
+        annualAdapter_->runAnnual(stateSnapshot(), request));
   } catch (...) {
     return {};
   }
 }
 
-QVariantMap
-AnnualWorkflow::computeAnnualPreview(const QString &annualId,
-                                     const QStringList &analysisIds,
-                                     int year) const {
-  if (!annualService_) {
+QVariantMap AnnualWorkflow::computeAnnualPreview(const QString &annualId,
+                                               const QStringList &analysisIds,
+                                               int year) const {
+  if (!annualAdapter_) {
     return {};
   }
   try {
-    const QString previewId = QStringLiteral("__annual_preview__");
-    const auto snapshot = annual::withPreviewAnnual(
-        stateSnapshot(), annualId.trimmed().isEmpty() ? previewId
-                                                      : annualId.trimmed(),
-        analysisIds, year);
-    return annual::toPayload(
-        annualService_->runAnnual(snapshot, annual::toRequest(annualId.trimmed().isEmpty()
-                                                                  ? previewId
-                                                                  : annualId.trimmed())));
+    const QString previewId =
+        QString::fromLatin1(core::application::annual::kPreviewAnnualId);
+    const QString resolvedAnnualId =
+        annualId.trimmed().isEmpty() ? previewId : annualId.trimmed();
+
+    std::vector<std::string> analysisIdsStd;
+    analysisIdsStd.reserve(analysisIds.size());
+    for (const auto &id : analysisIds) {
+      analysisIdsStd.push_back(strings::toStdString(id));
+    }
+
+    const auto snapshot = core::application::annual::withPreviewAnnual(
+        stateSnapshot(), strings::toStdString(resolvedAnnualId), analysisIdsStd,
+        year);
+
+    core::ports::annual::AnnualRequest request;
+    request.annualId = strings::toStdString(resolvedAnnualId);
+    return annualAdapter_->mapAnnualResult(
+        annualAdapter_->runAnnual(snapshot, request));
   } catch (...) {
     return {};
   }
 }
 
 core::ports::workspace::WorkspaceSnapshot AnnualWorkflow::stateSnapshot() const {
-  return stateSnapshotProvider_
-             ? stateSnapshotProvider_()
-             : core::ports::workspace::WorkspaceSnapshot{};
+  return stateSnapshotProvider_ ? stateSnapshotProvider_()
+                                : core::ports::workspace::WorkspaceSnapshot{};
 }
 
 } // namespace ui

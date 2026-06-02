@@ -13,7 +13,6 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQmlImageProviderBase>
-#include <QVariant>
 #include <QQuickItem>
 #include <QQuickView>
 #include <QSize>
@@ -22,15 +21,14 @@
 #include <qqml.h>
 #include <string>
 
-#include "core/constants/app.h"
+#include "ui/shared/config/Defaults.h"
+#include "ui/shared/observability/Origins.h"
+#include "ui/shared/text/Text.h"
+#include "ui/shared/util/StringConversions.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/AppContext.h"
 #include "ui/shell/QmlContracts.h"
 #include "ui/shell/QmlRuntime.h"
-#include "ui/shared/config/Defaults.h"
-#include "ui/shared/observability/Origins.h"
-#include "ui/shared/util/StringConversions.h"
-#include "ui/shared/text/Text.h"
 #include "ui/shell/window/MainWindowContext.h"
 #include "ui/shell/window/MainWindowTrace.h"
 
@@ -38,7 +36,8 @@ namespace {
 
 using ui::observability::context::kError;
 
-/** @brief Keeps the QML root object's size properties aligned with the host size. */
+/** @brief Keeps the QML root object's size properties aligned with the host
+ * size. */
 void syncRootObjectSize(QQuickView *quickView, QWidget *hostWidget) {
   if (!quickView || !hostWidget || !quickView->rootObject())
     return;
@@ -79,8 +78,7 @@ void reportQmlLoadErrors(QQuickView *quickView, const QUrl &source) {
 } // namespace
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-  setWindowTitle(
-      QString::fromLatin1(core::constants::application::kDisplayName.data()));
+  setWindowTitle(ui::config::kApplicationDisplayName);
   resize(ui::config::kMainWindowDefaultWidth,
          ui::config::kMainWindowDefaultHeight);
 
@@ -102,7 +100,8 @@ void MainWindow::setupQuickHost() {
   appContext_ = new ui::bootstrap::AppContext(this);
 
   m_quickContainer = QWidget::createWindowContainer(m_quickView, this);
-  m_quickContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  m_quickContainer->setSizePolicy(QSizePolicy::Expanding,
+                                  QSizePolicy::Expanding);
   m_quickContainer->setMinimumSize(0, 0);
   m_quickContainer->setAcceptDrops(true);
   m_quickContainer->installEventFilter(this);
@@ -118,26 +117,31 @@ void MainWindow::setupUiContext() {
   }
 
   const auto services =
-      ui::window::installMainWindowContext(*m_quickView->rootContext(), this,
-                                           this);
+      ui::window::installMainWindowContext(m_quickView->engine(), this);
   actions_ = services.actions;
-  workspace_ = services.workspace;
+  workspace_ = services.workspaceFacade;
+  settings_ = services.settings;
   status_ = services.status;
 
   if (appContext_) {
     appContext_->setActions(services.actions);
     appContext_->setNavigation(services.navigation);
-    appContext_->setWorkspace(services.workspace);
+    appContext_->setWorkspaceFacade(services.workspaceFacade);
     appContext_->setFileSystemBrowser(services.fileSystemBrowser);
     appContext_->setLanguageService(services.languageService);
-    appContext_->setSettingsViewModel(services.settingsViewModel);
     appContext_->setStatus(services.status);
+#ifdef QT_DEBUG
+    appContext_->setIsDebugBuild(true);
+#else
+    appContext_->setIsDebugBuild(false);
+#endif
   }
 }
 
 void MainWindow::setupActionRouting() {
   ui::window::wireMainWindowActions(
-      *this, {actions_, nullptr, workspace_, nullptr, nullptr, nullptr, status_},
+      *this,
+      {actions_, nullptr, workspace_, nullptr, nullptr, settings_, status_},
       [this]() { onAbout(); });
 }
 
@@ -173,26 +177,6 @@ void MainWindow::prepareForQmlShutdown() {
 }
 
 MainWindow::~MainWindow() { prepareForQmlShutdown(); }
-
-void MainWindow::setQmlContextProperty(const QString &name, QObject *value) {
-  if (!m_quickView)
-    return;
-  if (!m_quickView->rootContext())
-    return;
-  m_quickView->rootContext()->setContextProperty(name, value);
-  if (appContext_)
-    appContext_->setProperty(name.toUtf8().constData(), QVariant::fromValue(value));
-}
-
-void MainWindow::setQmlContextValue(const QString &name, const QVariant &value) {
-  if (!m_quickView)
-    return;
-  if (!m_quickView->rootContext())
-    return;
-  m_quickView->rootContext()->setContextProperty(name, value);
-  if (appContext_)
-    appContext_->setProperty(name.toUtf8().constData(), value);
-}
 
 void MainWindow::addImageProvider(const QString &id,
                                   QQmlImageProviderBase *provider) {
@@ -263,8 +247,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
 void MainWindow::handleStorageOperationSucceeded(const QString &operation) {
   if (!closeWorkflow_.handleStorageOperationSucceeded(
-          operation, ui::config::operationKeys::kSaveFile,
-          [this]() {
+          operation, ui::config::operationKeys::kSaveFile, [this]() {
             QMetaObject::invokeMethod(
                 this, [this]() { close(); }, Qt::QueuedConnection);
           })) {
@@ -283,8 +266,7 @@ void MainWindow::handleStorageOperationFailed(const QString &operation,
     return;
 
   const QString message =
-      error.isEmpty() ? ui::text::workflowErrors::storageSaveFailed()
-                      : error;
+      error.isEmpty() ? ui::text::workflowErrors::storageSaveFailed() : error;
   if (status_)
     status_->setText(message);
 
@@ -294,8 +276,7 @@ void MainWindow::handleStorageOperationFailed(const QString &operation,
       core::errors::ErrorSeverity::Warning,
       {{kError, ui::strings::toStdString(message)}});
 
-  QMetaObject::invokeMethod(
-      this, [this]() { close(); }, Qt::QueuedConnection);
+  QMetaObject::invokeMethod(this, [this]() { close(); }, Qt::QueuedConnection);
 }
 
 void MainWindow::onAbout() {

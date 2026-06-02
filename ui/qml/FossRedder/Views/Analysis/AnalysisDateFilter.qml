@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var analysisState
+    required property var analysisViewModel
     property bool initialized: false
     readonly property real modeFieldWidth: root.theme.formFieldWidth
     readonly property real valueFieldWidth: root.theme.formFieldWidth
@@ -31,10 +31,10 @@ Controls.Panel {
             objectName: "analysisDateFieldComboBox"
             Layout.preferredWidth: root.theme.formFieldWidth
             model: [qsTr("Booking Date"), qsTr("Valuta")]
-            currentIndex: root.analysisState.dateFieldIndex
+            currentIndex: root.analysisViewModel.dateFieldIndex
             onCurrentIndexChanged: {
                 if (root.initialized)
-                    root.analysisState.dateFieldIndex = currentIndex;
+                    root.analysisViewModel.dateFieldIndex = currentIndex;
             }
         }
 
@@ -43,63 +43,63 @@ Controls.Panel {
             objectName: "analysisDateModeComboBox"
             Layout.preferredWidth: root.theme.formFieldWidth
             model: [qsTr("Year"), qsTr("Date Range")]
-            currentIndex: root.analysisState.dateModeIndex
+            currentIndex: root.analysisViewModel.dateModeIndex
             onCurrentIndexChanged: {
                 if (root.initialized)
-                    root.analysisState.dateModeIndex = currentIndex;
+                    root.analysisViewModel.dateModeIndex = currentIndex;
             }
         }
 
         Label {
             id: implicitFromLabel
             color: root.theme.textPrimary
-            visible: root.analysisState.dateModeIndex === 1
+            visible: root.analysisViewModel.dateModeIndex === 1
             text: qsTr("From")
         }
 
         Controls.TextField {
             id: dateFromField
             objectName: "analysisDateFromField"
-            visible: root.analysisState.dateModeIndex === 1
+            visible: root.analysisViewModel.dateModeIndex === 1
             Layout.preferredWidth: root.theme.formFieldWidth
             placeholderText: qsTr("YYYY-MM-DD")
-            text: root.analysisState.dateFromValue
+            text: root.analysisViewModel.dateFromValue
             onTextChanged: {
                 if (root.initialized)
-                    root.analysisState.dateFromValue = text;
+                    root.analysisViewModel.dateFromValue = text;
             }
         }
 
         Label {
             id: implicitToLabel
             color: root.theme.textPrimary
-            visible: root.analysisState.dateModeIndex === 1
+            visible: root.analysisViewModel.dateModeIndex === 1
             text: qsTr("To")
         }
 
         Controls.TextField {
             id: dateToField
             objectName: "analysisDateToField"
-            visible: root.analysisState.dateModeIndex === 1
+            visible: root.analysisViewModel.dateModeIndex === 1
             Layout.preferredWidth: root.theme.formFieldWidth
             placeholderText: qsTr("YYYY-MM-DD")
-            text: root.analysisState.dateToValue
+            text: root.analysisViewModel.dateToValue
             onTextChanged: {
                 if (root.initialized)
-                    root.analysisState.dateToValue = text;
+                    root.analysisViewModel.dateToValue = text;
             }
         }
 
         Controls.TextField {
             id: yearField
             objectName: "analysisYearField"
-            visible: root.analysisState.dateModeIndex === 0
+            visible: root.analysisViewModel.dateModeIndex === 0
             Layout.preferredWidth: root.yearFieldWidth
             placeholderText: qsTr("YYYY")
-            text: root.analysisState.yearValue
+            text: root.analysisViewModel.yearValue
             onTextChanged: {
                 if (root.initialized)
-                    root.analysisState.yearValue = text;
+                    root.analysisViewModel.yearValue = text;
             }
         }
 

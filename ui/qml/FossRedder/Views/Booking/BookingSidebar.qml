@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Item {
     id: root
     required property var theme
-    required property var bookingState
+    required property var bookingViewModel
     readonly property real rowRadius: root.theme.viewSidebarRowRadius
     readonly property real rowHeight: root.theme.viewSidebarRowHeight
     readonly property color panelSurfaceAlt: root.theme.surfaceAlt
@@ -47,7 +47,7 @@ Item {
                 spacing: root.theme.spacingSmall
 
                 Repeater {
-                    model: root.bookingState.statementRows
+                    model: root.bookingViewModel.statementRows
 
                     delegate: Rectangle {
                         id: statementEntry
@@ -57,7 +57,7 @@ Item {
                         property bool collapsed: false
                         property string statementId: statementEntry.modelData.id
                         property string statementName: statementEntry.modelData.name
-                        readonly property bool isSelectedStatement: statementEntry.statementId === root.bookingState.selectedStatementId
+                        readonly property bool isSelectedStatement: statementEntry.statementId === root.bookingViewModel.selectedStatementId
                         color: statementMouseArea.containsMouse ? root.theme.sidebarHoverFill : root.panelSurfaceAlt
                         radius: root.rowRadius
                         border.width: root.theme.borderWidthThin
@@ -83,7 +83,7 @@ Item {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     preventStealing: true
-                                    onClicked: root.bookingState.selectStatement(statementEntry.statementId)
+                                    onClicked: root.bookingViewModel.selectStatement(statementEntry.statementId)
                                 }
 
                                 Text {
@@ -128,8 +128,8 @@ Item {
                                         width: transactionColumn.width
                                         height: root.rowHeight
                                         radius: root.rowRadius
-                                        color: transactionEntry.transactionId === root.bookingState.selectedTransactionId ? root.theme.selectionHighlight : (transactionMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
-                                        border.color: transactionEntry.transactionId === root.bookingState.selectedTransactionId ? root.theme.selectionBorder : (transactionMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
+                                        color: transactionEntry.transactionId === root.bookingViewModel.selectedTransactionId ? root.theme.selectionHighlight : (transactionMouse.containsMouse ? root.theme.sidebarHoverFill : "transparent")
+                                        border.color: transactionEntry.transactionId === root.bookingViewModel.selectedTransactionId ? root.theme.selectionBorder : (transactionMouse.containsMouse ? root.theme.sidebarHoverBorder : root.theme.borderSoft)
                                         border.width: root.theme.borderWidthThin
 
                                         MouseArea {
@@ -140,7 +140,7 @@ Item {
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
                                             preventStealing: true
-                                            onClicked: root.bookingState.selectTransaction(statementEntry.statementId, transactionEntry.transactionId)
+                                            onClicked: root.bookingViewModel.selectTransaction(statementEntry.statementId, transactionEntry.transactionId)
                                         }
 
                                         RowLayout {

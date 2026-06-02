@@ -30,13 +30,13 @@ TestCase {
         onSelectedActorIdChanged: {
             if (selectedActorId.length === 0) {
                 selectedActor = null
-                if (testCase.actorState)
-                    testCase.actorState.syncFromSelection(false)
+                if (testCase.actorViewModel)
+                    testCase.actorViewModel.syncFromSelection(false)
                 return
             }
             if (selectedActor && String(selectedActor.id || "") === selectedActorId) {
-                if (testCase.actorState)
-                    testCase.actorState.syncFromSelection(false)
+                if (testCase.actorViewModel)
+                    testCase.actorViewModel.syncFromSelection(false)
                 return
             }
 
@@ -50,8 +50,8 @@ TestCase {
                         aliases: row.aliases || [],
                         contractIds: row.contractIds || []
                     }
-                    if (testCase.actorState)
-                        testCase.actorState.syncFromSelection(false)
+                    if (testCase.actorViewModel)
+                        testCase.actorViewModel.syncFromSelection(false)
                     return
                 }
             }
@@ -62,10 +62,10 @@ TestCase {
                 aliases: [],
                 contractIds: []
             }
-            if (testCase.actorState)
-                testCase.actorState.syncFromSelection(false)
+            if (testCase.actorViewModel)
+                testCase.actorViewModel.syncFromSelection(false)
         }
-        onSelectedActorChanged: if (testCase.actorState) testCase.actorState.syncFromSelection(true)
+        onSelectedActorChanged: if (testCase.actorViewModel) testCase.actorViewModel.syncFromSelection(true)
         function addUniqueTrimmed(values, value) {
             const out = values ? values.slice(0) : []
             const next = String(value || "").trim()
@@ -147,7 +147,7 @@ TestCase {
         }
     }
 
-    property var actorState: QtObject {
+    property var actorViewModel: QtObject {
         property string currentOwnerId: ""
         property string name: ""
         property var aliases: []
@@ -284,7 +284,7 @@ TestCase {
     property var workspaceFacade: QtObject {
         property var actorRows: testCase.session.actorRows
         property var contractRows: testCase.session.contractRows
-        property var actorState: testCase.actorState
+        property var actorViewModel: testCase.actorViewModel
         function saveActor(id, name, aliases, contractIds) { return id || "actor-new" }
         function deleteActor(id) {}
     }
@@ -319,7 +319,7 @@ TestCase {
 
     Component {
         id: actorViewComponent
-        ActorView { width: 960; height: 640; actorState: testCase.actorState; theme: testCase.theme }
+        ActorView { width: 960; height: 640; actorViewModel: testCase.actorViewModel; theme: testCase.theme }
     }
 
     function findRequired(root, objectName) {
@@ -340,8 +340,8 @@ TestCase {
             { id: "actor-3", name: "A3" }
         ]
         session.contracts = []
-        if (testCase.actorState)
-            testCase.actorState.syncFromSelection(true)
+        if (testCase.actorViewModel)
+            testCase.actorViewModel.syncFromSelection(true)
     }
 
     function test_ACT_V_005_navigationStaysEnabledWithSingleRow() {

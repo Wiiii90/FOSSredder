@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var annualState: QtObject {
+    property var annualViewModel: QtObject {
         property bool isEdit: false
         property bool canSubmit: true
         property bool hasRows: true
@@ -94,7 +94,7 @@ TestCase {
         Annual.AnnualView {
             width: 960
             height: 640
-            annualState: testCase.annualState
+            annualViewModel: testCase.annualViewModel
             theme: testCase.theme
         }
     }
@@ -104,8 +104,8 @@ TestCase {
     }
 
     function init() {
-        annualState.refreshCalls = 0
-        annualState.createCalls = 0
+        annualViewModel.refreshCalls = 0
+        annualViewModel.createCalls = 0
     }
 
     function test_ANN_V_001_mountsFormAndBottomBarWithAnnualState() {
@@ -117,6 +117,6 @@ TestCase {
     function test_ANN_V_002_bottomBarCommandUsesInjectedAnnualState() {
         const view = createView()
         TestSupport.findRequired(Lookup, view, "annualCreateButton").clicked()
-        compare(annualState.createCalls, 1)
+        compare(annualViewModel.createCalls, 1)
     }
 }

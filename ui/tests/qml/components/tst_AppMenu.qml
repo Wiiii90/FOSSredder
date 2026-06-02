@@ -19,16 +19,7 @@ TestCase {
 
     property var navigation: QtObject {
         property int sectionValue: -1
-        function setSectionValue(value) { sectionValue = value }
-    }
-
-    property var session: QtObject {
-        property string selectedActorId: ""
-        property string selectedStatementId: ""
-        property string selectedTransactionId: ""
-    }
-
-    property var shellNavigationState: QtObject {
+        property int activeSection: sectionValue
         property int actorSection: 0
         property int propertySection: 1
         property int contractSection: 2
@@ -38,27 +29,11 @@ TestCase {
         property int settingsSection: 6
         property int analysisSection: 7
         property int annualSection: 8
-        property int activeSection: testCase.navigation.sectionValue
-        function navigateToSection(section, clearWorkspaceSelection) {
-            if (clearWorkspaceSelection) {
-                testCase.session.selectedActorId = "";
-            } else if (section !== bookingSection) {
-                testCase.session.selectedStatementId = "";
-                testCase.session.selectedTransactionId = "";
-            }
-            testCase.navigation.setSectionValue(section);
-        }
-        function navigateToImportHome() {
-            navigateToSection(importSection, false);
-        }
-        function navigateToBookingCreate() {
-            testCase.session.selectedStatementId = "";
-            testCase.session.selectedTransactionId = "";
-            navigateToSection(bookingSection, false);
-        }
+        function setSectionValue(value) { sectionValue = value }
+        function navigateToSection(section) { sectionValue = section }
     }
 
-    property var settingsState: QtObject {
+    property var settingsViewModel: QtObject {
         property var languageOptions: []
         property string language: ""
         function selectLanguageAt(index) { }
@@ -67,9 +42,9 @@ TestCase {
     Component {
         id: appMenuComponent
         AppMenu {
-            shellNavigationState: testCase.shellNavigationState
+            navigation: testCase.navigation
             actions: QtObject {}
-            settingsState: testCase.settingsState
+            settingsViewModel: testCase.settingsViewModel
             theme: Theme
         }
     }
@@ -80,26 +55,15 @@ TestCase {
 
     function init() {
         navigation.sectionValue = -1
-        session.selectedActorId = ""
-        session.selectedStatementId = ""
-        session.selectedTransactionId = ""
     }
 
-    function test_CTRL_AM_001_preservesDomainSelectionAndClearsStaleBookingSelection() {
+    function test_CTRL_AM_001_navigatesToSections() {
         const menu = createControl()
-        session.selectedActorId = "actor-2"
-        session.selectedStatementId = "statement-2"
-        session.selectedTransactionId = "tx-2"
 
         menu.navigateToSection(menu.navActors)
-        compare(session.selectedActorId, "actor-2")
-        compare(session.selectedStatementId, "")
-        compare(session.selectedTransactionId, "")
+        compare(navigation.sectionValue, navigation.actorSection)
 
-        session.selectedStatementId = "statement-2"
-        session.selectedTransactionId = "tx-2"
         menu.navigateToSection(menu.navBooking)
-        compare(session.selectedStatementId, "statement-2")
-        compare(session.selectedTransactionId, "tx-2")
+        compare(navigation.sectionValue, navigation.bookingSection)
     }
 }

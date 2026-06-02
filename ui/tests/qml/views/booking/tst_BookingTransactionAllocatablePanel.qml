@@ -31,13 +31,13 @@ TestCase {
         property color textPrimary: "#111111"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property bool transactionAllocatable: false
     }
 
     Component {
         id: panelComponent
-        Booking.BookingTransactionAllocatablePanel { theme: testCase.theme; bookingState: testCase.bookingState }
+        Booking.BookingTransactionAllocatablePanel { theme: testCase.theme; bookingViewModel: testCase.bookingViewModel }
     }
 
     function findRequired(root, objectName) {
@@ -51,6 +51,6 @@ TestCase {
 
         findRequired(panel, "bookingTransactionAllocatableToggle").clicked(null)
 
-        compare(bookingState.transactionAllocatable, true)
+        compare(bookingViewModel.transactionAllocatable, true)
     }
 }

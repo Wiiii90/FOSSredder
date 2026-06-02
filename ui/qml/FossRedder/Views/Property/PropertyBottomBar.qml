@@ -13,7 +13,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var propertyState
+    required property var propertyViewModel
     required property var propertyRows
 
     implicitWidth: bar.implicitWidth
@@ -27,7 +27,7 @@ Item {
         Controls.PrevButton {
             objectName: "propertyPreviousButton"
             enabled: root.propertyRows.length > 0
-            onClicked: if (root.propertyState) root.propertyState.previous()
+            onClicked: if (root.propertyViewModel) root.propertyViewModel.previous()
         }
 
         Item {
@@ -36,44 +36,44 @@ Item {
 
         Controls.DangerButton {
             objectName: "propertyClearButton"
-            visible: root.propertyState ? !root.propertyState.isEdit : false
+            visible: root.propertyViewModel ? !root.propertyViewModel.isEdit : false
             text: qsTr("Clear")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.propertyState) root.propertyState.clear()
+            onClicked: if (root.propertyViewModel) root.propertyViewModel.clear()
         }
 
         Controls.SuccessButton {
             objectName: "propertyCreateButton"
-            visible: root.propertyState ? !root.propertyState.isEdit : false
+            visible: root.propertyViewModel ? !root.propertyViewModel.isEdit : false
             text: qsTr("Create")
-            enabled: root.propertyState ? root.propertyState.canSubmit : false
+            enabled: root.propertyViewModel ? root.propertyViewModel.canSubmit : false
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.propertyState) root.propertyState.submit()
+            onClicked: if (root.propertyViewModel) root.propertyViewModel.submit()
         }
 
         Controls.DangerButton {
             objectName: "propertyDeleteButton"
-            visible: root.propertyState ? root.propertyState.isEdit : false
+            visible: root.propertyViewModel ? root.propertyViewModel.isEdit : false
             text: qsTr("Delete")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.propertyState) root.propertyState.deleteCurrent()
+            onClicked: if (root.propertyViewModel) root.propertyViewModel.deleteCurrent()
         }
 
         Controls.SecondaryButton {
             objectName: "propertyCreateModeButton"
-            visible: root.propertyState ? root.propertyState.isEdit : false
+            visible: root.propertyViewModel ? root.propertyViewModel.isEdit : false
             text: qsTr("New")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.propertyState) root.propertyState.enterCreateMode()
+            onClicked: if (root.propertyViewModel) root.propertyViewModel.enterCreateMode()
         }
 
         Controls.SuccessButton {
             objectName: "propertyUpdateButton"
-            visible: root.propertyState ? root.propertyState.isEdit : false
+            visible: root.propertyViewModel ? root.propertyViewModel.isEdit : false
             text: qsTr("Update")
-            enabled: root.propertyState ? (root.propertyState.hasChanges && root.propertyState.canSubmit) : false
+            enabled: root.propertyViewModel ? (root.propertyViewModel.hasChanges && root.propertyViewModel.canSubmit) : false
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.propertyState) root.propertyState.submit()
+            onClicked: if (root.propertyViewModel) root.propertyViewModel.submit()
         }
 
         Item {
@@ -83,7 +83,7 @@ Item {
         Controls.NextButton {
             objectName: "propertyNextButton"
             enabled: root.propertyRows.length > 0
-            onClicked: if (root.propertyState) root.propertyState.next()
+            onClicked: if (root.propertyViewModel) root.propertyViewModel.next()
         }
     }
 }

@@ -35,8 +35,20 @@ public:
 
     /** @brief Replaces import logs with command payload. */
     void setImportLogs(const core::ports::workspace::ImportLogsCommand& command);
+    /** @brief Saves or updates one import log. */
+    void saveImportLog(const core::ports::workspace::ImportLogCommand& command);
+    /** @brief Deletes one import log by id. */
+    void deleteImportLog(const std::string& id);
+    /** @brief Deletes all import logs. */
+    void clearImportLogs();
     /** @brief Replaces export logs with command payload. */
     void setExportLogs(const core::ports::workspace::ExportLogsCommand& command);
+    /** @brief Saves or updates one export log. */
+    void saveExportLog(const core::ports::workspace::ExportLogCommand& command);
+    /** @brief Deletes one export log by id. */
+    void deleteExportLog(const std::string& id);
+    /** @brief Deletes all export logs. */
+    void clearExportLogs();
 
 private:
     core::application::workspace::WorkspaceSessionState& mutableDocument() noexcept;

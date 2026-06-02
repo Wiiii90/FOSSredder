@@ -41,7 +41,7 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var importState: QtObject {
+    property var importViewModel: QtObject {
         property var importWorkflow: null
         property var navigation: null
         property var workspace: null
@@ -53,8 +53,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            importState: testCase.importState
-            draft: null
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -66,7 +65,7 @@ TestCase {
         const view = createTemporaryObject(statementViewComponent, null)
         wait(0)
 
-        compare(findRequired(view, "statementDraftState").hasDraft, false)
+        compare(findRequired(view, "statementDraftViewModel").hasDraft, false)
         compare(findRequired(view, "statementDraftEmptyLabel").visible, true)
     }
 }

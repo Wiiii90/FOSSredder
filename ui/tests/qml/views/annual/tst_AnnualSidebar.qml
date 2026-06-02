@@ -19,7 +19,7 @@ TestCase {
     width: 320
     height: 480
 
-    property var annualState: QtObject {
+    property var annualViewModel: QtObject {
         property var annualRows: [
             { id: "annual-1", display: "Annual 1", year: 2026 },
             { id: "annual-2", display: "Annual 2", year: 2027 }
@@ -48,7 +48,7 @@ TestCase {
         Annual.AnnualSidebar {
             width: 320
             height: 480
-            annualState: testCase.annualState
+            annualViewModel: testCase.annualViewModel
             theme: testCase.theme
         }
     }
@@ -57,6 +57,6 @@ TestCase {
         const sidebar = createTemporaryObject(sidebarComponent, testCase)
         const row = TestSupport.findRequired(Lookup, sidebar, "annualSidebarRowMouseArea")
         row.clicked(null)
-        compare(annualState.selectedByClick, "annual-1")
+        compare(annualViewModel.selectedByClick, "annual-1")
     }
 }

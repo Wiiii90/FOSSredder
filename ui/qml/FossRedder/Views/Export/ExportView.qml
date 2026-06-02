@@ -12,7 +12,7 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var exportState
+    required property var exportViewModel
     required property var theme
 
     ColumnLayout {
@@ -40,7 +40,7 @@ Item {
                     objectName: "exportFormPanel"
                     Layout.fillWidth: true
                     theme: root.theme
-                    exportState: root.exportState
+                    exportViewModel: root.exportViewModel
                 }
 
                 Export.ExportPanel {
@@ -49,7 +49,7 @@ Item {
                     Layout.fillHeight: true
                     Layout.minimumHeight: root.theme.exportView.panel.panelMinHeight
                     theme: root.theme
-                    exportState: root.exportState
+                    exportViewModel: root.exportViewModel
                 }
             }
         }
@@ -57,15 +57,15 @@ Item {
         Export.ExportProgressBar {
             Layout.fillWidth: true
             theme: root.theme
-            exportState: root.exportState
+            exportViewModel: root.exportViewModel
         }
 
         Export.ExportBottomBar {
             Layout.fillWidth: true
             theme: root.theme
-            exportState: root.exportState
+            exportViewModel: root.exportViewModel
         }
     }
 
-    Component.onCompleted: root.exportState.refreshFromWorkspace()
+    Component.onCompleted: root.exportViewModel.refreshFromWorkspace()
 }

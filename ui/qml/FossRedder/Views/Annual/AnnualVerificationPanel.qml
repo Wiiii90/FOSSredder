@@ -14,7 +14,7 @@ Controls.Panel {
     id: root
     objectName: "annualVerificationPanel"
     required property var theme
-    required property var annualState
+    required property var annualViewModel
 
     Layout.fillWidth: true
     contentSpacing: root.theme.spacingSmall
@@ -46,7 +46,7 @@ Controls.Panel {
                 spacing: root.theme.spacingSmall
 
                 Repeater {
-                    model: root.annualState.verificationRows
+                    model: root.annualViewModel.verificationRows
 
                     delegate: RowLayout {
                         id: verificationRow
@@ -84,7 +84,7 @@ Controls.Panel {
                     Label {
                         color: root.theme.textPrimary
                         objectName: "annualStatusSummaryLabel"
-                        text: root.annualState.statusSummaryText
+                        text: root.annualViewModel.statusSummaryText
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignRight
                         wrapMode: Text.WordWrap

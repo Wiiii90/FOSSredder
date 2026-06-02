@@ -58,7 +58,7 @@ TestCase {
         property color selectionHighlight: "#aaccee"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property bool isCreateMode: true
         property bool hasStatements: true
         property bool hasMultipleTransactions: true
@@ -109,7 +109,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            bookingState: testCase.bookingState
+            bookingViewModel: testCase.bookingViewModel
         }
     }
 
@@ -127,7 +127,7 @@ TestCase {
         submitCalls = 0
         updateCalls = 0
         clearCalls = 0
-        bookingState.isCreateMode = true
+        bookingViewModel.isCreateMode = true
     }
 
     function test_BKG_V_001_createModeContainerMountsAndCallsStateActions() {
@@ -141,7 +141,7 @@ TestCase {
     }
 
     function test_BKG_V_002_editModeContainerMountsAndCallsUpdate() {
-        bookingState.isCreateMode = false
+        bookingViewModel.isCreateMode = false
         const view = createView()
 
         findRequired(view, "bookingUpdateButton").clicked()

@@ -12,7 +12,7 @@ pragma ComponentBehavior: Bound
 Controls.Panel {
     id: root
     required property var theme
-    required property var annualState
+    required property var annualViewModel
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -50,7 +50,7 @@ Controls.Panel {
                 id: addAnalysisCombo
                 objectName: "annualAddAnalysisComboBox"
                 Layout.fillWidth: true
-                model: root.annualState.availableAnalysisRows
+                model: root.annualViewModel.availableAnalysisRows
                 textRole: "display"
                 currentIndex: model.length > 0 ? 0 : -1
             }
@@ -65,7 +65,7 @@ Controls.Panel {
                 Layout.maximumHeight: root.theme.controlHeight
                 textColor: root.theme.textMuted
                 enabled: addAnalysisCombo.currentIndex >= 0
-                onClicked: root.annualState.addAvailableAnalysisAtIndex(addAnalysisCombo.currentIndex)
+                onClicked: root.annualViewModel.addAvailableAnalysisAtIndex(addAnalysisCombo.currentIndex)
             }
         }
 
@@ -94,7 +94,7 @@ Controls.Panel {
                     spacing: root.theme.spacingSmall
 
                     Repeater {
-                        model: root.annualState.assignedAnalysisRows
+                        model: root.annualViewModel.assignedAnalysisRows
 
                         delegate: Rectangle {
                             id: analysisRow
@@ -157,14 +157,14 @@ Controls.Panel {
                                     Layout.preferredWidth: root.theme.formLabelWidth
                                     model: analysisRow.modelData.exportFormatOptions
                                     currentIndex: analysisRow.modelData.exportFormatIndex
-                                    onActivated: root.annualState.setAnalysisExportFormat(
+                                    onActivated: root.annualViewModel.setAnalysisExportFormat(
                                                      analysisRow.modelData.id,
                                                      model[currentIndex])
                                 }
 
                                 Controls.CompactRemoveButton {
                                     objectName: "annualRemoveAnalysisButton"
-                                    onClicked: root.annualState.removeAnalysis(analysisRow.modelData.id)
+                                    onClicked: root.annualViewModel.removeAnalysis(analysisRow.modelData.id)
                                 }
                             }
                         }

@@ -18,6 +18,7 @@
 #include <nlohmann/json.hpp>
 
 namespace core::application::analysis {
+
 namespace {
 
 using ContractTypeIndex = std::unordered_map<std::string, std::string>;
@@ -309,11 +310,12 @@ std::string extractYearMonth(const std::string& bookingDate)
     return value;
 }
 
-AnalysisResult buildPieResult(const std::vector<std::shared_ptr<core::domain::Transaction>>& matched,
-                              const ContractTypeIndex& normalizedContractTypeById,
-                              const std::string& plotMeasure)
+core::ports::analysis::AnalysisResult buildPieResult(
+    const std::vector<std::shared_ptr<core::domain::Transaction>>& matched,
+    const ContractTypeIndex& normalizedContractTypeById,
+    const std::string& plotMeasure)
 {
-    AnalysisResult result;
+    core::ports::analysis::AnalysisResult result;
     std::map<std::string, double> aggregatedAmounts;
     std::map<std::string, int> transactionCounts;
 
@@ -357,11 +359,12 @@ AnalysisResult buildPieResult(const std::vector<std::shared_ptr<core::domain::Tr
     return result;
 }
 
-AnalysisResult buildHistogramResult(const std::vector<std::shared_ptr<core::domain::Transaction>>& matched,
-                                    const core::domain::catalog::WorkspaceCatalog& state,
-                                    const ContractPropertyIndex& propertyIdsByContractId)
+core::ports::analysis::AnalysisResult buildHistogramResult(
+    const std::vector<std::shared_ptr<core::domain::Transaction>>& matched,
+    const core::domain::catalog::WorkspaceCatalog& state,
+    const ContractPropertyIndex& propertyIdsByContractId)
 {
-    AnalysisResult result;
+    core::ports::analysis::AnalysisResult result;
     if (matched.empty()) {
         return result;
     }
@@ -432,9 +435,10 @@ AnalysisResult buildHistogramResult(const std::vector<std::shared_ptr<core::doma
 
 } // namespace
 
-AnalysisResult computePlotAnalysis(const core::domain::Analysis& analysis,
-                                   const core::domain::catalog::WorkspaceCatalog& state,
-                                   const AnalysisFilter& filter)
+core::ports::analysis::AnalysisResult
+computePlotAnalysis(const core::domain::Analysis& analysis,
+                    const core::domain::catalog::WorkspaceCatalog& state,
+                    const AnalysisFilter& filter)
 {
     const PlotConfig config = parsePlotConfig(analysis);
     const ContractTypeIndex normalizedContractTypeById = buildContractTypeIndex(state, true);
@@ -448,7 +452,7 @@ AnalysisResult computePlotAnalysis(const core::domain::Analysis& analysis,
                                                     normalizedContractTypeById,
                                                     propertyIdsByContractId);
 
-    AnalysisResult out;
+    core::ports::analysis::AnalysisResult out;
     if (config.plotType == core::constants::analysis::plotTypes::kHistogram) {
         out = buildHistogramResult(matched, state, propertyIdsByContractId);
     } else {

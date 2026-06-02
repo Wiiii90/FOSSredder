@@ -9,97 +9,87 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: sidebarLeft
-    required property var shellNavigationState
-    required property var actorState
-    required property var propertyState
-    required property var contractState
-    required property var bookingState
-    required property var importState
-    required property var analysisState
-    required property var annualState
-    required property var exportState
-    required property var settingsState
+    required property var navigation
+    required property var actorViewModel
+    required property var propertyViewModel
+    required property var contractViewModel
+    required property var bookingViewModel
+    required property var importViewModel
+    required property var analysisViewModel
+    required property var annualViewModel
+    required property var exportViewModel
+    required property var settingsViewModel
     required property var theme
-    readonly property int sectionActors: sidebarLeft.shellNavigationState.actorSection
-    readonly property int sectionProperties: sidebarLeft.shellNavigationState.propertySection
-    readonly property int sectionContracts: sidebarLeft.shellNavigationState.contractSection
-    readonly property int sectionBooking: sidebarLeft.shellNavigationState.bookingSection
-    readonly property int sectionImport: sidebarLeft.shellNavigationState.importSection
-    readonly property int sectionExport: sidebarLeft.shellNavigationState.exportSection
-    readonly property int sectionAnalysis: sidebarLeft.shellNavigationState.analysisSection
-    readonly property int sectionAnnual: sidebarLeft.shellNavigationState.annualSection
-    readonly property int sectionSettings: sidebarLeft.shellNavigationState.settingsSection
+    readonly property int sectionActors: sidebarLeft.navigation.actorSection
+    readonly property int sectionProperties: sidebarLeft.navigation.propertySection
+    readonly property int sectionContracts: sidebarLeft.navigation.contractSection
+    readonly property int sectionBooking: sidebarLeft.navigation.bookingSection
+    readonly property int sectionImport: sidebarLeft.navigation.importSection
+    readonly property int sectionExport: sidebarLeft.navigation.exportSection
+    readonly property int sectionAnalysis: sidebarLeft.navigation.analysisSection
+    readonly property int sectionAnnual: sidebarLeft.navigation.annualSection
+    readonly property int sectionSettings: sidebarLeft.navigation.settingsSection
 
-    Component { id: actorSidebarComp; Views.ActorSidebar { actorState: sidebarLeft.actorState; theme: sidebarLeft.theme } }
-    Component { id: propertySidebarComp; Views.PropertySidebar { propertyState: sidebarLeft.propertyState; theme: sidebarLeft.theme } }
-    Component { id: contractSidebarComp; Views.ContractSidebar { contractState: sidebarLeft.contractState; theme: sidebarLeft.theme } }
-    Component { id: bookingSidebarComp; Views.BookingSidebar { theme: sidebarLeft.theme; bookingState: sidebarLeft.bookingState } }
-    Component { id: importSidebarComp; Views.ImportSidebar { importState: sidebarLeft.importState; theme: sidebarLeft.theme } }
-    Component { id: exportSidebarComp; Views.ExportSidebar { exportState: sidebarLeft.exportState; theme: sidebarLeft.theme } }
-    Component { id: analysisSidebarComp; Views.AnalysisSidebar { analysisState: sidebarLeft.analysisState; theme: sidebarLeft.theme } }
-    Component { id: annualSidebarComp; Views.AnnualSidebar { annualState: sidebarLeft.annualState; theme: sidebarLeft.theme } }
-    Component { id: settingsSidebarComp; Views.SettingsSidebar { settingsState: sidebarLeft.settingsState; theme: sidebarLeft.theme } }
-    Component { id: placeholderSidebarComp; Views.PlaceholderSidebar { } }
-
+    Component { id: actorSidebarComp; Views.ActorSidebar { actorViewModel: sidebarLeft.actorViewModel; theme: sidebarLeft.theme } }
+    Component { id: propertySidebarComp; Views.PropertySidebar { propertyViewModel: sidebarLeft.propertyViewModel; theme: sidebarLeft.theme } }
+    Component { id: contractSidebarComp; Views.ContractSidebar { contractViewModel: sidebarLeft.contractViewModel; theme: sidebarLeft.theme } }
+    Component { id: bookingSidebarComp; Views.BookingSidebar { theme: sidebarLeft.theme; bookingViewModel: sidebarLeft.bookingViewModel } }
+    Component { id: importSidebarComp; Views.ImportSidebar { importViewModel: sidebarLeft.importViewModel; theme: sidebarLeft.theme } }
+    Component { id: exportSidebarComp; Views.ExportSidebar { exportViewModel: sidebarLeft.exportViewModel; theme: sidebarLeft.theme } }
+    Component { id: analysisSidebarComp; Views.AnalysisSidebar { analysisViewModel: sidebarLeft.analysisViewModel; theme: sidebarLeft.theme } }
+    Component { id: annualSidebarComp; Views.AnnualSidebar { annualViewModel: sidebarLeft.annualViewModel; theme: sidebarLeft.theme } }
+    Component { id: settingsSidebarComp; Views.SettingsSidebar { settingsViewModel: sidebarLeft.settingsViewModel; theme: sidebarLeft.theme } }
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionActors
-        contentComponent: sidebarLeft.shellNavigationState.actorLoaded ? actorSidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionActors
+        contentComponent: actorSidebarComp
     }
 
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionProperties
-        contentComponent: sidebarLeft.shellNavigationState.propertyLoaded ? propertySidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionProperties
+        contentComponent: propertySidebarComp
     }
 
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionContracts
-        contentComponent: sidebarLeft.shellNavigationState.contractLoaded ? contractSidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionContracts
+        contentComponent: contractSidebarComp
     }
 
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionBooking
-        contentComponent: sidebarLeft.shellNavigationState.bookingLoaded ? bookingSidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionBooking
+        contentComponent: bookingSidebarComp
     }
 
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionImport
-        contentComponent: sidebarLeft.shellNavigationState.importLoaded ? importSidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionImport
+        contentComponent: importSidebarComp
     }
 
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionExport
-        contentComponent: sidebarLeft.shellNavigationState.exportLoaded ? exportSidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionExport
+        contentComponent: exportSidebarComp
     }
 
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionAnalysis
-        contentComponent: sidebarLeft.shellNavigationState.analysisLoaded ? analysisSidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionAnalysis
+        contentComponent: analysisSidebarComp
     }
 
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionAnnual
-        contentComponent: sidebarLeft.shellNavigationState.annualLoaded ? annualSidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionAnnual
+        contentComponent: annualSidebarComp
     }
 
     Sidebar {
         anchors.fill: parent
-        visible: sidebarLeft.shellNavigationState.activeSection === sidebarLeft.sectionSettings
-        contentComponent: sidebarLeft.shellNavigationState.settingsLoaded ? settingsSidebarComp : null
+        visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionSettings
+        contentComponent: settingsSidebarComp
     }
-
-    Sidebar {
-        anchors.fill: parent
-        visible: !sidebarLeft.shellNavigationState.isKnownSection(sidebarLeft.shellNavigationState.activeSection)
-        contentComponent: sidebarLeft.shellNavigationState.placeholderLoaded ? placeholderSidebarComp : null
-    }
-
-    Component.onCompleted: sidebarLeft.shellNavigationState.activate()
 }

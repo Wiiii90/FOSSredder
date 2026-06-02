@@ -19,7 +19,7 @@ TestCase {
     width: 640
     height: 160
 
-    property var contractState: QtObject {
+    property var contractViewModel: QtObject {
         property string type: ""
     }
 
@@ -38,7 +38,7 @@ TestCase {
             width: 640
             height: 160
             theme: testCase.theme
-            contractState: testCase.contractState
+            contractViewModel: testCase.contractViewModel
         }
     }
 
@@ -53,11 +53,11 @@ TestCase {
         field.text = "lease"
         field.textEdited()
 
-        compare(contractState.type, "lease")
+        compare(contractViewModel.type, "lease")
     }
 
     function test_CON_TP_002_typeFieldRendersState() {
-        contractState.type = "service"
+        contractViewModel.type = "service"
         const panel = createTemporaryObject(panelComponent, testCase)
 
         compare(findRequired(panel, "contractTypeField").text, "service")

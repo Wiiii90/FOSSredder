@@ -13,9 +13,9 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var actorState
+    required property var actorViewModel
     property var contractRows: []
-    readonly property var selectedContractIds: root.actorState ? root.actorState.selectedContractIds : []
+    readonly property var selectedContractIds: root.actorViewModel ? root.actorViewModel.selectedContractIds : []
 
     Layout.fillWidth: true
     Layout.fillHeight: false
@@ -58,8 +58,8 @@ Controls.Panel {
                         Layout.fillWidth: false
                         Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                         checked: root.selectedContractIds.indexOf(contractRow.contractId) !== -1
-                        onToggled: if (root.actorState)
-                            root.actorState.setContractSelected(contractRow.contractId, checked)
+                        onToggled: if (root.actorViewModel)
+                            root.actorViewModel.setContractSelected(contractRow.contractId, checked)
                     }
 
                     Label {

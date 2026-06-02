@@ -12,7 +12,7 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var settingsState
+    required property var settingsViewModel
     required property var theme
 
     ColumnLayout {
@@ -25,26 +25,26 @@ Item {
             objectName: "settingsLoader"
             Layout.fillWidth: true
             Layout.fillHeight: true
-            currentIndex: root.settingsState.currentCategory
+            currentIndex: root.settingsViewModel.currentCategory
 
             Settings.SettingsGeneral {
                 theme: root.theme
-                settingsState: root.settingsState
+                settingsViewModel: root.settingsViewModel
             }
 
             Settings.SettingsImport {
                 theme: root.theme
-                settingsState: root.settingsState
+                settingsViewModel: root.settingsViewModel
             }
 
             Settings.SettingsExport {
                 theme: root.theme
-                settingsState: root.settingsState
+                settingsViewModel: root.settingsViewModel
             }
 
             Settings.SettingsMiscellaneous {
                 theme: root.theme
-                settingsState: root.settingsState
+                settingsViewModel: root.settingsViewModel
             }
         }
 
@@ -54,8 +54,8 @@ Item {
 
             Controls.PrevButton {
                 objectName: "settingsPrevCategoryButton"
-                enabled: root.settingsState.canNavigateCategories
-                onClicked: root.settingsState.navigateCategory(-1)
+                enabled: root.settingsViewModel.canNavigateCategories
+                onClicked: root.settingsViewModel.navigateCategory(-1)
             }
 
             Item { Layout.fillWidth: true }
@@ -64,25 +64,25 @@ Item {
                 objectName: "settingsDefaultButton"
                 text: qsTr("Default")
                 Layout.preferredWidth: root.theme.viewActionButtonWidth
-                onClicked: root.settingsState.resetSettings()
+                onClicked: root.settingsViewModel.resetSettings()
             }
 
             Controls.SuccessButton {
                 objectName: "settingsUpdateButton"
                 text: qsTr("Update")
                 Layout.preferredWidth: root.theme.viewActionButtonWidth
-                onClicked: root.settingsState.saveSettings()
+                onClicked: root.settingsViewModel.saveSettings()
             }
 
             Item { Layout.fillWidth: true }
 
             Controls.NextButton {
                 objectName: "settingsNextCategoryButton"
-                enabled: root.settingsState.canNavigateCategories
-                onClicked: root.settingsState.navigateCategory(1)
+                enabled: root.settingsViewModel.canNavigateCategories
+                onClicked: root.settingsViewModel.navigateCategory(1)
             }
         }
     }
 
-    Component.onCompleted: root.settingsState.activate()
+    Component.onCompleted: root.settingsViewModel.activate()
 }

@@ -13,14 +13,14 @@ import FossRedder.Views.Property 1.0 as Property
 
 Item {
     id: root
-    required property var propertyState
+    required property var propertyViewModel
     required property var theme
 
-    readonly property bool isEdit: root.propertyState ? root.propertyState.isEdit : false
-    readonly property var aliases: root.propertyState ? root.propertyState.aliases : []
-    readonly property int aliasIndex: root.propertyState ? root.propertyState.aliasIndex : -1
-    readonly property var selectedContractIds: root.propertyState ? root.propertyState.selectedContractIds : []
-    readonly property var contractRows: root.propertyState.contractRows
+    readonly property bool isEdit: root.propertyViewModel ? root.propertyViewModel.isEdit : false
+    readonly property var aliases: root.propertyViewModel ? root.propertyViewModel.aliases : []
+    readonly property int aliasIndex: root.propertyViewModel ? root.propertyViewModel.aliasIndex : -1
+    readonly property var selectedContractIds: root.propertyViewModel ? root.propertyViewModel.selectedContractIds : []
+    readonly property var contractRows: root.propertyViewModel.contractRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -58,11 +58,11 @@ Item {
                         objectName: "propertyNameField"
                         placeholderText: ""
                         Layout.fillWidth: true
-                        text: root.propertyState ? root.propertyState.name : ""
-                        onTextChanged: if (root.propertyState)
-                            root.propertyState.name = text
-                        onTextEdited: if (root.propertyState)
-                            root.propertyState.name = text
+                        text: root.propertyViewModel ? root.propertyViewModel.name : ""
+                        onTextChanged: if (root.propertyViewModel)
+                            root.propertyViewModel.name = text
+                        onTextEdited: if (root.propertyViewModel)
+                            root.propertyViewModel.name = text
                     }
                 }
 
@@ -85,25 +85,25 @@ Item {
                             objectName: "propertyAliasInput"
                             Layout.fillWidth: true
                             placeholderText: ""
-                            text: root.propertyState ? root.propertyState.aliasInputText : ""
-                            onTextChanged: if (root.propertyState)
-                                root.propertyState.aliasInputText = text
-                            onTextEdited: if (root.propertyState)
-                                root.propertyState.aliasInputText = text
+                            text: root.propertyViewModel ? root.propertyViewModel.aliasInputText : ""
+                            onTextChanged: if (root.propertyViewModel)
+                                root.propertyViewModel.aliasInputText = text
+                            onTextEdited: if (root.propertyViewModel)
+                                root.propertyViewModel.aliasInputText = text
                         }
 
                         Controls.CompactAddButton {
                             objectName: "propertyAddAliasButton"
-                            enabled: root.propertyState ? root.propertyState.canAddAlias(propertyAliasInput.text) : false
-                            onClicked: if (root.propertyState)
-                                root.propertyState.addAlias(propertyAliasInput.text)
+                            enabled: root.propertyViewModel ? root.propertyViewModel.canAddAlias(propertyAliasInput.text) : false
+                            onClicked: if (root.propertyViewModel)
+                                root.propertyViewModel.addAlias(propertyAliasInput.text)
                         }
 
                         Controls.CompactRemoveButton {
                             objectName: "propertyRemoveAliasButton"
                             enabled: root.aliasIndex >= 0 && root.aliasIndex < root.aliases.length
-                            onClicked: if (root.propertyState)
-                                root.propertyState.requestRemoveSelectedAlias()
+                            onClicked: if (root.propertyViewModel)
+                                root.propertyViewModel.requestRemoveSelectedAlias()
                         }
                     }
 
@@ -165,10 +165,10 @@ Item {
                                             objectName: "propertyAliasMouse_" + propertyAliasChip.index
                                             anchors.fill: parent
                                             preventStealing: true
-                                            onPressed: if (root.propertyState)
-                                                root.propertyState.aliasIndex = propertyAliasChip.index
-                                            onClicked: if (root.propertyState)
-                                                root.propertyState.aliasIndex = propertyAliasChip.index
+                                            onPressed: if (root.propertyViewModel)
+                                                root.propertyViewModel.aliasIndex = propertyAliasChip.index
+                                            onClicked: if (root.propertyViewModel)
+                                                root.propertyViewModel.aliasIndex = propertyAliasChip.index
                                         }
                                     }
                                 }
@@ -180,7 +180,7 @@ Item {
                 Property.PropertyContractPanel {
                     Layout.fillWidth: true
                     theme: root.theme
-                    propertyState: root.propertyState
+                    propertyViewModel: root.propertyViewModel
                     contractRows: root.contractRows
                 }
             }

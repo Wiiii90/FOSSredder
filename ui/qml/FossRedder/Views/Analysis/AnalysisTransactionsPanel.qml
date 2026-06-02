@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var analysisState
+    required property var analysisViewModel
     readonly property var txTheme: root.theme.analysis.transactions
     readonly property int txTableMinimumWidth: root.txTheme.applyColumnWidth + root.txTheme.statementColumnWidth + root.txTheme.transactionColumnWidth + root.txTheme.dateColumnWidth + root.txTheme.dateColumnWidth + root.txTheme.actorColumnWidth + root.txTheme.contractColumnWidth + root.txTheme.typeColumnWidth + root.txTheme.propertiesColumnWidth + root.txTheme.amountColumnWidth + root.theme.spacingSmall * root.txTheme.columnSpacingCount + root.theme.spacingSmall * root.txTheme.horizontalPaddingCount
 
@@ -38,8 +38,8 @@ Controls.Panel {
                 objectName: "analysisCalcNameField"
                 Layout.preferredWidth: root.theme.formFieldWidth
                 placeholderText: qsTr("e.g. VAT")
-                text: root.analysisState.calcName
-                onTextChanged: root.analysisState.calcName = text
+                text: root.analysisViewModel.calcName
+                onTextChanged: root.analysisViewModel.calcName = text
             }
             Label {
                 color: root.theme.textPrimary
@@ -50,13 +50,13 @@ Controls.Panel {
                 objectName: "analysisCalcPercentField"
                 Layout.preferredWidth: root.txTheme.calcPercentFieldWidth
                 placeholderText: qsTr("0")
-                text: root.analysisState.calcPercentText
-                onTextChanged: root.analysisState.calcPercentText = text
+                text: root.analysisViewModel.calcPercentText
+                onTextChanged: root.analysisViewModel.calcPercentText = text
             }
             Controls.Button {
                 objectName: "analysisApplyCalcButton"
                 text: qsTr("Apply to selected")
-                onClicked: root.analysisState.applySelectedCalc()
+                onClicked: root.analysisViewModel.applySelectedCalc()
             }
         }
 
@@ -152,7 +152,7 @@ Controls.Panel {
                     anchors.top: headerRect.bottom
                     height: Math.max(0, txViewport.height - headerRect.height)
                     clip: true
-                    model: root.analysisState.previewTransactionRows
+                    model: root.analysisViewModel.previewTransactionRows
                     delegate: Rectangle {
                         id: txRow
                         required property var modelData
@@ -172,8 +172,8 @@ Controls.Panel {
                                 Layout.preferredWidth: root.txTheme.applyColumnWidth
                                 Layout.fillWidth: false
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                checked: root.analysisState.selectedAdjustmentTxIds.indexOf(txRow.modelData.id) !== -1
-                                onToggled: root.analysisState.setAdjustmentTransactionSelected(txRow.modelData.id, checked)
+                                checked: root.analysisViewModel.selectedAdjustmentTxIds.indexOf(txRow.modelData.id) !== -1
+                                onToggled: root.analysisViewModel.setAdjustmentTransactionSelected(txRow.modelData.id, checked)
                             }
 
                             Label {
@@ -246,12 +246,12 @@ Controls.Panel {
             Layout.fillWidth: true
             Label {
                 color: root.theme.textPrimary
-                text: root.analysisState.previewStatementCountText
+                text: root.analysisViewModel.previewStatementCountText
                 Layout.preferredWidth: root.txTheme.metricsStatementWidth
             }
             Label {
                 color: root.theme.textPrimary
-                text: root.analysisState.previewTransactionCountText
+                text: root.analysisViewModel.previewTransactionCountText
                 Layout.preferredWidth: root.txTheme.metricsTransactionWidth
             }
             Item {
@@ -259,7 +259,7 @@ Controls.Panel {
             }
             Label {
                 color: root.theme.textPrimary
-                text: root.analysisState.previewAmountSumText
+                text: root.analysisViewModel.previewAmountSumText
                 Layout.preferredWidth: root.txTheme.metricsAmountWidth
                 horizontalAlignment: Text.AlignRight
             }

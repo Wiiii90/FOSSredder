@@ -24,7 +24,7 @@ TestCase {
         { id: "property-2", name: "House" }
     ]
 
-    property var contractState: QtObject {
+    property var contractViewModel: QtObject {
         property var selectedPropertyIds: []
         function setPropertySelected(propertyId, selected) {
             var next = selectedPropertyIds ? selectedPropertyIds.slice(0) : []
@@ -55,7 +55,7 @@ TestCase {
             width: 960
             height: 320
             theme: testCase.theme
-            contractState: testCase.contractState
+            contractViewModel: testCase.contractViewModel
             propertyRows: testCase.propertyRows
         }
     }
@@ -75,17 +75,17 @@ TestCase {
         checkBox.checked = true
         checkBox.toggled()
 
-        compare(contractState.selectedPropertyIds.length, 1)
-        compare(contractState.selectedPropertyIds[0], "property-1")
+        compare(contractViewModel.selectedPropertyIds.length, 1)
+        compare(contractViewModel.selectedPropertyIds[0], "property-1")
     }
 
     function test_CON_PP_002_selectionIsDerivedFromState() {
-        contractState.selectedPropertyIds = ["property-2"]
+        contractViewModel.selectedPropertyIds = ["property-2"]
         const panel = createPanel()
         const checkBox = findRequired(panel, "contractPropertyCheckBox")
 
         compare(checkBox.checked, false)
-        contractState.selectedPropertyIds = ["property-1"]
+        contractViewModel.selectedPropertyIds = ["property-1"]
         compare(findRequired(panel, "contractPropertyCheckBox").checked, true)
     }
 }

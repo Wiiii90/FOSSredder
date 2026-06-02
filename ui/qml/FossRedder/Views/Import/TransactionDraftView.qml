@@ -11,7 +11,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var transactionState
+    required property var transactionViewModel
 
     implicitHeight: layout.implicitHeight
     implicitWidth: layout.implicitWidth
@@ -25,23 +25,23 @@ Item {
         Import.TransactionDraftForm {
             Layout.fillWidth: true
             theme: root.theme
-            transactionState: root.transactionState
+            transactionViewModel: root.transactionViewModel
         }
 
         Import.TransactionDraftProofPanel {
-            transactionState: root.transactionState
+            transactionViewModel: root.transactionViewModel
             theme: root.theme
         }
 
         Import.TransactionDraftMetadataPanel {
-            transactionState: root.transactionState
+            transactionViewModel: root.transactionViewModel
             theme: root.theme
         }
 
         Import.TransactionDraftContractPanel {
             Layout.fillWidth: true
             theme: root.theme
-            transactionState: root.transactionState
+            transactionViewModel: root.transactionViewModel
         }
     }
 }

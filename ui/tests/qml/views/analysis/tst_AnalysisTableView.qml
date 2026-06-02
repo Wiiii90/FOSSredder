@@ -18,7 +18,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property var tableContractTypes: ["lease", "service"]
         property var tablePropertyRows: [
             { propertyName: "Lot", amounts: [100.0, 0.0], total: 100.0 },
@@ -56,7 +56,7 @@ TestCase {
             width: 960
             height: 640
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -65,12 +65,12 @@ TestCase {
     }
 
     function init() {
-        analysisState.tableContractTypes = ["lease", "service"]
-        analysisState.tablePropertyRows = [
+        analysisViewModel.tableContractTypes = ["lease", "service"]
+        analysisViewModel.tablePropertyRows = [
             { propertyName: "Lot", amounts: [100.0, 0.0], total: 100.0 },
             { propertyName: "House", amounts: [0.0, 50.0], total: 50.0 }
         ]
-        analysisState.tableGrandTotal = 150.0
+        analysisViewModel.tableGrandTotal = 150.0
     }
 
     function findRequired(root, objectName) {
@@ -82,9 +82,9 @@ TestCase {
     function test_ANL_TV_001_tableRenderUsesStateMatrix() {
         const view = createView()
 
-        compare(view.analysisState.tableContractTypes.length, 2)
-        compare(view.analysisState.tablePropertyRows.length, 2)
-        compare(view.analysisState.tableGrandTotal, 150.0)
+        compare(view.analysisViewModel.tableContractTypes.length, 2)
+        compare(view.analysisViewModel.tablePropertyRows.length, 2)
+        compare(view.analysisViewModel.tableGrandTotal, 150.0)
     }
 
     function test_ANL_TV_002_tablePreviewHasRenderableGeometry() {

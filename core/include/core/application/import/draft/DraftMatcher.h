@@ -129,6 +129,24 @@ struct DraftDerivedState {
     std::vector<std::string> autoPropertyIds;
 };
 
+enum class DraftAutoSelectionMode { InitialImport, InteractiveSync };
+
+struct TransactionDraftPatch {
+    bool hasName = false;
+    std::string name;
+    bool hasBookingDate = false;
+    std::string bookingDate;
+    bool hasValuta = false;
+    std::string valuta;
+    bool hasAmount = false;
+    double amount = 0.0;
+    bool hasStatus = false;
+    int status = 0;
+    bool hasAllocatable = false;
+    bool allocatable = false;
+    bool allocatableSelected = false;
+};
+
 /**
  * @brief Normalizes free-form draft text for fuzzy matching.
  * @param text Input text to normalize.
@@ -201,5 +219,28 @@ core::domain::catalog::WorkspaceCatalog mergeCatalogState(core::domain::catalog:
  */
 DraftDerivedState buildDraftDerivedState(const core::domain::catalog::WorkspaceCatalog& state,
                                          const DraftLinkSelection& selection);
+
+bool applyDerivedSelections(TransactionDraft& draft,
+                            const DraftDerivedState& derived,
+                            DraftAutoSelectionMode mode);
+
+bool applyActorSelection(TransactionDraft& draft, const std::string& actorId);
+bool clearActorSelection(TransactionDraft& draft);
+bool applyPropertySelection(TransactionDraft& draft,
+                            const std::string& propertyId);
+bool setPropertySelected(TransactionDraft& draft,
+                         const std::string& propertyId,
+                         bool selected);
+bool applyContractSelection(TransactionDraft& draft,
+                            const DraftChoiceRow& contract);
+bool applyContractSelection(TransactionDraft& draft,
+                            const core::domain::catalog::WorkspaceCatalog& state,
+                            const std::string& contractId);
+bool clearContractSelection(TransactionDraft& draft);
+bool applyTransactionPatch(TransactionDraft& draft,
+                           const TransactionDraftPatch& patch);
+int insertTransactionAfter(StatementDraft& draft, int currentIndex);
+int removeTransactionAt(StatementDraft& draft, int index);
+bool renameStatementDraft(StatementDraft& draft, const std::string& name);
 
 }

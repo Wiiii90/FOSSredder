@@ -204,14 +204,14 @@ bool isLikelyTransactionMainRowGeom(const RawLine& line, const ColumnModel& cols
     const auto tokens = core::utils::splitWhitespace(line.text);
     if (tokens.size() != line.wordSpans.size() || tokens.size() < 3) return false;
 
-    const int band = core::parser::helpers::parserConfig.tokenNearBandForMainRow;
-    const bool hasValuta = core::parser::helpers::hasTokenNearX(rawToOcrLine(line), cols.valutaX, band);
-    bool hasDebit = cols.hasDebit() ? core::parser::helpers::hasTokenNearX(rawToOcrLine(line), cols.debitX, band) : false;
-    bool hasCredit = cols.hasCredit() ? core::parser::helpers::hasTokenNearX(rawToOcrLine(line), cols.creditX, band) : false;
+    const int band = helpers::parserConfig.tokenNearBandForMainRow;
+    const bool hasValuta = helpers::hasTokenNearX(rawToOcrLine(line), cols.valutaX, band);
+    bool hasDebit = cols.hasDebit() ? helpers::hasTokenNearX(rawToOcrLine(line), cols.debitX, band) : false;
+    bool hasCredit = cols.hasCredit() ? helpers::hasTokenNearX(rawToOcrLine(line), cols.creditX, band) : false;
 
     if (!hasDebit && !hasCredit) {
         tryReportParserWarning("core::parser::DefaultStatementParser::isLikelyTransactionMainRowGeom", [&] {
-            auto amountIndices = core::parser::helpers::findAmountTokenIndices(rawToOcrLine(line), cols.valutaX, core::parser::helpers::parserConfig.amountNearValutaBandPx);
+            auto amountIndices = helpers::findAmountTokenIndices(rawToOcrLine(line), cols.valutaX, helpers::parserConfig.amountNearValutaBandPx);
             if (!amountIndices.empty()) hasDebit = true;
         });
     }
@@ -220,7 +220,7 @@ bool isLikelyTransactionMainRowGeom(const RawLine& line, const ColumnModel& cols
     for (size_t i = 0; i < tokens.size(); ++i) {
         const auto& span = line.wordSpans[i];
         const int centerX = (span.first + span.second) / 2;
-        if (centerX < cols.valutaX - core::parser::helpers::parserConfig.leftDescriptiveOffsetPx) {
+        if (centerX < cols.valutaX - helpers::parserConfig.leftDescriptiveOffsetPx) {
             hasLeft = true;
             break;
         }
@@ -230,7 +230,7 @@ bool isLikelyTransactionMainRowGeom(const RawLine& line, const ColumnModel& cols
 }
 
 bool isLikelyTransactionHeaderLine(const OcrLine& line, const ColumnModel& cols) {
-    return cols.hasValuta() && core::parser::helpers::hasTokenNearX(line, cols.valutaX, 100);
+    return cols.hasValuta() && helpers::hasTokenNearX(line, cols.valutaX, 100);
 }
 
 std::pair<int, bool> detectHeaderRegion(const std::vector<OcrLine>& lines, size_t scanLines)
@@ -247,11 +247,11 @@ std::pair<int, bool> detectHeaderRegion(const std::vector<OcrLine>& lines, size_
         bool isStrongHeaderLike = false;
         bool isNoise = false;
         try {
-            if (core::parser::heuristics::isTransactionsSectionHeader(text)) isStrongHeaderLike = true;
+            if (heuristics::isTransactionsSectionHeader(text)) isStrongHeaderLike = true;
             if (helpers::normalizeAlnumLower(text).find("valuta") != std::string::npos) isStrongHeaderLike = true;
-            if (core::parser::heuristics::isDebitCreditHeaderLine(text)) isStrongHeaderLike = true;
+            if (heuristics::isDebitCreditHeaderLine(text)) isStrongHeaderLike = true;
             if (helpers::findFirstFullDate(text).has_value()) isStrongHeaderLike = true;
-            if (core::parser::heuristics::isHeaderNoiseLine(text)) isNoise = true;
+            if (heuristics::isHeaderNoiseLine(text)) isNoise = true;
         } catch (...) {
             core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::detectHeaderRegion", std::current_exception());
         }
@@ -277,7 +277,7 @@ std::optional<std::string> findDefaultBookingDate(const std::vector<OcrLine>& li
         for (size_t i = 0; i < n; ++i) {
             const auto& text = lines[i].text;
             if (text.empty()) continue;
-            if (core::parser::heuristics::isPostTransactionFootnote(text)) continue;
+            if (heuristics::isPostTransactionFootnote(text)) continue;
 
             std::smatch match;
             const auto combinedPrev = (i > 0) ? (lines[i - 1].text + std::string(" ") + text) : text;
@@ -324,7 +324,7 @@ bool detectEarlyEmptyPage(const std::vector<OcrLine>& lines, std::string& outDeb
         for (size_t i = start; i < lines.size(); ++i) {
             const auto& text = lines[i].text;
             if (text.empty()) continue;
-            if (core::parser::heuristics::isPostTransactionFootnote(text)) ++footLike;
+            if (heuristics::isPostTransactionFootnote(text)) ++footLike;
 
             const auto tokens = core::utils::splitWhitespace(text);
             for (const auto& token : tokens) {
@@ -416,14 +416,14 @@ HeaderAnalysis analyzeHeaderWindow(const std::vector<OcrLine>& ocrLines,
             const auto& line = ocrLines[headerIndex];
             const auto& text = line.text;
             try {
-                const bool isTxSection = core::parser::heuristics::isTransactionsSectionHeader(text);
-                const bool isDebitCredit = core::parser::heuristics::isDebitCreditHeaderLine(text);
-                const bool isNoise = core::parser::heuristics::isHeaderNoiseLine(text);
-                const bool hasFullDate = core::parser::helpers::findFirstFullDate(text).has_value();
-                bool hasAmount = core::parser::helpers::hasAmountLikeTokenInLine(line, seedCols.valutaX);
+                const bool isTxSection = heuristics::isTransactionsSectionHeader(text);
+                const bool isDebitCredit = heuristics::isDebitCreditHeaderLine(text);
+                const bool isNoise = heuristics::isHeaderNoiseLine(text);
+                const bool hasFullDate = helpers::findFirstFullDate(text).has_value();
+                bool hasAmount = helpers::hasAmountLikeTokenInLine(line, seedCols.valutaX);
                 bool hasValutaTokenNear = false;
                 tryReportParserWarning("core::parser::DefaultStatementParser::headerCandidateValutaNear", [&] {
-                    if (seedCols.valutaX >= 0) hasValutaTokenNear = core::parser::helpers::hasTokenNearX(line, seedCols.valutaX, core::parser::helpers::parserConfig.tokenNearBandForMainRow);
+                    if (seedCols.valutaX >= 0) hasValutaTokenNear = helpers::hasTokenNearX(line, seedCols.valutaX, helpers::parserConfig.tokenNearBandForMainRow);
                 });
                 std::ostringstream summary;
                 summary << "header.candidate\tline=" << headerIndex << "\ttext=" << text << "\ttxSection=" << (isTxSection ? "1" : "0") << "\tdebitcredit=" << (isDebitCredit ? "1" : "0") << "\tnoise=" << (isNoise ? "1" : "0") << "\tfullDate=" << (hasFullDate ? "1" : "0") << "\thasAmt=" << (hasAmount ? "1" : "0") << "\tvalutaNear=" << (hasValutaTokenNear ? "1" : "0");
@@ -438,8 +438,8 @@ HeaderAnalysis analyzeHeaderWindow(const std::vector<OcrLine>& ocrLines,
         for (const auto& line : lines) {
             try {
                 OcrLine ocrLine = rawToOcrLine(line);
-                const bool hasAmount = core::parser::helpers::hasAmountLikeTokenInLine(ocrLine, seedCols.valutaX);
-                const bool dateLeft = core::parser::helpers::hasShortDateToken(ocrLine.text) && core::parser::helpers::hasLeftDescriptiveText(ocrLine, seedCols.valutaX);
+                const bool hasAmount = helpers::hasAmountLikeTokenInLine(ocrLine, seedCols.valutaX);
+                const bool dateLeft = helpers::hasShortDateToken(ocrLine.text) && helpers::hasLeftDescriptiveText(ocrLine, seedCols.valutaX);
                 if (!hasAmount && !dateLeft) continue;
                 earliestAmountY = std::min(earliestAmountY, line.maxY);
                 foundAmountLine = true;
@@ -461,9 +461,9 @@ HeaderAnalysis analyzeHeaderWindow(const std::vector<OcrLine>& ocrLines,
 static bool looksLikeRescuedMainLine(const OcrLine& line, const ColumnModel& cols)
 {
     bool looksMain = false;
-    try { if (core::parser::helpers::hasAmountLikeTokenInLine(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::hasAmount", std::current_exception()); }
-    try { if (!looksMain && core::parser::helpers::isLooseTransactionLine(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::isLoose", std::current_exception()); }
-    try { if (!looksMain && core::parser::helpers::hasShortDateToken(line.text) && core::parser::helpers::hasLeftDescriptiveText(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::dateAndLeft", std::current_exception()); }
+    try { if (helpers::hasAmountLikeTokenInLine(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::hasAmount", std::current_exception()); }
+    try { if (!looksMain && helpers::isLooseTransactionLine(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::isLoose", std::current_exception()); }
+    try { if (!looksMain && helpers::hasShortDateToken(line.text) && helpers::hasLeftDescriptiveText(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::dateAndLeft", std::current_exception()); }
     return looksMain;
 }
 
@@ -717,7 +717,7 @@ static void applyCellAmountOverride(core::application::importing::draft::Transac
             for (const auto& cell : table.cells) {
                 if (cell.col != cols.creditCol || !overlapsLine(cell)) continue;
                 out.debugLines.push_back(std::string("cell.amount_used\t") + cell.text);
-                if (auto value = core::parser::parseAmountString(cell.text)) {
+                if (auto value = core::application::importing::transaction::parseAmountString(cell.text)) {
                     tx.amount = *value;
                     usedCell = true;
                     out.debugLines.push_back(std::string("cell.override->") + std::to_string(tx.amount));
@@ -730,7 +730,7 @@ static void applyCellAmountOverride(core::application::importing::draft::Transac
             for (const auto& cell : table.cells) {
                 if (cell.col != cols.debitCol || !overlapsLine(cell)) continue;
                 out.debugLines.push_back(std::string("cell.amount_used\t") + cell.text);
-                if (auto value = core::parser::parseAmountString(cell.text)) {
+                if (auto value = core::application::importing::transaction::parseAmountString(cell.text)) {
                     tx.amount = -std::abs(*value);
                     out.debugLines.push_back(std::string("cell.override->") + std::to_string(tx.amount));
                 }

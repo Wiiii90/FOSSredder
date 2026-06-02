@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 120
 
-    property var annualState: QtObject {
+    property var annualViewModel: QtObject {
         property bool isEdit: false
         property bool canSubmit: true
         property bool hasRows: true
@@ -60,7 +60,7 @@ TestCase {
         Annual.AnnualBottomBar {
             width: 960
             height: 80
-            annualState: testCase.annualState
+            annualViewModel: testCase.annualViewModel
             theme: testCase.theme
         }
     }
@@ -70,13 +70,13 @@ TestCase {
     }
 
     function init() {
-        annualState.isEdit = false
-        annualState.navigateCalls = 0
-        annualState.toggleCalls = 0
-        annualState.resetCalls = 0
-        annualState.createCalls = 0
-        annualState.updateCalls = 0
-        annualState.deleteCalls = 0
+        annualViewModel.isEdit = false
+        annualViewModel.navigateCalls = 0
+        annualViewModel.toggleCalls = 0
+        annualViewModel.resetCalls = 0
+        annualViewModel.createCalls = 0
+        annualViewModel.updateCalls = 0
+        annualViewModel.deleteCalls = 0
     }
 
     function test_ANN_BB_001_createModeActionsDelegateToAnnualState() {
@@ -87,19 +87,19 @@ TestCase {
         TestSupport.findRequired(Lookup, bar, "annualCreateButton").clicked()
         TestSupport.findRequired(Lookup, bar, "annualNextButton").clicked()
 
-        compare(annualState.navigateCalls, 2)
-        compare(annualState.toggleCalls, 1)
-        compare(annualState.resetCalls, 1)
-        compare(annualState.createCalls, 1)
+        compare(annualViewModel.navigateCalls, 2)
+        compare(annualViewModel.toggleCalls, 1)
+        compare(annualViewModel.resetCalls, 1)
+        compare(annualViewModel.createCalls, 1)
     }
 
     function test_ANN_BB_002_editModeActionsDelegateToAnnualState() {
-        annualState.isEdit = true
+        annualViewModel.isEdit = true
         const bar = createBar()
         TestSupport.findRequired(Lookup, bar, "annualDeleteButton").clicked()
         TestSupport.findRequired(Lookup, bar, "annualUpdateButton").clicked()
 
-        compare(annualState.deleteCalls, 1)
-        compare(annualState.updateCalls, 1)
+        compare(annualViewModel.deleteCalls, 1)
+        compare(annualViewModel.updateCalls, 1)
     }
 }

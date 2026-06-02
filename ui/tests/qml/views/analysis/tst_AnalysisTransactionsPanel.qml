@@ -57,7 +57,7 @@ TestCase {
     property string calcName: ""
     property string calcPercent: ""
     property int applyCalls: 0
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property string calcName: testCase.calcName
         property string calcPercentText: testCase.calcPercent
         property var selectedAdjustmentTxIds: testCase.selectedIds
@@ -78,7 +78,7 @@ TestCase {
             width: 960
             height: 640
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -92,9 +92,9 @@ TestCase {
         selectedIds = []
         calcName = ""
         calcPercent = ""
-        analysisState.calcName = ""
-        analysisState.calcPercentText = ""
-        analysisState.selectedAdjustmentTxIds = []
+        analysisViewModel.calcName = ""
+        analysisViewModel.calcPercentText = ""
+        analysisViewModel.selectedAdjustmentTxIds = []
         applyCalls = 0
     }
 
@@ -113,8 +113,8 @@ TestCase {
 
         calcNameField.text = "VAT"
         calcPercentField.text = "19"
-        compare(analysisState.calcName, "VAT")
-        compare(analysisState.calcPercentText, "19")
+        compare(analysisViewModel.calcName, "VAT")
+        compare(analysisViewModel.calcPercentText, "19")
 
         applyCalcButton.clicked()
         compare(applyCalls, 1)

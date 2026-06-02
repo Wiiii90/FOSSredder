@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/application/export/ExportTypes.h"
+#include "core/ports/export/ExportRequest.h"
 
 #include <filesystem>
 
@@ -30,7 +30,7 @@ public:
      */
     virtual bool create(const std::filesystem::path& sourceDirectory,
                         const std::filesystem::path& outputArchive,
-                        core::application::exporting::PackageFormat format) const = 0;
+                        core::ports::exporting::PackageFormat format) const = 0;
 };
 
 } // namespace core::ports::archive

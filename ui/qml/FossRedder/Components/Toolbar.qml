@@ -11,22 +11,27 @@ import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: toolBar
-    required property var shellNavigationState
+    required property var navigation
+    required property var actorViewModel
+    required property var propertyViewModel
+    required property var contractViewModel
+    required property var analysisViewModel
+    required property var annualViewModel
     required property var settingsViewModel
     required property var theme
-    readonly property int navActors: toolBar.shellNavigationState.actorSection
-    readonly property int navProperties: toolBar.shellNavigationState.propertySection
-    readonly property int navContracts: toolBar.shellNavigationState.contractSection
-    readonly property int navBooking: toolBar.shellNavigationState.bookingSection
-    readonly property int navImport: toolBar.shellNavigationState.importSection
-    readonly property int navExport: toolBar.shellNavigationState.exportSection
-    readonly property int navSettings: toolBar.shellNavigationState.settingsSection
-    readonly property int navAnalysis: toolBar.shellNavigationState.analysisSection
-    readonly property int navAnnual: toolBar.shellNavigationState.annualSection
-    readonly property bool fileGroupActive: toolBar.shellNavigationState.activeSection === toolBar.navImport || toolBar.shellNavigationState.activeSection === toolBar.navExport
-    readonly property bool domainGroupActive: toolBar.shellNavigationState.activeSection === toolBar.navBooking || toolBar.shellNavigationState.activeSection === toolBar.navActors || toolBar.shellNavigationState.activeSection === toolBar.navProperties || toolBar.shellNavigationState.activeSection === toolBar.navContracts
-    readonly property bool toolsGroupActive: toolBar.shellNavigationState.activeSection === toolBar.navAnalysis || toolBar.shellNavigationState.activeSection === toolBar.navAnnual
-    readonly property bool appGroupActive: toolBar.shellNavigationState.activeSection === toolBar.navSettings
+    readonly property int navActors: toolBar.navigation.actorSection
+    readonly property int navProperties: toolBar.navigation.propertySection
+    readonly property int navContracts: toolBar.navigation.contractSection
+    readonly property int navBooking: toolBar.navigation.bookingSection
+    readonly property int navImport: toolBar.navigation.importSection
+    readonly property int navExport: toolBar.navigation.exportSection
+    readonly property int navSettings: toolBar.navigation.settingsSection
+    readonly property int navAnalysis: toolBar.navigation.analysisSection
+    readonly property int navAnnual: toolBar.navigation.annualSection
+    readonly property bool fileGroupActive: toolBar.navigation.activeSection === toolBar.navImport || toolBar.navigation.activeSection === toolBar.navExport
+    readonly property bool domainGroupActive: toolBar.navigation.activeSection === toolBar.navBooking || toolBar.navigation.activeSection === toolBar.navActors || toolBar.navigation.activeSection === toolBar.navProperties || toolBar.navigation.activeSection === toolBar.navContracts
+    readonly property bool toolsGroupActive: toolBar.navigation.activeSection === toolBar.navAnalysis || toolBar.navigation.activeSection === toolBar.navAnnual
+    readonly property bool appGroupActive: toolBar.navigation.activeSection === toolBar.navSettings
     implicitHeight: toolBar.theme.toolbarHeight
     property int iconRowHeight: toolBar.theme.toolbarIconRowHeight
 
@@ -34,16 +39,24 @@ Item {
         return Qt.resolvedUrl("../assets/" + fileName);
     }
 
-    function navigateTo(section, clearSelection) {
-        toolBar.shellNavigationState.navigateToSection(section, clearSelection);
+    function prepareCreateMode(section) {
+        if (section === toolBar.navActors && toolBar.actorViewModel) {
+            toolBar.actorViewModel.enterCreateMode();
+        } else if (section === toolBar.navProperties && toolBar.propertyViewModel) {
+            toolBar.propertyViewModel.enterCreateMode();
+        } else if (section === toolBar.navContracts && toolBar.contractViewModel) {
+            toolBar.contractViewModel.enterCreateMode();
+        } else if (section === toolBar.navAnalysis && toolBar.analysisViewModel) {
+            toolBar.analysisViewModel.selectAnalysis("");
+        } else if (section === toolBar.navAnnual && toolBar.annualViewModel) {
+            toolBar.annualViewModel.resetCreateState();
+        }
     }
 
-    function navigateToImportHome() {
-        toolBar.shellNavigationState.navigateToImportHome();
-    }
-
-    function navigateToBookingCreate() {
-        toolBar.shellNavigationState.navigateToBookingCreate();
+    function navigateTo(section, createMode) {
+        if (createMode)
+            toolBar.prepareCreateMode(section);
+        toolBar.navigation.navigateToSection(section);
     }
 
     function showDividerForGroup(visibleGroup, hasVisibleAfter) {
@@ -100,8 +113,8 @@ Item {
                     Layout.preferredHeight: fileGroup.actionHeight
                     svgSource: toolBar.assetUrl("import.svg")
                     label: qsTr("Import")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navImport
-                    onClicked: toolBar.navigateToImportHome()
+                    active: toolBar.navigation.activeSection === toolBar.navImport
+                    onClicked: toolBar.navigateTo(toolBar.navImport, false)
                 }
                 Controls.IconButton {
                     visible: toolBar.settingsViewModel.toolbarShowExport
@@ -109,7 +122,7 @@ Item {
                     Layout.preferredHeight: fileGroup.actionHeight
                     svgSource: toolBar.assetUrl("export.svg")
                     label: qsTr("Export")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navExport
+                    active: toolBar.navigation.activeSection === toolBar.navExport
                     onClicked: toolBar.navigateTo(toolBar.navExport, false)
                 }
             }
@@ -133,8 +146,8 @@ Item {
                     Layout.preferredHeight: domainGroup.actionHeight
                     svgSource: toolBar.assetUrl("booking.svg")
                     label: qsTr("Booking")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navBooking
-                    onClicked: toolBar.navigateToBookingCreate()
+                    active: toolBar.navigation.activeSection === toolBar.navBooking
+                    onClicked: toolBar.navigateTo(toolBar.navBooking, false)
                 }
                 Controls.IconButton {
                     visible: toolBar.settingsViewModel.toolbarShowActors
@@ -142,7 +155,7 @@ Item {
                     Layout.preferredHeight: domainGroup.actionHeight
                     svgSource: toolBar.assetUrl("actor.svg")
                     label: qsTr("Actor")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navActors
+                    active: toolBar.navigation.activeSection === toolBar.navActors
                     onClicked: toolBar.navigateTo(toolBar.navActors, true)
                 }
                 Controls.IconButton {
@@ -151,7 +164,7 @@ Item {
                     Layout.preferredHeight: domainGroup.actionHeight
                     svgSource: toolBar.assetUrl("property.svg")
                     label: qsTr("Property")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navProperties
+                    active: toolBar.navigation.activeSection === toolBar.navProperties
                     onClicked: toolBar.navigateTo(toolBar.navProperties, true)
                 }
                 Controls.IconButton {
@@ -160,7 +173,7 @@ Item {
                     Layout.preferredHeight: domainGroup.actionHeight
                     svgSource: toolBar.assetUrl("contract.svg")
                     label: qsTr("Contract")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navContracts
+                    active: toolBar.navigation.activeSection === toolBar.navContracts
                     onClicked: toolBar.navigateTo(toolBar.navContracts, true)
                 }
             }
@@ -184,7 +197,7 @@ Item {
                     Layout.preferredHeight: toolsGroup.actionHeight
                     svgSource: toolBar.assetUrl("analysis.svg")
                     label: qsTr("Analysis")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navAnalysis
+                    active: toolBar.navigation.activeSection === toolBar.navAnalysis
                     onClicked: toolBar.navigateTo(toolBar.navAnalysis, true)
                 }
                 Controls.IconButton {
@@ -193,7 +206,7 @@ Item {
                     Layout.preferredHeight: toolsGroup.actionHeight
                     svgSource: toolBar.assetUrl("annual.svg")
                     label: qsTr("Annual")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navAnnual
+                    active: toolBar.navigation.activeSection === toolBar.navAnnual
                     onClicked: toolBar.navigateTo(toolBar.navAnnual, true)
                 }
             }
@@ -217,7 +230,7 @@ Item {
                     Layout.preferredHeight: appGroup.actionHeight
                     svgSource: toolBar.assetUrl("settings.svg")
                     label: qsTr("Settings")
-                    active: toolBar.shellNavigationState.activeSection === toolBar.navSettings
+                    active: toolBar.navigation.activeSection === toolBar.navSettings
                     onClicked: toolBar.navigateTo(toolBar.navSettings, false)
                 }
             }

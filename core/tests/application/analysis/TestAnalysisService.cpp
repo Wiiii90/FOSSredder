@@ -9,8 +9,30 @@
 #include "core/domain/entities/Analysis.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Transaction.h"
+#include "core/ports/analysis-image-renderer/IAnalysisImageRenderer.h"
 
 namespace core::application::analysis {
+
+namespace {
+
+class RecordingAnalysisImageRenderer final
+    : public core::ports::analysis_image_renderer::IAnalysisImageRenderer {
+public:
+  bool writeAnalysisImage(
+      const std::filesystem::path &outputPath, const std::string &title,
+      const core::ports::analysis::AnalysisResult &result) const override {
+    lastOutputPath = outputPath;
+    lastTitle = title;
+    lastTableRows = result.table.size();
+    return true;
+  }
+
+  mutable std::filesystem::path lastOutputPath;
+  mutable std::string lastTitle;
+  mutable std::size_t lastTableRows = 0;
+};
+
+} // namespace
 
 TEST(AnalysisServiceTest, RunsAnalysisAgainstWorkspaceState) {
     core::domain::catalog::WorkspaceCatalog state;
@@ -214,6 +236,44 @@ TEST(AnalysisServiceTest, AppliesCalculationAdjustmentsToTransactionObjectSnapsh
     EXPECT_DOUBLE_EQ(std::stod(result.table.front().at(1)), 119.0);
     ASSERT_EQ(result.transactions.size(), 1u);
     EXPECT_EQ(result.transactions.front().id, "tx-1");
+}
+
+TEST(AnalysisServiceTest, PortRunRendersAnalysisArtifactsBehindRunnerBoundary) {
+    core::ports::workspace::WorkspaceSnapshot workspace;
+
+    core::ports::workspace::ContractSnapshot contract;
+    contract.id = "contract-1";
+    contract.name = "Contract";
+    contract.type = "rent";
+    workspace.contracts.push_back(contract);
+
+    core::ports::workspace::TransactionSnapshot transaction;
+    transaction.id = "tx-1";
+    transaction.name = "Rent";
+    transaction.bookingDate = "2026-01-31";
+    transaction.amount = 100.0;
+    transaction.contractId = "contract-1";
+    workspace.transactions.push_back(transaction);
+
+    core::ports::workspace::AnalysisSnapshot analysis;
+    analysis.id = "analysis-1";
+    analysis.name = "Analysis";
+    analysis.type = "plot";
+    analysis.configJson = R"({"plotType":"pie","plotMeasure":"totalAmount"})";
+    workspace.analyses.push_back(analysis);
+
+    auto renderer = std::make_shared<RecordingAnalysisImageRenderer>();
+    AnalysisService service(renderer);
+    core::ports::analysis::AnalysisRequest request;
+    request.analysisId = "analysis-1";
+
+    const auto result = service.runAnalysis(workspace, request);
+
+    ASSERT_TRUE(result.found);
+    ASSERT_EQ(result.artifacts.size(), 1u);
+    EXPECT_FALSE(renderer->lastOutputPath.empty());
+    EXPECT_EQ(renderer->lastTitle, "analysis-1");
+    EXPECT_EQ(renderer->lastTableRows, result.table.size());
 }
 
 } // namespace core::application::analysis

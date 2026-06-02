@@ -31,7 +31,7 @@ TestCase {
         property color border: "#cccccc"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property var propertyRows: [{ id: "property-1", display: "Flat 1" }]
         property var selectedPropertyIds: ["property-1"]
         function isPropertySelected(propertyId) {
@@ -51,7 +51,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            bookingState: testCase.bookingState
+            bookingViewModel: testCase.bookingViewModel
         }
     }
 
@@ -59,7 +59,7 @@ TestCase {
         lastPropertyId = ""
         lastPropertySelected = false
         setPropertyCalls = 0
-        bookingState.selectedPropertyIds = ["property-1"]
+        bookingViewModel.selectedPropertyIds = ["property-1"]
     }
 
     function findRequired(root, objectName) {
@@ -86,7 +86,7 @@ TestCase {
         const checkBox = findRequired(panel, "bookingTransactionPropertyCheckBox")
 
         compare(checkBox.checked, true)
-        bookingState.selectedPropertyIds = []
+        bookingViewModel.selectedPropertyIds = []
         wait(50)
 
         compare(checkBox.checked, false)

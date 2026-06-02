@@ -21,6 +21,7 @@ namespace core::application::importing::transaction {
 using internal::OcrLine;
 using internal::TransactionBlock;
 namespace helpers = core::application::importing::internal;
+namespace amount_parser = core::application::importing::transaction;
 
 namespace {
 
@@ -110,7 +111,7 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
             creditVal = v;
             if (debugOut) debugOut->push_back(std::string("initial.credit.helperUsed\t") + block.main.credit.line.text + std::string(" -> ") + std::to_string(*creditVal));
         } else {
-            creditVal = parseAmountString(block.main.credit.line.text);
+            creditVal = amount_parser::parseAmountString(block.main.credit.line.text);
             if (debugOut) debugOut->push_back(std::string("initial.credit.parse\t") + block.main.credit.line.text + std::string(" -> ") + (creditVal ? std::to_string(*creditVal) : std::string("(none)")));
         }
     }
@@ -120,7 +121,7 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
             debitVal = v;
             if (debugOut) debugOut->push_back(std::string("initial.debit.helperUsed\t") + block.main.debit.line.text + std::string(" -> ") + std::to_string(*debitVal));
         } else {
-            debitVal = parseAmountString(block.main.debit.line.text);
+            debitVal = amount_parser::parseAmountString(block.main.debit.line.text);
             if (debugOut) debugOut->push_back(std::string("initial.debit.parse\t") + block.main.debit.line.text + std::string(" -> ") + (debitVal ? std::to_string(*debitVal) : std::string("(none)")));
         }
     }
@@ -194,8 +195,8 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
         auto tryCombineParse = [&](const std::string& a, const std::string& b)->std::optional<double> {
             try {
                 if (a.empty() || b.empty()) return std::nullopt;
-                if (auto p = parseAmountString(a + b)) return p;
-                if (auto p2 = parseAmountString(a + " " + b)) return p2;
+                if (auto p = amount_parser::parseAmountString(a + b)) return p;
+                if (auto p2 = amount_parser::parseAmountString(a + " " + b)) return p2;
             } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultTransactionParser::parseTransaction::tryCombineParse", std::current_exception()); }
             return std::nullopt;
         };

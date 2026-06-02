@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsState: QtObject {
+    property var settingsViewModel: QtObject {
         property int currentCategory: 0
         property bool canNavigateCategories: true
         property var languageOptions: [
@@ -82,7 +82,7 @@ TestCase {
         Settings.SettingsView {
             width: 960
             height: 640
-            settingsState: testCase.settingsState
+            settingsViewModel: testCase.settingsViewModel
             theme: testCase.theme
         }
     }
@@ -92,10 +92,10 @@ TestCase {
     }
 
     function init() {
-        settingsState.currentCategory = 0
-        settingsState.activateCalls = 0
-        settingsState.saveCalls = 0
-        settingsState.resetCalls = 0
+        settingsViewModel.currentCategory = 0
+        settingsViewModel.activateCalls = 0
+        settingsViewModel.saveCalls = 0
+        settingsViewModel.resetCalls = 0
     }
 
     function test_SET_V_001_mountsSettingsStackAndActivatesState() {
@@ -103,7 +103,7 @@ TestCase {
         const stack = TestSupport.findRequired(Lookup, view, "settingsLoader")
 
         compare(stack.currentIndex, 0)
-        compare(settingsState.activateCalls, 1)
+        compare(settingsViewModel.activateCalls, 1)
     }
 
     function test_SET_V_002_categoryNavigationButtonsAdvanceAndReturn() {
@@ -113,11 +113,11 @@ TestCase {
         const stack = TestSupport.findRequired(Lookup, view, "settingsLoader")
 
         nextButton.clicked()
-        compare(settingsState.currentCategory, 1)
+        compare(settingsViewModel.currentCategory, 1)
         compare(stack.currentIndex, 1)
 
         prevButton.clicked()
-        compare(settingsState.currentCategory, 0)
+        compare(settingsViewModel.currentCategory, 0)
         compare(stack.currentIndex, 0)
     }
 
@@ -125,29 +125,29 @@ TestCase {
         const view = createView()
         TestSupport.findRequired(Lookup, view, "settingsUpdateButton").clicked()
 
-        compare(settingsState.saveCalls, 1)
+        compare(settingsViewModel.saveCalls, 1)
     }
 
     function test_SET_V_004_defaultButtonResetsSettingsAndCategory() {
-        settingsState.currentCategory = 2
+        settingsViewModel.currentCategory = 2
         const view = createView()
 
         TestSupport.findRequired(Lookup, view, "settingsDefaultButton").clicked()
 
-        compare(settingsState.resetCalls, 1)
-        compare(settingsState.currentCategory, 0)
+        compare(settingsViewModel.resetCalls, 1)
+        compare(settingsViewModel.currentCategory, 0)
     }
 
     function test_SET_V_005_categoryNavigationWrapsAtEdges() {
-        settingsState.currentCategory = 3
+        settingsViewModel.currentCategory = 3
         const view = createView()
         const nextButton = TestSupport.findRequired(Lookup, view, "settingsNextCategoryButton")
         const prevButton = TestSupport.findRequired(Lookup, view, "settingsPrevCategoryButton")
 
         nextButton.clicked()
-        compare(settingsState.currentCategory, 0)
+        compare(settingsViewModel.currentCategory, 0)
 
         prevButton.clicked()
-        compare(settingsState.currentCategory, 3)
+        compare(settingsViewModel.currentCategory, 3)
     }
 }

@@ -11,7 +11,7 @@ pragma ComponentBehavior: Bound
 Controls.Panel {
     id: root
     required property var theme
-    required property var transactionState
+    required property var transactionViewModel
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -36,7 +36,7 @@ Controls.Panel {
             Layout.minimumHeight: 0
             visible: source.toString().length > 0
             fillMode: Image.PreserveAspectFit
-            source: root.transactionState.proofSource
+            source: root.transactionViewModel.proofSource
             cache: true
             asynchronous: true
         }

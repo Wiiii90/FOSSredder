@@ -13,8 +13,8 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var analysisState
-    readonly property var selectedIds: root.analysisState.selectedPropertyIds
+    required property var analysisViewModel
+    readonly property var selectedIds: root.analysisViewModel.selectedPropertyIds
 
     readonly property real actionButtonSize: root.theme.viewCompactActionButtonSize || root.theme.controlHeight || 32
     readonly property real actionButtonWidth: Math.max(root.actionButtonSize, 96)
@@ -55,7 +55,7 @@ Controls.Panel {
                     text: qsTr("All")
                     Layout.preferredWidth: root.actionButtonWidth
                     Layout.preferredHeight: root.actionButtonSize
-                    onClicked: root.analysisState.selectAllProperties()
+                    onClicked: root.analysisViewModel.selectAllProperties()
                 }
 
                 Controls.SecondaryButton {
@@ -63,14 +63,14 @@ Controls.Panel {
                     text: qsTr("None")
                     Layout.preferredWidth: root.actionButtonWidth
                     Layout.preferredHeight: root.actionButtonSize
-                    onClicked: root.analysisState.selectNoProperties()
+                    onClicked: root.analysisViewModel.selectNoProperties()
                 }
             }
         }
 
         Controls.CheckListPanel {
             Repeater {
-                model: root.analysisState.propertyFilterRows
+                model: root.analysisViewModel.propertyFilterRows
 
                 delegate: RowLayout {
                     id: rowRoot
@@ -85,7 +85,7 @@ Controls.Panel {
                         Layout.fillWidth: false
                         Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                         checked: root.selectedIds.indexOf(rowRoot.modelData.id) !== -1
-                        onClicked: root.analysisState.setPropertySelected(rowRoot.modelData.id, checked)
+                        onClicked: root.analysisViewModel.setPropertySelected(rowRoot.modelData.id, checked)
                     }
 
                     Label {

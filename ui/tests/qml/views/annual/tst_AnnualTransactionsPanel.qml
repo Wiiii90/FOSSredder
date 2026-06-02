@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var annualState: QtObject {
+    property var annualViewModel: QtObject {
         property var annualTransactions: [{ id: "d-1" }]
         property var transactionSections: [
             { key: "deduplicated", title: "Included entries (exact matches)", expanded: true, visible: true, rows: [row("d-1", "Dedup", 0)] },
@@ -84,7 +84,7 @@ TestCase {
             width: 960
             height: 640
             theme: testCase.theme
-            annualState: testCase.annualState
+            annualViewModel: testCase.annualViewModel
         }
     }
 
@@ -106,6 +106,6 @@ TestCase {
     function test_ANN_T_002_sectionToggleDelegatesToAnnualState() {
         const panel = createPanel()
         TestSupport.findRequired(Lookup, panel, "annualTransactionsSectionMouseArea_similar").clicked(null)
-        compare(annualState.toggledKey, "similar")
+        compare(annualViewModel.toggledKey, "similar")
     }
 }

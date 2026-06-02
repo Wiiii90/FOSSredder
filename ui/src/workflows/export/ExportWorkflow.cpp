@@ -1,237 +1,209 @@
 /**
  * @file ui/src/workflows/export/ExportWorkflow.cpp
- * @brief Implements the asynchronous export workflow exposed to the UI.
+ * @brief Implements export workflow orchestration, logging, and async execution.
  */
 
 #include "ui/workflows/export/ExportWorkflow.h"
 
+#include "ui/adapters/ExportAdapter.h"
+#include "core/errors/ErrorCodes.h"
+#include "core/errors/ErrorReporterRegistry.h"
+#include "core/ports/export/ExportRequest.h"
 #include "ui/shared/observability/Origins.h"
 #include "ui/shared/observability/Trace.h"
-#include "ui/shared/util/CoreFacadeGuard.h"
-#include "ui/shared/util/StringConversions.h"
 #include "ui/shared/text/Text.h"
+#include "ui/shared/util/StringConversions.h"
 
-#include <QtConcurrent/qtconcurrentrun.h>
 #include <QDateTime>
-#include <QUuid>
-#include <QDesktopServices>
-#include <QDir>
-#include <QFileInfo>
-#include <QUrl>
 #include <QMetaObject>
 #include <QPointer>
+#include <QUuid>
+#include <QtConcurrent/qtconcurrentrun.h>
+
 #include <algorithm>
 #include <exception>
 #include <string>
 
 namespace ui {
-
 namespace {
 
-QString buildExportSuccessStatusMessage()
-{
-    return ui::text::exportRuns::successDetail();
+QString buildExportSuccessStatusMessage() {
+  return ui::text::exportRuns::successDetail();
+}
+
+QString currentTimestamp() {
+  return QDateTime::currentDateTime().toString(
+      QStringLiteral("dd.MM.yyyy HH:mm:ss"));
+}
+
+QString generateLogId() {
+  return QUuid::createUuid().toString(QUuid::WithoutBraces);
+}
+
+core::ports::workspace::ExportLogSnapshot
+toExportLogSnapshot(const ExportLogRow &row) {
+  core::ports::workspace::ExportLogSnapshot log;
+  log.id = row.logId.toStdString();
+  log.time = row.time.toStdString();
+  log.targetPath = row.file.toStdString();
+  log.status = row.status.toStdString();
+  log.message = row.message.toStdString();
+  log.payload = row.payload.toStdString();
+  return log;
+}
+
+ExportLogRow
+toExportLogRow(const core::ports::workspace::ExportLogSnapshot &log) {
+  ExportLogRow row;
+  row.logId = QString::fromStdString(log.id);
+  row.time = QString::fromStdString(log.time);
+  row.file = QString::fromStdString(log.targetPath);
+  row.status = QString::fromStdString(log.status);
+  row.message = QString::fromStdString(log.message);
+  row.payload = QString::fromStdString(log.payload);
+  return row;
 }
 
 } // namespace
 
 ExportWorkflow::ExportWorkflow(
     StateSnapshotProvider stateSnapshotProvider,
-    std::shared_ptr<ui::exporting::ExportRunner> runner,
-    std::shared_ptr<core::ports::presenters::IExportPresenter> exportPresenter,
-    QObject* parent)
-    : QObject(parent)
-    , stateSnapshotProvider_(std::move(stateSnapshotProvider))
-    , runner_(runner ? std::move(runner)
-                     : std::make_shared<ui::exporting::ExportRunner>())
-    , exportPresenter_(std::move(exportPresenter))
-    , runs_(std::make_unique<ExportRunList>(this))
-{
-    connect(&exportWatcher_,
-            &QFutureWatcher<ui::exporting::ExportResult>::finished,
-            this,
-            &ExportWorkflow::onExportFinished);
+    std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter, QObject *parent)
+    : QObject(parent),
+      stateSnapshotProvider_(std::move(stateSnapshotProvider)),
+      exportAdapter_(std::move(exportAdapter)) {
+  connect(&exportWatcher_,
+          &QFutureWatcher<core::ports::exporting::ExportResult>::finished, this,
+          &ExportWorkflow::onExportFinished);
 
-    restoreRunsFromSnapshot();
+  restoreExportLogsFromSnapshot();
 }
 
-void ExportWorkflow::setExportLogsStore(ExportLogsStore store)
-{
-    exportLogsStore_ = std::move(store);
+void ExportWorkflow::refreshFromStateSnapshot() {
+  restoreExportLogsFromSnapshot();
+  emit stateChanged();
 }
 
-void ExportWorkflow::refreshFromStateSnapshot()
-{
-    restoreRunsFromSnapshot();
-    emit stateChanged();
+void ExportWorkflow::setExportLogSink(ExportLogSink sink) {
+  exportLogSink_ = std::move(sink);
 }
 
-int ExportWorkflow::currentMode() const noexcept
-{
-    if (isRunning_) return ProgressMode;
-    return CreateMode;
+int ExportWorkflow::currentMode() const noexcept {
+  if (isRunning_)
+    return ProgressMode;
+  return CreateMode;
 }
 
-ExportRunList* ExportWorkflow::runs() noexcept
-{
-    return runs_.get();
+core::ports::workspace::WorkspaceSnapshot ExportWorkflow::stateSnapshot() const {
+  return stateSnapshotProvider_ ? stateSnapshotProvider_()
+                                : core::ports::workspace::WorkspaceSnapshot{};
 }
 
-bool ExportWorkflow::hasPrevRun() const
-{
-    return currentRunIndex() > 0;
+core::ports::exporting::ExportRequest
+ExportWorkflow::buildRequest(int format, const QString &path,
+                             bool includeFormulas,
+                             const QString &locale) const {
+  if (!exportAdapter_) {
+    return {};
+  }
+  return exportAdapter_->buildExportRequest(format, path, includeFormulas,
+                                            locale, pendingPayload_);
 }
 
-bool ExportWorkflow::hasNextRun() const
-{
-    const int idx = currentRunIndex();
-    return idx >= 0 && runs_ && idx < runs_->rowCount() - 1;
+ExportLogRow ExportWorkflow::upsertExportLogById(const QString &logId,
+                                                 const QString &path,
+                                                 const QString &status,
+                                                 const QString &message,
+                                                 const QString &payload) {
+  ExportLogRow row;
+  row.logId = logId.isEmpty() ? generateLogId() : logId;
+  auto existing =
+      std::find_if(exportLogs_.begin(), exportLogs_.end(),
+                   [&row](const ExportLogRow &candidate) {
+                     return candidate.logId == row.logId;
+                   });
+  if (existing != exportLogs_.end()) {
+    row = *existing;
+  }
+  row.time = currentTimestamp();
+  row.file = path;
+  row.status = status;
+  row.message = message;
+  row.payload = payload;
+  if (existing != exportLogs_.end()) {
+    *existing = row;
+  } else {
+    exportLogs_.push_back(row);
+  }
+  publishExportLog(row);
+  return row;
 }
 
-int ExportWorkflow::currentRunIndex() const
-{
-    if (!runs_ || activeRunLogId_.isEmpty()) return -1;
-    return runs_->findByLogId(activeRunLogId_);
+void ExportWorkflow::restoreExportLogsFromSnapshot() {
+  exportLogs_.clear();
+  const auto snapshot = stateSnapshot();
+  exportLogs_.reserve(snapshot.exportLogs.size());
+  for (const auto &log : snapshot.exportLogs) {
+    exportLogs_.push_back(toExportLogRow(log));
+  }
 }
 
-ui::exporting::ExportRequest ExportWorkflow::buildRequest(ui::qml::contracts::ExportFormat format,
-                                                            const QString& path,
-                                                            bool includeFormulas,
-                                                            const QString& locale) const
-{
-    ui::exporting::ExportRequest request;
-    request.format = format;
-    request.path = path;
-    request.includeFormulas = includeFormulas;
-    request.locale = locale;
-    request.payload = pendingPayload_;
-    return request;
+void ExportWorkflow::publishExportLog(const ExportLogRow &row) {
+  if (!exportLogSink_) {
+    return;
+  }
+  try {
+    exportLogSink_(toExportLogSnapshot(row));
+  } catch (...) {
+    core::errors::reportException(
+        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionError,
+        observability::origins::workflow::exportFlow::kFinish,
+        std::current_exception());
+  }
 }
 
-void ExportWorkflow::finishExport(bool success, const QString& outputPath)
-{
-    completedSteps_ = totalSteps_;
-    progress_ = 1.0;
-    phase_ = success ? QStringLiteral("Finished") : QStringLiteral("Failed");
-
-    const QString status = success ? QStringLiteral("Success") : QStringLiteral("Failed");
-    const QString path = outputPath.isEmpty() ? activeRunPath_ : outputPath;
-    QString message = lastError_;
-    if (success && message.isEmpty()) {
-        message = buildExportSuccessStatusMessage();
-    }
-    upsertRunById(activeRunLogId_, path, status, message, pendingPayload_);
-    persistRuns();
-
-    isRunning_ = false;
-    isPaused_ = false;
-    cancelRequested_ = false;
-    if (!success) {
-        emit exportFailed(lastError_);
-    }
-    emit stateChanged();
-    emit exportFinished(success);
+void ExportWorkflow::clearActiveExportLog() {
+  activeExportLogId_.clear();
+  emit stateChanged();
 }
 
-std::shared_ptr<const core::application::workspace::WorkspaceSessionState> ExportWorkflow::stateSnapshot() const
-{
-    return stateSnapshotProvider_ ? stateSnapshotProvider_()
-                                  : std::shared_ptr<const core::application::workspace::WorkspaceSessionState>{};
-}
+void ExportWorkflow::finishExport(bool success, const QString &outputPath) {
+  completedSteps_ = totalSteps_;
+  progress_ = 1.0;
+  phase_ = success ? QStringLiteral("Finished") : QStringLiteral("Failed");
 
-QString ExportWorkflow::generateLogId() const
-{
-    return QUuid::createUuid().toString(QUuid::WithoutBraces);
-}
+  const QString status =
+      success ? QStringLiteral("Success") : QStringLiteral("Failed");
+  const QString path = outputPath.isEmpty() ? activeExportPath_ : outputPath;
+  QString message = lastError_;
+  if (success && message.isEmpty()) {
+    message = buildExportSuccessStatusMessage();
+  }
+  upsertExportLogById(activeExportLogId_, path, status, message,
+                      pendingPayload_);
 
-QString ExportWorkflow::currentTimestamp() const
-{
-    return QDateTime::currentDateTime().toString(QStringLiteral("dd.MM.yyyy HH:mm:ss"));
-}
-
-ExportRunRow ExportWorkflow::upsertRunById(const QString& logId,
-                                             const QString& path,
-                                             const QString& status,
-                                             const QString& message,
-                                             const QString& payload)
-{
-    ExportRunRow row;
-    row.logId = logId.isEmpty() ? generateLogId() : logId;
-    const int existingIndex = runs_ ? runs_->findByLogId(row.logId) : -1;
-    if (runs_ && existingIndex >= 0) {
-        row = runs_->at(existingIndex);
-    }
-    row.time = currentTimestamp();
-    row.file = path;
-    row.status = status;
-    row.message = message;
-    row.payload = payload;
-    if (runs_) runs_->upsertRun(row);
-    return row;
-}
-
-void ExportWorkflow::persistRuns()
-{
-    if (!exportLogsStore_ || !runs_) return;
-    const auto rows = runs_->snapshot();
-    std::vector<core::application::exporting::ExportLog> logs;
-    logs.reserve(rows.size());
-    for (const auto& row : rows) {
-        core::application::exporting::ExportLog log;
-        log.id = strings::toStdString(row.logId);
-        log.time = strings::toStdString(row.time);
-        log.targetPath = strings::toStdString(row.file);
-        log.status = strings::toStdString(row.status);
-        log.message = strings::toStdString(row.message);
-        log.payload = strings::toStdString(row.payload);
-        logs.push_back(std::move(log));
-    }
-    exportLogsStore_(logs);
-}
-
-void ExportWorkflow::restoreRunsFromSnapshot()
-{
-    if (!runs_ || !stateSnapshotProvider_) return;
-    const auto snapshot = stateSnapshotProvider_();
-    if (!snapshot) return;
-
-    const QString previousActiveRunLogId = activeRunLogId_;
-    std::vector<ExportRunRow> rows;
-    const auto& exportLogs = snapshot->workflow.exportLogs;
-    rows.reserve(exportLogs.size());
-    for (const auto& item : exportLogs) {
-        if (!item) continue;
-        ExportRunRow row;
-        row.logId = QString::fromStdString(item->id);
-        row.time = QString::fromStdString(item->time);
-        row.file = QString::fromStdString(item->targetPath);
-        row.status = QString::fromStdString(item->status);
-        row.message = QString::fromStdString(item->message);
-        row.payload = QString::fromStdString(item->payload);
-        rows.push_back(std::move(row));
-    }
-    runs_->setRuns(std::move(rows));
-
-    if (!previousActiveRunLogId.isEmpty() && runs_->findByLogId(previousActiveRunLogId) >= 0) {
-        activeRunLogId_ = previousActiveRunLogId;
-    } else if (!activeRunLogId_.isEmpty() && runs_->findByLogId(activeRunLogId_) < 0) {
-        activeRunLogId_.clear();
-    }
+  isRunning_ = false;
+  isPaused_ = false;
+  cancelRequested_ = false;
+  if (!success) {
+    emit exportFailed(lastError_);
+  }
+  emit stateChanged();
+  emit exportFinished(success);
 }
 
 void ExportWorkflow::exportData(int format, const QString &path,
-                                  bool includeFormulas, const QString &locale) {
+                                bool includeFormulas, const QString &locale) {
   exportDataWithPayload(format, path, includeFormulas, locale, QString(), 1);
 }
 
-void ExportWorkflow::exportDataWithPayload(int format,
-                                             const QString &path,
-                                             bool includeFormulas,
-                                             const QString &locale,
-                                             const QString& payload,
-                                             int totalSteps) {
-    if (isRunning_) {
-  observability::reportFlow(
+void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
+                                           bool includeFormulas,
+                                           const QString &locale,
+                                           const QString &payload,
+                                           int totalSteps) {
+  if (isRunning_) {
+    observability::reportFlow(
         core::errors::ErrorSeverity::Info,
         observability::codes::FlowExportStarted,
         observability::origins::workflow::exportFlow::kStart,
@@ -246,31 +218,37 @@ void ExportWorkflow::exportDataWithPayload(int format,
     progress_ = 0.0;
     phase_ = QStringLiteral("Starting export...");
     pendingPayload_ = payload;
-    activeRunPath_ = path;
-    activeRunLogId_ = generateLogId();
-    upsertRunById(activeRunLogId_, activeRunPath_, QStringLiteral("Running"),
-                  ui::text::exportRuns::startingDetail(), pendingPayload_);
+    activeExportPath_ = path;
+    activeExportLogId_ = generateLogId();
+    upsertExportLogById(activeExportLogId_, activeExportPath_,
+                        QStringLiteral("Running"),
+                        ui::text::exportRuns::startingDetail(),
+                        pendingPayload_);
     emit stateChanged();
 
-    const auto request = buildRequest(
-        static_cast<ui::qml::contracts::ExportFormat>(format), path,
-        includeFormulas, locale);
-    auto requestWithProgress = request;
+    auto request = buildRequest(format, path, includeFormulas, locale);
     QPointer<ExportWorkflow> self(this);
-    requestWithProgress.progressCallback = [self](double progress, const QString& phaseText) {
-      if (!self) return;
-      QMetaObject::invokeMethod(self, [self, progress, phaseText]() {
-        if (!self || !self->isRunning_) return;
-        const double clamped = std::max(0.0, std::min(1.0, progress));
-        self->progress_ = clamped;
-        if (!phaseText.isEmpty()) {
-          self->phase_ = phaseText;
-        }
-        emit self->stateChanged();
-      }, Qt::QueuedConnection);
+    request.progressCallback = [self](double progressValue,
+                                      const std::string &phaseText) {
+      if (!self)
+        return;
+      QMetaObject::invokeMethod(
+          self,
+          [self, progressValue, phaseText]() {
+            if (!self || !self->isRunning_)
+              return;
+            const double clamped =
+                std::max(0.0, std::min(1.0, progressValue));
+            self->progress_ = clamped;
+            if (!phaseText.empty()) {
+              self->phase_ = QString::fromStdString(phaseText);
+            }
+            emit self->stateChanged();
+          },
+          Qt::QueuedConnection);
     };
-    const auto snapshot = stateSnapshot();
-    if (!snapshot) {
+
+    if (!stateSnapshotProvider_) {
       lastError_ = ui::text::workflowErrors::exportStateUnavailable();
       observability::reportFlow(
           core::errors::ErrorSeverity::Warning,
@@ -278,8 +256,26 @@ void ExportWorkflow::exportDataWithPayload(int format,
           observability::origins::workflow::exportFlow::kStart,
           "Export rejected: state snapshot unavailable",
           {{observability::context::kPath, strings::toStdString(path)}});
-      upsertRunById(activeRunLogId_, activeRunPath_, QStringLiteral("Failed"), lastError_, pendingPayload_);
-      persistRuns();
+      upsertExportLogById(activeExportLogId_, activeExportPath_,
+                          QStringLiteral("Failed"), lastError_,
+                          pendingPayload_);
+      emit exportFailed(lastError_);
+      emit exportFinished(false);
+      emit stateChanged();
+      return;
+    }
+
+    if (!exportAdapter_) {
+      lastError_ = ui::text::exportRunner::runnerUnavailable();
+      observability::reportFlow(
+          core::errors::ErrorSeverity::Warning,
+          observability::codes::FlowExportFailed,
+          observability::origins::workflow::exportFlow::kStart,
+          "Export rejected: export runner unavailable",
+          {{observability::context::kPath, strings::toStdString(path)}});
+      upsertExportLogById(activeExportLogId_, activeExportPath_,
+                          QStringLiteral("Failed"), lastError_,
+                          pendingPayload_);
       emit exportFailed(lastError_);
       emit exportFinished(false);
       emit stateChanged();
@@ -293,18 +289,18 @@ void ExportWorkflow::exportDataWithPayload(int format,
     observability::reportFlow(
         core::errors::ErrorSeverity::Info,
         observability::codes::FlowExportStarted,
-        observability::origins::workflow::exportFlow::kStart,
-        "Export started",
+        observability::origins::workflow::exportFlow::kStart, "Export started",
         {{observability::context::kPath, strings::toStdString(path)},
-         {observability::context::kFormat,
-          std::to_string(static_cast<int>(request.format))},
+         {observability::context::kFormat, std::to_string(format)},
          {observability::context::kIncludeFormulas,
           includeFormulas ? "true" : "false"},
          {observability::context::kLocale, strings::toStdString(locale)}});
 
+    const auto snapshot = stateSnapshot();
     exportFuture_ = QtConcurrent::run(
-        [runner = runner_, snapshot, request = std::move(requestWithProgress)]() mutable {
-          return runner->run(snapshot->catalog, request);
+        [exportAdapter = exportAdapter_, snapshot,
+         request = std::move(request)]() mutable {
+          return exportAdapter->runExport(snapshot, std::move(request));
         });
     exportWatcher_.setFuture(exportFuture_);
   } catch (const std::exception &ex) {
@@ -321,8 +317,10 @@ void ExportWorkflow::exportDataWithPayload(int format,
          {observability::context::kPath, strings::toStdString(path)}});
     finishExport(false);
   } catch (...) {
-    ui::util::guard::reportException(
-        observability::origins::workflow::exportFlow::kStart);
+    core::errors::reportException(
+        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionError,
+        observability::origins::workflow::exportFlow::kStart,
+        std::current_exception());
     lastError_ = ui::text::workflowErrors::exportFailed();
     observability::reportFlow(
         core::errors::ErrorSeverity::Error,
@@ -334,91 +332,20 @@ void ExportWorkflow::exportDataWithPayload(int format,
   }
 }
 
-void ExportWorkflow::activateRunAt(int index)
-{
-  if (!runs_) return;
-  const auto row = runs_->at(index);
-  if (row.logId.isEmpty()) return;
-  activeRunLogId_ = row.logId;
-  emit runActivated(row.payload);
-  emit stateChanged();
-}
-
-bool ExportWorkflow::openRunLocationAt(int index)
-{
-  if (!runs_) return false;
-  const auto row = runs_->at(index);
-  if (row.file.isEmpty()) return false;
-
-  QFileInfo info(row.file);
-  QString folderPath;
-
-  if (info.exists()) {
-    folderPath = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
-  } else {
-    const QString asDir = row.file;
-    const QDir dir(asDir);
-    if (dir.exists()) folderPath = dir.absolutePath();
-  }
-
-  if (folderPath.isEmpty()) return false;
-  return QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
-}
-
-void ExportWorkflow::removeRunAt(int index)
-{
-  if (!runs_) return;
-  const auto row = runs_->at(index);
-  if (row.logId == activeRunLogId_) activeRunLogId_.clear();
-  runs_->removeAt(index);
-  persistRuns();
-  emit stateChanged();
-}
-
-void ExportWorkflow::clearRuns()
-{
-  if (!runs_) return;
-  runs_->clear();
-  activeRunLogId_.clear();
-  persistRuns();
-  emit stateChanged();
-}
-
-bool ExportWorkflow::openPrevRun()
-{
-  const int idx = currentRunIndex();
-  if (idx <= 0) return false;
-  activateRunAt(idx - 1);
-  return true;
-}
-
-bool ExportWorkflow::openNextRun()
-{
-  const int idx = currentRunIndex();
-  if (idx < 0 || !runs_ || idx >= runs_->rowCount() - 1) return false;
-  activateRunAt(idx + 1);
-  return true;
-}
-
-void ExportWorkflow::clearActiveRun()
-{
-  activeRunLogId_.clear();
-  emit stateChanged();
-}
-
-void ExportWorkflow::cancelExport()
-{
-  if (!isRunning_) return;
+void ExportWorkflow::cancelExport() {
+  if (!isRunning_)
+    return;
   cancelRequested_ = true;
   phase_ = QStringLiteral("Cancel requested...");
   emit stateChanged();
 }
 
-void ExportWorkflow::togglePause()
-{
-  if (!isRunning_) return;
+void ExportWorkflow::togglePause() {
+  if (!isRunning_)
+    return;
   isPaused_ = !isPaused_;
-  phase_ = isPaused_ ? QStringLiteral("Paused") : QStringLiteral("Running export...");
+  phase_ = isPaused_ ? QStringLiteral("Paused")
+                     : QStringLiteral("Running export...");
   emit stateChanged();
 }
 
@@ -434,19 +361,18 @@ void ExportWorkflow::onExportFinished() {
   QString resolvedOutputPath;
   try {
     const auto result = exportFuture_.result();
-    const auto presented = exportPresenter_ ? exportPresenter_->present(result) : result;
-    success = presented.success;
+    success = result.success;
     if (success) {
-      resolvedOutputPath = QString::fromStdString(presented.resolvedOutputPath);
+      resolvedOutputPath = QString::fromStdString(result.resolvedOutputPath);
     }
     if (!success) {
-      lastError_ = presented.message.empty()
+      lastError_ = result.message.empty()
                        ? ui::text::workflowErrors::exportFailed()
-                       : QString::fromStdString(presented.message);
+                       : QString::fromStdString(result.message);
       core::errors::report(
           core::errors::ErrorSeverity::Warning,
-          presented.errorCode.empty() ? core::errors::codes::GenericError
-                                      : presented.errorCode.c_str(),
+          result.errorCode.empty() ? core::errors::codes::GenericError
+                                   : result.errorCode.c_str(),
           observability::origins::workflow::exportFlow::kFinish,
           strings::toStdString(lastError_));
       observability::reportFlow(
@@ -476,8 +402,10 @@ void ExportWorkflow::onExportFinished() {
         {{observability::context::kException, ex.what()}});
     success = false;
   } catch (...) {
-    ui::util::guard::reportException(
-        observability::origins::workflow::exportFlow::kFinish);
+    core::errors::reportException(
+        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionError,
+        observability::origins::workflow::exportFlow::kFinish,
+        std::current_exception());
     lastError_ = ui::text::workflowErrors::exportFailed();
     observability::reportFlow(
         core::errors::ErrorSeverity::Error,

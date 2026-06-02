@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var exportState
+    required property var exportViewModel
 
     contentSpacing: root.theme.spacingSmall
 
@@ -30,14 +30,14 @@ Controls.Panel {
             objectName: "exportTargetDirectoryField"
             Layout.fillWidth: true
             placeholderText: qsTr("Select target directory...")
-            text: root.exportState.targetDirectory
-            onTextChanged: root.exportState.targetDirectory = text
+            text: root.exportViewModel.targetDirectory
+            onTextChanged: root.exportViewModel.targetDirectory = text
         }
 
         Controls.SecondaryButton {
             objectName: "exportBrowseDirectoryButton"
             text: qsTr("Browse...")
-            onClicked: root.exportState.browseDirectory()
+            onClicked: root.exportViewModel.browseDirectory()
         }
     }
 
@@ -54,8 +54,8 @@ Controls.Panel {
             objectName: "exportArchiveFormatComboBox"
             Layout.fillWidth: true
             model: [qsTr("None"), qsTr("ZIP")]
-            currentIndex: root.exportState.packageFormatIndex
-            onCurrentIndexChanged: root.exportState.packageFormatIndex = currentIndex
+            currentIndex: root.exportViewModel.packageFormatIndex
+            onCurrentIndexChanged: root.exportViewModel.packageFormatIndex = currentIndex
         }
     }
 }

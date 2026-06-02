@@ -23,7 +23,7 @@ public:
     void setErrorReporter(std::shared_ptr<core::errors::IErrorReporter>) override {}
     void setAtomicStoreSave(core::ports::storage::IStorageManager::AtomicStoreSave) override {}
     void setAtomicStoreLoad(core::ports::storage::IStorageManager::AtomicStoreLoad) override {}
-    void setDeletionImpactCallback(core::ports::storage::IStorageManager::DeletionImpactCallback) override {}
+    void setDeletionImpactCallback(core::ports::workspace::IWorkspaceWriter::DeletionImpactCallback) override {}
     void openLatest() override {}
     void newFile(const std::string&) override {}
     void openFile(const std::string&) override {}
@@ -60,7 +60,13 @@ public:
     void saveStatementDraft(const StatementDraftCommand&) override {}
     void clearStatementDraft(const std::string&) override {}
     void setImportLogs(const ImportLogsCommand&) override {}
+    void saveImportLog(const ImportLogCommand&) override {}
+    void deleteImportLog(const std::string&) override {}
+    void clearImportLogs() override {}
     void setExportLogs(const ExportLogsCommand&) override {}
+    void saveExportLog(const ExportLogCommand&) override {}
+    void deleteExportLog(const std::string&) override {}
+    void clearExportLogs() override {}
 };
 
 } // namespace

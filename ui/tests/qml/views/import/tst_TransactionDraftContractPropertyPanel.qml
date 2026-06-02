@@ -30,9 +30,9 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionState: QtObject {
-        property var propertyRows: [{ id: "property-1", display: "Energy" }, { id: "property-2", display: "Office" }]
-        property string newPropertyName: ""
+    property var transactionViewModel: QtObject {
+        property var propertyOptions: [{ id: "property-1", display: "Energy" }, { id: "property-2", display: "Office" }]
+        property string propertyName: ""
         property bool canAddProperty: true
         property int addPropertyCalls: 0
         property int selectedPropertyCalls: 0
@@ -47,7 +47,7 @@ TestCase {
             lastPropertyId = propertyId
             lastPropertySelected = selected
         }
-        function addPropertyFromInput() { addPropertyCalls += 1 }
+        function addProperty() { addPropertyCalls += 1 }
     }
 
     Component {
@@ -55,7 +55,7 @@ TestCase {
         Import.TransactionDraftContractPropertyPanel {
             width: testCase.width
             theme: testCase.theme
-            transactionState: testCase.transactionState
+            transactionViewModel: testCase.transactionViewModel
         }
     }
 
@@ -74,10 +74,10 @@ TestCase {
         input.textEdited()
         findRequired(panel, "transactionDraftPropertyAddButton").clicked()
 
-        compare(transactionState.selectedPropertyCalls, 1)
-        compare(transactionState.lastPropertyId, "property-2")
-        compare(transactionState.lastPropertySelected, true)
-        compare(transactionState.newPropertyName, "New Property")
-        compare(transactionState.addPropertyCalls, 1)
+        compare(transactionViewModel.selectedPropertyCalls, 1)
+        compare(transactionViewModel.lastPropertyId, "property-2")
+        compare(transactionViewModel.lastPropertySelected, true)
+        compare(transactionViewModel.propertyName, "New Property")
+        compare(transactionViewModel.addPropertyCalls, 1)
     }
 }

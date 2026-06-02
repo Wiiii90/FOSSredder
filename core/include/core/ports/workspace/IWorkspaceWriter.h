@@ -8,7 +8,6 @@
 #include <functional>
 #include <string>
 
-#include "core/application/storage/DeletionImpact.h"
 #include "core/errors/IErrorReporter.h"
 #include "core/ports/storage/IStorageManager.h"
 #include "core/ports/workspace/WorkspaceCommands.h"
@@ -19,6 +18,7 @@ namespace core::ports::workspace {
 class IWorkspaceWriter {
 public:
     using SnapshotChanged = std::function<void(const WorkspaceSnapshot&)>;
+    using DeletionImpactCallback = std::function<void(const DeletionImpact&)>;
 
     virtual ~IWorkspaceWriter() = default;
 
@@ -31,7 +31,7 @@ public:
     /** @brief Registers atomic persistence load callback. */
     virtual void setAtomicStoreLoad(core::ports::storage::IStorageManager::AtomicStoreLoad loadFn) = 0;
     /** @brief Registers deletion impact callback invoked after save operations. */
-    virtual void setDeletionImpactCallback(core::ports::storage::IStorageManager::DeletionImpactCallback cb) = 0;
+    virtual void setDeletionImpactCallback(DeletionImpactCallback cb) = 0;
 
     /** @brief Opens latest known workspace file. */
     virtual void openLatest() = 0;
@@ -106,8 +106,20 @@ public:
 
     /** @brief Replaces import logs with command payload. */
     virtual void setImportLogs(const ImportLogsCommand& command) = 0;
+    /** @brief Saves or updates one import log. */
+    virtual void saveImportLog(const ImportLogCommand& command) = 0;
+    /** @brief Deletes one import log by id. */
+    virtual void deleteImportLog(const std::string& id) = 0;
+    /** @brief Deletes all import logs. */
+    virtual void clearImportLogs() = 0;
     /** @brief Replaces export logs with command payload. */
     virtual void setExportLogs(const ExportLogsCommand& command) = 0;
+    /** @brief Saves or updates one export log. */
+    virtual void saveExportLog(const ExportLogCommand& command) = 0;
+    /** @brief Deletes one export log by id. */
+    virtual void deleteExportLog(const std::string& id) = 0;
+    /** @brief Deletes all export logs. */
+    virtual void clearExportLogs() = 0;
 };
 
 } // namespace core::ports::workspace

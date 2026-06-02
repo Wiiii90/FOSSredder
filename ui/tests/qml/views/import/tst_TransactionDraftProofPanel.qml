@@ -28,7 +28,7 @@ TestCase {
         property color surfaceAlt: "#f5f5f5"
     }
 
-    property var transactionState: QtObject {
+    property var transactionViewModel: QtObject {
         property string proofSource: "data:image/jpeg;base64," + testCase.proofData
     }
 
@@ -37,7 +37,7 @@ TestCase {
         Import.TransactionDraftProofPanel {
             width: testCase.width
             theme: testCase.theme
-            transactionState: testCase.transactionState
+            transactionViewModel: testCase.transactionViewModel
         }
     }
 
@@ -48,6 +48,6 @@ TestCase {
     function test_IMP_D_008B_proofPanelRendersTransactionStateSource() {
         const panel = createTemporaryObject(panelComponent, testCase)
 
-        compare(findRequired(panel, "transactionDraftProofImage").source.toString(), transactionState.proofSource)
+        compare(findRequired(panel, "transactionDraftProofImage").source.toString(), transactionViewModel.proofSource)
     }
 }

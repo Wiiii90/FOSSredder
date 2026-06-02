@@ -75,7 +75,7 @@ TestCase {
         }
     }
 
-    property var propertyState: QtObject {
+    property var propertyViewModel: QtObject {
         property string currentId: ""
         property string name: ""
         property var aliases: []
@@ -159,7 +159,7 @@ TestCase {
 
     Component {
         id: propertyViewComponent
-        PropertyView { width: 960; height: 640; propertyState: testCase.propertyState; theme: testCase.theme }
+        PropertyView { width: 960; height: 640; propertyViewModel: testCase.propertyViewModel; theme: testCase.theme }
     }
 
     function findRequired(root, objectName) {
@@ -202,7 +202,7 @@ TestCase {
     function test_PROP_V_003_navigationCyclesThroughCreateMode() {
         session.selectedPropertyId = "property-3"
         session.selectedProperty = { id: "property-3", name: "P3" }
-        propertyState.isEdit = true
+        propertyViewModel.isEdit = true
         var view = createView()
 
         findRequired(view, "propertyNextButton").clicked()
@@ -213,7 +213,7 @@ TestCase {
 
         session.selectedPropertyId = "property-1"
         session.selectedProperty = { id: "property-1", name: "P1" }
-        propertyState.isEdit = true
+        propertyViewModel.isEdit = true
         findRequired(view, "propertyPreviousButton").clicked()
         compare(session.selectedPropertyId, "")
 
@@ -228,7 +228,7 @@ TestCase {
         compare(session.selectedPropertyId, "property-1")
 
         session.selectedPropertyId = ""
-        propertyState.isEdit = false
+        propertyViewModel.isEdit = false
         findRequired(view, "propertyPreviousButton").clicked()
         compare(session.selectedPropertyId, "property-3")
     }
@@ -239,9 +239,9 @@ TestCase {
         ]
         session.selectedPropertyId = "property-2"
         session.selectedProperty = { id: "property-2", name: "P2" }
-        propertyState.isEdit = true
-        propertyState.name = "P2"
-        propertyState.hasChanges = false
+        propertyViewModel.isEdit = true
+        propertyViewModel.name = "P2"
+        propertyViewModel.hasChanges = false
 
         var view = createView()
         var checkBox = findRequired(view, "propertyContractCheckBox")
@@ -251,7 +251,7 @@ TestCase {
         checkBox.checked = true
         checkBox.toggled()
 
-        compare(propertyState.hasChanges, true)
+        compare(propertyViewModel.hasChanges, true)
         compare(updateButton.enabled, true)
     }
 }

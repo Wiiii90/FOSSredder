@@ -19,7 +19,7 @@ TestCase {
     width: 900
     height: 90
 
-    property var analysisState: QtObject {
+    property var analysisViewModel: QtObject {
         property int dateFieldIndex: 0
         property int dateModeIndex: 0
         property string yearValue: "2025"
@@ -43,7 +43,7 @@ TestCase {
         Analysis.AnalysisDateFilter {
             width: testCase.width
             theme: testCase.theme
-            analysisState: testCase.analysisState
+            analysisViewModel: testCase.analysisViewModel
         }
     }
 
@@ -52,11 +52,11 @@ TestCase {
     }
 
     function init() {
-        analysisState.dateFieldIndex = 0
-        analysisState.dateModeIndex = 0
-        analysisState.yearValue = "2025"
-        analysisState.dateFromValue = ""
-        analysisState.dateToValue = ""
+        analysisViewModel.dateFieldIndex = 0
+        analysisViewModel.dateModeIndex = 0
+        analysisViewModel.yearValue = "2025"
+        analysisViewModel.dateFromValue = ""
+        analysisViewModel.dateToValue = ""
     }
 
     function test_ANL_DF_001_dateControlsWriteAnalysisState() {
@@ -67,10 +67,10 @@ TestCase {
         TestSupport.findRequired(Lookup, filter, "analysisDateFromField").text = "2026-01-01"
         TestSupport.findRequired(Lookup, filter, "analysisDateToField").text = "2026-12-31"
 
-        compare(analysisState.dateFieldIndex, 1)
-        compare(analysisState.dateModeIndex, 1)
-        compare(analysisState.dateFromValue, "2026-01-01")
-        compare(analysisState.dateToValue, "2026-12-31")
+        compare(analysisViewModel.dateFieldIndex, 1)
+        compare(analysisViewModel.dateModeIndex, 1)
+        compare(analysisViewModel.dateFromValue, "2026-01-01")
+        compare(analysisViewModel.dateToValue, "2026-12-31")
     }
 
     function test_ANL_DF_002_yearFieldWritesAnalysisState() {
@@ -78,6 +78,6 @@ TestCase {
 
         TestSupport.findRequired(Lookup, filter, "analysisYearField").text = "2027"
 
-        compare(analysisState.yearValue, "2027")
+        compare(analysisViewModel.yearValue, "2027")
     }
 }

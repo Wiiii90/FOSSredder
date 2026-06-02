@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 ColumnLayout {
     id: root
     required property var theme
-    required property var statementState
+    required property var statementViewModel
     spacing: root.theme.spacingSmall
 
     RowLayout {
@@ -28,12 +28,12 @@ ColumnLayout {
         Controls.TextField {
             objectName: "statementDraftNameField"
             Layout.fillWidth: true
-            text: root.statementState.statementName
-            onTextEdited: root.statementState.statementName = text
-            onEditingFinished: root.statementState.statementName = text
-            onAccepted: root.statementState.statementName = text
+            text: root.statementViewModel.statementName
+            onTextEdited: root.statementViewModel.statementName = text
+            onEditingFinished: root.statementViewModel.statementName = text
+            onAccepted: root.statementViewModel.statementName = text
             onActiveFocusChanged: if (!activeFocus)
-                root.statementState.statementName = text
+                root.statementViewModel.statementName = text
         }
     }
 
@@ -43,19 +43,21 @@ ColumnLayout {
         Label {
             color: root.theme.textPrimary
             Layout.fillWidth: true
-            text: root.statementState.transactionInfoText
+            text: root.statementViewModel.hasDraft
+                  ? qsTr("Transaction %1 / %2").arg(root.statementViewModel.currentTransactionNumber).arg(root.statementViewModel.transactionCount)
+                  : qsTr("No current transaction")
         }
 
         Controls.CompactAddButton {
             objectName: "statementDraftAddTransactionButton"
-            visible: root.statementState.hasDraft
-            onClicked: root.statementState.addTransactionAfterCurrent()
+            visible: root.statementViewModel.hasDraft
+            onClicked: root.statementViewModel.addTransactionAfterCurrent()
         }
 
         Controls.CompactRemoveButton {
             objectName: "statementDraftDeleteTransactionButton"
-            visible: root.statementState.canDeleteTransaction
-            onClicked: root.statementState.deleteCurrentTransaction()
+            visible: root.statementViewModel.canDeleteTransaction
+            onClicked: root.statementViewModel.deleteCurrentTransaction()
         }
     }
 }

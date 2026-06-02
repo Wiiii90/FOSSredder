@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var importState
+    required property var importViewModel
 
     contentSpacing: root.theme.spacingSmall
 
@@ -27,7 +27,7 @@ Controls.Panel {
         Controls.DropdownMenu {
             id: sourceKind
             objectName: "importSourceComboBox"
-            model: root.importState.importSourceLabels
+            model: root.importViewModel.importSourceLabels
             currentIndex: 0
         }
     }
@@ -42,7 +42,7 @@ Controls.Panel {
         Controls.DropdownMenu {
             id: strategy
             objectName: "importStrategyComboBox"
-            model: root.importState.statementStrategyLabels
+            model: root.importViewModel.statementStrategyLabels
             currentIndex: 0
         }
     }

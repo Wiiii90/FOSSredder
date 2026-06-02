@@ -1,5 +1,5 @@
 /**
- * @file ui/src/window/DropHandler.cpp
+ * @file ui/src/shell/window/DropHandler.cpp
  * @brief Implementation of the UI drop handling component.
  */
 

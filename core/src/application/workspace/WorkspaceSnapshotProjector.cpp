@@ -130,7 +130,7 @@ core::ports::workspace::WorkspaceSnapshot WorkspaceSnapshotProjector::project(
         row.bookingDate = item->bookingDate();
         row.valuta = item->valuta();
         row.amount = item->amount();
-        row.status = item->status();
+        row.status = static_cast<int>(item->status());
         row.contractId = item->contractId();
         row.actorId = item->actorId();
         row.statementId = item->statementId();

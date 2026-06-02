@@ -10,7 +10,7 @@
 #include <QQuickStyle>
 #include <QString>
 
-#include "core/constants/runtime.h"
+#include "ui/shared/config/Defaults.h"
 #include "ui/shell/QmlRuntime.h"
 
 class UiQmlTestSetup : public QObject {
@@ -18,9 +18,7 @@ class UiQmlTestSetup : public QObject {
 public slots:
     void applicationAvailable()
     {
-        const auto style = QString::fromLatin1(core::constants::runtime::kQtStyle.data(),
-                                               static_cast<int>(core::constants::runtime::kQtStyle.size()));
-        QQuickStyle::setStyle(style);
+        QQuickStyle::setStyle(ui::config::kQtStyle);
         ui::bootstrap::registerTypes();
     }
 

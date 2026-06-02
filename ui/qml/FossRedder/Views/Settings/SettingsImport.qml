@@ -11,7 +11,7 @@ pragma ComponentBehavior: Bound
 
 Flickable {
     id: root
-    required property var settingsState
+    required property var settingsViewModel
     required property var theme
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -47,14 +47,14 @@ Flickable {
                         objectName: "settingsImportDefaultPathField"
                         Layout.fillWidth: true
                         placeholderText: qsTr("Select default PDF file...")
-                        text: root.settingsState.importDefaultPath
-                        onTextChanged: root.settingsState.importDefaultPath = text
+                        text: root.settingsViewModel.importDefaultPath
+                        onTextChanged: root.settingsViewModel.importDefaultPath = text
                     }
                     Controls.SecondaryButton {
                         objectName: "settingsImportBrowseButton"
                         text: qsTr("Browse...")
                         Layout.preferredHeight: defaultImportPathField.implicitHeight
-                        onClicked: root.settingsState.browseImportPath()
+                        onClicked: root.settingsViewModel.browseImportPath()
                     }
                 }
             }
@@ -80,8 +80,8 @@ Flickable {
                         objectName: "settingsImportPopplerField"
                         Layout.fillWidth: true
                         placeholderText: qsTr("Placeholder for Poppler defaults")
-                        text: root.settingsState.importPoppler
-                        onTextChanged: root.settingsState.importPoppler = text
+                        text: root.settingsViewModel.importPoppler
+                        onTextChanged: root.settingsViewModel.importPoppler = text
                     }
                 }
 
@@ -92,8 +92,8 @@ Flickable {
                         objectName: "settingsImportOpenCvField"
                         Layout.fillWidth: true
                         placeholderText: qsTr("Placeholder for OpenCV defaults")
-                        text: root.settingsState.importOpenCv
-                        onTextChanged: root.settingsState.importOpenCv = text
+                        text: root.settingsViewModel.importOpenCv
+                        onTextChanged: root.settingsViewModel.importOpenCv = text
                     }
                 }
 
@@ -104,8 +104,8 @@ Flickable {
                         objectName: "settingsImportTesseractField"
                         Layout.fillWidth: true
                         placeholderText: qsTr("Placeholder for Tesseract defaults")
-                        text: root.settingsState.importTesseract
-                        onTextChanged: root.settingsState.importTesseract = text
+                        text: root.settingsViewModel.importTesseract
+                        onTextChanged: root.settingsViewModel.importTesseract = text
                     }
                 }
 
@@ -116,8 +116,8 @@ Flickable {
                         objectName: "settingsImportParserField"
                         Layout.fillWidth: true
                         placeholderText: qsTr("Placeholder for parser defaults")
-                        text: root.settingsState.importParser
-                        onTextChanged: root.settingsState.importParser = text
+                        text: root.settingsViewModel.importParser
+                        onTextChanged: root.settingsViewModel.importParser = text
                     }
                 }
 
@@ -128,8 +128,8 @@ Flickable {
                         objectName: "settingsImportMatcherField"
                         Layout.fillWidth: true
                         placeholderText: qsTr("Placeholder for matcher defaults")
-                        text: root.settingsState.importMatcher
-                        onTextChanged: root.settingsState.importMatcher = text
+                        text: root.settingsViewModel.importMatcher
+                        onTextChanged: root.settingsViewModel.importMatcher = text
                     }
                 }
             }

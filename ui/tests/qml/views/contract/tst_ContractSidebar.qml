@@ -22,7 +22,7 @@ TestCase {
     property var workspaceFacade: QtObject {
         property string selectedContractId: ""
         property var contractRows: []
-        property var contractState: QtObject {
+        property var contractViewModel: QtObject {
             readonly property string currentId: testCase.workspaceFacade.selectedContractId
             property var contractRows: testCase.workspaceFacade.contractRows
             property string lastSelectedId: ""
@@ -56,7 +56,7 @@ TestCase {
         ContractSidebar {
             width: 320
             height: 240
-            contractState: testCase.workspaceFacade.contractState
+            contractViewModel: testCase.workspaceFacade.contractViewModel
             theme: testCase.theme
         }
     }
@@ -72,7 +72,7 @@ TestCase {
     function init() {
         workspaceFacade.selectedContractId = ""
         workspaceFacade.contractRows = []
-        workspaceFacade.contractState.lastSelectedId = ""
+        workspaceFacade.contractViewModel.lastSelectedId = ""
     }
 
     function test_CON_S_001_rowsRenderFromWorkspaceFacade() {
@@ -98,7 +98,7 @@ TestCase {
         mouseArea.clicked(null)
 
         compare(workspaceFacade.selectedContractId, "contract-2")
-        compare(workspaceFacade.contractState.lastSelectedId, "contract-2")
+        compare(workspaceFacade.contractViewModel.lastSelectedId, "contract-2")
     }
 
     function test_CON_S_003_selectedRowUsesThemeHighlight() {

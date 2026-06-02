@@ -230,8 +230,8 @@ TestCase {
     function test_CTRL_RL_002_deleteClickEmitsDeleteSignal() {
         const control = createControl()
         let received = ({})
-        control.deleteClicked.connect(function(index, draftAttached, draftId) {
-            received = { index: index, draftAttached: draftAttached, draftId: draftId }
+        control.deleteClicked.connect(function(index, logId, draftAttached, draftId) {
+            received = { index: index, logId: logId, draftAttached: draftAttached, draftId: draftId }
         })
         wait(0)
 
@@ -239,6 +239,7 @@ TestCase {
         deleteButton.clicked()
 
         compare(received.index, 0)
+        compare(received.logId, "log-1")
         compare(received.draftAttached, false)
     }
 

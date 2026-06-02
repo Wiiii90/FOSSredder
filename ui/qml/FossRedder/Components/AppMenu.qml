@@ -10,19 +10,19 @@ import QtQuick.Controls 2.15
 
 MenuBar {
     id: root
-    required property var shellNavigationState
+    required property var navigation
     required property var actions
-    required property var settingsState
+    required property var settingsViewModel
     required property var theme
-    readonly property int navActors: root.shellNavigationState.actorSection
-    readonly property int navProperties: root.shellNavigationState.propertySection
-    readonly property int navContracts: root.shellNavigationState.contractSection
-    readonly property int navBooking: root.shellNavigationState.bookingSection
-    readonly property int navImport: root.shellNavigationState.importSection
-    readonly property int navExport: root.shellNavigationState.exportSection
-    readonly property int navSettings: root.shellNavigationState.settingsSection
-    readonly property int navAnalysis: root.shellNavigationState.analysisSection
-    readonly property int navAnnual: root.shellNavigationState.annualSection
+    readonly property int navActors: root.navigation.actorSection
+    readonly property int navProperties: root.navigation.propertySection
+    readonly property int navContracts: root.navigation.contractSection
+    readonly property int navBooking: root.navigation.bookingSection
+    readonly property int navImport: root.navigation.importSection
+    readonly property int navExport: root.navigation.exportSection
+    readonly property int navSettings: root.navigation.settingsSection
+    readonly property int navAnalysis: root.navigation.analysisSection
+    readonly property int navAnnual: root.navigation.annualSection
 
     palette.text: root.theme.appMenuText
     palette.windowText: root.theme.appMenuText
@@ -33,11 +33,7 @@ MenuBar {
     font.pointSize: root.theme.appMenuFontSize
 
     function navigateToSection(section) {
-        root.shellNavigationState.navigateToSection(section);
-    }
-
-    function navigateToImportHome() {
-        root.shellNavigationState.navigateToImportHome();
+        root.navigation.navigateToSection(section);
     }
 
     background: Rectangle {
@@ -154,7 +150,7 @@ MenuBar {
 
         Action {
             text: qsTr("Import")
-            onTriggered: root.navigateToImportHome()
+            onTriggered: root.navigateToSection(root.navImport)
         }
         Action {
             text: qsTr("Export")
@@ -203,19 +199,19 @@ MenuBar {
         delegate: AppMenuItem { theme: root.theme }
 
         Instantiator {
-            model: root.settingsState.languageOptions
+            model: root.settingsViewModel.languageOptions
 
             delegate: Action {
                 required property var modelData
                 required property int index
                 text: modelData.label
                 checkable: true
-                checked: root.settingsState.language === modelData.code
+                checked: root.settingsViewModel.language === modelData.code
                 enabled: modelData.available !== false
                 onTriggered: {
                     if (!enabled)
                         return;
-                    root.settingsState.selectLanguageAt(index);
+                    root.settingsViewModel.selectLanguageAt(index);
                 }
             }
 

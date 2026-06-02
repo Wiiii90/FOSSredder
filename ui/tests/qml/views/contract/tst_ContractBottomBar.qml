@@ -25,7 +25,7 @@ TestCase {
         property color textMuted: "#666666"
     }
 
-    property var contractState: QtObject {
+    property var contractViewModel: QtObject {
         property bool isEdit: false
         property bool hasChanges: false
         property string name: ""
@@ -59,7 +59,7 @@ TestCase {
             width: 960
             height: 64
             theme: testCase.theme
-            contractState: testCase.contractState
+            contractViewModel: testCase.contractViewModel
             contractRows: testCase.contractRows
         }
     }
@@ -76,33 +76,33 @@ TestCase {
         const bar = createBar()
         findRequired(bar, "contractPreviousButton").clicked()
         findRequired(bar, "contractNextButton").clicked()
-        compare(contractState.previousCalls, 1)
-        compare(contractState.nextCalls, 1)
+        compare(contractViewModel.previousCalls, 1)
+        compare(contractViewModel.nextCalls, 1)
     }
 
     function test_CON_BB_002_createModeButtonsSwitchState() {
         const bar = createBar()
-        contractState.isEdit = false
-        contractState.name = "Lease"
-        contractState.type = "rent"
+        contractViewModel.isEdit = false
+        contractViewModel.name = "Lease"
+        contractViewModel.type = "rent"
         findRequired(bar, "contractClearButton").clicked()
         findRequired(bar, "contractCreateButton").clicked()
-        compare(contractState.clearCalls, 1)
-        compare(contractState.submitCalls, 1)
+        compare(contractViewModel.clearCalls, 1)
+        compare(contractViewModel.submitCalls, 1)
     }
 
     function test_CON_BB_003_editModeButtonsSwitchState() {
         const bar = createBar()
-        contractState.isEdit = true
-        contractState.hasChanges = true
-        contractState.name = "Lease"
-        contractState.type = "rent"
+        contractViewModel.isEdit = true
+        contractViewModel.hasChanges = true
+        contractViewModel.name = "Lease"
+        contractViewModel.type = "rent"
         findRequired(bar, "contractCreateModeButton").clicked()
         findRequired(bar, "contractDeleteButton").clicked()
-        contractState.submitCalls = 0
+        contractViewModel.submitCalls = 0
         findRequired(bar, "contractUpdateButton").clicked()
-        compare(contractState.enterCreateModeCalls, 1)
-        compare(contractState.deleteCurrentCalls, 1)
-        compare(contractState.submitCalls, 1)
+        compare(contractViewModel.enterCreateModeCalls, 1)
+        compare(contractViewModel.deleteCurrentCalls, 1)
+        compare(contractViewModel.submitCalls, 1)
     }
 }

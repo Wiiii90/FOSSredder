@@ -7,7 +7,6 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
-import FossRedder 1.0 as App
 
 GridLayout {
     id: layoutRoot
@@ -18,67 +17,31 @@ GridLayout {
     columnSpacing: 0
     rowSpacing: 0
 
-    App.AnalysisState {
-        id: analysisStateObject
-        workspace: layoutRoot.appContext.workspaceFacade
-        analysisWorkflow: layoutRoot.appContext.analysisWorkflow
-        settingsViewModel: layoutRoot.appContext.settingsViewModel
-    }
-
-    App.AnnualState {
-        id: annualStateObject
-        workspace: layoutRoot.appContext.workspaceFacade
-        annualWorkflow: layoutRoot.appContext.annualWorkflow
-    }
-
-    App.ExportState {
-        id: exportStateObject
-        workspace: layoutRoot.appContext.workspaceFacade
-        exportWorkflow: layoutRoot.appContext.exportWorkflow
-        actions: layoutRoot.appContext.actions
-        fileSystemBrowser: layoutRoot.appContext.fileSystemBrowser
-        settings: layoutRoot.appContext.settingsViewModel
-    }
-
-    App.ImportState {
-        id: importStateObject
-        importWorkflow: layoutRoot.appContext.importWorkflow
-        navigation: layoutRoot.appContext.navigation
-        workspace: layoutRoot.appContext.workspaceFacade
-        settingsViewModel: layoutRoot.appContext.settingsViewModel
-        actions: layoutRoot.appContext.actions
-        status: layoutRoot.appContext.status
-    }
-
-    App.SettingsState {
-        id: settingsStateObject
-        navigation: layoutRoot.appContext.navigation
-        settingsViewModel: layoutRoot.appContext.settingsViewModel
-        actions: layoutRoot.appContext.actions
-        languageService: layoutRoot.appContext.languageService
-    }
+    readonly property var analysisViewModelObject: layoutRoot.appContext.analysisViewModel
+    readonly property var annualViewModelObject: layoutRoot.appContext.annualViewModel
+    readonly property var actorViewModelObject: layoutRoot.appContext.actorViewModel
+    readonly property var bookingViewModelObject: layoutRoot.appContext.bookingViewModel
+    readonly property var contractViewModelObject: layoutRoot.appContext.contractViewModel
+    readonly property var exportViewModelObject: layoutRoot.appContext.exportViewModel
+    readonly property var importViewModelObject: layoutRoot.appContext.importViewModel
+    readonly property var propertyViewModelObject: layoutRoot.appContext.propertyViewModel
+    readonly property var settingsViewModelObject: layoutRoot.appContext.settingsViewModel
+    readonly property var navigationObject: layoutRoot.appContext.navigation
 
     Binding {
         target: layoutRoot.theme
         property: "mode"
-        value: settingsStateObject.themeMode
+        value: settingsViewModelObject ? settingsViewModelObject.themeMode : "system"
         restoreMode: Binding.RestoreBinding
-    }
-
-    App.ShellNavigationState {
-        id: shellNavigationStateObject
-        navigation: layoutRoot.appContext.navigation
-        workspace: layoutRoot.appContext.workspaceFacade
-        importWorkflow: layoutRoot.appContext.importWorkflow
     }
 
     AppMenu {
         id: appMenu
         Layout.row: 0
         Layout.fillWidth: true
-        shellNavigationState: shellNavigationStateObject
+        navigation: navigationObject
         actions: layoutRoot.appContext.actions
-        settingsState: settingsStateObject
+        settingsViewModel: settingsViewModelObject
         theme: layoutRoot.theme
     }
 
@@ -88,8 +51,13 @@ GridLayout {
         Layout.preferredHeight: toolbar.implicitHeight
         Layout.minimumHeight: toolbar.implicitHeight
         Layout.fillWidth: true
-        shellNavigationState: shellNavigationStateObject
-        settingsViewModel: layoutRoot.appContext.settingsViewModel
+        navigation: navigationObject
+        actorViewModel: actorViewModelObject
+        propertyViewModel: propertyViewModelObject
+        contractViewModel: contractViewModelObject
+        analysisViewModel: analysisViewModelObject
+        annualViewModel: annualViewModelObject
+        settingsViewModel: settingsViewModelObject
         theme: layoutRoot.theme
     }
 
@@ -110,16 +78,16 @@ GridLayout {
 
             SidebarRouter {
                 anchors.fill: parent
-                shellNavigationState: shellNavigationStateObject
-                actorState: layoutRoot.appContext.workspaceFacade.actorState
-                propertyState: layoutRoot.appContext.workspaceFacade.propertyState
-                contractState: layoutRoot.appContext.workspaceFacade.contractState
-                bookingState: layoutRoot.appContext.workspaceFacade.bookingState
-                importState: importStateObject
-                analysisState: analysisStateObject
-                annualState: annualStateObject
-                exportState: exportStateObject
-                settingsState: settingsStateObject
+                navigation: navigationObject
+                actorViewModel: actorViewModelObject
+                propertyViewModel: propertyViewModelObject
+                contractViewModel: contractViewModelObject
+                bookingViewModel: bookingViewModelObject
+                importViewModel: importViewModelObject
+                analysisViewModel: analysisViewModelObject
+                annualViewModel: annualViewModelObject
+                exportViewModel: exportViewModelObject
+                settingsViewModel: settingsViewModelObject
                 theme: layoutRoot.theme
             }
         }
@@ -132,16 +100,16 @@ GridLayout {
 
             ContentRouter {
                 anchors.fill: parent
-                shellNavigationState: shellNavigationStateObject
-                actorState: layoutRoot.appContext.workspaceFacade.actorState
-                propertyState: layoutRoot.appContext.workspaceFacade.propertyState
-                contractState: layoutRoot.appContext.workspaceFacade.contractState
-                bookingState: layoutRoot.appContext.workspaceFacade.bookingState
-                importState: importStateObject
-                analysisState: analysisStateObject
-                annualState: annualStateObject
-                exportState: exportStateObject
-                settingsState: settingsStateObject
+                navigation: navigationObject
+                actorViewModel: actorViewModelObject
+                propertyViewModel: propertyViewModelObject
+                contractViewModel: contractViewModelObject
+                bookingViewModel: bookingViewModelObject
+                importViewModel: importViewModelObject
+                analysisViewModel: analysisViewModelObject
+                annualViewModel: annualViewModelObject
+                exportViewModel: exportViewModelObject
+                settingsViewModel: settingsViewModelObject
                 theme: layoutRoot.theme
             }
         }

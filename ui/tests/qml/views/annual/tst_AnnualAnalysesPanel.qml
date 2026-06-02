@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 420
 
-    property var annualState: QtObject {
+    property var annualViewModel: QtObject {
         property var availableAnalysisRows: [
             { id: "analysis-1", display: "Analysis 1", typeLabel: "Table", exportFormatOptions: ["XLSX", "CSV"], exportFormatIndex: 0 }
         ]
@@ -59,7 +59,7 @@ TestCase {
         Annual.AnnualAnalysesPanel {
             width: 960
             height: 420
-            annualState: testCase.annualState
+            annualViewModel: testCase.annualViewModel
             theme: testCase.theme
         }
     }
@@ -69,16 +69,16 @@ TestCase {
     }
 
     function init() {
-        annualState.addIndex = -1
-        annualState.removedId = ""
-        annualState.formatId = ""
-        annualState.formatValue = ""
+        annualViewModel.addIndex = -1
+        annualViewModel.removedId = ""
+        annualViewModel.formatId = ""
+        annualViewModel.formatValue = ""
     }
 
     function test_ANN_P_001_addAnnualAnalysisDelegatesToAnnualState() {
         const panel = createPanel()
         TestSupport.findRequired(Lookup, panel, "annualAddAnalysisButton").clicked()
-        compare(annualState.addIndex, 0)
+        compare(annualViewModel.addIndex, 0)
     }
 
     function test_ANN_P_002_exportFormatUpdateDelegatesToAnnualState() {
@@ -86,13 +86,13 @@ TestCase {
         const combo = TestSupport.findRequired(Lookup, panel, "annualAnalysisExportFormatComboBox")
         combo.currentIndex = 1
         combo.activated(1)
-        compare(annualState.formatId, "analysis-2")
-        compare(annualState.formatValue, "JPG")
+        compare(annualViewModel.formatId, "analysis-2")
+        compare(annualViewModel.formatValue, "JPG")
     }
 
     function test_ANN_P_003_removeAnalysisDelegatesToAnnualState() {
         const panel = createPanel()
         TestSupport.findRequired(Lookup, panel, "annualRemoveAnalysisButton").clicked()
-        compare(annualState.removedId, "analysis-2")
+        compare(annualViewModel.removedId, "analysis-2")
     }
 }

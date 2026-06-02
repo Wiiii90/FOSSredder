@@ -5,69 +5,116 @@
 
 #pragma once
 
-#include "core/application/analysis/AnalysisRequest.h"
-#include "core/application/analysis/AnalysisResult.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
 #include "core/domain/entities/Analysis.h"
 #include "core/domain/entities/Transaction.h"
+#include "core/ports/analysis/AnalysisRequest.h"
+#include "core/ports/analysis/AnalysisResult.h"
+#include "core/ports/analysis/IAnalysisRunner.h"
 
 #include <memory>
 #include <string>
 #include <vector>
 
+namespace core::ports::analysis_image_renderer {
+class IAnalysisImageRenderer;
+} // namespace core::ports::analysis_image_renderer
+
 namespace core::application::analysis {
 
 /**
- * @brief Coordinates analysis lookup, execution, and transaction preview filtering.
+ * @brief Coordinates analysis lookup, execution, and transaction preview
+ * filtering.
  */
-class AnalysisService {
+class AnalysisService : public core::ports::analysis::IAnalysisRunner {
 public:
-    AnalysisService() = default;
-    ~AnalysisService() = default;
+  AnalysisService() = default;
+  explicit AnalysisService(
+      std::shared_ptr<
+          core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+          imageRenderer);
+  ~AnalysisService() = default;
 
-    AnalysisService(const AnalysisService&) = delete;
-    AnalysisService& operator=(const AnalysisService&) = delete;
-    AnalysisService(AnalysisService&&) noexcept = default;
-    AnalysisService& operator=(AnalysisService&&) noexcept = default;
+  AnalysisService(const AnalysisService &) = delete;
+  AnalysisService &operator=(const AnalysisService &) = delete;
+  AnalysisService(AnalysisService &&) noexcept = default;
+  AnalysisService &operator=(AnalysisService &&) noexcept = default;
 
-    /**
-     * @brief Runs one analysis request against the supplied workspace state.
+  /**
+     * @brief Runs one analysis request against the supplied workspace
+   * state.
      * @param state Current workspace catalog snapshot.
-     * @param request Analysis request containing identifier and optional filter override.
-     * @return Materialized analysis result, or an unfound result when the identifier is missing.
-     */
-    AnalysisResult runAnalysis(const core::domain::catalog::WorkspaceCatalog& state, const AnalysisRequest& request) const;
+   * @param request Analysis request containing identifier and optional filter
+   * override.
+   * @return Materialized analysis result, or an unfound result when the
+   * identifier is missing.
+   */
+  core::ports::analysis::AnalysisResult
+  runAnalysis(const core::domain::catalog::WorkspaceCatalog &state,
+              const core::ports::analysis::AnalysisRequest &request) const;
 
-    /**
-     * @brief Resolves an analysis by identifier and executes it.
-     * @param state Current workspace catalog snapshot.
-     * @param analysisId Identifier of the stored analysis definition.
-     * @param filterSpec Optional filter override applied instead of the stored filter.
-     * @return Materialized analysis result, or an unfound result when the identifier is missing.
+  /**
+     * @brief Runs one analysis request against a workspace port
+   * snapshot.
      */
-    AnalysisResult runAnalysisById(const core::domain::catalog::WorkspaceCatalog& state,
-                                   const std::string& analysisId,
-                                   const std::string& filterSpec = {}) const;
+  core::ports::analysis::AnalysisResult runAnalysis(
+      const core::ports::workspace::WorkspaceSnapshot &workspace,
+      const core::ports::analysis::AnalysisRequest &request) const override;
 
-    /**
-     * @brief Computes a concrete analysis definition against the supplied workspace state.
-     * @param analysis Analysis definition to execute.
-     * @param state Current workspace catalog snapshot.
-     * @param filterSpec Optional filter override applied during execution.
-     * @return Fully materialized analysis result.
-     */
-    AnalysisResult computeAnalysis(const core::domain::Analysis& analysis,
-                                   const core::domain::catalog::WorkspaceCatalog& state,
-                                   const std::string& filterSpec = {}) const;
+  /**
+   * @brief Resolves an analysis by identifier and executes it.
+   * @param state Current workspace catalog snapshot.
+   * @param analysisId Identifier of the stored analysis definition.
+   * @param filterSpec Optional filter override applied instead of the stored
+   * filter.
+   * @return Materialized analysis result, or an unfound result when the
+   * identifier is missing.
+   */
+  core::ports::analysis::AnalysisResult
+  runAnalysisById(const core::domain::catalog::WorkspaceCatalog &state,
+                  const std::string &analysisId,
+                  const std::string &filterSpec = {}) const;
 
-    /**
-     * @brief Returns the transactions matched by one analysis filter specification.
-     * @param state Current workspace catalog snapshot.
-     * @param filterSpec Raw analysis filter specification.
-     * @return Transactions that satisfy the parsed filter.
+  /**
+   * @brief Computes a concrete analysis definition against the supplied
+   * workspace state.
+   * @param analysis Analysis definition to execute.
+   * @param state Current workspace catalog snapshot.
+   * @param filterSpec Optional filter override applied during execution.
+   * @return Fully materialized analysis result.
+   */
+  core::ports::analysis::AnalysisResult
+  computeAnalysis(const core::domain::Analysis &analysis,
+                  const core::domain::catalog::WorkspaceCatalog &state,
+                  const std::string &filterSpec = {}) const;
+
+  /**
+   * @brief Returns the transactions matched by one analysis filter
+   * specification.
+   * @param state Current workspace catalog snapshot.
+   * @param filterSpec Raw analysis filter specification.
+   * @return Transactions that satisfy the parsed filter.
+   */
+  std::vector<std::shared_ptr<core::domain::Transaction>>
+  filterTransactions(const core::domain::catalog::WorkspaceCatalog &state,
+                     const std::string &filterSpec = {}) const;
+
+  /**
+     * @brief Returns port-native transaction preview rows for one filter
+   * specification.
      */
-    std::vector<std::shared_ptr<core::domain::Transaction>> filterTransactions(const core::domain::catalog::WorkspaceCatalog& state,
-                                                                               const std::string& filterSpec = {}) const;
+  std::vector<core::ports::analysis::AnalysisPreviewTransaction>
+  previewTransactions(
+      const core::ports::workspace::WorkspaceSnapshot &workspace,
+      const std::string &filterSpec = {}) const override;
+
+private:
+  core::ports::analysis::AnalysisResult
+  withRenderedArtifacts(const core::ports::analysis::AnalysisRequest &request,
+                        core::ports::analysis::AnalysisResult result) const;
+
+  std::shared_ptr<core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+      imageRenderer_;
 };
 
 } // namespace core::application::analysis

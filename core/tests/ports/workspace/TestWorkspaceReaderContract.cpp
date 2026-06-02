@@ -20,6 +20,10 @@ public:
         return snapshot;
     }
 
+    std::string currentPath() const override {
+        return snapshot.hasCurrentPath ? snapshot.currentPath : std::string{};
+    }
+
     std::optional<StatementDraftSnapshot> statementDraftSnapshot(const std::string& = {}) const override {
         return draft;
     }
@@ -36,10 +40,12 @@ TEST(WorkspaceReaderContractTest, ReturnsSnapshotAndDraftState) {
     reader.draft->id = "draft-1";
 
     const auto snapshot = reader.workspaceSnapshot();
+    const auto path = reader.currentPath();
     const auto draft = reader.statementDraftSnapshot();
 
     EXPECT_TRUE(snapshot.hasCurrentPath);
     EXPECT_EQ(snapshot.currentPath, "P:/workspace.db");
+    EXPECT_EQ(path, "P:/workspace.db");
     ASSERT_TRUE(draft.has_value());
     EXPECT_EQ(draft->id, "draft-1");
 }

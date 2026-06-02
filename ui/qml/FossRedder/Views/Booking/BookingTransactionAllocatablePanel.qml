@@ -12,7 +12,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var bookingState
+    required property var bookingViewModel
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -38,8 +38,8 @@ Controls.Panel {
             bordered: true
             filled: false
             emphasized: false
-            text: root.bookingState.transactionAllocatable ? qsTr("Allocatable") : qsTr("Not allocatable")
-            onClicked: root.bookingState.transactionAllocatable = !root.bookingState.transactionAllocatable
+            text: root.bookingViewModel.transactionAllocatable ? qsTr("Allocatable") : qsTr("Not allocatable")
+            onClicked: root.bookingViewModel.transactionAllocatable = !root.bookingViewModel.transactionAllocatable
         }
     }
 }

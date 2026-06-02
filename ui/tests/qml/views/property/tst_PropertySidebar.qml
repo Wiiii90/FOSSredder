@@ -22,7 +22,7 @@ TestCase {
     property var session: QtObject {
         property string selectedPropertyId: ""
         property var propertyRows: []
-        property var propertyState: QtObject {
+        property var propertyViewModel: QtObject {
             readonly property string currentId: testCase.session.selectedPropertyId
             property var propertyRows: testCase.session.propertyRows
             property string lastSelectedId: ""
@@ -56,7 +56,7 @@ TestCase {
         PropertySidebar {
             width: 320
             height: 240
-            propertyState: testCase.session.propertyState
+            propertyViewModel: testCase.session.propertyViewModel
             theme: testCase.theme
         }
     }
@@ -97,7 +97,7 @@ TestCase {
         mouseArea.clicked(null)
 
         compare(session.selectedPropertyId, "property-2")
-        compare(session.propertyState.lastSelectedId, "property-2")
+        compare(session.propertyViewModel.lastSelectedId, "property-2")
     }
 
     function test_PROP_S_003_selectedRowUsesThemeHighlight() {

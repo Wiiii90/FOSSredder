@@ -13,14 +13,14 @@ import FossRedder.Views.Contract 1.0 as Contract
 
 Item {
     id: root
-    required property var contractState
+    required property var contractViewModel
     required property var theme
 
-    readonly property var aliases: root.contractState ? root.contractState.aliases : []
-    readonly property int aliasIndex: root.contractState ? root.contractState.aliasIndex : -1
-    readonly property var selectedActorIds: root.contractState ? root.contractState.selectedActorIds : []
-    readonly property var selectedPropertyIds: root.contractState ? root.contractState.selectedPropertyIds : []
-    readonly property var propertyRows: root.contractState.propertyRows
+    readonly property var aliases: root.contractViewModel ? root.contractViewModel.aliases : []
+    readonly property int aliasIndex: root.contractViewModel ? root.contractViewModel.aliasIndex : -1
+    readonly property var selectedActorIds: root.contractViewModel ? root.contractViewModel.selectedActorIds : []
+    readonly property var selectedPropertyIds: root.contractViewModel ? root.contractViewModel.selectedPropertyIds : []
+    readonly property var propertyRows: root.contractViewModel.propertyRows
 
     ColumnLayout {
         anchors.fill: parent
@@ -58,11 +58,11 @@ Item {
                         objectName: "contractNameField"
                         placeholderText: ""
                         Layout.fillWidth: true
-                        text: root.contractState ? root.contractState.name : ""
-                        onTextChanged: if (root.contractState)
-                            root.contractState.name = text
-                        onTextEdited: if (root.contractState)
-                            root.contractState.name = text
+                        text: root.contractViewModel ? root.contractViewModel.name : ""
+                        onTextChanged: if (root.contractViewModel)
+                            root.contractViewModel.name = text
+                        onTextEdited: if (root.contractViewModel)
+                            root.contractViewModel.name = text
                     }
                 }
 
@@ -85,25 +85,25 @@ Item {
                             objectName: "contractAliasInput"
                             Layout.fillWidth: true
                             placeholderText: ""
-                            text: root.contractState ? root.contractState.aliasInputText : ""
-                            onTextChanged: if (root.contractState)
-                                root.contractState.aliasInputText = text
-                            onTextEdited: if (root.contractState)
-                                root.contractState.aliasInputText = text
+                            text: root.contractViewModel ? root.contractViewModel.aliasInputText : ""
+                            onTextChanged: if (root.contractViewModel)
+                                root.contractViewModel.aliasInputText = text
+                            onTextEdited: if (root.contractViewModel)
+                                root.contractViewModel.aliasInputText = text
                         }
 
                         Controls.CompactAddButton {
                             objectName: "contractAddAliasButton"
-                            enabled: root.contractState ? root.contractState.canAddAlias(contractAliasInput.text) : false
-                            onClicked: if (root.contractState)
-                                root.contractState.addAlias(contractAliasInput.text)
+                            enabled: root.contractViewModel ? root.contractViewModel.canAddAlias(contractAliasInput.text) : false
+                            onClicked: if (root.contractViewModel)
+                                root.contractViewModel.addAlias(contractAliasInput.text)
                         }
 
                         Controls.CompactRemoveButton {
                             objectName: "contractRemoveAliasButton"
                             enabled: root.aliasIndex >= 0 && root.aliasIndex < root.aliases.length
-                            onClicked: if (root.contractState)
-                                root.contractState.requestRemoveSelectedAlias()
+                            onClicked: if (root.contractViewModel)
+                                root.contractViewModel.requestRemoveSelectedAlias()
                         }
                     }
 
@@ -165,10 +165,10 @@ Item {
                                             objectName: "contractAliasMouse_" + contractAliasChip.index
                                             anchors.fill: parent
                                             preventStealing: true
-                                            onPressed: if (root.contractState)
-                                                root.contractState.aliasIndex = contractAliasChip.index
-                                            onClicked: if (root.contractState)
-                                                root.contractState.aliasIndex = contractAliasChip.index
+                                            onPressed: if (root.contractViewModel)
+                                                root.contractViewModel.aliasIndex = contractAliasChip.index
+                                            onClicked: if (root.contractViewModel)
+                                                root.contractViewModel.aliasIndex = contractAliasChip.index
                                         }
                                     }
                                 }
@@ -180,13 +180,13 @@ Item {
                 Contract.ContractTypePanel {
                     Layout.fillWidth: true
                     theme: root.theme
-                    contractState: root.contractState
+                    contractViewModel: root.contractViewModel
                 }
 
                 Contract.ContractAllocatablePanel {
                     Layout.fillWidth: true
                     theme: root.theme
-                    contractState: root.contractState
+                    contractViewModel: root.contractViewModel
                 }
 
                 Contract.ContractActorsPanel {
@@ -194,13 +194,13 @@ Item {
                     Layout.preferredHeight: implicitHeight
                     Layout.maximumHeight: implicitHeight
                     theme: root.theme
-                    contractState: root.contractState
+                    contractViewModel: root.contractViewModel
                 }
 
                 Contract.ContractPropertiesPanel {
                     Layout.fillWidth: true
                     theme: root.theme
-                    contractState: root.contractState
+                    contractViewModel: root.contractViewModel
                     propertyRows: root.propertyRows
                 }
             }

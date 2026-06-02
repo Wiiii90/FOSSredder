@@ -12,10 +12,10 @@ import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
-    required property var transactionState
+    required property var transactionViewModel
     required property var theme
 
-    readonly property int suggestionTone: root.transactionState.suggestionTone(root.transactionState.allocatableSuggestionConfidence)
+    readonly property int suggestionTone: root.transactionViewModel.suggestionTone(root.transactionViewModel.allocatableSuggestionConfidence)
     readonly property color suggestionColor: root.suggestionTone === 2 ? root.theme.successStrong : (root.suggestionTone === 1 ? root.theme.warning : root.theme.danger)
 
     Layout.fillHeight: false
@@ -57,15 +57,15 @@ Item {
                     bordered: true
                     filled: false
                     emphasized: false
-                    text: root.transactionState.effectiveAllocatable ? qsTr("Allocatable") : qsTr("Not allocatable")
-                    onClicked: root.transactionState.toggleAllocatable()
+                    text: root.transactionViewModel.effectiveAllocatable ? qsTr("Allocatable") : qsTr("Not allocatable")
+                    onClicked: root.transactionViewModel.toggleAllocatable()
                 }
             }
         }
 
         Label {
             objectName: "transactionDraftAllocatableSuggestionLabel"
-            text: root.transactionState.allocatableSuggestionText
+            text: root.transactionViewModel.allocatableSuggestionText
             color: root.suggestionColor
             Layout.fillWidth: true
         }

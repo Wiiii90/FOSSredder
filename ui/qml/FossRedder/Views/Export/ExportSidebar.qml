@@ -11,7 +11,7 @@ import FossRedder.Components 1.0 as Components
 
 Item {
     id: root
-    required property var exportState
+    required property var exportViewModel
     required property var theme
 
     ColumnLayout {
@@ -30,16 +30,16 @@ Item {
             baseBorderColor: root.theme.borderSoft
             actionButtonSize: root.theme.viewCompactActionButtonSizeTiny
             headerTopInset: root.theme.spacingSmall
-            model: root.exportState.runs
+            model: root.exportViewModel.exportLogs
             fileRowsClickable: true
             onRunClicked: function (index, logId, draftAttached, statementId) {
-                root.exportState.openRunLocationAt(index);
+                root.exportViewModel.openExportLogLocation(index, logId);
             }
-            onDeleteClicked: function (index, draftAttached, draftId) {
-                root.exportState.removeRunAt(index);
+            onDeleteClicked: function (index, logId, draftAttached, draftId) {
+                root.exportViewModel.deleteExportLog(index, logId);
             }
         }
     }
 
-    Component.onCompleted: root.exportState.refreshRuns()
+    Component.onCompleted: root.exportViewModel.refreshExportLogs()
 }

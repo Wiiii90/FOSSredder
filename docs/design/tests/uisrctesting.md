@@ -57,7 +57,6 @@ ui/
       TestRunListModels.cpp
       TestSelectionState.cpp
       TestSettingsState.cpp
-      TestShellNavigationState.cpp
       TestSessionModels.cpp
       TestSessionMutationState.cpp
       TestWorkspaceFacade.cpp
@@ -135,9 +134,8 @@ too stateful for declarative QML.
 | ST-008 | Selection state projects and clears rows consistently | Unit | Selection state with a representative workspace catalog | Set and then remove source rows | Selected rows resolve while present and clear once the source disappears |
 | ST-009 | Navigation state stores the current section and settings category | Unit | Fresh navigation state | Change section and settings category values | Section and category values stay in sync with the enum representation |
 | ST-010 | Mutation helpers normalize string and draft state families | Unit | Mixed string collections and draft payloads | Normalize, insert, remove, and current-state helpers | String collections, transaction drafts, and draft-list helpers stay deterministic |
-| SHL-NAV-001 | Toolbar create navigation clears workspace selection | Unit | ShellNavigationState connected to navigation and workspace facade | Navigate to a create-mode section with reset enabled | Domain, booking, analysis, and annual selections clear and the target section is remembered |
-| SHL-NAV-002 | Menu navigation preserves non-booking selection | Unit | ShellNavigationState connected to navigation and workspace facade | Navigate through app-menu style section routing | Non-booking selection remains while stale booking selection is cleared outside Booking |
-| SHL-NAV-003 | Booking create navigation clears booking selection | Unit | ShellNavigationState with selected statement and transaction | Navigate to booking create | Statement and transaction selection clear and Booking is marked loaded |
+| NAV-010 | QML navigation exposes section constants | Unit | Fresh navigation state | Read QML-facing section constants | Constants match the internal section enum values |
+| NAV-011 | QML navigation changes active section | Unit | Fresh navigation state | Navigate to a section by value | Active section and section value stay in sync |
 | BKG-ST-001 | Booking create commit | Unit | Fresh workspace and BookingState draft | Fill statement and transaction fields and submit | A statement and transaction are created, selection moves to the created statement, and amount/status/allocatable values persist |
 | BKG-ST-002 | Booking empty default transaction | Unit | Fresh workspace and BookingState draft with only statement name | Submit the statement | The statement is created without committing the empty default transaction draft |
 | BKG-ST-003 | Booking incomplete transaction guard | Unit | Fresh workspace and BookingState draft with a statement name and incomplete transaction content | Attempt submit | Create remains disabled and no statement or transaction is committed |
@@ -277,7 +275,6 @@ ui/
       TestRunListModels.cpp
       TestSelectionState.cpp
       TestSettingsState.cpp
-      TestShellNavigationState.cpp
       TestSessionModels.cpp
       TestSessionMutationState.cpp
       TestWorkspaceFacade.cpp

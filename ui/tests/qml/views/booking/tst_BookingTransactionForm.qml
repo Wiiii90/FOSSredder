@@ -26,7 +26,7 @@ TestCase {
         property int fontSize: 10
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property string transactionName: "Rent"
         property string transactionBookingDate: "2026-01-05"
         property string transactionValuta: "2026-01-06"
@@ -47,7 +47,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            bookingState: testCase.bookingState
+            bookingViewModel: testCase.bookingViewModel
         }
     }
 
@@ -82,10 +82,10 @@ TestCase {
 
         findRequired(form, "bookingTransactionStatusComboBox").activated(2)
 
-        compare(bookingState.transactionName, "Rent Updated")
-        compare(bookingState.transactionBookingDate, "2026-02-01")
-        compare(bookingState.transactionValuta, "2026-02-02")
-        compare(bookingState.transactionAmountText, "99.95")
-        compare(bookingState.transactionStatusIndex, 2)
+        compare(bookingViewModel.transactionName, "Rent Updated")
+        compare(bookingViewModel.transactionBookingDate, "2026-02-01")
+        compare(bookingViewModel.transactionValuta, "2026-02-02")
+        compare(bookingViewModel.transactionAmountText, "99.95")
+        compare(bookingViewModel.transactionStatusIndex, 2)
     }
 }

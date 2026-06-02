@@ -1,34 +1,43 @@
 set(CORE_PUBLIC_HEADERS
-    include/core/application/analysis/AnalysisFilterSpec.h
     include/core/application/analysis/AnalysisService.h
-    include/core/application/analysis/AnalysisRequest.h
-    include/core/application/annual/AnnualRequest.h
-    include/core/application/annual/AnnualResult.h
+    include/core/application/analysis/AnalysisWorkflowSupport.h
     include/core/application/annual/AnnualService.h
     include/core/application/export/CsvExporter.h
     include/core/application/export/ExportLog.h
-    include/core/application/export/ExportRequest.h
-    include/core/application/export/ExportResult.h
     include/core/application/export/ExportService.h
-    include/core/application/export/ExportTypes.h
     include/core/application/export/XlsxExporter.h
     include/core/application/import/IImportStatement.h
     include/core/application/import/ImportLog.h
     include/core/application/import/ImportRequest.h
     include/core/application/import/ImportResult.h
+    include/core/application/import/StatementImportRunner.h
     include/core/application/import/draft/DraftFinalizer.h
     include/core/application/import/draft/DraftMatcher.h
     include/core/application/import/draft/StatementDraft.h
     include/core/application/import/draft/TransactionDraft.h
+    include/core/application/import/transaction/AmountParser.h
     include/core/application/storage/DeletionImpact.h
     include/core/application/storage/RepositoryBundle.h
     include/core/application/storage/StorageManager.h
     include/core/application/workspace/WorkspaceFacade.h
+    include/core/application/workspace/WorkspaceSnapshotCatalogMapper.h
     include/core/application/workspace/WorkspaceQueryService.h
     include/core/application/workspace/WorkspaceSession.h
     include/core/application/workspace/WorkspaceStateManager.h
     include/core/ports/archive/IArchive.h
+    include/core/ports/analysis/AnalysisRequest.h
+    include/core/ports/analysis/AnalysisResult.h
+    include/core/ports/analysis/IAnalysisRunner.h
     include/core/ports/analysis-image-renderer/IAnalysisImageRenderer.h
+    include/core/ports/annual/AnnualRequest.h
+    include/core/ports/annual/AnnualResult.h
+    include/core/ports/annual/IAnnualRunner.h
+    include/core/ports/export/ExportRequest.h
+    include/core/ports/export/ExportResult.h
+    include/core/ports/export/IExportRunner.h
+    include/core/ports/import/IImportRunner.h
+    include/core/ports/import/ImportDraft.h
+    include/core/ports/import/ImportResult.h
     include/core/ports/xlsx-writer/IXlsxWriter.h
     include/core/constants/analysis.h
     include/core/constants/app.h
@@ -67,11 +76,6 @@ set(CORE_PUBLIC_HEADERS
     include/core/jobs/JobTypes.h
     include/core/jobs/Scheduler.h
     include/core/pch.h
-    include/core/ports/presenters/IAnalysisPresenter.h
-    include/core/ports/presenters/IAnnualPresenter.h
-    include/core/ports/presenters/IExportPresenter.h
-    include/core/ports/presenters/IImportPresenter.h
-    include/core/ports/presenters/IWorkspacePresenter.h
     include/core/ports/repositories/IActorRepository.h
     include/core/ports/repositories/IAnalysisRepository.h
     include/core/ports/repositories/IAnnualRepository.h
@@ -98,7 +102,6 @@ set(CORE_PUBLIC_HEADERS
     include/core/ports/storage/IRegistry.h
     include/core/ports/storage/IStorageManager.h
     include/core/utils/Time.h
-    include/core/application/import/draft/IImportMatcherService.h
 )
 
 option(BUILD_CORE_TESTS "Build core tests" OFF)
@@ -121,9 +124,11 @@ set(CORE_PRIVATE_HEADERS
 
 # Core implementation sources.
 set(CORE_SRCS
-    src/application/analysis/AnalysisFilterSpec.cpp
+    src/application/analysis/AnalysisRequest.cpp
+    src/application/analysis/AnalysisWorkflowSupport.cpp
     src/application/analysis/AnalysisService.cpp
     src/application/annual/AnnualService.cpp
+    src/application/annual/AnnualWorkflowSupport.cpp
     src/application/analysis/internal/AnalysisFilter.cpp
     src/application/analysis/presentation/PlotAnalysis.cpp
     src/application/analysis/presentation/TableAnalysis.cpp
@@ -139,6 +144,7 @@ set(CORE_SRCS
     src/application/import/draft/DraftMatcherSignals.cpp
     src/application/import/ImportPipelineHelpers.cpp
     src/application/import/ImportStatement.cpp
+    src/application/import/StatementImportRunner.cpp
     src/application/import/ImportStrategySupport.cpp
     src/application/import/internal/ParserDateUtils.cpp
     src/application/import/internal/ParserHelpers.cpp
@@ -152,6 +158,7 @@ set(CORE_SRCS
     src/application/workspace/WorkspaceFacade.cpp
     src/application/workspace/WorkspaceWorkflowService.cpp
     src/application/workspace/WorkspaceSnapshotProjector.cpp
+    src/application/workspace/WorkspaceSnapshotCatalogMapper.cpp
     src/application/workspace/WorkspaceQueryService.cpp
     src/application/workspace/WorkspaceSession.cpp
     src/application/workspace/WorkspaceStateManager.cpp

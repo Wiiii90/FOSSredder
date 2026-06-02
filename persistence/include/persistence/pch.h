@@ -15,7 +15,6 @@
 
 #include "core/domain/entities/Actor.h"
 #include "core/domain/entities/Analysis.h"
-#include "core/application/analysis/AnalysisResult.h"
 #include "core/domain/entities/Annual.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
 #include "core/domain/entities/Contract.h"

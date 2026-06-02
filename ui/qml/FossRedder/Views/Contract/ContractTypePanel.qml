@@ -11,7 +11,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var contractState
+    required property var contractViewModel
 
     Layout.fillWidth: true
     contentSpacing: root.theme.spacingSmall
@@ -37,11 +37,11 @@ Controls.Panel {
         Controls.TextField {
             objectName: "contractTypeField"
             Layout.fillWidth: true
-            text: root.contractState ? root.contractState.type : ""
-            onTextChanged: if (root.contractState)
-                root.contractState.type = text
-            onTextEdited: if (root.contractState)
-                root.contractState.type = text
+            text: root.contractViewModel ? root.contractViewModel.type : ""
+            onTextChanged: if (root.contractViewModel)
+                root.contractViewModel.type = text
+            onTextEdited: if (root.contractViewModel)
+                root.contractViewModel.type = text
         }
     }
 }

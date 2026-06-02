@@ -23,7 +23,7 @@ TEST(AnnualServiceTest, ParsesArraySnapshotPayloads)
     workspace.transactions.push_back(liveA);
 
     AnnualService service;
-    core::application::annual::AnnualRequest request;
+    core::ports::annual::AnnualRequest request;
     request.annualId = "annual-1";
     const auto result = service.runAnnual(workspace, request);
 
@@ -53,7 +53,7 @@ TEST(AnnualServiceTest, CategorizesRowsAndBuildsStatsDeterministically)
     core::ports::workspace::TransactionSnapshot liveDup;
     liveDup.id = "dup";
     liveDup.bookingDate = "2026-03-01";
-    liveDup.status = core::domain::Transaction::Status::Verified;
+    liveDup.status = 2;
     liveDup.allocatable = true;
     liveDup.contractId = "c-1";
     workspace.transactions.push_back(liveDup);
@@ -61,7 +61,7 @@ TEST(AnnualServiceTest, CategorizesRowsAndBuildsStatsDeterministically)
     core::ports::workspace::TransactionSnapshot workspaceOnly;
     workspaceOnly.id = "live-only";
     workspaceOnly.bookingDate = "2026-10-15";
-    workspaceOnly.status = core::domain::Transaction::Status::Unverified;
+    workspaceOnly.status = 1;
     workspaceOnly.allocatable = false;
     workspaceOnly.contractId = "c-2";
     workspace.transactions.push_back(workspaceOnly);

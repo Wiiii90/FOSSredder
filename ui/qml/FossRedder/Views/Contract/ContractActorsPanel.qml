@@ -11,7 +11,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var contractState
+    required property var contractViewModel
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -38,15 +38,15 @@ Controls.Panel {
         Controls.DropdownMenu {
             id: actorCombo
             objectName: "contractActorComboBox"
-            readonly property string selectedActorId: root.contractState && root.contractState.selectedActorIds.length > 0 ? String(root.contractState.selectedActorIds[0]) : ""
+            readonly property string selectedActorId: root.contractViewModel && root.contractViewModel.selectedActorIds.length > 0 ? String(root.contractViewModel.selectedActorIds[0]) : ""
             Layout.fillWidth: true
             textRole: "display"
-            model: root.contractState.actorDisplayRows
-            currentIndex: root.contractState.selectedActorIndex
+            model: root.contractViewModel.actorDisplayRows
+            currentIndex: root.contractViewModel.selectedActorIndex
             onActivated: function (index) {
                 const row = model[index];
-                if (root.contractState)
-                    root.contractState.selectPrimaryActor(row && row.id ? String(row.id) : "");
+                if (root.contractViewModel)
+                    root.contractViewModel.selectPrimaryActor(row && row.id ? String(row.id) : "");
             }
         }
     }

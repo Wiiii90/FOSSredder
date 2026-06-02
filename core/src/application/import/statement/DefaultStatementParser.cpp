@@ -415,9 +415,9 @@ DefaultStatementParser::ParseResult DefaultStatementParser::parse([[maybe_unused
         for (const auto& ol : orphanLines) {
             try {
                 bool looksMain = false;
-                try { if (core::parser::helpers::hasAmountLikeTokenInLine(ol, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::hasAmount", std::current_exception()); }
-                try { if (!looksMain && core::parser::helpers::isLooseTransactionLine(ol, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::isLoose", std::current_exception()); }
-                try { if (!looksMain && core::parser::helpers::hasShortDateToken(ol.text) && core::parser::helpers::hasLeftDescriptiveText(ol, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::dateAndLeft", std::current_exception()); }
+                try { if (core::application::importing::internal::hasAmountLikeTokenInLine(ol, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::hasAmount", std::current_exception()); }
+                try { if (!looksMain && core::application::importing::internal::isLooseTransactionLine(ol, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::isLoose", std::current_exception()); }
+                try { if (!looksMain && core::application::importing::internal::hasShortDateToken(ol.text) && core::application::importing::internal::hasLeftDescriptiveText(ol, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::dateAndLeft", std::current_exception()); }
                 if (looksMain) {
                     core::application::importing::transaction::internal::TransactionBlock nb;
                     nb.bookingDateGroup = currentBookingDate;

@@ -41,7 +41,7 @@ TEST(ZipArchiveAdapterTest, CreatesArchiveAndPreservesRelativePaths) {
     writeFile(nestedDir / "beta.txt", "beta");
 
     ZipArchiveAdapter adapter;
-    ASSERT_TRUE(adapter.create(sourceDir, archivePath, core::application::exporting::PackageFormat::Zip));
+    ASSERT_TRUE(adapter.create(sourceDir, archivePath, core::ports::exporting::PackageFormat::Zip));
     ASSERT_TRUE(std::filesystem::exists(archivePath));
     ASSERT_GT(std::filesystem::file_size(archivePath), 0u);
 
@@ -65,7 +65,7 @@ TEST(ZipArchiveAdapterTest, RejectsUnsupportedFormat) {
     writeFile(sourceDir / "alpha.txt", "alpha");
 
     ZipArchiveAdapter adapter;
-    EXPECT_FALSE(adapter.create(sourceDir, archivePath, core::application::exporting::PackageFormat::None));
+    EXPECT_FALSE(adapter.create(sourceDir, archivePath, core::ports::exporting::PackageFormat::None));
     EXPECT_FALSE(std::filesystem::exists(archivePath));
 }
 

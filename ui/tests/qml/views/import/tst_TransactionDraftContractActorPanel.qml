@@ -33,17 +33,17 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionState: QtObject {
-        property var actorChoiceModel: [{ id: "", display: "" }, { id: "actor-1", display: "Alice" }]
-        property int selectedActorIndex: 0
-        property string actorText: ""
+    property var transactionViewModel: QtObject {
+        property var actorOptions: [{ id: "", display: "" }, { id: "actor-1", display: "Alice" }]
+        property int selectedActorOptionIndex: 0
+        property string actorName: ""
         property bool canAddActor: true
         property real actorSuggestionConfidence: 0
         property string actorSuggestionSummary: "0% Confidence - No suggestion"
         property int addActorCalls: 0
         function suggestionTone(confidence) { return confidence >= 0.75 ? 2 : 0 }
-        function selectActorIndex(index) { selectedActorIndex = index }
-        function addActorFromText() { addActorCalls += 1 }
+        function selectActorAtIndex(index) { selectedActorOptionIndex = index }
+        function addActor() { addActorCalls += 1 }
     }
 
     Component {
@@ -51,7 +51,7 @@ TestCase {
         Import.TransactionDraftContractActorPanel {
             width: testCase.width
             theme: testCase.theme
-            transactionState: testCase.transactionState
+            transactionViewModel: testCase.transactionViewModel
         }
     }
 
@@ -60,22 +60,22 @@ TestCase {
     }
 
     function init() {
-        transactionState.actorSuggestionConfidence = 0
-        transactionState.actorSuggestionSummary = "0% Confidence - No suggestion"
-        transactionState.actorText = ""
-        transactionState.addActorCalls = 0
+        transactionViewModel.actorSuggestionConfidence = 0
+        transactionViewModel.actorSuggestionSummary = "0% Confidence - No suggestion"
+        transactionViewModel.actorName = ""
+        transactionViewModel.addActorCalls = 0
     }
 
     function test_IMP_D_014_actorPanelDelegatesQuickCreate() {
         const panel = createTemporaryObject(panelComponent, testCase)
-        const input = findRequired(panel, "transactionDraftActorTextField")
+        const input = findRequired(panel, "transactionDraftActorNameField")
 
         input.text = "Alice Example"
         input.textEdited()
         findRequired(panel, "transactionDraftActorAddFromTextButton").clicked()
 
-        compare(transactionState.actorText, "Alice Example")
-        compare(transactionState.addActorCalls, 1)
+        compare(transactionViewModel.actorName, "Alice Example")
+        compare(transactionViewModel.addActorCalls, 1)
     }
 
     function test_IMP_D_020_actorSuggestionLabelRebindsWhenMatcherStateChanges() {
@@ -85,8 +85,8 @@ TestCase {
         compare(label.text, "0% Confidence - No suggestion")
         compare(label.color, theme.danger)
 
-        transactionState.actorSuggestionConfidence = 0.8
-        transactionState.actorSuggestionSummary = "80% Confidence - Alice"
+        transactionViewModel.actorSuggestionConfidence = 0.8
+        transactionViewModel.actorSuggestionSummary = "80% Confidence - Alice"
         wait(0)
 
         compare(label.text, "80% Confidence - Alice")

@@ -11,7 +11,7 @@ pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
-    required property var exportState
+    required property var exportViewModel
     required property var theme
 
     readonly property int exportTypeColumnWidth: root.theme.exportView.panel.exportTypeColumnWidth
@@ -29,34 +29,34 @@ Controls.Panel {
             objectName: "exportAddAnnualModeButton"
             text: qsTr("Annual")
             bordered: true
-            filled: root.exportState.addMode === "annual"
+            filled: root.exportViewModel.addMode === "annual"
             fillColor: filled ? root.theme.subtlePrimaryFill : root.theme.surface
             textColor: root.theme.textPrimary
             Layout.preferredWidth: root.theme.exportView.panel.addModeButtonWidth
             Layout.preferredHeight: root.theme.controlHeight
-            onClicked: root.exportState.addMode = "annual"
+            onClicked: root.exportViewModel.addMode = "annual"
         }
 
         Controls.Button {
             objectName: "exportAddAnalysisModeButton"
             text: qsTr("Analysis")
             bordered: true
-            filled: root.exportState.addMode === "analysis"
+            filled: root.exportViewModel.addMode === "analysis"
             fillColor: filled ? root.theme.subtlePrimaryFill : root.theme.surface
             textColor: root.theme.textPrimary
             Layout.preferredWidth: root.theme.exportView.panel.addModeButtonWidth
             Layout.preferredHeight: root.theme.controlHeight
-            onClicked: root.exportState.addMode = "analysis"
+            onClicked: root.exportViewModel.addMode = "analysis"
         }
 
         Controls.DropdownMenu {
             objectName: "exportAddObjectComboBox"
             Layout.fillWidth: true
             Layout.preferredWidth: root.theme.formFieldWidth
-            model: root.exportState.addRows
-            textRole: root.exportState.addTextRole
-            currentIndex: root.exportState.pendingIndex
-            onActivated: function(index) { root.exportState.selectPendingRow(index) }
+            model: root.exportViewModel.addRows
+            textRole: root.exportViewModel.addTextRole
+            currentIndex: root.exportViewModel.pendingIndex
+            onActivated: function(index) { root.exportViewModel.selectPendingRow(index) }
         }
 
         Controls.AddButton {
@@ -67,8 +67,8 @@ Controls.Panel {
             Layout.preferredHeight: root.theme.controlHeight
             Layout.minimumHeight: root.theme.controlHeight
             Layout.maximumHeight: root.theme.controlHeight
-            enabled: root.exportState.canAddEntry
-            onClicked: root.exportState.addPendingEntry()
+            enabled: root.exportViewModel.canAddEntry
+            onClicked: root.exportViewModel.addPendingEntry()
         }
     }
 
@@ -98,10 +98,10 @@ Controls.Panel {
 
                 Item {
                     width: contentColumn.width
-                    height: root.exportState.exportEntries.length === 0
+                    height: root.exportViewModel.exportEntries.length === 0
                             ? Math.max(objectsFlick.height, dropContent.implicitHeight)
                             : 0
-                    visible: root.exportState.exportEntries.length === 0
+                    visible: root.exportViewModel.exportEntries.length === 0
 
                     ColumnLayout {
                         id: dropContent
@@ -133,7 +133,7 @@ Controls.Panel {
                 }
 
                 Repeater {
-                    model: root.exportState.exportEntries
+                    model: root.exportViewModel.exportEntries
 
                     delegate: Loader {
                         required property var modelData
@@ -196,7 +196,7 @@ Controls.Panel {
                                 Layout.preferredHeight: root.theme.viewCompactActionButtonSize
                                 Layout.minimumHeight: root.theme.viewCompactActionButtonSize
                                 Layout.maximumHeight: root.theme.viewCompactActionButtonSize
-                                onClicked: root.exportState.updateAnnualCollapsed(
+                                onClicked: root.exportViewModel.updateAnnualCollapsed(
                                                annualEntryItem.entryIndex,
                                                !annualEntryItem.annualData.collapsed)
                             }
@@ -222,10 +222,10 @@ Controls.Panel {
                             Controls.DropdownMenu {
                                 objectName: "exportAnnualObjectComboBox"
                                 Layout.fillWidth: true
-                                model: root.exportState.annualRows
+                                model: root.exportViewModel.annualRows
                                 textRole: "display"
                                 currentIndex: annualEntryItem.annualData.annualIndex
-                                onActivated: root.exportState.updateAnnualEntryAtIndex(
+                                onActivated: root.exportViewModel.updateAnnualEntryAtIndex(
                                                  annualEntryItem.entryIndex,
                                                  currentIndex)
                             }
@@ -241,7 +241,7 @@ Controls.Panel {
                                 Layout.preferredWidth: root.removeColumnWidth
                                 Layout.minimumWidth: root.removeColumnWidth
                                 Layout.maximumWidth: root.removeColumnWidth
-                                onClicked: root.exportState.removeEntry(annualEntryItem.entryIndex)
+                                onClicked: root.exportViewModel.removeEntry(annualEntryItem.entryIndex)
                             }
                         }
 
@@ -341,7 +341,7 @@ Controls.Panel {
                                             Layout.maximumWidth: root.exportTypeColumnWidth
                                             model: annualAnalysisEntry.modelData.exportTypeOptions
                                             currentIndex: Math.max(0, annualAnalysisEntry.modelData.exportTypeIndex)
-                                            onActivated: root.exportState.updateAnnualAnalysisExportType(
+                                            onActivated: root.exportViewModel.updateAnnualAnalysisExportType(
                                                              annualEntryItem.entryIndex,
                                                              annualAnalysisEntry.index,
                                                              annualExportTypeDropdown.currentText)
@@ -418,10 +418,10 @@ Controls.Panel {
                     objectName: "exportAnalysisObjectComboBox"
                     Layout.fillWidth: true
                     Layout.minimumWidth: root.analysisNameMinWidth
-                    model: root.exportState.analysisRows
+                    model: root.exportViewModel.analysisRows
                     textRole: "name"
                     currentIndex: standaloneAnalysisEntry.modelData.analysisIndex
-                    onActivated: root.exportState.updateStandaloneAnalysisAtIndex(
+                    onActivated: root.exportViewModel.updateStandaloneAnalysisAtIndex(
                                      standaloneAnalysisEntry.entryIndex,
                                      currentIndex)
                 }
@@ -434,7 +434,7 @@ Controls.Panel {
                     Layout.maximumWidth: root.exportTypeColumnWidth
                     model: standaloneAnalysisEntry.modelData.exportTypeOptions
                     currentIndex: Math.max(0, standaloneAnalysisEntry.modelData.exportTypeIndex)
-                    onActivated: root.exportState.updateStandaloneAnalysisExportType(
+                    onActivated: root.exportViewModel.updateStandaloneAnalysisExportType(
                                      standaloneAnalysisEntry.entryIndex,
                                      standaloneExportTypeDropdown.currentText)
                 }
@@ -444,7 +444,7 @@ Controls.Panel {
                     Layout.preferredWidth: root.removeColumnWidth
                     Layout.minimumWidth: root.removeColumnWidth
                     Layout.maximumWidth: root.removeColumnWidth
-                    onClicked: root.exportState.removeEntry(standaloneAnalysisEntry.entryIndex)
+                    onClicked: root.exportViewModel.removeEntry(standaloneAnalysisEntry.entryIndex)
                 }
             }
         }

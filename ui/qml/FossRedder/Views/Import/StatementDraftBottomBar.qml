@@ -12,7 +12,8 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var statementState
+    required property var importViewModel
+    required property var statementViewModel
 
     implicitWidth: bar.implicitWidth
     implicitHeight: bar.implicitHeight
@@ -24,52 +25,52 @@ Item {
 
         Controls.PrevPageButton {
             objectName: "statementDraftPrevPageButton"
-            enabled: root.statementState.canOpenPreviousDraft
-            onClicked: root.statementState.openPreviousDraft()
+            enabled: root.importViewModel.hasDraftNavigation
+            onClicked: root.importViewModel.selectPreviousDraft()
         }
 
         Controls.PrevButton {
             objectName: "statementDraftPrevTransactionButton"
-            enabled: root.statementState.canOpenPreviousTransaction
-            onClicked: root.statementState.openPreviousTransaction()
+            enabled: root.statementViewModel.canSelectPreviousTransactionDraft
+            onClicked: root.statementViewModel.selectPreviousTransactionDraft()
         }
 
         Item { Layout.fillWidth: true }
 
         Controls.ReturnButton {
             objectName: "statementDraftReturnButton"
-            enabled: root.statementState.hasDraft
-            onClicked: root.statementState.returnToImport()
+            enabled: root.statementViewModel.hasDraft
+            onClicked: root.statementViewModel.returnToImport()
         }
 
         Controls.DangerButton {
             objectName: "statementDraftDiscardButton"
             text: qsTr("Discard")
-            enabled: root.statementState.hasDraft
+            enabled: root.statementViewModel.hasDraft
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.statementState.discardDraft()
+            onClicked: root.statementViewModel.discard()
         }
 
         Controls.SuccessButton {
             objectName: "statementDraftFinalizeButton"
             text: qsTr("Finalize")
-            enabled: root.statementState.hasDraft
+            enabled: root.statementViewModel.hasDraft
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.statementState.finalizeDraft()
+            onClicked: root.statementViewModel.finalize()
         }
 
         Item { Layout.fillWidth: true }
 
         Controls.NextButton {
             objectName: "statementDraftNextTransactionButton"
-            enabled: root.statementState.canOpenNextTransaction
-            onClicked: root.statementState.openNextTransaction()
+            enabled: root.statementViewModel.canSelectNextTransactionDraft
+            onClicked: root.statementViewModel.selectNextTransactionDraft()
         }
 
         Controls.NextPageButton {
             objectName: "statementDraftNextPageButton"
-            enabled: root.statementState.canOpenNextDraft
-            onClicked: root.statementState.openNextDraft()
+            enabled: root.importViewModel.hasDraftNavigation
+            onClicked: root.importViewModel.selectNextDraft()
         }
     }
 }

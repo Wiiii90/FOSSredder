@@ -4,8 +4,24 @@
  */
 
 #include "Environment.h"
+#include "analysis-image-renderer/OpenCvAnalysisImageRendererAdapter.h"
+#include "archive/ZipArchiveAdapter.h"
+#include "core/application/analysis/AnalysisService.h"
+#include "core/application/annual/AnnualService.h"
+#include "core/application/export/ExportService.h"
+#include "core/application/import/IImportStatement.h"
+#include "core/application/import/StatementImportRunner.h"
 #include "core/application/workspace/WorkspaceSessionState.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
+#include "core/ports/analysis/IAnalysisRunner.h"
+#include "core/ports/annual/IAnnualRunner.h"
+#include "core/ports/export/IExportRunner.h"
+#include "core/ports/image-processing/IImageProcessor.h"
+#include "core/ports/import/IImportRunner.h"
+#include "core/ports/pdf-rendering/IPdfRenderer.h"
+#include "core/ports/text-recognition/ITextRecognizer.h"
+#include "core/ports/workspace/IWorkspaceReader.h"
+#include "core/ports/workspace/IWorkspaceWriter.h"
 #include <QApplication>
 #include <QByteArray>
 #include <QIcon>
@@ -23,14 +39,25 @@
 #include "core/application/workspace/WorkspaceFacade.h"
 #include "core/errors/ErrorCodes.h"
 #include "core/errors/ErrorReporterRegistry.h"
+#include "debug/DebugDefaults.h"
 #include "debug/ErrorReporter.h"
+#include "debug/FileDebugger.h"
+#include "debug/IDebugger.h"
 #include "ui/shared/config/Defaults.h"
 #include "ui/shared/observability/ErrorCodes.h"
+#include "xlsx-writer/XlntTableWriterAdapter.h"
 
 #include <QDir>
 #include <QStandardPaths>
 #include <cstdio>
 #include <filesystem>
+
+std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer>
+createPdfRendererAdapter(std::shared_ptr<IDebugger> dbg);
+std::shared_ptr<core::ports::image_processing::IImageProcessor>
+createImageProcessorAdapter(std::shared_ptr<IDebugger> dbg);
+std::shared_ptr<core::ports::text_recognition::ITextRecognizer>
+createTextRecognizerAdapter(std::shared_ptr<IDebugger> dbg);
 
 namespace {
 
@@ -98,7 +125,18 @@ static void qtMessageHandler(QtMsgType type, const QMessageLogContext &context,
  * Implemented in `main_qml.cpp`. Only available when built with USE_QML.
  */
 extern int startQmlApp(QApplication &app,
-                       core::application::WorkspaceFacade &appStateFacade);
+                       core::ports::workspace::IWorkspaceReader &workspaceReader,
+                       core::ports::workspace::IWorkspaceWriter &workspaceWriter,
+                       std::shared_ptr<core::errors::IErrorReporter>
+                           errorReporter,
+                       std::shared_ptr<core::ports::analysis::IAnalysisRunner>
+                           analysisRunner,
+                       std::shared_ptr<core::ports::annual::IAnnualRunner>
+                           annualRunner,
+                       std::shared_ptr<core::ports::exporting::IExportRunner>
+                           exportRunner,
+                       std::shared_ptr<core::ports::importing::IImportRunner>
+                           importRunner);
 #endif
 
 int main(int argc, char *argv[]) {
@@ -149,7 +187,7 @@ int main(int argc, char *argv[]) {
   ensureParentDirectoryExists(registryDbPath,
                               "app::main::createRegistryDirectory");
 
-  std::shared_ptr<core::storage::IRegistry> registry;
+  std::shared_ptr<core::ports::storage::IRegistry> registry;
   try {
     registry = createSqliteRegistry(registryDbPath.string());
   } catch (const std::exception &ex) {
@@ -202,7 +240,37 @@ int main(int argc, char *argv[]) {
 #ifdef USE_QML
   // Delegate to QML-specific startup
   try {
-    const int exitCode = startQmlApp(app, appStateFacade);
+    auto analysisRunner =
+        std::make_shared<core::application::analysis::AnalysisService>(
+            std::make_shared<infra::analysis_image_renderer::
+                                 OpenCvAnalysisImageRendererAdapter>());
+    auto annualRunner =
+        std::make_shared<core::application::annual::AnnualService>();
+    auto exportRunner =
+        std::make_shared<core::application::exporting::ExportService>(
+            std::make_shared<infra::archive::ZipArchiveAdapter>(),
+            std::make_shared<infra::xlsx_writer::XlntTableWriterAdapter>(),
+            std::make_shared<infra::analysis_image_renderer::
+                                 OpenCvAnalysisImageRendererAdapter>());
+
+    auto importDebugger = std::make_shared<FileDebugger>(
+        "", std::string(debug::defaults::kImportProcessName));
+    auto importService = core::application::importing::createImportStatement(
+        createPdfRendererAdapter(importDebugger),
+        createImageProcessorAdapter(importDebugger),
+        createTextRecognizerAdapter(importDebugger), errorReporter);
+    const auto importRunBasePath =
+        QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+            .toStdString();
+    auto importRunner =
+        std::make_shared<core::application::importing::StatementImportRunner>(
+            importService, importRunBasePath, errorReporter);
+
+    const int exitCode =
+        startQmlApp(app, appStateFacade, appStateFacade,
+                    errorReporter,
+                    std::move(analysisRunner), std::move(annualRunner),
+                    std::move(exportRunner), std::move(importRunner));
     qInstallMessageHandler(previousQtMessageHandler);
     appStateFacade.setErrorReporter({});
     core::errors::setGlobalErrorReporter({});

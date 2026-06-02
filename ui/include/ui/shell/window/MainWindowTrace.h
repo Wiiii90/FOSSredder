@@ -1,5 +1,5 @@
 /**
- * @file ui/include/ui/window/MainWindowTrace.h
+ * @file ui/include/ui/shell/window/MainWindowTrace.h
  * @brief Declarations for the UI MainWindowTrace component.
  */
 

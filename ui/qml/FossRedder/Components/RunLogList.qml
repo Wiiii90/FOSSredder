@@ -26,7 +26,7 @@ Item {
     property int headerTopInset: 0
     property bool fileRowsClickable: false
     signal runClicked(int index, string logId, bool draftAttached, string statementId, string draftId)
-    signal deleteClicked(int index, bool draftAttached, string draftId)
+    signal deleteClicked(int index, string logId, bool draftAttached, string draftId)
 
     readonly property int detailLineHeight: detailLineMetric.height
 
@@ -136,7 +136,7 @@ Item {
                             implicitWidth: root.actionButtonSize
                             Layout.alignment: Qt.AlignTop | Qt.AlignRight
                             textColor: root.theme.textMuted
-                            onClicked: root.deleteClicked(runDelegate.index, runDelegate.draftAttached, runDelegate.draftId)
+                            onClicked: root.deleteClicked(runDelegate.index, runDelegate.logId, runDelegate.draftAttached, runDelegate.draftId)
                         }
                     }
 

@@ -18,20 +18,17 @@
 
 namespace core::storage {
 
-using IRegistry = core::ports::storage::IRegistry;
-using IStorageManager = core::ports::storage::IStorageManager;
-
 /**
  * @brief Persists workspace session state through atomic store callbacks and latest-path registry access.
  */
-class StorageManager : public IStorageManager {
+class StorageManager : public core::ports::storage::IStorageManager {
 public:
-    using AtomicStoreSave = IStorageManager::AtomicStoreSave;
-    using AtomicStoreLoad = IStorageManager::AtomicStoreLoad;
-    using DeletionImpactCallback = IStorageManager::DeletionImpactCallback;
+    using AtomicStoreSave = core::ports::storage::IStorageManager::AtomicStoreSave;
+    using AtomicStoreLoad = core::ports::storage::IStorageManager::AtomicStoreLoad;
+    using DeletionImpactCallback = core::ports::storage::IStorageManager::DeletionImpactCallback;
 
     /** @brief Creates a storage manager with an optional latest-path registry backend. */
-    explicit StorageManager(std::shared_ptr<IRegistry> registry = nullptr);
+    explicit StorageManager(std::shared_ptr<core::ports::storage::IRegistry> registry = nullptr);
 
     void setAtomicStoreSave(AtomicStoreSave saveFn) override;
     void setAtomicStoreLoad(AtomicStoreLoad loadFn) override;
@@ -44,7 +41,7 @@ public:
     const std::string& currentPath() const noexcept override { return currentPath_; }
 
 private:
-    std::shared_ptr<IRegistry> registry_;
+    std::shared_ptr<core::ports::storage::IRegistry> registry_;
     std::string currentPath_;
     AtomicStoreSave atomicSave_;
     AtomicStoreLoad atomicLoad_;

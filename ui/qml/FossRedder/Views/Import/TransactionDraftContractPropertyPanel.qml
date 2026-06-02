@@ -12,11 +12,11 @@ import FossRedder.Controls 1.0 as Controls
 
 Item {
     id: root
-    required property var transactionState
+    required property var transactionViewModel
     required property var theme
     property bool embedded: false
 
-    readonly property int suggestionTone: root.transactionState.suggestionTone(root.transactionState.propertySuggestionConfidence)
+    readonly property int suggestionTone: root.transactionViewModel.suggestionTone(root.transactionViewModel.propertySuggestionConfidence)
     readonly property color suggestionColor: root.suggestionTone === 2 ? root.theme.successStrong : (root.suggestionTone === 1 ? root.theme.warning : root.theme.danger)
 
     Layout.fillWidth: true
@@ -59,7 +59,7 @@ Item {
 
                     Repeater {
                         id: propertyRepeater
-                        model: root.transactionState.propertyRows
+                        model: root.transactionViewModel.propertyOptions
 
                         delegate: RowLayout {
                             id: propertyOption
@@ -71,8 +71,8 @@ Item {
                                 objectName: "transactionDraftPropertyCheck_" + String(propertyOption.modelData.id || "")
                                 Layout.fillWidth: false
                                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                checked: root.transactionState.isPropertySelected(propertyOption.modelData.id)
-                                onToggled: root.transactionState.setPropertySelected(propertyOption.modelData.id, checked)
+                                checked: root.transactionViewModel.isPropertySelected(propertyOption.modelData.id)
+                                onToggled: root.transactionViewModel.setPropertySelected(propertyOption.modelData.id, checked)
                             }
 
                             Label {
@@ -115,9 +115,9 @@ Item {
                             objectName: "transactionDraftPropertyNameInput"
                             Layout.fillWidth: true
                             placeholderText: ""
-                            text: root.transactionState.newPropertyName
-                            onTextEdited: root.transactionState.newPropertyName = text
-                            onAccepted: root.transactionState.addPropertyFromInput()
+                            text: root.transactionViewModel.propertyName
+                            onTextEdited: root.transactionViewModel.propertyName = text
+                            onAccepted: root.transactionViewModel.addProperty()
                         }
                     }
 
@@ -130,8 +130,8 @@ Item {
                         }
                         Controls.CompactAddButton {
                             objectName: "transactionDraftPropertyAddButton"
-                            enabled: root.transactionState.canAddProperty
-                            onClicked: root.transactionState.addPropertyFromInput()
+                            enabled: root.transactionViewModel.canAddProperty
+                            onClicked: root.transactionViewModel.addProperty()
                         }
                     }
                 }
@@ -140,7 +140,7 @@ Item {
 
         Label {
             objectName: "transactionDraftPropertySuggestionLabel"
-            text: root.transactionState.propertySuggestionSummary
+            text: root.transactionViewModel.propertySuggestionSummary
             color: root.suggestionColor
             Layout.fillWidth: true
         }

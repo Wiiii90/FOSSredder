@@ -16,6 +16,8 @@
 
 namespace core::application::annual {
 
+namespace annual_ports = core::ports::annual;
+
 namespace {
 
 struct SnapshotTx {
@@ -125,18 +127,18 @@ std::string exactKey(const SnapshotTx &tx) {
 
 } // namespace
 
-AnnualResult AnnualService::runAnnual(
+annual_ports::AnnualResult AnnualService::runAnnual(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
-    const AnnualRequest &request) const {
+    const annual_ports::AnnualRequest &request) const {
   return buildAnnualResult(workspace, request.annualId);
 }
 
-AnnualResult AnnualService::buildAnnualResult(
+annual_ports::AnnualResult AnnualService::buildAnnualResult(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
     const std::string &annualId) const {
   using namespace core::ports::workspace;
 
-  AnnualResult out;
+  annual_ports::AnnualResult out;
   out.annualId = annualId;
 
   const AnnualSnapshot *annual = nullptr;
@@ -212,7 +214,7 @@ AnnualResult AnnualService::buildAnnualResult(
 
   auto buildRow = [&](const std::vector<SnapshotTx> &group, bool similar,
                       bool divergent) {
-    AnnualRowResult row;
+    annual_ports::AnnualRowResult row;
     if (group.empty())
       return row;
     const auto &base = group.front();
@@ -275,7 +277,7 @@ AnnualResult AnnualService::buildAnnualResult(
         continue;
       if (out.year > 0 && bookingYear(live.bookingDate) != out.year)
         continue;
-      AnnualRowResult row;
+      annual_ports::AnnualRowResult row;
       row.key = "live|" + live.id;
       row.transactionId = live.id;
       row.transactionName = live.name;
@@ -291,7 +293,7 @@ AnnualResult AnnualService::buildAnnualResult(
       out.stats.missingFromYear += 1;
     }
 
-    auto updateStatus = [&](const AnnualRowResult &row) {
+    auto updateStatus = [&](const annual_ports::AnnualRowResult &row) {
       if (row.status == 1)
         out.stats.unverified += 1;
       else if (row.status == 2)
@@ -374,7 +376,7 @@ AnnualResult AnnualService::buildAnnualResult(
       continue;
     if (out.year > 0 && bookingYear(live.bookingDate) != out.year)
       continue;
-    AnnualRowResult row;
+    annual_ports::AnnualRowResult row;
     row.key = "live|" + live.id;
     row.transactionId = live.id;
     row.transactionName = live.name;
@@ -390,7 +392,7 @@ AnnualResult AnnualService::buildAnnualResult(
     out.stats.missingFromYear += 1;
   }
 
-  auto updateStatus = [&](const AnnualRowResult &row) {
+  auto updateStatus = [&](const annual_ports::AnnualRowResult &row) {
     if (row.status == 1)
       out.stats.unverified += 1;
     else if (row.status == 2)

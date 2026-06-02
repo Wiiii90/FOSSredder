@@ -38,7 +38,7 @@ TestCase {
         property color buttonText: "#111111"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property string selectedStatementId: ""
         property string selectedTransactionId: ""
         property var statementRows: [
@@ -74,7 +74,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            bookingState: testCase.bookingState
+            bookingViewModel: testCase.bookingViewModel
         }
     }
 
@@ -89,8 +89,8 @@ TestCase {
     }
 
     function init() {
-        bookingState.selectedStatementId = ""
-        bookingState.selectedTransactionId = ""
+        bookingViewModel.selectedStatementId = ""
+        bookingViewModel.selectedTransactionId = ""
     }
 
     function test_BKG_S_001_transactionRowClickSelectsStatementAndTransaction() {
@@ -98,26 +98,26 @@ TestCase {
 
         findRequired(sidebar, "bookingTransactionMouse_transaction-2").clicked(null)
 
-        compare(bookingState.selectedStatementId, "statement-1")
-        compare(bookingState.selectedTransactionId, "transaction-2")
+        compare(bookingViewModel.selectedStatementId, "statement-1")
+        compare(bookingViewModel.selectedTransactionId, "transaction-2")
     }
 
     function test_BKG_S_002_statementRowClickClearsTransactionSelection() {
-        bookingState.selectedStatementId = "statement-1"
-        bookingState.selectedTransactionId = "transaction-1"
+        bookingViewModel.selectedStatementId = "statement-1"
+        bookingViewModel.selectedTransactionId = "transaction-1"
         const sidebar = createSidebar()
 
         findRequired(sidebar, "bookingStatementMouse_statement-2").clicked(null)
 
-        compare(bookingState.selectedStatementId, "statement-2")
-        compare(bookingState.selectedTransactionId, "")
+        compare(bookingViewModel.selectedStatementId, "statement-2")
+        compare(bookingViewModel.selectedTransactionId, "")
     }
 
     function test_BKG_S_003_rowsRefreshWhenStatementRowsChange() {
         const sidebar = createSidebar()
         verify(findRequired(sidebar, "bookingTransactionRow_transaction-2") !== null)
 
-        bookingState.statementRows = [
+        bookingViewModel.statementRows = [
             {
                 id: "statement-1",
                 name: "January",

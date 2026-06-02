@@ -10,109 +10,98 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: contentRouter
-    required property var shellNavigationState
-    required property var actorState
-    required property var propertyState
-    required property var contractState
-    required property var bookingState
-    required property var importState
-    required property var analysisState
-    required property var annualState
-    required property var exportState
-    required property var settingsState
+    required property var navigation
+    required property var actorViewModel
+    required property var propertyViewModel
+    required property var contractViewModel
+    required property var bookingViewModel
+    required property var importViewModel
+    required property var analysisViewModel
+    required property var annualViewModel
+    required property var exportViewModel
+    required property var settingsViewModel
     required property var theme
-    readonly property int navActors: contentRouter.shellNavigationState.actorSection
-    readonly property int navProperties: contentRouter.shellNavigationState.propertySection
-    readonly property int navContracts: contentRouter.shellNavigationState.contractSection
-    readonly property int navBooking: contentRouter.shellNavigationState.bookingSection
-    readonly property int navImport: contentRouter.shellNavigationState.importSection
-    readonly property int navExport: contentRouter.shellNavigationState.exportSection
-    readonly property int navSettings: contentRouter.shellNavigationState.settingsSection
-    readonly property int navAnalysis: contentRouter.shellNavigationState.analysisSection
-    readonly property int navAnnual: contentRouter.shellNavigationState.annualSection
+    readonly property int navActors: contentRouter.navigation.actorSection
+    readonly property int navProperties: contentRouter.navigation.propertySection
+    readonly property int navContracts: contentRouter.navigation.contractSection
+    readonly property int navBooking: contentRouter.navigation.bookingSection
+    readonly property int navImport: contentRouter.navigation.importSection
+    readonly property int navExport: contentRouter.navigation.exportSection
+    readonly property int navSettings: contentRouter.navigation.settingsSection
+    readonly property int navAnalysis: contentRouter.navigation.analysisSection
+    readonly property int navAnnual: contentRouter.navigation.annualSection
     Layout.fillWidth: true
     Layout.fillHeight: true
 
-    Component { id: actorViewComp; Views.ActorView { actorState: contentRouter.actorState; theme: contentRouter.theme } }
-    Component { id: propertyViewComp; Views.PropertyView { propertyState: contentRouter.propertyState; theme: contentRouter.theme } }
-    Component { id: contractViewComp; Views.ContractView { contractState: contentRouter.contractState; theme: contentRouter.theme } }
-    Component { id: bookingViewComp; Views.BookingView { bookingState: contentRouter.bookingState; theme: contentRouter.theme } }
-    Component { id: importViewComp; Views.ImportView { importState: contentRouter.importState; theme: contentRouter.theme } }
-    Component { id: exportViewComp; Views.ExportView { exportState: contentRouter.exportState; theme: contentRouter.theme } }
-    Component { id: settingsViewComp; Views.SettingsView { settingsState: contentRouter.settingsState; theme: contentRouter.theme } }
-    Component { id: analysisViewComp; Views.AnalysisView { analysisState: contentRouter.analysisState; theme: contentRouter.theme } }
-    Component { id: annualViewComp; Views.AnnualView { annualState: contentRouter.annualState; theme: contentRouter.theme } }
-    Component { id: placeholderViewComp; Views.PlaceholderView { } }
-
+    Component { id: actorViewComp; Views.ActorView { actorViewModel: contentRouter.actorViewModel; theme: contentRouter.theme } }
+    Component { id: propertyViewComp; Views.PropertyView { propertyViewModel: contentRouter.propertyViewModel; theme: contentRouter.theme } }
+    Component { id: contractViewComp; Views.ContractView { contractViewModel: contentRouter.contractViewModel; theme: contentRouter.theme } }
+    Component { id: bookingViewComp; Views.BookingView { bookingViewModel: contentRouter.bookingViewModel; theme: contentRouter.theme } }
+    Component { id: importViewComp; Views.ImportView { importViewModel: contentRouter.importViewModel; theme: contentRouter.theme } }
+    Component { id: exportViewComp; Views.ExportView { exportViewModel: contentRouter.exportViewModel; theme: contentRouter.theme } }
+    Component { id: settingsViewComp; Views.SettingsView { settingsViewModel: contentRouter.settingsViewModel; theme: contentRouter.theme } }
+    Component { id: analysisViewComp; Views.AnalysisView { analysisViewModel: contentRouter.analysisViewModel; theme: contentRouter.theme } }
+    Component { id: annualViewComp; Views.AnnualView { annualViewModel: contentRouter.annualViewModel; theme: contentRouter.theme } }
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navActors
-        contentComponent: contentRouter.shellNavigationState.actorLoaded ? actorViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navActors
+        contentComponent: actorViewComp
     }
 
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navProperties
-        contentComponent: contentRouter.shellNavigationState.propertyLoaded ? propertyViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navProperties
+        contentComponent: propertyViewComp
     }
 
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navContracts
-        contentComponent: contentRouter.shellNavigationState.contractLoaded ? contractViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navContracts
+        contentComponent: contractViewComp
     }
 
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navBooking
-        contentComponent: contentRouter.shellNavigationState.bookingLoaded ? bookingViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navBooking
+        contentComponent: bookingViewComp
     }
 
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navImport
-        contentComponent: contentRouter.shellNavigationState.importLoaded ? importViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navImport
+        contentComponent: importViewComp
     }
 
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navExport
-        contentComponent: contentRouter.shellNavigationState.exportLoaded ? exportViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navExport
+        contentComponent: exportViewComp
     }
 
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navSettings
-        contentComponent: contentRouter.shellNavigationState.settingsLoaded ? settingsViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navSettings
+        contentComponent: settingsViewComp
     }
 
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navAnalysis
-        contentComponent: contentRouter.shellNavigationState.analysisLoaded ? analysisViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navAnalysis
+        contentComponent: analysisViewComp
     }
 
     Content {
         anchors.fill: parent
         theme: contentRouter.theme
-        visible: contentRouter.shellNavigationState.activeSection === contentRouter.navAnnual
-        contentComponent: contentRouter.shellNavigationState.annualLoaded ? annualViewComp : null
+        visible: contentRouter.navigation.activeSection === contentRouter.navAnnual
+        contentComponent: annualViewComp
     }
-
-    Content {
-        anchors.fill: parent
-        theme: contentRouter.theme
-        visible: !contentRouter.shellNavigationState.isKnownSection(contentRouter.shellNavigationState.activeSection)
-        contentComponent: contentRouter.shellNavigationState.placeholderLoaded ? placeholderViewComp : null
-    }
-
-    Component.onCompleted: contentRouter.shellNavigationState.activate()
 }

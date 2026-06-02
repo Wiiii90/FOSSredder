@@ -25,7 +25,7 @@ TestCase {
         property int controlHeight: 32
     }
 
-    property var transactionState: QtObject {
+    property var transactionViewModel: QtObject {
         property string nameText: "Tx 1"
         property string bookingDateText: "2026-05-16"
         property string valutaText: "2026-05-17"
@@ -40,7 +40,7 @@ TestCase {
         function commitBookingDateText() { commitBookingDateCalls += 1 }
         function commitValutaText() { commitValutaCalls += 1 }
         function commitAmountText() { commitAmountCalls += 1 }
-        function setStatusByIndex(index) { statusIndex = index }
+        function selectStatusAtIndex(index) { statusIndex = index }
     }
 
     Component {
@@ -48,7 +48,7 @@ TestCase {
         Import.TransactionDraftForm {
             width: testCase.width
             theme: testCase.theme
-            transactionState: testCase.transactionState
+            transactionViewModel: testCase.transactionViewModel
         }
     }
 
@@ -61,15 +61,15 @@ TestCase {
     }
 
     function init() {
-        transactionState.nameText = "Tx 1"
-        transactionState.bookingDateText = "2026-05-16"
-        transactionState.valutaText = "2026-05-17"
-        transactionState.amountText = "12.50"
-        transactionState.statusIndex = 0
-        transactionState.commitNameCalls = 0
-        transactionState.commitBookingDateCalls = 0
-        transactionState.commitValutaCalls = 0
-        transactionState.commitAmountCalls = 0
+        transactionViewModel.nameText = "Tx 1"
+        transactionViewModel.bookingDateText = "2026-05-16"
+        transactionViewModel.valutaText = "2026-05-17"
+        transactionViewModel.amountText = "12.50"
+        transactionViewModel.statusIndex = 0
+        transactionViewModel.commitNameCalls = 0
+        transactionViewModel.commitBookingDateCalls = 0
+        transactionViewModel.commitValutaCalls = 0
+        transactionViewModel.commitAmountCalls = 0
     }
 
     function test_IMP_D_010_amountTextCommitsOnlyOnEditingFinished() {
@@ -79,11 +79,11 @@ TestCase {
         amountField.text = "99.99"
         amountField.textEdited()
 
-        compare(transactionState.amountText, "99.99")
-        compare(transactionState.commitAmountCalls, 0)
+        compare(transactionViewModel.amountText, "99.99")
+        compare(transactionViewModel.commitAmountCalls, 0)
 
         amountField.editingFinished()
-        compare(transactionState.commitAmountCalls, 1)
+        compare(transactionViewModel.commitAmountCalls, 1)
     }
 
     function test_IMP_D_011_amountFieldFollowsCommittedStateChanges() {
@@ -91,7 +91,7 @@ TestCase {
         const amountField = findRequired(form, "transactionDraftAmountField")
 
         compare(amountField.text, "12.50")
-        transactionState.amountText = "42.00"
+        transactionViewModel.amountText = "42.00"
         wait(0)
 
         compare(amountField.text, "42.00")
@@ -107,8 +107,8 @@ TestCase {
 
         findRequired(form, "transactionDraftStatusCombo").activated(1)
 
-        compare(transactionState.nameText, "Updated")
-        compare(transactionState.commitNameCalls, 1)
-        compare(transactionState.statusIndex, 1)
+        compare(transactionViewModel.nameText, "Updated")
+        compare(transactionViewModel.commitNameCalls, 1)
+        compare(transactionViewModel.statusIndex, 1)
     }
 }

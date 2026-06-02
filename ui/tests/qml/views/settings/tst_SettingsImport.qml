@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsState: QtObject {
+    property var settingsViewModel: QtObject {
         property string importDefaultPath: ""
         property string importPoppler: ""
         property string importOpenCv: ""
@@ -43,7 +43,7 @@ TestCase {
         Settings.SettingsImport {
             width: 900
             height: 560
-            settingsState: testCase.settingsState
+            settingsViewModel: testCase.settingsViewModel
             theme: testCase.theme
         }
     }
@@ -53,13 +53,13 @@ TestCase {
     }
 
     function init() {
-        settingsState.importDefaultPath = ""
-        settingsState.importPoppler = ""
-        settingsState.importOpenCv = ""
-        settingsState.importTesseract = ""
-        settingsState.importParser = ""
-        settingsState.importMatcher = ""
-        settingsState.browseCalls = 0
+        settingsViewModel.importDefaultPath = ""
+        settingsViewModel.importPoppler = ""
+        settingsViewModel.importOpenCv = ""
+        settingsViewModel.importTesseract = ""
+        settingsViewModel.importParser = ""
+        settingsViewModel.importMatcher = ""
+        settingsViewModel.browseCalls = 0
     }
 
     function test_SET_I_001_defaultPathFieldUpdatesSettingsState() {
@@ -68,7 +68,7 @@ TestCase {
 
         pathField.text = "test:///import/default.pdf"
 
-        compare(settingsState.importDefaultPath, "test:///import/default.pdf")
+        compare(settingsViewModel.importDefaultPath, "test:///import/default.pdf")
     }
 
     function test_SET_I_002_browseButtonDelegatesToSettingsState() {
@@ -77,7 +77,7 @@ TestCase {
 
         browseButton.clicked()
 
-        compare(settingsState.browseCalls, 1)
+        compare(settingsViewModel.browseCalls, 1)
     }
 
     function test_SET_I_003_pipelineFieldsUpdateSettingsState() {
@@ -93,7 +93,7 @@ TestCase {
         for (const field of fields) {
             const control = TestSupport.findRequired(Lookup, view, field.objectName)
             control.text = field.value
-            compare(settingsState[field.propertyName], field.value)
+            compare(settingsViewModel[field.propertyName], field.value)
         }
     }
 }

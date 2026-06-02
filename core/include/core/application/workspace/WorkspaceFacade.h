@@ -81,7 +81,7 @@ public:
      * @brief Registers a callback that receives deletion impact information after saves.
      * @param cb Deletion impact callback implementation.
      */
-    void setDeletionImpactCallback(core::ports::storage::IStorageManager::DeletionImpactCallback cb) override;
+    void setDeletionImpactCallback(core::ports::workspace::IWorkspaceWriter::DeletionImpactCallback cb) override;
 
     /** @brief Returns the current immutable workspace snapshot. */
     core::ports::workspace::WorkspaceSnapshot workspaceSnapshot() const override;
@@ -133,17 +133,26 @@ public:
     void saveStatementDraft(const core::ports::workspace::StatementDraftCommand& command) override;
     void clearStatementDraft(const std::string& draftId = {}) override;
     void setImportLogs(const core::ports::workspace::ImportLogsCommand& command) override;
+    void saveImportLog(const core::ports::workspace::ImportLogCommand& command) override;
+    void deleteImportLog(const std::string& id) override;
+    void clearImportLogs() override;
     void setExportLogs(const core::ports::workspace::ExportLogsCommand& command) override;
+    void saveExportLog(const core::ports::workspace::ExportLogCommand& command) override;
+    void deleteExportLog(const std::string& id) override;
+    void clearExportLogs() override;
 
     /** @brief Returns the full mutable session state used by the application layer. */
     const core::application::workspace::WorkspaceSessionState& state() const noexcept;
     /** @brief Returns the current workspace catalog aggregate. */
     const core::domain::catalog::WorkspaceCatalog& catalogState() const noexcept;
     /** @brief Returns the current workspace path tracked by the storage layer. */
-    const std::string& currentPath() const noexcept;
+    std::string currentPath() const override;
 
 private:
+    void installStateChangedDispatcher();
+
     SnapshotChanged onSnapshotChanged_;
+    StateChanged onStateChanged_;
     std::unique_ptr<WorkspaceSession> session_;
     std::unique_ptr<WorkspaceCommandService> commands_;
     std::unique_ptr<WorkspaceWorkflowService> workflows_;

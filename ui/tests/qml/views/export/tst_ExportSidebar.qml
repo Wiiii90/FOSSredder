@@ -19,14 +19,14 @@ TestCase {
     width: 960
     height: 640
 
-    property var exportState: QtObject {
-        property var runs: []
+    property var exportViewModel: QtObject {
+        property var exportLogs: []
         property int refreshCalls: 0
         property int openCalls: 0
         property int removeCalls: 0
-        function refreshRuns() { refreshCalls += 1 }
-        function openRunLocationAt(index) { openCalls += 1 }
-        function removeRunAt(index) { removeCalls += 1 }
+        function refreshExportLogs() { refreshCalls += 1 }
+        function openExportLogLocation(index) { openCalls += 1 }
+        function deleteExportLog(index) { removeCalls += 1 }
     }
 
     property var theme: QtObject {
@@ -54,7 +54,7 @@ TestCase {
         Export.ExportSidebar {
             width: 960
             height: 640
-            exportState: testCase.exportState
+            exportViewModel: testCase.exportViewModel
             theme: testCase.theme
         }
     }
@@ -64,7 +64,7 @@ TestCase {
     }
 
     function init() {
-        exportState.runs = [
+        exportViewModel.exportLogs = [
             {
                 logId: "export-1",
                 time: "2026-05-16 10:00:00",
@@ -77,16 +77,16 @@ TestCase {
                 statementId: ""
             }
         ]
-        exportState.refreshCalls = 0
-        exportState.openCalls = 0
-        exportState.removeCalls = 0
+        exportViewModel.refreshCalls = 0
+        exportViewModel.openCalls = 0
+        exportViewModel.removeCalls = 0
     }
 
-    function test_EXP_S_001_runListIsBoundToExportStateRuns() {
+    function test_EXP_S_001_logListIsBoundToExportLogs() {
         const view = createView()
         const runList = TestSupport.findRequired(Lookup, view, "runLogList")
 
-        compare(exportState.refreshCalls, 1)
+        compare(exportViewModel.refreshCalls, 1)
         compare(runList.count, 1)
     }
 }

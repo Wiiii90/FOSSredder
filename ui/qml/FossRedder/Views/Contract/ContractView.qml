@@ -10,18 +10,18 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var contractState
+    required property var contractViewModel
     required property var theme
-    readonly property var contractRows: root.contractState.contractRows
-    readonly property bool isEdit: root.contractState ? root.contractState.isEdit : false
-    readonly property bool hasChanges: root.contractState ? root.contractState.hasChanges : false
-    readonly property string name: root.contractState ? root.contractState.name : ""
-    readonly property string type: root.contractState ? root.contractState.type : ""
-    readonly property var aliases: root.contractState ? root.contractState.aliases : []
-    readonly property string aliasInputText: root.contractState ? root.contractState.aliasInputText : ""
-    readonly property int aliasIndex: root.contractState ? root.contractState.aliasIndex : -1
-    readonly property var selectedActorIds: root.contractState ? root.contractState.selectedActorIds : []
-    readonly property var selectedPropertyIds: root.contractState ? root.contractState.selectedPropertyIds : []
+    readonly property var contractRows: root.contractViewModel.contractRows
+    readonly property bool isEdit: root.contractViewModel ? root.contractViewModel.isEdit : false
+    readonly property bool hasChanges: root.contractViewModel ? root.contractViewModel.hasChanges : false
+    readonly property string name: root.contractViewModel ? root.contractViewModel.name : ""
+    readonly property string type: root.contractViewModel ? root.contractViewModel.type : ""
+    readonly property var aliases: root.contractViewModel ? root.contractViewModel.aliases : []
+    readonly property string aliasInputText: root.contractViewModel ? root.contractViewModel.aliasInputText : ""
+    readonly property int aliasIndex: root.contractViewModel ? root.contractViewModel.aliasIndex : -1
+    readonly property var selectedActorIds: root.contractViewModel ? root.contractViewModel.selectedActorIds : []
+    readonly property var selectedPropertyIds: root.contractViewModel ? root.contractViewModel.selectedPropertyIds : []
 
     ColumnLayout {
         anchors.fill: parent
@@ -30,7 +30,7 @@ Item {
         Contract.ContractForm {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            contractState: root.contractState
+            contractViewModel: root.contractViewModel
             theme: root.theme
         }
 
@@ -40,7 +40,7 @@ Item {
             Layout.rightMargin: root.theme.pageContentMargin
             Layout.bottomMargin: root.theme.pageContentMargin
             theme: root.theme
-            contractState: root.contractState
+            contractViewModel: root.contractViewModel
             contractRows: root.contractRows
         }
     }

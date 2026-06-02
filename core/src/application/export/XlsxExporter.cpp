@@ -13,134 +13,148 @@
 
 namespace core::application::exporting {
 
+namespace export_ports = core::ports::exporting;
+
 namespace {
 
-std::string columnRef(int column)
-{
-    std::string ref;
-    while (column > 0) {
-        const int remainder = (column - 1) % 26;
-        ref.insert(ref.begin(), static_cast<char>('A' + remainder));
-        column = (column - 1) / 26;
-    }
-    return ref;
+std::string columnRef(int column) {
+  std::string ref;
+  while (column > 0) {
+    const int remainder = (column - 1) % 26;
+    ref.insert(ref.begin(), static_cast<char>('A' + remainder));
+    column = (column - 1) / 26;
+  }
+  return ref;
 }
 
-std::vector<std::vector<std::string>> buildRows(const internal::PropertyContractMatrix& matrix,
-                                                bool includeFormulas)
-{
-    std::vector<std::vector<std::string>> rows;
-    std::vector<std::string> header;
-    header.push_back(std::string(core::constants::exportFlow::labels::kPropertyHeader));
-    header.insert(header.end(), matrix.propertyNames.begin(), matrix.propertyNames.end());
-    header.push_back(std::string(core::constants::exportFlow::labels::kTotal));
-    rows.push_back(std::move(header));
+std::vector<std::vector<std::string>>
+buildRows(const internal::PropertyContractMatrix &matrix,
+          bool includeFormulas) {
+  std::vector<std::vector<std::string>> rows;
+  std::vector<std::string> header;
+  header.push_back(
+      std::string(core::constants::exportFlow::labels::kPropertyHeader));
+  header.insert(header.end(), matrix.propertyNames.begin(),
+                matrix.propertyNames.end());
+  header.push_back(std::string(core::constants::exportFlow::labels::kTotal));
+  rows.push_back(std::move(header));
 
-    std::vector<double> columnSums(matrix.propertyNames.size(), 0.0);
-    int rowIndex = 2;
-    for (const auto& contractType : matrix.contractTypes) {
-        std::vector<std::string> row;
-        row.reserve(matrix.propertyNames.size() + 2);
-        row.push_back(contractType);
+  std::vector<double> columnSums(matrix.propertyNames.size(), 0.0);
+  int rowIndex = 2;
+  for (const auto &contractType : matrix.contractTypes) {
+    std::vector<std::string> row;
+    row.reserve(matrix.propertyNames.size() + 2);
+    row.push_back(contractType);
 
-        double rowSum = 0.0;
-        for (size_t column = 0; column < matrix.propertyNames.size(); ++column) {
-            double value = 0.0;
-            const auto propertyIt = matrix.amountsByProperty.find(matrix.propertyNames[column]);
-            if (propertyIt != matrix.amountsByProperty.end()) {
-                const auto contractIt = propertyIt->second.find(contractType);
-                if (contractIt != propertyIt->second.end()) {
-                    value = contractIt->second;
-                }
-            }
-            row.push_back(std::to_string(value));
-            columnSums[column] += value;
-            rowSum += value;
+    double rowSum = 0.0;
+    for (size_t column = 0; column < matrix.propertyNames.size(); ++column) {
+      double value = 0.0;
+      const auto propertyIt =
+          matrix.amountsByProperty.find(matrix.propertyNames[column]);
+      if (propertyIt != matrix.amountsByProperty.end()) {
+        const auto contractIt = propertyIt->second.find(contractType);
+        if (contractIt != propertyIt->second.end()) {
+          value = contractIt->second;
         }
-        if (includeFormulas && !matrix.propertyNames.empty()) {
-            row.push_back("=SUM(" + columnRef(2) + std::to_string(rowIndex) + ":" +
-                          columnRef(static_cast<int>(1 + matrix.propertyNames.size())) + std::to_string(rowIndex) + ")");
-        } else {
-            row.push_back(std::to_string(rowSum));
-        }
-        rows.push_back(std::move(row));
-        ++rowIndex;
+      }
+      row.push_back(std::to_string(value));
+      columnSums[column] += value;
+      rowSum += value;
     }
-
-    if (!matrix.propertyNames.empty()) {
-        std::vector<std::string> totalRow;
-        totalRow.reserve(matrix.propertyNames.size() + 2);
-        totalRow.push_back(std::string(core::constants::exportFlow::labels::kTotal));
-
-        double grandTotal = 0.0;
-        for (double value : columnSums) {
-            totalRow.push_back(std::to_string(value));
-            grandTotal += value;
-        }
-        if (includeFormulas && !matrix.contractTypes.empty()) {
-            totalRow.push_back("=SUM(" + columnRef(static_cast<int>(2 + matrix.propertyNames.size())) + "2:" +
-                              columnRef(static_cast<int>(2 + matrix.propertyNames.size())) + std::to_string(rowIndex - 1) + ")");
-        } else {
-            totalRow.push_back(std::to_string(grandTotal));
-        }
-        rows.push_back(std::move(totalRow));
+    if (includeFormulas && !matrix.propertyNames.empty()) {
+      row.push_back(
+          "=SUM(" + columnRef(2) + std::to_string(rowIndex) + ":" +
+          columnRef(static_cast<int>(1 + matrix.propertyNames.size())) +
+          std::to_string(rowIndex) + ")");
+    } else {
+      row.push_back(std::to_string(rowSum));
     }
+    rows.push_back(std::move(row));
+    ++rowIndex;
+  }
 
-    return rows;
+  if (!matrix.propertyNames.empty()) {
+    std::vector<std::string> totalRow;
+    totalRow.reserve(matrix.propertyNames.size() + 2);
+    totalRow.push_back(
+        std::string(core::constants::exportFlow::labels::kTotal));
+
+    double grandTotal = 0.0;
+    for (double value : columnSums) {
+      totalRow.push_back(std::to_string(value));
+      grandTotal += value;
+    }
+    if (includeFormulas && !matrix.contractTypes.empty()) {
+      totalRow.push_back(
+          "=SUM(" +
+          columnRef(static_cast<int>(2 + matrix.propertyNames.size())) +
+          "2:" + columnRef(static_cast<int>(2 + matrix.propertyNames.size())) +
+          std::to_string(rowIndex - 1) + ")");
+    } else {
+      totalRow.push_back(std::to_string(grandTotal));
+    }
+    rows.push_back(std::move(totalRow));
+  }
+
+  return rows;
 }
 
 } // namespace
 
-XlsxExporter::XlsxExporter(std::shared_ptr<core::ports::xlsx_writer::IXlsxWriter> writer)
-    : writer_(std::move(writer)) {
-}
+XlsxExporter::XlsxExporter(
+    std::shared_ptr<core::ports::xlsx_writer::IXlsxWriter> writer)
+    : writer_(std::move(writer)) {}
 
-ExportResult XlsxExporter::exportData(const ExportRequest& request) const
-{
-    ExportResult result;
-    result.actualFormat = ExportFormat::Xlsx;
-    result.resolvedOutputPath = request.outputPath;
+export_ports::ExportResult
+XlsxExporter::exportData(
+    const core::domain::catalog::WorkspaceCatalog &state,
+    const export_ports::ExportRequest &request) const {
+  export_ports::ExportResult result;
+  result.actualFormat = export_ports::ExportFormat::Xlsx;
+  result.resolvedOutputPath = request.outputPath;
 
-    try {
-        if (request.outputPath.empty()) {
-            result.status = ExportStatus::InvalidInput;
-            result.errorCode = std::string(core::constants::exportFlow::errors::kOutputPathEmpty);
-            result.message = std::string(core::constants::exportFlow::messages::kOutputPathEmpty);
-            return result;
-        }
-        if (!request.stateSnapshot) {
-            result.status = ExportStatus::InvalidInput;
-            result.errorCode = std::string(core::constants::exportFlow::errors::kStateMissing);
-            result.message = std::string(core::constants::exportFlow::messages::kStateMissing);
-            return result;
-        }
-        if (!writer_) {
-            result.status = ExportStatus::XlsxGenerationFailed;
-            result.errorCode = std::string(core::constants::exportFlow::errors::kXlsxGenerationFailed);
-            result.message = std::string(core::constants::exportFlow::messages::kXlsxGenerationFailed);
-            return result;
-        }
-
-        const auto matrix = internal::buildPropertyContractMatrix(*request.stateSnapshot,
-                                                                "core::exporting::XlsxExporter::exportData");
-        const auto rows = buildRows(matrix, request.includeFormulas);
-
-        if (!writer_->writeTable(request.outputPath, rows, "Export")) {
-            result.status = ExportStatus::XlsxGenerationFailed;
-            result.errorCode = std::string(core::constants::exportFlow::errors::kXlsxGenerationFailed);
-            result.message = std::string(core::constants::exportFlow::messages::kXlsxGenerationFailed);
-            return result;
-        }
-
-        result.status = ExportStatus::Ok;
-        result.success = true;
-    } catch (...) {
-        result.status = ExportStatus::XlsxGenerationFailed;
-        result.errorCode = std::string(core::constants::exportFlow::errors::kXlsxGenerationFailed);
-        result.message = std::string(core::constants::exportFlow::messages::kXlsxGenerationFailed);
+  try {
+    if (request.outputPath.empty()) {
+      result.status = export_ports::ExportStatus::InvalidInput;
+      result.errorCode =
+          std::string(core::constants::exportFlow::errors::kOutputPathEmpty);
+      result.message =
+          std::string(core::constants::exportFlow::messages::kOutputPathEmpty);
+      return result;
+    }
+    if (!writer_) {
+      result.status = export_ports::ExportStatus::XlsxGenerationFailed;
+      result.errorCode = std::string(
+          core::constants::exportFlow::errors::kXlsxGenerationFailed);
+      result.message = std::string(
+          core::constants::exportFlow::messages::kXlsxGenerationFailed);
+      return result;
     }
 
-    return result;
+    const auto matrix = internal::buildPropertyContractMatrix(
+        state, "core::exporting::XlsxExporter::exportData");
+    const auto rows = buildRows(matrix, request.includeFormulas);
+
+    if (!writer_->writeTable(request.outputPath, rows, "Export")) {
+      result.status = export_ports::ExportStatus::XlsxGenerationFailed;
+      result.errorCode = std::string(
+          core::constants::exportFlow::errors::kXlsxGenerationFailed);
+      result.message = std::string(
+          core::constants::exportFlow::messages::kXlsxGenerationFailed);
+      return result;
+    }
+
+    result.status = export_ports::ExportStatus::Ok;
+    result.success = true;
+  } catch (...) {
+    result.status = export_ports::ExportStatus::XlsxGenerationFailed;
+    result.errorCode =
+        std::string(core::constants::exportFlow::errors::kXlsxGenerationFailed);
+    result.message = std::string(
+        core::constants::exportFlow::messages::kXlsxGenerationFailed);
+  }
+
+  return result;
 }
 
 } // namespace core::application::exporting

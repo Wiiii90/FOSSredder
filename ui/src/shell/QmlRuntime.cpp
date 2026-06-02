@@ -1,5 +1,5 @@
 /**
- * @file ui/src/bootstrap/QmlRuntime.cpp
+ * @file ui/src/shell/QmlRuntime.cpp
  * @brief Implementation of the UI QmlRuntime component.
  */
 
@@ -11,90 +11,105 @@
 #include <QQmlEngine>
 #include <qqml.h>
 
-#include "ui/shell/QmlContracts.h"
 #include "ui/shared/config/Defaults.h"
-#include "ui/state/export/ExportState.h"
-#include "ui/state/session/AnalysisState.h"
-#include "ui/state/session/AnnualState.h"
-#include "ui/state/import/ImportState.h"
-#include "ui/state/import/StatementDraftState.h"
-#include "ui/state/import/TransactionDraftState.h"
-#include "ui/state/navigation/NavigationState.h"
-#include "ui/state/settings/SettingsState.h"
-#include "ui/state/shell/ShellNavigationState.h"
+#include "ui/platform/FileSystemBrowser.h"
+#include "ui/platform/LanguageService.h"
+#include "ui/shell/AppActions.h"
+#include "ui/shell/QmlContracts.h"
+#include "ui/shell/NavigationState.h"
+#include "ui/shell/StatusState.h"
+#include "ui/viewmodels/ActorViewModel.h"
+#include "ui/viewmodels/AnalysisViewModel.h"
+#include "ui/viewmodels/AnnualViewModel.h"
+#include "ui/viewmodels/BookingViewModel.h"
+#include "ui/viewmodels/ContractViewModel.h"
+#include "ui/viewmodels/ExportViewModel.h"
+#include "ui/viewmodels/ImportViewModel.h"
+#include "ui/viewmodels/PropertyViewModel.h"
+#include "ui/viewmodels/SettingsViewModel.h"
+#include "ui/viewmodels/StatementDraftViewModel.h"
+#include "ui/viewmodels/TransactionDraftViewModel.h"
+#include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui::bootstrap {
 
-void registerTypes()
-{
-    // Idempotent registration of QML-exposed types and metaobjects.
-    static bool registered = false;
-    if (registered) return;
+namespace {
 
-    qmlRegisterUncreatableType<ui::NavigationState>(ui::qml::contracts::module::kName,
-                                                    ui::qml::contracts::module::kMajorVersion,
-                                                    ui::qml::contracts::module::kMinorVersion,
-                                                    ui::qml::contracts::module::kNavigationTypeName,
-                                                    ui::qml::contracts::module::kNavigationTypeDescription);
-    qmlRegisterUncreatableMetaObject(ui::qml::contracts::staticMetaObject,
-                                     ui::qml::contracts::module::kName,
-                                     ui::qml::contracts::module::kMajorVersion,
-                                     ui::qml::contracts::module::kMinorVersion,
-                                     ui::qml::contracts::module::kQmlContractsTypeName,
-                                     ui::qml::contracts::module::kQmlContractsTypeDescription);
-    qmlRegisterType<ui::ImportState>(ui::qml::contracts::module::kName,
-                                     ui::qml::contracts::module::kMajorVersion,
-                                     ui::qml::contracts::module::kMinorVersion,
-                                     "ImportState");
-    qmlRegisterType<ui::AnalysisState>(ui::qml::contracts::module::kName,
-                                       ui::qml::contracts::module::kMajorVersion,
-                                       ui::qml::contracts::module::kMinorVersion,
-                                       "AnalysisState");
-    qmlRegisterType<ui::AnnualState>(ui::qml::contracts::module::kName,
-                                     ui::qml::contracts::module::kMajorVersion,
-                                     ui::qml::contracts::module::kMinorVersion,
-                                     "AnnualState");
-    qmlRegisterType<ui::ExportState>(ui::qml::contracts::module::kName,
-                                     ui::qml::contracts::module::kMajorVersion,
-                                     ui::qml::contracts::module::kMinorVersion,
-                                     "ExportState");
-    qmlRegisterType<ui::SettingsState>(ui::qml::contracts::module::kName,
-                                       ui::qml::contracts::module::kMajorVersion,
-                                       ui::qml::contracts::module::kMinorVersion,
-                                       "SettingsState");
-    qmlRegisterType<ui::ShellNavigationState>(ui::qml::contracts::module::kName,
-                                              ui::qml::contracts::module::kMajorVersion,
-                                              ui::qml::contracts::module::kMinorVersion,
-                                              "ShellNavigationState");
-    qmlRegisterType<ui::StatementDraftState>(ui::qml::contracts::module::kName,
-                                             ui::qml::contracts::module::kMajorVersion,
-                                             ui::qml::contracts::module::kMinorVersion,
-                                             "StatementDraftState");
-    qmlRegisterType<ui::TransactionDraftState>(ui::qml::contracts::module::kName,
-                                               ui::qml::contracts::module::kMajorVersion,
-                                               ui::qml::contracts::module::kMinorVersion,
-                                               "TransactionDraftState");
-    registered = true;
+template <typename T>
+void registerContextObjectType(const char *name) {
+  qmlRegisterUncreatableType<T>(
+      ui::qml::contracts::module::kName,
+      ui::qml::contracts::module::kMajorVersion,
+      ui::qml::contracts::module::kMinorVersion, name,
+      "This type is provided by AppContext");
 }
 
-void configureRuntime(QQmlEngine* engine)
-{
-    if (!engine) return;
+} // namespace
 
-    const QString qtImports = QLibraryInfo::path(QLibraryInfo::Qml2ImportsPath);
-    if (!qtImports.isEmpty() && QDir(qtImports).exists()) {
-        engine->addImportPath(qtImports);
-    }
+void registerTypes() {
+  // Idempotent registration of QML-exposed types and metaobjects.
+  static bool registered = false;
+  if (registered)
+    return;
 
-    const QString appQmlDir = QCoreApplication::applicationDirPath() + QLatin1Char('/') + ui::config::kAppQmlDirName;
-    if (QDir(appQmlDir).exists()) {
-        engine->addImportPath(appQmlDir);
-    }
+  qmlRegisterUncreatableType<ui::NavigationState>(
+      ui::qml::contracts::module::kName,
+      ui::qml::contracts::module::kMajorVersion,
+      ui::qml::contracts::module::kMinorVersion,
+      ui::qml::contracts::module::kNavigationTypeName,
+      ui::qml::contracts::module::kNavigationTypeDescription);
+  registerContextObjectType<ui::Actions>("Actions");
+  registerContextObjectType<ui::FileSystemBrowser>("FileSystemBrowser");
+  registerContextObjectType<ui::LanguageService>("LanguageService");
+  registerContextObjectType<ui::StatusState>("StatusState");
+  registerContextObjectType<ui::WorkspaceFacade>("WorkspaceFacade");
+  registerContextObjectType<ui::ActorViewModel>("ActorViewModel");
+  registerContextObjectType<ui::BookingViewModel>("BookingViewModel");
+  registerContextObjectType<ui::ContractViewModel>("ContractViewModel");
+  registerContextObjectType<ui::PropertyViewModel>("PropertyViewModel");
+  registerContextObjectType<ui::AnalysisViewModel>("AnalysisViewModel");
+  registerContextObjectType<ui::AnnualViewModel>("AnnualViewModel");
+  registerContextObjectType<ui::ExportViewModel>("ExportViewModel");
+  registerContextObjectType<ui::ImportViewModel>("ImportViewModel");
+  registerContextObjectType<ui::SettingsViewModel>("SettingsViewModel");
+  qmlRegisterType<ui::StatementDraftViewModel>(
+      ui::qml::contracts::module::kName,
+      ui::qml::contracts::module::kMajorVersion,
+      ui::qml::contracts::module::kMinorVersion, "StatementDraftViewModel");
+  qmlRegisterType<ui::TransactionDraftViewModel>(
+      ui::qml::contracts::module::kName,
+      ui::qml::contracts::module::kMajorVersion,
+      ui::qml::contracts::module::kMinorVersion, "TransactionDraftViewModel");
+  qmlRegisterUncreatableMetaObject(
+      ui::qml::contracts::staticMetaObject, ui::qml::contracts::module::kName,
+      ui::qml::contracts::module::kMajorVersion,
+      ui::qml::contracts::module::kMinorVersion,
+      ui::qml::contracts::module::kQmlContractsTypeName,
+      ui::qml::contracts::module::kQmlContractsTypeDescription);
+  registered = true;
+}
 
-    const QString imageFormatsDir = QCoreApplication::applicationDirPath() + QLatin1Char('/') + ui::config::kImageFormatsDirName;
-    if (QDir(imageFormatsDir).exists()) {
-        QCoreApplication::addLibraryPath(imageFormatsDir);
-    }
+void configureRuntime(QQmlEngine *engine) {
+  if (!engine)
+    return;
+
+  const QString qtImports = QLibraryInfo::path(QLibraryInfo::Qml2ImportsPath);
+  if (!qtImports.isEmpty() && QDir(qtImports).exists()) {
+    engine->addImportPath(qtImports);
+  }
+
+  const QString appQmlDir = QCoreApplication::applicationDirPath() +
+                            QLatin1Char('/') + ui::config::kAppQmlDirName;
+  if (QDir(appQmlDir).exists()) {
+    engine->addImportPath(appQmlDir);
+  }
+
+  const QString imageFormatsDir = QCoreApplication::applicationDirPath() +
+                                  QLatin1Char('/') +
+                                  ui::config::kImageFormatsDirName;
+  if (QDir(imageFormatsDir).exists()) {
+    QCoreApplication::addLibraryPath(imageFormatsDir);
+  }
 }
 
 } // namespace ui::bootstrap

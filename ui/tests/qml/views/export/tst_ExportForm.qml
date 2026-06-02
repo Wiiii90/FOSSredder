@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var exportState: QtObject {
+    property var exportViewModel: QtObject {
         property string targetDirectory: "test:///export/default"
         property int packageFormatIndex: 0
         property int browseCalls: 0
@@ -36,7 +36,7 @@ TestCase {
         Export.ExportForm {
             width: 700
             theme: testCase.theme
-            exportState: testCase.exportState
+            exportViewModel: testCase.exportViewModel
         }
     }
 
@@ -45,9 +45,9 @@ TestCase {
     }
 
     function init() {
-        exportState.targetDirectory = "test:///export/default"
-        exportState.packageFormatIndex = 0
-        exportState.browseCalls = 0
+        exportViewModel.targetDirectory = "test:///export/default"
+        exportViewModel.packageFormatIndex = 0
+        exportViewModel.browseCalls = 0
     }
 
     function test_EXP_F_001_targetDirectoryFieldUpdatesExportState() {
@@ -56,7 +56,7 @@ TestCase {
 
         targetField.text = "test:///export/target"
 
-        compare(exportState.targetDirectory, "test:///export/target")
+        compare(exportViewModel.targetDirectory, "test:///export/target")
     }
 
     function test_EXP_F_002_archiveFormatDropdownUpdatesExportState() {
@@ -65,7 +65,7 @@ TestCase {
 
         archiveCombo.currentIndex = 1
 
-        compare(exportState.packageFormatIndex, 1)
+        compare(exportViewModel.packageFormatIndex, 1)
     }
 
     function test_EXP_F_003_browseButtonDelegatesToExportState() {
@@ -74,6 +74,6 @@ TestCase {
 
         browseButton.clicked()
 
-        compare(exportState.browseCalls, 1)
+        compare(exportViewModel.browseCalls, 1)
     }
 }

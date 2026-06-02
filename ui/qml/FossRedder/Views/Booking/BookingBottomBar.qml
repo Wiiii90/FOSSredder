@@ -13,7 +13,7 @@ pragma ComponentBehavior: Bound
 Item {
     id: root
     required property var theme
-    required property var bookingState
+    required property var bookingViewModel
 
     implicitWidth: bar.implicitWidth
     implicitHeight: bar.implicitHeight
@@ -25,14 +25,14 @@ Item {
 
         Controls.PrevPageButton {
             objectName: "bookingPreviousStatementButton"
-            enabled: root.bookingState.hasStatements
-            onClicked: root.bookingState.previousStatement()
+            enabled: root.bookingViewModel.hasStatements
+            onClicked: root.bookingViewModel.previousStatement()
         }
 
         Controls.PrevButton {
             objectName: "bookingPreviousTransactionButton"
-            enabled: root.bookingState.hasMultipleTransactions
-            onClicked: root.bookingState.previousTransaction()
+            enabled: root.bookingViewModel.hasMultipleTransactions
+            onClicked: root.bookingViewModel.previousTransaction()
         }
 
         Item {
@@ -41,36 +41,36 @@ Item {
 
         Controls.DangerButton {
             objectName: "bookingClearButton"
-            visible: root.bookingState.isCreateMode
+            visible: root.bookingViewModel.isCreateMode
             text: qsTr("Clear")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.bookingState.resetCreateState()
+            onClicked: root.bookingViewModel.resetCreateState()
         }
 
         Controls.SuccessButton {
             objectName: "bookingCreateButton"
-            visible: root.bookingState.isCreateMode
+            visible: root.bookingViewModel.isCreateMode
             text: qsTr("Create")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            enabled: root.bookingState.canCreate
-            onClicked: root.bookingState.submit()
+            enabled: root.bookingViewModel.canCreate
+            onClicked: root.bookingViewModel.submit()
         }
 
         Controls.DangerButton {
             objectName: "bookingDeleteButton"
-            visible: !root.bookingState.isCreateMode
+            visible: !root.bookingViewModel.isCreateMode
             text: qsTr("Delete")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: root.bookingState.deleteCurrentStatement()
+            onClicked: root.bookingViewModel.deleteCurrentStatement()
         }
 
         Controls.SuccessButton {
             objectName: "bookingUpdateButton"
-            visible: !root.bookingState.isCreateMode
+            visible: !root.bookingViewModel.isCreateMode
             text: qsTr("Update")
             Layout.preferredWidth: root.theme.viewActionButtonWidth
-            enabled: root.bookingState.canUpdate
-            onClicked: root.bookingState.updateCurrent()
+            enabled: root.bookingViewModel.canUpdate
+            onClicked: root.bookingViewModel.updateCurrent()
         }
 
         Item {
@@ -79,14 +79,14 @@ Item {
 
         Controls.NextButton {
             objectName: "bookingNextTransactionButton"
-            enabled: root.bookingState.hasMultipleTransactions
-            onClicked: root.bookingState.nextTransaction()
+            enabled: root.bookingViewModel.hasMultipleTransactions
+            onClicked: root.bookingViewModel.nextTransaction()
         }
 
         Controls.NextPageButton {
             objectName: "bookingNextStatementButton"
-            enabled: root.bookingState.hasStatements
-            onClicked: root.bookingState.nextStatement()
+            enabled: root.bookingViewModel.hasStatements
+            onClicked: root.bookingViewModel.nextStatement()
         }
     }
 }

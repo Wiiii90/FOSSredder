@@ -1,145 +1,123 @@
 /**
  * @file ui/include/ui/workflows/export/ExportWorkflow.h
- * @brief Declares the asynchronous export workflow exposed to QML.
+ * @brief Declares the asynchronous export workflow used by ExportViewModel.
  */
 
 #pragma once
 
-#include <QObject>
-#include <QString>
-#include <QStringList>
 #include <QFuture>
 #include <QFutureWatcher>
-#include <qqmlintegration.h>
+#include <QObject>
+#include <QString>
 #include <functional>
 #include <memory>
+#include <vector>
 
-#include "core/application/export/ExportLog.h"
-#include "core/application/workspace/WorkspaceSessionState.h"
-#include "core/ports/presenters/IExportPresenter.h"
-#include "ui/viewmodels/export/ExportRunListModel.h"
+#include "core/ports/export/ExportResult.h"
+#include "core/ports/workspace/WorkspaceSnapshot.h"
 
-#include "ui/shell/QmlContracts.h"
-#include "ui/workflows/export/ExportRunner.h"
+namespace ui::adapters {
+class ExportAdapter;
+}
 
 namespace ui {
+
+struct ExportLogRow {
+  QString logId;
+  QString time;
+  QString file;
+  QString status;
+  QString message;
+  QString payload;
+};
 
 /**
  * @brief Coordinates asynchronous exports from a read-only state snapshot.
  */
 class ExportWorkflow : public QObject {
-    Q_OBJECT
-    QML_NAMED_ELEMENT(ExportWorkflow)
-    QML_UNCREATABLE("ExportWorkflow is provided by the application context")
-    Q_PROPERTY(bool isRunning READ isRunning NOTIFY stateChanged)
-    Q_PROPERTY(bool isPaused READ isPaused NOTIFY stateChanged)
-    Q_PROPERTY(double progress READ progress NOTIFY stateChanged)
-    Q_PROPERTY(QString phase READ phase NOTIFY stateChanged)
-    Q_PROPERTY(QString error READ error NOTIFY stateChanged)
-    Q_PROPERTY(int currentMode READ currentMode NOTIFY stateChanged)
-    Q_PROPERTY(ExportRunList* runs READ runs CONSTANT)
-    Q_PROPERTY(bool hasPrevRun READ hasPrevRun NOTIFY stateChanged)
-    Q_PROPERTY(bool hasNextRun READ hasNextRun NOTIFY stateChanged)
-    Q_PROPERTY(int currentRunIndex READ currentRunIndex NOTIFY stateChanged)
+  Q_OBJECT
 public:
-    enum Mode {
-        CreateMode = 0,
-        ProgressMode = 1
-    };
-    Q_ENUM(Mode)
+  enum Mode { CreateMode = 0, ProgressMode = 1 };
+  Q_ENUM(Mode)
 
-    using StateSnapshotProvider = std::function<std::shared_ptr<const core::application::workspace::WorkspaceSessionState>()>;
-    using ExportLogsStore = std::function<void(const std::vector<core::application::exporting::ExportLog>&)>;
+  using StateSnapshotProvider =
+      std::function<core::ports::workspace::WorkspaceSnapshot()>;
+  using ExportLogSink =
+      std::function<void(const core::ports::workspace::ExportLogSnapshot &)>;
 
-    /** @brief Create an export workflow backed by a snapshot provider and export runner. */
-    explicit ExportWorkflow(StateSnapshotProvider stateSnapshotProvider,
-                            std::shared_ptr<ui::exporting::ExportRunner> runner,
-                            std::shared_ptr<core::ports::presenters::IExportPresenter> exportPresenter = {},
-                            QObject* parent = nullptr);
+  /** @brief Create an export workflow backed by a snapshot provider and export
+   * runner. */
+  explicit ExportWorkflow(
+      StateSnapshotProvider stateSnapshotProvider,
+      std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter,
+      QObject *parent = nullptr);
 
-    void setExportLogsStore(ExportLogsStore store);
-    Q_INVOKABLE void refreshFromStateSnapshot();
+  void refreshFromStateSnapshot();
+  void setExportLogSink(ExportLogSink sink);
 
-    bool isRunning() const noexcept { return isRunning_; }
-    bool isPaused() const noexcept { return isPaused_; }
-    double progress() const noexcept { return progress_; }
-    QString phase() const { return phase_; }
-    QString error() const { return lastError_; }
-    int currentMode() const noexcept;
-    ExportRunList* runs() noexcept;
-    bool hasPrevRun() const;
-    bool hasNextRun() const;
-    int currentRunIndex() const;
+  bool isRunning() const noexcept { return isRunning_; }
+  bool isPaused() const noexcept { return isPaused_; }
+  double progress() const noexcept { return progress_; }
+  QString phase() const { return phase_; }
+  QString error() const { return lastError_; }
+  int currentMode() const noexcept;
+  const std::vector<ExportLogRow> &exportLogs() const noexcept {
+    return exportLogs_;
+  }
 
-    /** @brief Start an asynchronous export with the selected UI options.
-     *  @param format Export format enum value
-     *  @param path Output path
-     *  @param includeFormulas Whether to include formulas
-     *  @param locale Locale identifier
-     */
-    Q_INVOKABLE void exportData(int format, const QString& path, bool includeFormulas = true, const QString& locale = QString());
-    Q_INVOKABLE void exportDataWithPayload(int format,
-                                           const QString& path,
-                                           bool includeFormulas,
-                                           const QString& locale,
-                                           const QString& payload,
-                                           int totalSteps = 1);
-    Q_INVOKABLE void activateRunAt(int index);
-    Q_INVOKABLE void removeRunAt(int index);
-    Q_INVOKABLE void clearRuns();
-    Q_INVOKABLE bool openRunLocationAt(int index);
-    Q_INVOKABLE bool openPrevRun();
-    Q_INVOKABLE bool openNextRun();
-    Q_INVOKABLE void clearActiveRun();
-    Q_INVOKABLE void cancelExport();
-    Q_INVOKABLE void togglePause();
+  /** @brief Start an asynchronous export with the selected UI options.
+   *  @param format Export format enum value
+   *  @param path Output path
+   *  @param includeFormulas Whether to include formulas
+   *  @param locale Locale identifier
+   */
+  void exportData(int format, const QString &path, bool includeFormulas = true,
+                  const QString &locale = QString());
+  void exportDataWithPayload(int format, const QString &path,
+                             bool includeFormulas, const QString &locale,
+                             const QString &payload, int totalSteps = 1);
+  void clearActiveExportLog();
+  void cancelExport();
+  void togglePause();
 
 signals:
-    void stateChanged();
-    void exportFinished(bool success);
-    void exportFailed(const QString& error);
-    void runActivated(const QString& payload);
+  void stateChanged();
+  void exportFinished(bool success);
+  void exportFailed(const QString &error);
 
 private slots:
-    /** @brief Finalize UI state once the asynchronous export completes. */
-    void onExportFinished();
+  /** @brief Finalize UI state once the asynchronous export completes. */
+  void onExportFinished();
 
 private:
-    ui::exporting::ExportRequest buildRequest(ui::qml::contracts::ExportFormat format,
-                                              const QString& path,
-                                              bool includeFormulas,
-                                              const QString& locale) const;
-    void restoreRunsFromSnapshot();
-    void persistRuns();
-    QString generateLogId() const;
-    QString currentTimestamp() const;
-    ExportRunRow upsertRunById(const QString& logId,
-                               const QString& path,
-                               const QString& status,
-                               const QString& message,
-                               const QString& payload);
-    void finishExport(bool success, const QString& outputPath = QString());
-    std::shared_ptr<const core::application::workspace::WorkspaceSessionState> stateSnapshot() const;
+  core::ports::exporting::ExportRequest
+  buildRequest(int format, const QString &path, bool includeFormulas,
+               const QString &locale) const;
+  void restoreExportLogsFromSnapshot();
+  void publishExportLog(const ExportLogRow &row);
+  ExportLogRow upsertExportLogById(const QString &logId, const QString &path,
+                                   const QString &status, const QString &message,
+                                   const QString &payload);
+  void finishExport(bool success, const QString &outputPath = QString());
+  core::ports::workspace::WorkspaceSnapshot stateSnapshot() const;
 
-    StateSnapshotProvider stateSnapshotProvider_;
-    ExportLogsStore exportLogsStore_;
-    std::shared_ptr<ui::exporting::ExportRunner> runner_;
-    std::shared_ptr<core::ports::presenters::IExportPresenter> exportPresenter_;
-    std::unique_ptr<ExportRunList> runs_;
-    QFuture<ui::exporting::ExportResult> exportFuture_;
-    QFutureWatcher<ui::exporting::ExportResult> exportWatcher_;
-    bool isRunning_ = false;
-    bool isPaused_ = false;
-    bool cancelRequested_ = false;
-    double progress_ = 0.0;
-    QString phase_;
-    int totalSteps_ = 1;
-    int completedSteps_ = 0;
-    QString pendingPayload_;
-    QString activeRunLogId_;
-    QString activeRunPath_;
-    QString lastError_;
+  StateSnapshotProvider stateSnapshotProvider_;
+  ExportLogSink exportLogSink_;
+  std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter_;
+  std::vector<ExportLogRow> exportLogs_;
+  QFuture<core::ports::exporting::ExportResult> exportFuture_;
+  QFutureWatcher<core::ports::exporting::ExportResult> exportWatcher_;
+  bool isRunning_ = false;
+  bool isPaused_ = false;
+  bool cancelRequested_ = false;
+  double progress_ = 0.0;
+  QString phase_;
+  int totalSteps_ = 1;
+  int completedSteps_ = 0;
+  QString pendingPayload_;
+  QString activeExportLogId_;
+  QString activeExportPath_;
+  QString lastError_;
 };
 
 } // namespace ui
-

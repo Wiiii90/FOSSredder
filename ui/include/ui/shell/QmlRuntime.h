@@ -1,6 +1,7 @@
 /**
- * @file ui/include/ui/bootstrap/QmlRuntime.h
- * @brief QML runtime setup helpers for registering types and configuring the engine.
+ * @file ui/include/ui/shell/QmlRuntime.h
+ * @brief QML runtime setup helpers for registering types and configuring the
+ * engine.
  */
 
 #pragma once
@@ -20,6 +21,6 @@ void registerTypes();
  * @brief Configure QQmlEngine import paths and plugin library paths.
  * @param engine QQmlEngine instance to configure (must not be null).
  */
-void configureRuntime(QQmlEngine* engine);
+void configureRuntime(QQmlEngine *engine);
 
 } // namespace ui::bootstrap

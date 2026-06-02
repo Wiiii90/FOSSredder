@@ -10,7 +10,7 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var bookingState
+    required property var bookingViewModel
     required property var theme
 
     ColumnLayout {
@@ -23,13 +23,13 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             theme: root.theme
-            bookingState: root.bookingState
+            bookingViewModel: root.bookingViewModel
         }
 
         Booking.BookingBottomBar {
             Layout.fillWidth: true
             theme: root.theme
-            bookingState: root.bookingState
+            bookingViewModel: root.bookingViewModel
         }
     }
 }

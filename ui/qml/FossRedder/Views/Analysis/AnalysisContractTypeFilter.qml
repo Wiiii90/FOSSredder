@@ -13,8 +13,8 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var analysisState
-    readonly property var selectedTypes: root.analysisState.selectedContractTypes
+    required property var analysisViewModel
+    readonly property var selectedTypes: root.analysisViewModel.selectedContractTypes
 
     readonly property real actionButtonSize: root.theme.viewCompactActionButtonSize || root.theme.controlHeight || 32
     readonly property real actionButtonWidth: Math.max(root.actionButtonSize, 96)
@@ -55,7 +55,7 @@ Controls.Panel {
                     text: qsTr("All")
                     Layout.preferredWidth: root.actionButtonWidth
                     Layout.preferredHeight: root.actionButtonSize
-                    onClicked: root.analysisState.selectAllContractTypes()
+                    onClicked: root.analysisViewModel.selectAllContractTypes()
                 }
 
                 Controls.SecondaryButton {
@@ -63,14 +63,14 @@ Controls.Panel {
                     text: qsTr("None")
                     Layout.preferredWidth: root.actionButtonWidth
                     Layout.preferredHeight: root.actionButtonSize
-                    onClicked: root.analysisState.selectNoContractTypes()
+                    onClicked: root.analysisViewModel.selectNoContractTypes()
                 }
             }
         }
 
         Controls.CheckListPanel {
             Repeater {
-                model: root.analysisState.contractTypeRows
+                model: root.analysisViewModel.contractTypeRows
 
                 delegate: RowLayout {
                     id: ctRow
@@ -85,7 +85,7 @@ Controls.Panel {
                         Layout.fillWidth: false
                         Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                         checked: root.selectedTypes.indexOf(String(ctRow.modelData.value)) !== -1
-                        onClicked: root.analysisState.setContractTypeSelected(String(ctRow.modelData.value), checked)
+                        onClicked: root.analysisViewModel.setContractTypeSelected(String(ctRow.modelData.value), checked)
                     }
 
                     Label {

@@ -146,7 +146,7 @@ void drawRotatedText(cv::Mat& image,
     }
 }
 
-std::vector<std::vector<std::string>> normalizedRowsForImage(const core::domain::AnalysisResult& result)
+std::vector<std::vector<std::string>> normalizedRowsForImage(const core::ports::analysis::AnalysisResult& result)
 {
     using core::constants::analysis::resultFields::kAmountAdjusted;
     using core::constants::analysis::resultFields::kAmountOriginal;
@@ -262,7 +262,7 @@ bool drawTableImage(cv::Mat& image, const std::vector<std::vector<std::string>>&
     return true;
 }
 
-bool drawPieChartImage(cv::Mat& image, const core::domain::AnalysisResult& result)
+bool drawPieChartImage(cv::Mat& image, const core::ports::analysis::AnalysisResult& result)
 {
     struct Slice {
         std::string label;
@@ -315,7 +315,7 @@ bool drawPieChartImage(cv::Mat& image, const core::domain::AnalysisResult& resul
     return true;
 }
 
-bool drawHistogramImage(cv::Mat& image, const core::domain::AnalysisResult& result)
+bool drawHistogramImage(cv::Mat& image, const core::ports::analysis::AnalysisResult& result)
 {
     struct Bucket {
         std::string label;
@@ -501,7 +501,7 @@ bool drawHistogramImage(cv::Mat& image, const core::domain::AnalysisResult& resu
 }
 
 bool writeImageFromResult(const std::filesystem::path& outputPath,
-                          const core::domain::AnalysisResult& result)
+                          const core::ports::analysis::AnalysisResult& result)
 {
     constexpr int width = 2560;
     constexpr int height = 1440;
@@ -532,7 +532,7 @@ namespace infra::analysis_image_renderer {
 
 bool OpenCvAnalysisImageRendererAdapter::writeAnalysisImage(const std::filesystem::path& outputPath,
                                                             const std::string& title,
-                                                            const core::domain::AnalysisResult& result) const
+                                                            const core::ports::analysis::AnalysisResult& result) const
 {
     (void)title;
     return writeImageFromResult(outputPath, result);

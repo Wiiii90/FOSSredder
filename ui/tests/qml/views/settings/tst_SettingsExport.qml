@@ -19,7 +19,7 @@ TestCase {
     width: 960
     height: 640
 
-    property var settingsState: QtObject {
+    property var settingsViewModel: QtObject {
         property string exportDefaultDirectory: ""
         property int exportArchiveFormat: 0
         property bool exportIncludeFormulas: true
@@ -40,7 +40,7 @@ TestCase {
         Settings.SettingsExport {
             width: 900
             height: 560
-            settingsState: testCase.settingsState
+            settingsViewModel: testCase.settingsViewModel
             theme: testCase.theme
         }
     }
@@ -50,10 +50,10 @@ TestCase {
     }
 
     function init() {
-        settingsState.exportDefaultDirectory = ""
-        settingsState.exportArchiveFormat = 0
-        settingsState.exportIncludeFormulas = true
-        settingsState.browseCalls = 0
+        settingsViewModel.exportDefaultDirectory = ""
+        settingsViewModel.exportArchiveFormat = 0
+        settingsViewModel.exportIncludeFormulas = true
+        settingsViewModel.browseCalls = 0
     }
 
     function test_SET_E_001_defaultDirectoryFieldUpdatesSettingsState() {
@@ -62,7 +62,7 @@ TestCase {
 
         pathField.text = "test:///export/out"
 
-        compare(settingsState.exportDefaultDirectory, "test:///export/out")
+        compare(settingsViewModel.exportDefaultDirectory, "test:///export/out")
     }
 
     function test_SET_E_002_archiveFormatSelectionUpdatesSettingsState() {
@@ -72,7 +72,7 @@ TestCase {
         archiveCombo.currentIndex = 1
         archiveCombo.activated(1)
 
-        compare(settingsState.exportArchiveFormat, 1)
+        compare(settingsViewModel.exportArchiveFormat, 1)
     }
 
     function test_SET_E_003_includeFormulasToggleUpdatesSettingsState() {
@@ -82,7 +82,7 @@ TestCase {
         formulasCheck.checked = false
         formulasCheck.toggled(false)
 
-        compare(settingsState.exportIncludeFormulas, false)
+        compare(settingsViewModel.exportIncludeFormulas, false)
     }
 
     function test_SET_E_004_browseButtonDelegatesToSettingsState() {
@@ -91,6 +91,6 @@ TestCase {
 
         browseButton.clicked()
 
-        compare(settingsState.browseCalls, 1)
+        compare(settingsViewModel.browseCalls, 1)
     }
 }

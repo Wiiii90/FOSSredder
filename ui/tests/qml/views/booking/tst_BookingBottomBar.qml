@@ -39,7 +39,7 @@ TestCase {
         property color successText: "#ffffff"
     }
 
-    property var bookingState: QtObject {
+    property var bookingViewModel: QtObject {
         property bool isCreateMode: true
         property bool hasStatements: true
         property bool hasMultipleTransactions: true
@@ -70,7 +70,7 @@ TestCase {
             width: testCase.width
             height: testCase.height
             theme: testCase.theme
-            bookingState: testCase.bookingState
+            bookingViewModel: testCase.bookingViewModel
         }
     }
 
@@ -85,19 +85,19 @@ TestCase {
     }
 
     function init() {
-        bookingState.isCreateMode = true
-        bookingState.hasStatements = true
-        bookingState.hasMultipleTransactions = true
-        bookingState.canCreate = true
-        bookingState.canUpdate = true
-        bookingState.previousStatementCalls = 0
-        bookingState.nextStatementCalls = 0
-        bookingState.previousTransactionCalls = 0
-        bookingState.nextTransactionCalls = 0
-        bookingState.clearCalls = 0
-        bookingState.createCalls = 0
-        bookingState.deleteCalls = 0
-        bookingState.updateCalls = 0
+        bookingViewModel.isCreateMode = true
+        bookingViewModel.hasStatements = true
+        bookingViewModel.hasMultipleTransactions = true
+        bookingViewModel.canCreate = true
+        bookingViewModel.canUpdate = true
+        bookingViewModel.previousStatementCalls = 0
+        bookingViewModel.nextStatementCalls = 0
+        bookingViewModel.previousTransactionCalls = 0
+        bookingViewModel.nextTransactionCalls = 0
+        bookingViewModel.clearCalls = 0
+        bookingViewModel.createCalls = 0
+        bookingViewModel.deleteCalls = 0
+        bookingViewModel.updateCalls = 0
     }
 
     function test_BKG_BB_001_navigationButtonsCallStateNavigation() {
@@ -108,10 +108,10 @@ TestCase {
         findRequired(bar, "bookingPreviousTransactionButton").clicked()
         findRequired(bar, "bookingNextTransactionButton").clicked()
 
-        compare(bookingState.previousStatementCalls, 1)
-        compare(bookingState.nextStatementCalls, 1)
-        compare(bookingState.previousTransactionCalls, 1)
-        compare(bookingState.nextTransactionCalls, 1)
+        compare(bookingViewModel.previousStatementCalls, 1)
+        compare(bookingViewModel.nextStatementCalls, 1)
+        compare(bookingViewModel.previousTransactionCalls, 1)
+        compare(bookingViewModel.nextTransactionCalls, 1)
     }
 
     function test_BKG_BB_002_createModeButtonsCallStateCommands() {
@@ -120,18 +120,18 @@ TestCase {
         findRequired(bar, "bookingClearButton").clicked()
         findRequired(bar, "bookingCreateButton").clicked()
 
-        compare(bookingState.clearCalls, 1)
-        compare(bookingState.createCalls, 1)
+        compare(bookingViewModel.clearCalls, 1)
+        compare(bookingViewModel.createCalls, 1)
     }
 
     function test_BKG_BB_003_editModeButtonsCallStateCommands() {
-        bookingState.isCreateMode = false
+        bookingViewModel.isCreateMode = false
         const bar = createBar()
 
         findRequired(bar, "bookingDeleteButton").clicked()
         findRequired(bar, "bookingUpdateButton").clicked()
 
-        compare(bookingState.deleteCalls, 1)
-        compare(bookingState.updateCalls, 1)
+        compare(bookingViewModel.deleteCalls, 1)
+        compare(bookingViewModel.updateCalls, 1)
     }
 }
