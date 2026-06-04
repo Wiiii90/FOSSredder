@@ -11,20 +11,19 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
-#include <QJsonDocument>
 #include <QLocale>
 #include <QUrl>
 
 #include "ui/platform/FileSystemBrowser.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/Settings.h"
-#include "ui/workspace/RowSelectionSupport.h"
-#include "ui/workflows/export/ExportWorkflow.h"
+#include "ui/observability/Trace.h"
+#include "ui/workflows/ExportWorkflow.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui {
 
-namespace export_view_model {
+namespace {
 
 inline constexpr auto kAnnual = "annual";
 inline constexpr auto kAnalysis = "analysis";
@@ -41,14 +40,31 @@ inline constexpr int kProgressMode = 1;
 
 QString qstr(const char *value) { return QString::fromLatin1(value); }
 
+int indexOfId(const QVariantList &rows, const QString &id,
+              const QString &idKey = QStringLiteral("id")) {
+  if (id.isEmpty()) {
+    return -1;
+  }
+  for (int i = 0; i < rows.size(); ++i) {
+    if (rows.at(i).toMap().value(idKey).toString() == id) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+QVariantMap rowById(const QVariantList &rows, const QString &id,
+                    const QString &idKey = QStringLiteral("id")) {
+  const int index = indexOfId(rows, id.trimmed(), idKey);
+  return index >= 0 ? rows.at(index).toMap() : QVariantMap{};
+}
+
 QString nonEmptyString(const QVariantMap &map, const QString &key,
                        const QString &fallback = {}) {
   const QString value = map.value(key).toString();
   return value.isEmpty() ? fallback : value;
 }
-} // namespace export_view_model
-
-using namespace export_view_model;
+} // namespace
 
 ExportViewModel::ExportViewModel(QObject *parent) : QObject(parent) {}
 
@@ -198,29 +214,29 @@ QVariantMap ExportViewModel::analysisRowById(const QString &id) const {
   return rowById(analysisRows(), id);
 }
 
-QString ExportViewModel::pendingObjectId() const {
-  return isAnnualMode() ? pendingAnnualId_ : pendingAnalysisId_;
+QString ExportViewModel::selectedAddObjectId() const {
+  return isAnnualMode() ? selectedAddAnnualId_ : selectedAddAnalysisId_;
 }
 
-void ExportViewModel::ensurePendingSelection() {
+void ExportViewModel::ensureAddSelection() {
   const QVariantList rows = addRows();
   if (rows.isEmpty()) {
     if (isAnnualMode()) {
-      pendingAnnualId_.clear();
+      selectedAddAnnualId_.clear();
     } else {
-      pendingAnalysisId_.clear();
+      selectedAddAnalysisId_.clear();
     }
     return;
   }
-  if (indexOfId(rows, pendingObjectId()) >= 0) {
+  if (indexOfId(rows, selectedAddObjectId()) >= 0) {
     return;
   }
   const QString firstId =
       rows.first().toMap().value(QStringLiteral("id")).toString();
   if (isAnnualMode()) {
-    pendingAnnualId_ = firstId;
+    selectedAddAnnualId_ = firstId;
   } else {
-    pendingAnalysisId_ = firstId;
+    selectedAddAnalysisId_ = firstId;
   }
 }
 
@@ -249,7 +265,7 @@ void ExportViewModel::setAddMode(const QString &value) {
     return;
   }
   addMode_ = normalized;
-  ensurePendingSelection();
+  ensureAddSelection();
   emitChanged();
 }
 
@@ -261,11 +277,13 @@ QString ExportViewModel::addTextRole() const {
   return isAnnualMode() ? QStringLiteral("display") : QStringLiteral("name");
 }
 
-int ExportViewModel::pendingIndex() const {
-  return indexOfId(addRows(), pendingObjectId());
+int ExportViewModel::selectedAddIndex() const {
+  return indexOfId(addRows(), selectedAddObjectId());
 }
 
-bool ExportViewModel::canAddEntry() const { return !pendingObjectId().isEmpty(); }
+bool ExportViewModel::canAddEntry() const {
+  return !selectedAddObjectId().isEmpty();
+}
 
 void ExportViewModel::refreshFromWorkspace() {
   if (targetDirectory_.isEmpty()) {
@@ -275,7 +293,7 @@ void ExportViewModel::refreshFromWorkspace() {
   if (settings_) {
     packageFormatIndex_ = settings_->exportArchiveFormat();
   }
-  ensurePendingSelection();
+  ensureAddSelection();
   refreshEntriesFromWorkspace();
   emitChanged();
 }
@@ -285,16 +303,10 @@ void ExportViewModel::clearForm() {
   appliedDefaultTargetDirectory_ = targetDirectory_;
   packageFormatIndex_ = settings_ ? settings_->exportArchiveFormat() : 0;
   exportEntries_.clear();
-  ensurePendingSelection();
+  ensureAddSelection();
   if (exportWorkflow_) {
     exportWorkflow_->clearActiveExportLog();
   }
-  emitChanged();
-}
-
-void ExportViewModel::clearAll() {
-  exportEntries_.clear();
-  ensurePendingSelection();
   emitChanged();
 }
 
@@ -425,21 +437,21 @@ QString ExportViewModel::analysisTypeById(const QString &id) const {
   return nonEmptyString(row, QStringLiteral("type"), qstr(kTab)).toLower();
 }
 
-void ExportViewModel::selectPendingRow(int index) {
+void ExportViewModel::selectAddRow(int index) {
   const QVariantList rows = addRows();
   const QVariantMap row =
       index >= 0 && index < rows.size() ? rows.at(index).toMap() : QVariantMap();
   const QString id = row.value(QStringLiteral("id")).toString();
   if (isAnnualMode()) {
-    pendingAnnualId_ = id;
+    selectedAddAnnualId_ = id;
   } else {
-    pendingAnalysisId_ = id;
+    selectedAddAnalysisId_ = id;
   }
   emitChanged();
 }
 
-void ExportViewModel::addPendingEntry() {
-  const QString objectId = pendingObjectId();
+void ExportViewModel::addSelectedEntry() {
+  const QString objectId = selectedAddObjectId();
   if (objectId.isEmpty()) {
     return;
   }
@@ -594,76 +606,6 @@ QVariantList ExportViewModel::exportItems() const {
   return out;
 }
 
-void ExportViewModel::loadItems(const QVariantList &items) {
-  QVariantList loadedEntries;
-  for (const QVariant &value : items) {
-    const QVariantMap item = value.toMap();
-    const QString objectType =
-        item.value(QStringLiteral("objectType")).toString();
-    if (objectType == qstr(kAnnualObject)) {
-      const QString annualId = item.value(QStringLiteral("objectId")).toString();
-      loadedEntries.push_back(createAnnualEntry(
-          annualId, item.value(QStringLiteral("objectName")).toString(),
-          analysesForAnnual(annualId, {})));
-      continue;
-    }
-    if (objectType != qstr(kAnalysisObject)) {
-      continue;
-    }
-    const QString annualId = item.value(QStringLiteral("annualId")).toString();
-    bool mappedToAnnual = false;
-    if (!annualId.isEmpty()) {
-      for (int i = loadedEntries.size() - 1; i >= 0; --i) {
-        QVariantMap entry = loadedEntries.at(i).toMap();
-        if (entry.value(QStringLiteral("kind")).toString() != qstr(kAnnual) ||
-            entry.value(QStringLiteral("objectId")).toString() != annualId) {
-          continue;
-        }
-        QVariantList analyses = entry.value(QStringLiteral("analyses")).toList();
-        const QString analysisId =
-            item.value(QStringLiteral("objectId")).toString();
-        const QVariantMap loadedAnalysis = createAnalysisEntry(
-            analysisId, item.value(QStringLiteral("objectName")).toString(),
-            analysisTypeById(analysisId),
-            item.value(QStringLiteral("exportType")).toString());
-        bool replacedAnalysis = false;
-        for (int analysisRow = 0; analysisRow < analyses.size();
-             ++analysisRow) {
-          if (analyses.at(analysisRow)
-                  .toMap()
-                  .value(QStringLiteral("objectId"))
-                  .toString() != analysisId) {
-            continue;
-          }
-          analyses[analysisRow] = loadedAnalysis;
-          replacedAnalysis = true;
-          break;
-        }
-        if (!replacedAnalysis) {
-          analyses.push_back(loadedAnalysis);
-        }
-        entry.insert(QStringLiteral("analyses"), analyses);
-        loadedEntries[i] = entry;
-        mappedToAnnual = true;
-        break;
-      }
-    }
-    if (!mappedToAnnual) {
-      const QString analysisId =
-          item.value(QStringLiteral("objectId")).toString();
-      const QVariantMap row = analysisRowById(analysisId);
-      loadedEntries.push_back(createAnalysisEntry(
-          analysisId, item.value(QStringLiteral("objectName")).toString(),
-          nonEmptyString(row, QStringLiteral("type"),
-                         analysisTypeById(analysisId)),
-          item.value(QStringLiteral("exportType")).toString()));
-    }
-  }
-  exportEntries_ = loadedEntries;
-  ensurePendingSelection();
-  emitChanged();
-}
-
 bool ExportViewModel::canStart() const {
   return exportWorkflow_ && workflowMode() == kCreateMode &&
          !targetDirectory_.isEmpty() && !exportItems().isEmpty();
@@ -679,9 +621,12 @@ bool ExportViewModel::showCancel() const {
 
 bool ExportViewModel::showPause() const { return showCancel(); }
 
+bool ExportViewModel::isPaused() const {
+  return exportWorkflow_ && exportWorkflow_->isPaused();
+}
+
 QString ExportViewModel::pauseText() const {
-  return exportWorkflow_ && exportWorkflow_->isPaused() ? tr("Resume")
-                                                        : tr("Pause");
+  return isPaused() ? tr("Resume") : tr("Pause");
 }
 
 double ExportViewModel::progress() const {
@@ -721,23 +666,36 @@ void ExportViewModel::startExport() {
   if (!canStart()) {
     return;
   }
+  observability::traceViewModel(
+      "ExportViewModel::startExport", "Export start submitted",
+      {{observability::context::kPath, targetDirectory_.toStdString()},
+       {observability::context::kCount,
+        std::to_string(std::max(1, static_cast<int>(exportItems().size())))}});
   const bool includeFormulas =
       settings_ ? settings_->exportIncludeFormulas() : true;
   const int itemCount = static_cast<int>(exportItems().size());
   exportWorkflow_->exportDataWithPayload(0, targetDirectory_, includeFormulas,
-                                         defaultLocale(), payloadJson(),
+                                         defaultLocale(), payload(),
                                          std::max(1, itemCount));
 }
 
 void ExportViewModel::cancelExport() {
   if (exportWorkflow_) {
+    observability::traceViewModel("ExportViewModel::cancelExport",
+                                  "Export cancel submitted");
     exportWorkflow_->cancelExport();
   }
 }
 
-void ExportViewModel::togglePause() {
+void ExportViewModel::pauseExport() {
   if (exportWorkflow_) {
-    exportWorkflow_->togglePause();
+    exportWorkflow_->pauseExport();
+  }
+}
+
+void ExportViewModel::resumeExport() {
+  if (exportWorkflow_) {
+    exportWorkflow_->resumeExport();
   }
 }
 
@@ -776,6 +734,9 @@ void ExportViewModel::deleteExportLog(int index, const QString &logId) {
   if (!workspace_) {
     return;
   }
+  observability::traceViewModel(
+      "ExportViewModel::deleteExportLog", "Export log delete submitted",
+      {{observability::context::kId, logId.toStdString()}});
   if (!logId.isEmpty()) {
     workspace_->deleteExportLog(logId);
     return;
@@ -786,13 +747,10 @@ void ExportViewModel::deleteExportLog(int index, const QString &logId) {
   }
 }
 
-QString ExportViewModel::payloadJson() const {
-  const QVariantMap payload{{QStringLiteral("targetDirectory"), targetDirectory_},
-                            {QStringLiteral("packageFormatIndex"),
-                             packageFormatIndex_},
-                            {QStringLiteral("items"), exportItems()}};
-  return QString::fromUtf8(QJsonDocument::fromVariant(payload).toJson(
-      QJsonDocument::Compact));
+QVariantMap ExportViewModel::payload() const {
+  return {{QStringLiteral("targetDirectory"), targetDirectory_},
+          {QStringLiteral("packageFormatIndex"), packageFormatIndex_},
+          {QStringLiteral("items"), exportItems()}};
 }
 
 QString ExportViewModel::defaultLocale() const {

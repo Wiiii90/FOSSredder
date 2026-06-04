@@ -1,6 +1,6 @@
 /**
  * @file ui/src/viewmodels/AnnualViewModel.cpp
- * @brief Wires the Annual view state to UI services.
+ * @brief Implements the QML-facing AnnualViewModel API.
  */
 
 #include "ui/viewmodels/AnnualViewModel.h"
@@ -12,13 +12,14 @@
 #include <QMetaType>
 #include <QSet>
 
-#include "ui/workspace/RowSelectionSupport.h"
-#include "ui/workflows/annual/AnnualWorkflow.h"
+#include "ui/observability/Trace.h"
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/workflows/AnnualWorkflow.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui {
 
-namespace annual_view_model {
+namespace {
 
 constexpr int kYearMin = 1900;
 constexpr int kYearMax = 2500;
@@ -35,6 +36,72 @@ constexpr auto kWorkspaceOnly = "workspaceOnly";
 constexpr auto kMissingLive = "missingLive";
 
 QString qstr(const char *value) { return QString::fromLatin1(value); }
+
+QString rowIdAt(const QVariantList &rows, int index,
+                const QString &idKey = QStringLiteral("id")) {
+  if (index < 0 || index >= rows.size()) {
+    return {};
+  }
+  return rows.at(index).toMap().value(idKey).toString();
+}
+
+int indexOfId(const QVariantList &rows, const QString &id,
+              const QString &idKey = QStringLiteral("id")) {
+  if (id.isEmpty()) {
+    return -1;
+  }
+  for (int i = 0; i < rows.size(); ++i) {
+    if (rows.at(i).toMap().value(idKey).toString() == id) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+QVariantMap rowById(const QVariantList &rows, const QString &id,
+                    const QString &idKey = QStringLiteral("id")) {
+  const int index = indexOfId(rows, id.trimmed(), idKey);
+  return index >= 0 ? rows.at(index).toMap() : QVariantMap{};
+}
+
+QString navigatedSelectionId(const QVariantList &rows, const QString &currentId,
+                             int delta, int defaultIndex = 0,
+                             const QString &idKey = QStringLiteral("id")) {
+  const int currentIndex = indexOfId(rows, currentId, idKey);
+  if (currentIndex < 0) {
+    if (rows.isEmpty()) {
+      return {};
+    }
+    if (delta > 0) {
+      return rowIdAt(rows, 0, idKey);
+    }
+    if (delta < 0) {
+      return rowIdAt(rows, rows.size() - 1, idKey);
+    }
+    return rowIdAt(rows, defaultIndex, idKey);
+  }
+  if (delta > 0) {
+    return currentIndex >= rows.size() - 1 ? QString()
+                                           : rowIdAt(rows, currentIndex + 1, idKey);
+  }
+  if (delta < 0) {
+    return currentIndex <= 0 ? QString()
+                             : rowIdAt(rows, currentIndex - 1, idKey);
+  }
+  return rowIdAt(rows, currentIndex, idKey);
+}
+
+QString deleteNextSelectionId(const QVariantList &rows, const QString &removedId,
+                              int defaultIndex = 0,
+                              const QString &idKey = QStringLiteral("id")) {
+  if (rows.isEmpty()) {
+    return {};
+  }
+  const int removedIndex = indexOfId(rows, removedId, idKey);
+  const int nextIndex = removedIndex >= 0 ? removedIndex + 1 : defaultIndex;
+  const int wrapped = nextIndex % rows.size();
+  return rowIdAt(rows, wrapped < 0 ? wrapped + rows.size() : wrapped, idKey);
+}
 
 double numberFromVariant(const QVariant &value) {
   bool ok = false;
@@ -55,9 +122,7 @@ QString nonEmptyString(const QVariantMap &map, const QString &key,
   const QString value = map.value(key).toString();
   return value.isEmpty() ? fallback : value;
 }
-} // namespace annual_view_model
-
-using namespace annual_view_model;
+} // namespace
 
 AnnualViewModel::AnnualViewModel(QObject *parent) : QObject(parent) {
   sectionExpanded_.insert(qstr(kDeduplicated), true);
@@ -84,7 +149,7 @@ void AnnualViewModel::setAnnualWorkflow(AnnualWorkflow *value) {
     return;
   }
   annualWorkflow_ = value;
-  lastPreviewRevision_ = -1;
+  cachedPreviewRevision_ = -1;
   refreshFromSelection();
   emitChanged();
 }
@@ -146,8 +211,8 @@ void AnnualViewModel::resetCreateState() {
   emitChanged();
 }
 
-void AnnualViewModel::toggleWorkspace() {
-  workspaceIndex_ = workspaceIndex_ == 0 ? 1 : 0;
+void AnnualViewModel::toggleContent() {
+  contentIndex_ = contentIndex_ == 0 ? 1 : 0;
   emitChanged();
 }
 
@@ -172,17 +237,6 @@ void AnnualViewModel::bindWorkspace(WorkspaceFacade *value) {
 }
 
 void AnnualViewModel::emitChanged() { emit changed(); }
-
-} // namespace ui
-
-
-
-
-
-
-namespace ui {
-
-using namespace annual_view_model;
 
 QStringList AnnualViewModel::normalizedAnalysisIds(const QVariant &values) const {
   QStringList out;
@@ -251,15 +305,14 @@ QVariantMap AnnualViewModel::normalizeAnalysisRow(const QVariant &value) const {
                    source.value(QStringLiteral("filterSpec"), QString())));
   out.insert(QStringLiteral("exportFormat"),
              source.value(QStringLiteral("exportFormat"), QString()));
-  out.insert(QStringLiteral("includeCalcAdjustments"),
-             source.value(QStringLiteral("includeCalcAdjustments"), true));
-  out.insert(QStringLiteral("exportViewModel"),
-             source.value(QStringLiteral("exportViewModel"), QStringLiteral("{}")));
+  out.insert(payload::keys::analysis::kIncludeCalcAdjustments,
+             source.value(payload::keys::analysis::kIncludeCalcAdjustments,
+                          true));
+  out.insert(QStringLiteral("exportState"),
+             source.value(QStringLiteral("exportState"), QStringLiteral("{}")));
   out.insert(
       QStringLiteral("snapshotTransactions"),
-      source.value(QStringLiteral("snapshotTransactions"),
-                   source.value(QStringLiteral("snapshotTransactionsJson"),
-                                QStringLiteral("[]"))));
+      source.value(QStringLiteral("snapshotTransactions"), QStringLiteral("[]")));
   return augmentAnalysisRow(out);
 }
 
@@ -347,17 +400,6 @@ QString AnnualViewModel::normalizedExportFormat(const QString &value,
   return allowed.contains(normalized) ? normalized : allowed.first();
 }
 
-} // namespace ui
-
-
-
-
-
-
-namespace ui {
-
-using namespace annual_view_model;
-
 QVariantList AnnualViewModel::analysisIds() const {
   QVariantList out;
   out.reserve(analysisIds_.size());
@@ -406,12 +448,12 @@ void AnnualViewModel::setAnalysisExportFormat(const QString &id,
   const QString nextFormat = normalizedExportFormat(exportFormat, type);
   workspace_->updateAnalysisExportFormat(id.trimmed(), nextFormat);
   analysisMetadataDirty_ = true;
-  refreshChoices();
+  refreshAnalysisSelectionRows();
   rebuildAnnualResultState();
   emitChanged();
 }
 
-void AnnualViewModel::refreshChoices() {
+void AnnualViewModel::refreshAnalysisSelectionRows() {
   assignedAnalysisRows_ = buildAssignedAnalysisRows();
   availableAnalysisRows_ = buildAvailableAnalysisRows();
 }
@@ -431,26 +473,18 @@ void AnnualViewModel::setAnalysisIds(const QStringList &ids) {
     return;
   }
   analysisIds_ = next;
-  refreshChoices();
+  refreshAnalysisSelectionRows();
   rebuildAnnualResultState();
   emitChanged();
 }
-
-} // namespace ui
-
-
-
-
-
-
-namespace ui {
-
-using namespace annual_view_model;
 
 void AnnualViewModel::submitCreate() {
   if (!workspace_ || !canSubmit()) {
     return;
   }
+  observability::traceViewModel(
+      "AnnualViewModel::submitCreate", "Annual create submitted",
+      {{observability::context::kName, name_.toStdString()}});
   const QString id = workspace_->addAnnual(name_, year_, analysisIds_);
   if (id.isEmpty()) {
     return;
@@ -464,6 +498,10 @@ void AnnualViewModel::submitUpdate() {
   if (!workspace_ || selectedAnnualId().isEmpty() || !canSubmit()) {
     return;
   }
+  observability::traceViewModel(
+      "AnnualViewModel::submitUpdate", "Annual update submitted",
+      {{observability::context::kId, selectedAnnualId().toStdString()},
+       {observability::context::kName, name_.toStdString()}});
   workspace_->updateAnnual(selectedAnnualId(), name_, year_, analysisIds_);
   captureSavedState();
   emitChanged();
@@ -474,6 +512,9 @@ void AnnualViewModel::deleteCurrent() {
     return;
   }
   const QString removedId = selectedAnnualId();
+  observability::traceViewModel(
+      "AnnualViewModel::deleteCurrent", "Annual delete submitted",
+      {{observability::context::kId, removedId.toStdString()}});
   workspace_->deleteAnnual(removedId);
 
   const QString nextId = deleteNextSelectionId(annualRows(), removedId);
@@ -512,9 +553,9 @@ void AnnualViewModel::loadCreateState() {
   name_.clear();
   year_ = defaultYear();
   analysisIds_.clear();
-  workspaceIndex_ = 0;
+  contentIndex_ = 0;
   analysisMetadataDirty_ = false;
-  refreshChoices();
+  refreshAnalysisSelectionRows();
   captureSavedState();
 }
 
@@ -533,7 +574,7 @@ void AnnualViewModel::loadSelectedAnnual() {
   analysisIds_ =
       normalizedAnalysisIds(payload.value(QStringLiteral("analysisIds")));
   analysisMetadataDirty_ = false;
-  refreshChoices();
+  refreshAnalysisSelectionRows();
   captureSavedState();
 }
 
@@ -543,16 +584,6 @@ void AnnualViewModel::captureSavedState() {
   savedAnalysisIds_ = analysisIds_;
   analysisMetadataDirty_ = false;
 }
-
-} // namespace ui
-
-
-
-
-
-namespace ui {
-
-using namespace annual_view_model;
 
 QVariantList AnnualViewModel::transactionSections() const {
   return {
@@ -633,28 +664,19 @@ bool AnnualViewModel::isTransactionSectionExpanded(const QString &key) const {
   return sectionExpanded_.value(key.trimmed(), true).toBool();
 }
 
-} // namespace ui
-
-
-
-
-
-namespace ui {
-
-using namespace annual_view_model;
-
 void AnnualViewModel::rebuildAnnualResultState() {
   const QString currentAnnualId = selectedAnnualId();
   const int currentRevision = workspaceRevision();
-  if (lastPreviewAnnualId_ == currentAnnualId && lastPreviewYear_ == year_ &&
-      lastPreviewAnalysisIds_ == analysisIds_ &&
-      lastPreviewRevision_ == currentRevision) {
+  if (cachedPreviewAnnualId_ == currentAnnualId &&
+      cachedPreviewYear_ == year_ &&
+      cachedPreviewAnalysisIds_ == analysisIds_ &&
+      cachedPreviewRevision_ == currentRevision) {
     return;
   }
-  lastPreviewAnnualId_ = currentAnnualId;
-  lastPreviewYear_ = year_;
-  lastPreviewAnalysisIds_ = analysisIds_;
-  lastPreviewRevision_ = currentRevision;
+  cachedPreviewAnnualId_ = currentAnnualId;
+  cachedPreviewYear_ = year_;
+  cachedPreviewAnalysisIds_ = analysisIds_;
+  cachedPreviewRevision_ = currentRevision;
   if (!annualWorkflow_) {
     applyAnnualResult({});
     return;
@@ -740,17 +762,6 @@ int AnnualViewModel::groupedCount() const {
          annualTransactionGroups_.value(qstr(kDivergent)).toList().size() +
          annualTransactionGroups_.value(qstr(kWorkspaceOnly)).toList().size();
 }
-
-} // namespace ui
-
-
-
-
-
-
-namespace ui {
-
-using namespace annual_view_model;
 
 QVariantList AnnualViewModel::rowsFromResultBucket(const QVariantList &rows) const {
   QVariantList out;

@@ -54,10 +54,6 @@ TestCase {
         function selectNoContractTypes() {
             selectedContractTypes = []
         }
-
-        function selectUnassignedContractTypes() {
-            selectedContractTypes = ["unassigned"]
-        }
     }
 
     Component {

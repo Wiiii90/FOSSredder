@@ -268,7 +268,7 @@ void WorkspaceWorkflowService::commit() {
 std::string WorkspaceWorkflowService::finalizeStatementDraft(const core::ports::workspace::FinalizeStatementDraftCommand& command) {
     const auto id = core::application::importing::draft::DraftFinalizer::finalize(mutableDocument().catalog, toDraft(command.draft));
     if (!id.empty()) {
-        commit();
+        session_->notifyState();
     }
     return id;
 }
@@ -280,47 +280,47 @@ void WorkspaceWorkflowService::saveStatementDraft(const core::ports::workspace::
 
 void WorkspaceWorkflowService::clearStatementDraft(const std::string& draftId) {
     ::clearStatementDraft(mutableDocument(), draftId);
-    commit();
+    session_->notifyState();
 }
 
 void WorkspaceWorkflowService::setImportLogs(const core::ports::workspace::ImportLogsCommand& command) {
     ::setImportLogs(mutableDocument(), toImportLogs(command));
-    commit();
+    session_->notifyState();
 }
 
 void WorkspaceWorkflowService::saveImportLog(const core::ports::workspace::ImportLogCommand& command) {
     ::saveImportLog(mutableDocument(), toImportLog(command.log));
-    commit();
+    session_->notifyState();
 }
 
 void WorkspaceWorkflowService::deleteImportLog(const std::string& id) {
     ::deleteImportLog(mutableDocument(), id);
-    commit();
+    session_->notifyState();
 }
 
 void WorkspaceWorkflowService::clearImportLogs() {
     mutableDocument().workflow.importLogs.clear();
-    commit();
+    session_->notifyState();
 }
 
 void WorkspaceWorkflowService::setExportLogs(const core::ports::workspace::ExportLogsCommand& command) {
     ::setExportLogs(mutableDocument(), toExportLogs(command));
-    commit();
+    session_->notifyState();
 }
 
 void WorkspaceWorkflowService::saveExportLog(const core::ports::workspace::ExportLogCommand& command) {
     ::saveExportLog(mutableDocument(), toExportLog(command.log));
-    commit();
+    session_->notifyState();
 }
 
 void WorkspaceWorkflowService::deleteExportLog(const std::string& id) {
     ::deleteExportLog(mutableDocument(), id);
-    commit();
+    session_->notifyState();
 }
 
 void WorkspaceWorkflowService::clearExportLogs() {
     mutableDocument().workflow.exportLogs.clear();
-    commit();
+    session_->notifyState();
 }
 
 } // namespace core::application

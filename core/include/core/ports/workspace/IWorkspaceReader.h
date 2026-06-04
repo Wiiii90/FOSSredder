@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
@@ -28,6 +29,22 @@ public:
      * @return Matching statement draft snapshot if available.
      */
     [[nodiscard]] virtual std::optional<StatementDraftSnapshot> statementDraftSnapshot(const std::string& draftId = {}) const = 0;
+
+    /** @brief Finds an actor identity by display name. */
+    [[nodiscard]] virtual WorkspaceIdentitySnapshot actorIdentityByName(const std::string& name) const = 0;
+
+    /** @brief Finds a property identity by display name. */
+    [[nodiscard]] virtual WorkspaceIdentitySnapshot propertyIdentityByName(const std::string& name) const = 0;
+
+    /** @brief Finds a contract identity by name, type, actor ids, and property ids. */
+    [[nodiscard]] virtual WorkspaceIdentitySnapshot contractIdentityBySignature(
+        const std::string& name,
+        const std::string& type,
+        const std::vector<std::string>& actorIds,
+        const std::vector<std::string>& propertyIds) const = 0;
+
+    /** @brief Returns the next generated contract name. */
+    [[nodiscard]] virtual std::string nextContractName() const = 0;
 };
 
 } // namespace core::ports::workspace

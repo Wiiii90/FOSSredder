@@ -9,7 +9,7 @@
 #include "core/application/storage/DeletionImpact.h"
 #include "core/application/workspace/WorkspaceSessionState.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
-#include "core/ports/storage/IStorageManager.h"
+#include "core/ports/infra/storage/IStorageManager.h"
 
 #include <functional>
 #include <memory>
@@ -47,6 +47,7 @@ public:
     void openFile(const std::string& path);
     void saveFile();
     void saveFileAs(const std::string& path);
+    /** @brief Persists the session when a file is open and notifies listeners. */
     void commit();
     void notifyState();
 

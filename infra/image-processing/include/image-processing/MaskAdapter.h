@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "core/ports/image-processing/ImageProcessingRequest.h"
-#include "core/ports/image-processing/ImageProcessingResult.h"
+#include "core/ports/infra/image-processing/ImageProcessingRequest.h"
+#include "core/ports/infra/image-processing/ImageProcessingResult.h"
 #include <memory>
 #include <opencv2/opencv.hpp>
 

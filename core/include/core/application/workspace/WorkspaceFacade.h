@@ -12,7 +12,7 @@
 
 #include "core/application/workspace/WorkspaceSessionState.h"
 #include "core/errors/IErrorReporter.h"
-#include "core/ports/storage/IStorageManager.h"
+#include "core/ports/infra/storage/IStorageManager.h"
 #include "core/ports/workspace/IWorkspaceReader.h"
 #include "core/ports/workspace/IWorkspaceWriter.h"
 
@@ -92,6 +92,14 @@ public:
      * @return Matching draft snapshot when present.
      */
     std::optional<core::ports::workspace::StatementDraftSnapshot> statementDraftSnapshot(const std::string& draftId = {}) const override;
+    core::ports::workspace::WorkspaceIdentitySnapshot actorIdentityByName(const std::string& name) const override;
+    core::ports::workspace::WorkspaceIdentitySnapshot propertyIdentityByName(const std::string& name) const override;
+    core::ports::workspace::WorkspaceIdentitySnapshot contractIdentityBySignature(
+        const std::string& name,
+        const std::string& type,
+        const std::vector<std::string>& actorIds,
+        const std::vector<std::string>& propertyIds) const override;
+    std::string nextContractName() const override;
 
     void openLatest() override;
     void newFile(const std::string& path) override;
@@ -100,6 +108,14 @@ public:
     void saveFileAs(const std::string& path) override;
     void commit() override;
     void notifySnapshot() override;
+
+    core::ports::workspace::ValidationResult validateActor(const core::ports::workspace::ActorCommand& command) const override;
+    core::ports::workspace::ValidationResult validateProperty(const core::ports::workspace::PropertyCommand& command) const override;
+    core::ports::workspace::ValidationResult validateContract(const core::ports::workspace::ContractCommand& command) const override;
+    core::ports::workspace::ValidationResult validateStatement(const core::ports::workspace::StatementCommand& command) const override;
+    core::ports::workspace::ValidationResult validateTransaction(const core::ports::workspace::TransactionCommand& command) const override;
+    core::ports::workspace::ValidationResult validateAnalysis(const core::ports::workspace::AnalysisCommand& command) const override;
+    core::ports::workspace::ValidationResult validateAnnual(const core::ports::workspace::AnnualCommand& command) const override;
 
     std::string addActor(const core::ports::workspace::ActorCommand& command) override;
     void updateActor(const core::ports::workspace::ActorCommand& command) override;

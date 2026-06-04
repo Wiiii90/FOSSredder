@@ -12,7 +12,6 @@ Item {
     id: root
     required property var theme
     required property var analysisViewModel
-    signal exportViewModelChanged(string exportStateJson)
 
     ColumnLayout {
         anchors.fill: root

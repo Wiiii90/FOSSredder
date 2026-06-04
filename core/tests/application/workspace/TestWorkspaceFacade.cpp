@@ -41,9 +41,7 @@ TEST(WorkspaceFacadeTest, ProjectsSnapshotsAndRoutesCatalogCommands) {
     EXPECT_FALSE(actorId.empty());
     EXPECT_EQ(snapshotCount, 2u);
     EXPECT_EQ(facade.workspaceSnapshot().actors.size(), 1u);
-    EXPECT_EQ(storagePtr->savedState_.catalog.actors().size(), 1u);
-    ASSERT_FALSE(storagePtr->savedState_.catalog.actors().empty());
-    EXPECT_EQ(storagePtr->savedState_.catalog.actors().front()->name(), "Alpha");
+    EXPECT_TRUE(storagePtr->savedState_.catalog.actors().empty());
 
     core::ports::workspace::ActorCommand updateCommand;
     updateCommand.id = actorId;
@@ -51,14 +49,16 @@ TEST(WorkspaceFacadeTest, ProjectsSnapshotsAndRoutesCatalogCommands) {
     facade.updateActor(updateCommand);
 
     EXPECT_EQ(snapshotCount, 3u);
-    ASSERT_FALSE(storagePtr->savedState_.catalog.actors().empty());
-    EXPECT_EQ(storagePtr->savedState_.catalog.actors().front()->name(), "Alpha Updated");
+    ASSERT_EQ(facade.workspaceSnapshot().actors.size(), 1u);
+    EXPECT_EQ(facade.workspaceSnapshot().actors.front().name, "Alpha Updated");
 
     facade.deleteActor(actorId);
 
     EXPECT_EQ(snapshotCount, 4u);
-    EXPECT_TRUE(storagePtr->savedState_.catalog.actors().empty());
     EXPECT_TRUE(facade.workspaceSnapshot().actors.empty());
+
+    facade.saveFile();
+    EXPECT_TRUE(storagePtr->savedState_.catalog.actors().empty());
 }
 
 } // namespace core::application

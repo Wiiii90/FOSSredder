@@ -9,17 +9,34 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QFileInfo>
+#include <QList>
 #include <QLocale>
 #include <QQmlEngine>
 #include <QSettings>
 
-#include "ui/shared/config/Defaults.h"
-#include "ui/shared/payload/PayloadKeys.h"
-#include "ui/shared/text/Text.h"
+#include "ui/i18n/Text.h"
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/shell/Defaults.h"
 
 namespace ui {
 
 namespace {
+
+using LanguageLabelFactory = QString (*)();
+
+struct LanguageDefinition {
+  QString code;
+  LanguageLabelFactory labelFactory;
+};
+
+/** @brief Supported UI languages in selector order. */
+QList<LanguageDefinition> supportedLanguages() {
+  return {
+      {ui::config::languages::kEnglish, ui::text::language::englishLabel},
+      {ui::config::languages::kGerman, ui::text::language::germanLabel},
+      {ui::config::languages::kFrench, ui::text::language::frenchLabel},
+  };
+}
 
 /** @brief Creates the payload for a single language option entry. */
 QVariantMap makeLanguageOption(const QString &code, const QString &label,
@@ -52,11 +69,11 @@ LanguageService::LanguageService(QApplication *application, QQmlEngine *engine,
 
 void LanguageService::refreshAvailableLanguages() {
   availableLanguages_.clear();
-  availableLanguages_.append(
-      makeLanguageOption(ui::config::languages::kEnglish,
-                         ui::text::language::englishLabel(), true));
-  availableLanguages_.append(makeLanguageOption(
-      ui::config::languages::kGerman, ui::text::language::germanLabel(), true));
+  for (const auto &language : supportedLanguages()) {
+    availableLanguages_.append(makeLanguageOption(
+        language.code, language.labelFactory(),
+        isLanguageAvailable(language.code)));
+  }
 }
 
 bool LanguageService::applyLanguage(const QString &languageCode) {
@@ -78,6 +95,8 @@ bool LanguageService::applyCurrentLanguage(const QString &languageCode) {
   const bool isSameLanguage = currentLanguage_ == targetLanguage;
   if (isSameLanguage && targetLanguage == ui::config::languages::kEnglish) {
     persistLanguage(targetLanguage);
+    refreshAvailableLanguages();
+    emit availableLanguagesChanged();
     return false;
   }
 
@@ -95,12 +114,16 @@ bool LanguageService::applyCurrentLanguage(const QString &languageCode) {
       application_->installTranslator(&translator_);
     persistLanguage(targetLanguage);
     retranslateUi();
+    refreshAvailableLanguages();
+    emit availableLanguagesChanged();
     return false;
   }
 
   currentLanguage_ = targetLanguage;
   persistLanguage(currentLanguage_);
   retranslateUi();
+  refreshAvailableLanguages();
+  emit availableLanguagesChanged();
   emit currentLanguageChanged();
   return true;
 }
@@ -114,10 +137,17 @@ bool LanguageService::isLanguageAvailable(const QString &languageCode) const {
 
 QString
 LanguageService::normalizeLanguageCode(const QString &languageCode) const {
-  const QString trimmed = languageCode.trimmed().toLower();
-  if (trimmed.startsWith(ui::config::languages::kGerman)) {
-    return ui::config::languages::kGerman;
+  const QString normalized =
+      languageCode.trimmed().toLower().replace(QLatin1Char('-'),
+                                               QLatin1Char('_'));
+
+  for (const auto &language : supportedLanguages()) {
+    if (normalized == language.code ||
+        normalized.startsWith(language.code + QLatin1Char('_'))) {
+      return language.code;
+    }
   }
+
   return ui::config::languages::kEnglish;
 }
 

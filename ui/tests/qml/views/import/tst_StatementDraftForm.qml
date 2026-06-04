@@ -24,10 +24,9 @@ TestCase {
         property int formLabelWidth: 120
     }
 
-    property var statementViewModel: QtObject {
+    property var importViewModel: QtObject {
         property bool hasDraft: true
         property string statementName: "Draft Name"
-        property string transactionInfoText: "Transaction 1 of 2"
         property bool canDeleteTransaction: true
         property int addTransactionCalls: 0
         property int deleteTransactionCalls: 0
@@ -40,7 +39,7 @@ TestCase {
         Import.StatementDraftForm {
             width: testCase.width
             theme: testCase.theme
-            statementViewModel: testCase.statementViewModel
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -53,11 +52,11 @@ TestCase {
     }
 
     function init() {
-        statementViewModel.hasDraft = true
-        statementViewModel.statementName = "Draft Name"
-        statementViewModel.canDeleteTransaction = true
-        statementViewModel.addTransactionCalls = 0
-        statementViewModel.deleteTransactionCalls = 0
+        importViewModel.hasDraft = true
+        importViewModel.statementName = "Draft Name"
+        importViewModel.canDeleteTransaction = true
+        importViewModel.addTransactionCalls = 0
+        importViewModel.deleteTransactionCalls = 0
     }
 
     function test_IMP_D_006_statementFormDeleteTransactionDelegatesToState() {
@@ -65,7 +64,7 @@ TestCase {
 
         findRequired(form, "statementDraftDeleteTransactionButton").clicked()
 
-        compare(statementViewModel.deleteTransactionCalls, 1)
+        compare(importViewModel.deleteTransactionCalls, 1)
     }
 
     function test_IMP_D_009_statementFormNameAndAddTransactionDelegateToState() {
@@ -76,7 +75,7 @@ TestCase {
         nameField.textEdited()
         findRequired(form, "statementDraftAddTransactionButton").clicked()
 
-        compare(statementViewModel.statementName, "New Statement")
-        compare(statementViewModel.addTransactionCalls, 1)
+        compare(importViewModel.statementName, "New Statement")
+        compare(importViewModel.addTransactionCalls, 1)
     }
 }

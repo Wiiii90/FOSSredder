@@ -8,6 +8,7 @@
 #include "core/application/import/IImportStatement.h"
 #include "core/application/import/draft/DraftMatcher.h"
 #include "core/application/import/draft/TransactionDraft.h"
+#include "core/application/import/transaction/AmountParser.h"
 #include "core/application/workspace/WorkspaceSnapshotCatalogMapper.h"
 #include "core/domain/entities/Statement.h"
 #include "core/domain/entities/Transaction.h"
@@ -498,9 +499,8 @@ void cleanupOldImportRuns(const std::filesystem::path &basePath) {
 }
 
 core::jobs::ImportStatementJobSpec
-buildImportSpec(
-    const core::ports::importing::StatementImportStartRequest &request,
-    const std::filesystem::path &basePath) {
+buildImportSpec(const core::ports::importing::ImportRequest &request,
+                const std::filesystem::path &basePath) {
   cleanupOldImportRuns(basePath);
   std::filesystem::create_directories(basePath);
 
@@ -552,7 +552,7 @@ StatementImportRunner::~StatementImportRunner() = default;
 
 core::ports::importing::StatementImportHandle
 StatementImportRunner::startStatementImport(
-    const core::ports::importing::StatementImportStartRequest &request,
+    const core::ports::importing::ImportRequest &request,
     core::ports::importing::StatementImportEventCallback callback) {
   if (!impl_->jobSystem)
     return {};
@@ -644,17 +644,6 @@ StatementImportRunner::buildImportSuggestions(
           toCoreDraft(transaction)));
 }
 
-core::ports::importing::draft::DraftTextSignals
-StatementImportRunner::buildDraftTextSignals(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const core::ports::importing::draft::TransactionDraft &transaction) const {
-  const auto signals = draft::buildDraftTextSignals(
-      core::application::workspace::toWorkspaceCatalog(state),
-      toCoreDraft(transaction));
-  return {signals.sharedText, signals.actorText, signals.propertyText,
-          signals.contractText, signals.typeText};
-}
-
 core::ports::importing::draft::DraftDerivedState
 StatementImportRunner::buildDraftDerivedState(
     const core::ports::workspace::WorkspaceSnapshot &state,
@@ -664,91 +653,57 @@ StatementImportRunner::buildDraftDerivedState(
       toCoreSelection(selection)));
 }
 
-bool StatementImportRunner::applyDerivedSelections(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const core::ports::importing::draft::DraftDerivedState &derived,
-    core::ports::importing::draft::DraftAutoSelectionMode mode) const {
-  auto coreDraft = toCoreDraft(draft);
-  const bool changed = draft::applyDerivedSelections(
-      coreDraft, toCoreDerivedState(derived),
-      toCoreAutoSelectionMode(mode));
-  if (!changed) {
-    return false;
-  }
-  draft = toPortDraft(coreDraft);
-  return true;
-}
-
-bool StatementImportRunner::applyActorSelection(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const std::string &actorId) const {
-  auto coreDraft = toCoreDraft(draft);
-  const bool changed = draft::applyActorSelection(coreDraft, actorId);
-  if (!changed) {
-    return false;
-  }
-  draft = toPortDraft(coreDraft);
-  return true;
-}
-
-bool StatementImportRunner::clearActorSelection(
-    core::ports::importing::draft::TransactionDraft &draft) const {
-  auto coreDraft = toCoreDraft(draft);
-  const bool changed = draft::clearActorSelection(coreDraft);
-  if (!changed) {
-    return false;
-  }
-  draft = toPortDraft(coreDraft);
-  return true;
-}
-
-bool StatementImportRunner::applyPropertySelection(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const std::string &propertyId) const {
-  auto coreDraft = toCoreDraft(draft);
-  const bool changed = draft::applyPropertySelection(coreDraft, propertyId);
-  if (!changed) {
-    return false;
-  }
-  draft = toPortDraft(coreDraft);
-  return true;
-}
-
-bool StatementImportRunner::setPropertySelected(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const std::string &propertyId,
-    bool selected) const {
-  auto coreDraft = toCoreDraft(draft);
-  const bool changed =
-      draft::setPropertySelected(coreDraft, propertyId, selected);
-  if (!changed) {
-    return false;
-  }
-  draft = toPortDraft(coreDraft);
-  return true;
-}
-
-bool StatementImportRunner::applyContractSelection(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const core::ports::importing::draft::DraftChoiceRow &contract) const {
-  auto coreDraft = toCoreDraft(draft);
-  const bool changed =
-      draft::applyContractSelection(coreDraft, toCoreChoiceRow(contract));
-  if (!changed) {
-    return false;
-  }
-  draft = toPortDraft(coreDraft);
-  return true;
-}
-
-bool StatementImportRunner::applyContractSelection(
+bool StatementImportRunner::updateTransactionDraft(
     core::ports::importing::draft::TransactionDraft &draft,
     const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::string &contractId) const {
+    const core::ports::importing::draft::TransactionDraftEdit &edit) const {
   auto coreDraft = toCoreDraft(draft);
-  const bool changed = draft::applyContractSelection(
-      coreDraft, core::application::workspace::toWorkspaceCatalog(state),
-      contractId);
+  bool changed = false;
+  switch (edit.kind) {
+  case core::ports::importing::draft::TransactionDraftEditKind::Patch:
+    changed = draft::applyTransactionPatch(coreDraft, toCorePatch(edit.patch));
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::ApplyAmountText:
+    if (const auto parsed = transaction::parseAmountString(edit.text)) {
+      core::application::importing::draft::TransactionDraftPatch patch;
+      patch.hasAmount = true;
+      patch.amount = *parsed;
+      changed = draft::applyTransactionPatch(coreDraft, patch);
+    }
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::SelectActor:
+    changed = draft::applyActorSelection(coreDraft, edit.id);
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::ClearActor:
+    changed = draft::clearActorSelection(coreDraft);
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::ApplyProperty:
+    changed = draft::applyPropertySelection(coreDraft, edit.id);
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::
+      SetPropertySelected:
+    changed = draft::setPropertySelected(coreDraft, edit.id, edit.selected);
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::SelectContract:
+    changed = draft::applyContractSelection(coreDraft,
+                                            toCoreChoiceRow(edit.choice));
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::
+      SelectContractFromCatalog:
+    changed = draft::applyContractSelection(
+        coreDraft, core::application::workspace::toWorkspaceCatalog(state),
+        edit.id);
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::ClearContract:
+    changed = draft::clearContractSelection(coreDraft);
+    break;
+  case core::ports::importing::draft::TransactionDraftEditKind::
+      ApplyDerivedSelections:
+    changed = draft::applyDerivedSelections(
+        coreDraft, toCoreDerivedState(edit.derived),
+        toCoreAutoSelectionMode(edit.autoSelectionMode));
+    break;
+  }
   if (!changed) {
     return false;
   }
@@ -756,61 +711,34 @@ bool StatementImportRunner::applyContractSelection(
   return true;
 }
 
-bool StatementImportRunner::clearContractSelection(
-    core::ports::importing::draft::TransactionDraft &draft) const {
-  auto coreDraft = toCoreDraft(draft);
-  const bool changed = draft::clearContractSelection(coreDraft);
-  if (!changed) {
-    return false;
-  }
-  draft = toPortDraft(coreDraft);
-  return true;
-}
-
-bool StatementImportRunner::applyTransactionPatch(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const core::ports::importing::draft::TransactionDraftPatch &patch) const {
-  auto coreDraft = toCoreDraft(draft);
-  const bool changed =
-      draft::applyTransactionPatch(coreDraft, toCorePatch(patch));
-  if (!changed) {
-    return false;
-  }
-  draft = toPortDraft(coreDraft);
-  return true;
-}
-
-int StatementImportRunner::insertTransactionAfter(
+core::ports::importing::draft::StatementDraftEditResult
+StatementImportRunner::updateStatementDraft(
     core::ports::importing::draft::StatementDraft &draft,
-    int currentIndex) const {
+    const core::ports::importing::draft::StatementDraftEdit &edit) const {
   auto coreDraft = toCoreStatementDraft(draft);
-  const int newIndex = draft::insertTransactionAfter(coreDraft, currentIndex);
-  draft = toPortStatementDraft(coreDraft);
-  return newIndex;
-}
-
-int StatementImportRunner::removeTransactionAt(
-    core::ports::importing::draft::StatementDraft &draft,
-    int index) const {
-  auto coreDraft = toCoreStatementDraft(draft);
-  const int newIndex = draft::removeTransactionAt(coreDraft, index);
-  if (newIndex < 0) {
-    return newIndex;
+  core::ports::importing::draft::StatementDraftEditResult result;
+  switch (edit.kind) {
+  case core::ports::importing::draft::StatementDraftEditKind::Rename:
+    result.changed = draft::renameStatementDraft(coreDraft, edit.text);
+    result.selectedTransactionIndex = edit.index;
+    break;
+  case core::ports::importing::draft::StatementDraftEditKind::
+      InsertTransactionAfter:
+    result.selectedTransactionIndex =
+        draft::insertTransactionAfter(coreDraft, edit.index);
+    result.changed = result.selectedTransactionIndex >= 0;
+    break;
+  case core::ports::importing::draft::StatementDraftEditKind::
+      RemoveTransactionAt:
+    result.selectedTransactionIndex =
+        draft::removeTransactionAt(coreDraft, edit.index);
+    result.changed = result.selectedTransactionIndex >= 0;
+    break;
   }
-  draft = toPortStatementDraft(coreDraft);
-  return newIndex;
-}
-
-bool StatementImportRunner::renameStatementDraft(
-    core::ports::importing::draft::StatementDraft &draft,
-    const std::string &name) const {
-  auto coreDraft = toCoreStatementDraft(draft);
-  const bool changed = draft::renameStatementDraft(coreDraft, name);
-  if (!changed) {
-    return false;
+  if (result.changed) {
+    draft = toPortStatementDraft(coreDraft);
   }
-  draft = toPortStatementDraft(coreDraft);
-  return true;
+  return result;
 }
 
 core::ports::importing::draft::StatementDraft
@@ -831,7 +759,9 @@ StatementImportRunner::buildStatementDraft(
 
   for (std::size_t i = 0; i < transactions.size(); ++i) {
     auto transaction = transactions[i];
-    const auto signals = buildDraftTextSignals(state, transaction);
+    const auto signals = draft::buildDraftTextSignals(
+        core::application::workspace::toWorkspaceCatalog(state),
+        toCoreDraft(transaction));
     if (transaction.id.empty()) {
       transaction.id = fallbackDraftTransactionId();
     }
@@ -842,49 +772,17 @@ StatementImportRunner::buildStatementDraft(
     transaction.propertyText = signals.propertyText;
     transaction.type = signals.typeText;
 
-    const auto derived = buildDraftDerivedState(state, toPortSelection(transaction));
-    applyDerivedSelections(transaction, derived,
-                           core::ports::importing::draft::
-                               DraftAutoSelectionMode::InitialImport);
+    core::ports::importing::draft::TransactionDraftEdit edit;
+    edit.kind = core::ports::importing::draft::TransactionDraftEditKind::
+        ApplyDerivedSelections;
+    edit.derived = buildDraftDerivedState(state, toPortSelection(transaction));
+    edit.autoSelectionMode =
+        core::ports::importing::draft::DraftAutoSelectionMode::InitialImport;
+    updateTransactionDraft(transaction, state, edit);
     draft.transactionIds.push_back(transaction.id);
     draft.transactions.push_back(std::move(transaction));
   }
 
-  return draft;
-}
-
-core::ports::workspace::StatementDraftSnapshot
-StatementImportRunner::buildImportedStatementDraftSnapshot(
-    const std::string &sourceFile,
-    const std::string &draftId,
-    const core::ports::workspace::StatementSnapshot &statement,
-    const std::vector<core::ports::importing::draft::TransactionDraft>
-        &transactions) const {
-  core::ports::workspace::StatementDraftSnapshot draft;
-  draft.id = draftId;
-  draft.name = !statement.name.empty() ? statement.name : fileStemFromPath(sourceFile);
-  draft.transactions.reserve(transactions.size());
-
-  for (std::size_t i = 0; i < transactions.size(); ++i) {
-    const auto &tx = transactions[i];
-    core::ports::workspace::TransactionDraftSnapshot snapshot;
-    snapshot.id = tx.id.empty() ? fallbackDraftTransactionId() : tx.id;
-    snapshot.statementDraftId = draft.id;
-    snapshot.name = tx.name;
-    snapshot.bookingDate = tx.bookingDate;
-    snapshot.valuta = tx.valuta;
-    snapshot.amount = tx.amount;
-    snapshot.actorId = tx.actorId;
-    snapshot.contractId = tx.contractId;
-    snapshot.propertyIds = tx.propertyIds;
-    snapshot.status = tx.status;
-    snapshot.allocatable = tx.allocatable;
-    snapshot.position = static_cast<int>(i);
-    snapshot.metadata = tx.metadata;
-    snapshot.proofImageData = tx.proofImageData;
-    draft.transactionIds.push_back(snapshot.id);
-    draft.transactions.push_back(std::move(snapshot));
-  }
   return draft;
 }
 
@@ -955,8 +853,9 @@ StatementImportRunner::buildStatementDraftSnapshot(
     transaction.actorId = draftTransaction.actorId;
     transaction.contractId = draftTransaction.contractId;
 
-    bool inferredAllocatable =
-        contractIsFullyAllocatable(state, draftTransaction.contractId);
+    bool inferredAllocatable = draft::contractIsFullyAllocatable(
+        core::application::workspace::toWorkspaceCatalog(state),
+        draftTransaction.contractId);
     if (!draftTransaction.contractId.empty()) {
       for (const auto &contract : state.contracts) {
         if (contract.id != draftTransaction.contractId) {
@@ -984,38 +883,11 @@ StatementImportRunner::buildStatementDraftSnapshot(
   return input;
 }
 
-std::string StatementImportRunner::resolveActorId(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::string &text) const {
-  return draft::resolveActorId(
-      core::application::workspace::toWorkspaceCatalog(state), text);
-}
-
-std::string StatementImportRunner::resolveContractId(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::string &text) const {
-  return draft::resolveContractId(
-      core::application::workspace::toWorkspaceCatalog(state), text);
-}
-
-bool StatementImportRunner::contractIsFullyAllocatable(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::string &contractId) const {
-  return draft::contractIsFullyAllocatable(
-      core::application::workspace::toWorkspaceCatalog(state), contractId);
-}
-
 core::ports::workspace::WorkspaceSnapshot
 StatementImportRunner::mergeWorkspaceState(
     core::ports::workspace::WorkspaceSnapshot primary,
     const core::ports::workspace::WorkspaceSnapshot &secondary) const {
   return mergeSnapshots(std::move(primary), secondary);
-}
-
-std::vector<std::string>
-StatementImportRunner::referenceAliasesFromMetadata(
-    const std::string &metadata) const {
-  return draft::referenceAliasesFromMetadata(metadata);
 }
 
 } // namespace core::application::importing

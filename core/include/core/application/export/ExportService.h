@@ -6,8 +6,8 @@
 #pragma once
 
 #include "core/domain/catalog/WorkspaceCatalog.h"
-#include "core/ports/export/IExportRunner.h"
-#include "core/ports/export/ExportResult.h"
+#include "core/ports/usecases/export/IExportRunner.h"
+#include "core/ports/usecases/export/ExportResult.h"
 
 #include <memory>
 

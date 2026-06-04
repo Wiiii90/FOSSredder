@@ -26,7 +26,7 @@ TestCase {
         property bool hasChanges: true
         property string name: ""
         property int year: 2026
-        property int workspaceIndex: 0
+        property int contentIndex: 0
         property var annualRows: []
         property string selectedAnnualId: ""
         property var availableAnalysisRows: []
@@ -43,7 +43,7 @@ TestCase {
         function submitUpdate() {}
         function deleteCurrent() {}
         function navigate(delta) {}
-        function toggleWorkspace() {}
+        function toggleContent() {}
         function addAvailableAnalysisAtIndex(index) {}
         function removeAnalysis(id) {}
         function setAnalysisExportFormat(id, exportFormat) {}

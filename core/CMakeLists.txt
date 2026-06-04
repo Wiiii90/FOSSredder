@@ -24,21 +24,21 @@ set(CORE_PUBLIC_HEADERS
     include/core/application/workspace/WorkspaceQueryService.h
     include/core/application/workspace/WorkspaceSession.h
     include/core/application/workspace/WorkspaceStateManager.h
-    include/core/ports/archive/IArchive.h
-    include/core/ports/analysis/AnalysisRequest.h
-    include/core/ports/analysis/AnalysisResult.h
-    include/core/ports/analysis/IAnalysisRunner.h
-    include/core/ports/analysis-image-renderer/IAnalysisImageRenderer.h
-    include/core/ports/annual/AnnualRequest.h
-    include/core/ports/annual/AnnualResult.h
-    include/core/ports/annual/IAnnualRunner.h
-    include/core/ports/export/ExportRequest.h
-    include/core/ports/export/ExportResult.h
-    include/core/ports/export/IExportRunner.h
-    include/core/ports/import/IImportRunner.h
-    include/core/ports/import/ImportDraft.h
-    include/core/ports/import/ImportResult.h
-    include/core/ports/xlsx-writer/IXlsxWriter.h
+    include/core/ports/infra/archive/IArchive.h
+    include/core/ports/usecases/analysis/AnalysisRequest.h
+    include/core/ports/usecases/analysis/AnalysisResult.h
+    include/core/ports/usecases/analysis/IAnalysisRunner.h
+    include/core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h
+    include/core/ports/usecases/annual/AnnualRequest.h
+    include/core/ports/usecases/annual/AnnualResult.h
+    include/core/ports/usecases/annual/IAnnualRunner.h
+    include/core/ports/usecases/export/ExportRequest.h
+    include/core/ports/usecases/export/ExportResult.h
+    include/core/ports/usecases/export/IExportRunner.h
+    include/core/ports/usecases/import/IImportRunner.h
+    include/core/ports/usecases/import/ImportRequest.h
+    include/core/ports/usecases/import/ImportResult.h
+    include/core/ports/infra/xlsx-writer/IXlsxWriter.h
     include/core/constants/analysis.h
     include/core/constants/app.h
     include/core/constants/app_state.h
@@ -87,20 +87,20 @@ set(CORE_PUBLIC_HEADERS
     include/core/ports/repositories/IStatementRepository.h
     include/core/ports/repositories/ITransactionDraftRepository.h
     include/core/ports/repositories/ITransactionRepository.h
-    include/core/ports/image-processing/IImageProcessor.h
-    include/core/ports/image-processing/ImageProcessingRequest.h
-    include/core/ports/image-processing/ImageProcessingResult.h
-    include/core/ports/image-processing/ImageProcessingTypes.h
-    include/core/ports/pdf-rendering/IPdfRenderer.h
-    include/core/ports/pdf-rendering/PdfRenderingRequest.h
-    include/core/ports/pdf-rendering/PdfRenderingResult.h
-    include/core/ports/pdf-rendering/PdfRenderingTypes.h
-    include/core/ports/text-recognition/ITextRecognizer.h
-    include/core/ports/text-recognition/TextRecognitionRequest.h
-    include/core/ports/text-recognition/TextRecognitionResult.h
-    include/core/ports/text-recognition/TextRecognitionTypes.h
-    include/core/ports/storage/IRegistry.h
-    include/core/ports/storage/IStorageManager.h
+    include/core/ports/infra/image-processing/IImageProcessor.h
+    include/core/ports/infra/image-processing/ImageProcessingRequest.h
+    include/core/ports/infra/image-processing/ImageProcessingResult.h
+    include/core/ports/infra/image-processing/ImageProcessingTypes.h
+    include/core/ports/infra/pdf-rendering/IPdfRenderer.h
+    include/core/ports/infra/pdf-rendering/PdfRenderingRequest.h
+    include/core/ports/infra/pdf-rendering/PdfRenderingResult.h
+    include/core/ports/infra/pdf-rendering/PdfRenderingTypes.h
+    include/core/ports/infra/text-recognition/ITextRecognizer.h
+    include/core/ports/infra/text-recognition/TextRecognitionRequest.h
+    include/core/ports/infra/text-recognition/TextRecognitionResult.h
+    include/core/ports/infra/text-recognition/TextRecognitionTypes.h
+    include/core/ports/infra/storage/IRegistry.h
+    include/core/ports/infra/storage/IStorageManager.h
     include/core/utils/Time.h
 )
 

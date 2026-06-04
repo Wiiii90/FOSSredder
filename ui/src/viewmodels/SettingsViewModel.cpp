@@ -1,16 +1,60 @@
 /**
  * @file ui/src/viewmodels/SettingsViewModel.cpp
- * @brief Dependency bindings for SettingsViewModel.
+ * @brief Implements the QML-facing SettingsViewModel API.
  */
 
 #include "ui/viewmodels/SettingsViewModel.h"
 
+#include "ui/shell/Defaults.h"
 #include "ui/platform/LanguageService.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/NavigationState.h"
 #include "ui/shell/Settings.h"
+#include "ui/observability/Trace.h"
 
 namespace ui {
+
+namespace {
+
+constexpr int kGeneralCategory = 0;
+constexpr int kImportCategory = 1;
+constexpr int kExportCategory = 2;
+constexpr int kMiscellaneousCategory = 3;
+
+QVariantMap categoryRow(int value, const QString &text, bool selected) {
+  return {{QStringLiteral("category"), value},
+          {QStringLiteral("text"), text},
+          {QStringLiteral("selected"), selected}};
+}
+
+QString languageCode(const QVariant &value) {
+  return value.toMap().value(QStringLiteral("code")).toString();
+}
+
+bool languageAvailable(const QVariant &value) {
+  const QVariantMap map = value.toMap();
+  return !map.contains(QStringLiteral("available")) ||
+         map.value(QStringLiteral("available")).toBool();
+}
+
+QVariantMap themeModeOption(const QString &code, const QString &label) {
+  return {{QStringLiteral("code"), code}, {QStringLiteral("label"), label}};
+}
+
+QString themeModeCode(const QVariant &value) {
+  return value.toMap().value(QStringLiteral("code")).toString();
+}
+
+int autosaveIntervalMinutes(const QVariant &value) {
+  return value.toMap().value(QStringLiteral("minutes")).toInt();
+}
+
+QVariantMap autosaveIntervalOption(int minutes, const QString &label) {
+  return {{QStringLiteral("minutes"), minutes},
+          {QStringLiteral("label"), label}};
+}
+
+} // namespace
 
 SettingsViewModel::SettingsViewModel(QObject *parent) : QObject(parent) {}
 
@@ -48,6 +92,8 @@ void SettingsViewModel::setLanguageService(LanguageService *value) {
   languageService_ = value;
   if (languageService_) {
     connect(languageService_, &LanguageService::currentLanguageChanged, this,
+            &SettingsViewModel::emitChanged);
+    connect(languageService_, &LanguageService::availableLanguagesChanged, this,
             &SettingsViewModel::emitChanged);
   }
   emitChanged();
@@ -109,16 +155,6 @@ void SettingsViewModel::bindActions(Actions *value) {
 
 void SettingsViewModel::emitChanged() { emit changed(); }
 
-} // namespace ui
-
-
-
-
-
-namespace ui {
-
-using namespace settings_view_model;
-
 int SettingsViewModel::currentCategory() const {
   return navigation_ ? navigation_->settingsCategoryValue() : firstCategory();
 }
@@ -175,21 +211,13 @@ void SettingsViewModel::resetSettings() {
   emitChanged();
 }
 
-int SettingsViewModel::firstCategory() const noexcept { return kGeneralCategory; }
+int SettingsViewModel::firstCategory() const noexcept {
+  return kGeneralCategory;
+}
 
 int SettingsViewModel::lastCategory() const noexcept {
   return kMiscellaneousCategory;
 }
-
-} // namespace ui
-
-
-
-
-
-namespace ui {
-
-using namespace settings_view_model;
 
 QVariantList SettingsViewModel::languageOptions() const {
   return languageService_ ? languageService_->availableLanguages()
@@ -240,8 +268,7 @@ void SettingsViewModel::setLanguage(const QString &value) {
 }
 
 QString SettingsViewModel::themeMode() const {
-  return settings_ ? settings_->themeMode()
-                            : QStringLiteral("light");
+  return settings_ ? settings_->themeMode() : QStringLiteral("light");
 }
 
 void SettingsViewModel::setThemeMode(const QString &value) {
@@ -269,17 +296,56 @@ void SettingsViewModel::selectThemeModeAt(int index) {
   setThemeMode(themeModeCode(options.at(index)));
 }
 
-} // namespace ui
+bool SettingsViewModel::autosaveOnClose() const {
+  return !settings_ || settings_->autosaveOnClose();
+}
 
+void SettingsViewModel::setAutosaveOnClose(bool value) {
+  if (settings_) {
+    settings_->setAutosaveOnClose(value);
+  }
+}
 
+QVariantList SettingsViewModel::autosaveIntervalOptions() const {
+  return {autosaveIntervalOption(
+              config::autosave::kIntervalOff, tr("Off")),
+          autosaveIntervalOption(
+              config::autosave::kInterval1Minute, tr("Every 1 minute")),
+          autosaveIntervalOption(
+              config::autosave::kInterval5Minutes, tr("Every 5 minutes")),
+          autosaveIntervalOption(
+              config::autosave::kInterval10Minutes, tr("Every 10 minutes")),
+          autosaveIntervalOption(
+              config::autosave::kInterval15Minutes, tr("Every 15 minutes")),
+          autosaveIntervalOption(
+              config::autosave::kInterval30Minutes, tr("Every 30 minutes"))};
+}
 
+int SettingsViewModel::autosaveIntervalIndex() const {
+  const int selectedMinutes =
+      settings_ ? settings_->autosaveIntervalMinutes()
+                  : config::autosave::kIntervalOff;
+  const QVariantList options = autosaveIntervalOptions();
+  for (int i = 0; i < options.size(); ++i) {
+    if (autosaveIntervalMinutes(options.at(i)) == selectedMinutes) {
+      return i;
+    }
+  }
+  return 0;
+}
 
-
-namespace ui {
+void SettingsViewModel::selectAutosaveIntervalAt(int index) {
+  const QVariantList options = autosaveIntervalOptions();
+  if (!settings_ || index < 0 || index >= options.size()) {
+    emitChanged();
+    return;
+  }
+  settings_->setAutosaveIntervalMinutes(
+      autosaveIntervalMinutes(options.at(index)));
+}
 
 QString SettingsViewModel::importDefaultPath() const {
-  return settings_ ? settings_->importDefaultPath()
-                            : QString();
+  return settings_ ? settings_->importDefaultPath() : QString();
 }
 
 void SettingsViewModel::setImportDefaultPath(const QString &value) {
@@ -309,8 +375,7 @@ void SettingsViewModel::setImportOpenCv(const QString &value) {
 }
 
 QString SettingsViewModel::importTesseract() const {
-  return settings_ ? settings_->importTesseract()
-                            : QString();
+  return settings_ ? settings_->importTesseract() : QString();
 }
 
 void SettingsViewModel::setImportTesseract(const QString &value) {
@@ -340,8 +405,7 @@ void SettingsViewModel::setImportMatcher(const QString &value) {
 }
 
 QString SettingsViewModel::exportDefaultDirectory() const {
-  return settings_ ? settings_->exportDefaultDirectory()
-                            : QString();
+  return settings_ ? settings_->exportDefaultDirectory() : QString();
 }
 
 void SettingsViewModel::setExportDefaultDirectory(const QString &value) {
@@ -461,6 +525,8 @@ void SettingsViewModel::setToolbarShowSettings(bool value) {
 }
 
 void SettingsViewModel::saveSettings() {
+  observability::traceViewModel("SettingsViewModel::saveSettings",
+                                "Settings save submitted");
   if (settings_) {
     settings_->save();
   }

@@ -41,7 +41,7 @@ TestCase {
         property bool canSubmit: true
         property bool hasRows: true
         function navigate(delta) { testCase.navigateCalls += 1 }
-        function toggleFilterWorkspace() {}
+        function toggleFilterContent() {}
         function clearFilters() { testCase.resetCalls += 1 }
         function submitCreate() { testCase.createCalls += 1 }
         function submitUpdate() { testCase.updateCalls += 1 }

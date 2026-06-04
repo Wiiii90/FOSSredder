@@ -2,7 +2,7 @@
 
 #include "core/domain/catalog/WorkspaceCatalog.h"
 #include "core/domain/entities/Analysis.h"
-#include "core/ports/analysis/AnalysisResult.h"
+#include "core/ports/usecases/analysis/AnalysisResult.h"
 
 namespace core::application::analysis {
 class AnalysisFilter;

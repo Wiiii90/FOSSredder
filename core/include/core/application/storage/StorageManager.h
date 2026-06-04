@@ -13,8 +13,8 @@
 
 #include "core/application/workspace/WorkspaceSessionState.h"
 #include "core/application/storage/DeletionImpact.h"
-#include "core/ports/storage/IRegistry.h"
-#include "core/ports/storage/IStorageManager.h"
+#include "core/ports/infra/storage/IRegistry.h"
+#include "core/ports/infra/storage/IStorageManager.h"
 
 namespace core::storage {
 

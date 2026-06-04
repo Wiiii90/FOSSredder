@@ -9,23 +9,23 @@
 
 #include <QVariantMap>
 
-#include "core/ports/annual/AnnualResult.h"
-#include "core/ports/annual/IAnnualRunner.h"
+#include "core/ports/usecases/annual/AnnualResult.h"
+#include "core/ports/usecases/annual/IAnnualRunner.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 namespace ui::adapters {
 
-class AnnualAdapter final : public core::ports::annual::IAnnualRunner {
+class AnnualAdapter final {
 public:
   explicit AnnualAdapter(
       std::shared_ptr<core::ports::annual::IAnnualRunner> runner);
 
   core::ports::annual::AnnualResult
-  runAnnual(const core::ports::workspace::WorkspaceSnapshot &workspace,
-            const core::ports::annual::AnnualRequest &request) const override;
+  runAnnual(const core::ports::workspace::WorkspaceSnapshot& workspace,
+            const core::ports::annual::AnnualRequest& request) const;
 
   [[nodiscard]] QVariantMap
-  mapAnnualResult(const core::ports::annual::AnnualResult &result) const;
+  mapAnnualResult(const core::ports::annual::AnnualResult& result) const;
 
 private:
   std::shared_ptr<core::ports::annual::IAnnualRunner> runner_;

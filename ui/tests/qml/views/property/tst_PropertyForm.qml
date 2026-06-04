@@ -162,9 +162,6 @@ TestCase {
             changed()
         }
         function canAddAlias(value) { return String(value || "").trim().length > 0 }
-        function canRemoveSelectedAlias() { return aliasIndex >= 0 && aliasIndex < aliases.length }
-        function isAliasSelected(index) { return aliasIndex === index }
-        function isContractSelected(contractId) { return selectedContractIds.indexOf(String(contractId || "").trim()) !== -1 }
         function clear() {
             currentId = ""
             name = ""
@@ -194,23 +191,16 @@ TestCase {
             hasChanges = true
             changed()
         }
-        function removeAlias(index) {
-            const next = testCase.session.removeAt(aliases, index)
+        function requestRemoveSelectedAlias() {
+            if (aliasIndex < 0 || aliasIndex >= aliases.length)
+                return
+            const next = testCase.session.removeAt(aliases, aliasIndex)
             if (next.length === aliases.length)
                 return
             aliases = next
-            aliasIndex = next.length > 0 ? Math.min(index, next.length - 1) : -1
+            aliasIndex = next.length > 0 ? Math.min(aliasIndex, next.length - 1) : -1
             hasChanges = true
             changed()
-        }
-        function selectAlias(index) {
-            aliasIndex = index
-            changed()
-        }
-        function requestRemoveSelectedAlias() {
-            if (!canRemoveSelectedAlias())
-                return
-            removeAlias(aliasIndex)
         }
         function setContractSelected(contractId, selected) {
             const next = selected ? testCase.session.addUniqueTrimmed(selectedContractIds, contractId) : testCase.session.removeString(selectedContractIds, contractId)

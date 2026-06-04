@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "core/ports/image-processing/ImageProcessingResult.h"
-#include "core/ports/image-processing/IImageProcessor.h"
-#include "core/ports/text-recognition/TextRecognitionResult.h"
+#include "core/ports/infra/image-processing/ImageProcessingResult.h"
+#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/application/import/draft/TransactionDraft.h"
 
 #include <filesystem>

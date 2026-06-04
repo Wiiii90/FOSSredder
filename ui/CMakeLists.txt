@@ -19,11 +19,12 @@ set(UI_SOURCES
     src/shell/AppContext.cpp
     src/shell/Composition.cpp
     src/shell/QmlRuntime.cpp
-    src/workflows/analysis/AnalysisWorkflow.cpp
-    src/workflows/annual/AnnualWorkflow.cpp
-    src/workflows/export/ExportWorkflow.cpp
+    src/observability/Trace.cpp
+    src/workflows/AnalysisWorkflow.cpp
+    src/workflows/AnnualWorkflow.cpp
+    src/workflows/ExportWorkflow.cpp
     src/platform/FileSystemBrowser.cpp
-    src/workflows/import/ImportWorkflow.cpp
+    src/workflows/ImportWorkflow.cpp
     src/platform/LanguageService.cpp
     src/adapters/AnalysisAdapter.cpp
     src/adapters/AnnualAdapter.cpp
@@ -33,24 +34,21 @@ set(UI_SOURCES
     src/platform/FileDialogs.cpp
     src/workspace/AnalysisListModel.cpp
     src/workspace/AnnualListModel.cpp
-    src/viewmodels/StatementDraftViewModel.cpp
-    src/workspace/StatementViewModel.cpp
+    src/workspace/StatementListModel.cpp
     src/workspace/TransactionFilterModel.cpp
-    src/workspace/TransactionViewModel.cpp
+    src/workspace/TransactionListModel.cpp
     src/workspace/WorkspaceFilterState.cpp
     "src/viewmodels/ActorViewModel.cpp"
     src/viewmodels/ContractViewModel.cpp
     src/viewmodels/PropertyViewModel.cpp
     src/viewmodels/ExportViewModel.cpp
     src/viewmodels/ImportViewModel.cpp
-    src/viewmodels/TransactionDraftViewModel.cpp
     src/shell/NavigationState.cpp
     src/viewmodels/SettingsViewModel.cpp
     src/viewmodels/AnalysisViewModel.cpp
     src/viewmodels/AnnualViewModel.cpp
     src/viewmodels/BookingViewModel.cpp
     src/workspace/WorkspaceSelection.cpp
-    src/workspace/RowSelectionSupport.cpp
     src/workspace/WorkspaceRowProjector.cpp
     src/workspace/WorkspaceCacheModels.cpp
     src/workspace/WorkspaceCache.cpp
@@ -71,12 +69,12 @@ set(UI_HEADERS
     include/ui/shell/Composition.h
     include/ui/shell/QmlContracts.h
     include/ui/shell/QmlRuntime.h
-    include/ui/shared/config/Defaults.h
-    include/ui/workflows/analysis/AnalysisWorkflow.h
-    include/ui/workflows/annual/AnnualWorkflow.h
-    include/ui/workflows/export/ExportWorkflow.h
+    include/ui/shell/Defaults.h
+    include/ui/workflows/AnalysisWorkflow.h
+    include/ui/workflows/AnnualWorkflow.h
+    include/ui/workflows/ExportWorkflow.h
     include/ui/platform/FileSystemBrowser.h
-    include/ui/workflows/import/ImportWorkflow.h
+    include/ui/workflows/ImportWorkflow.h
     include/ui/platform/LanguageService.h
     include/ui/shell/Settings.h
     "include/ui/platform/FileDialogs.h"
@@ -89,31 +87,28 @@ set(UI_HEADERS
     include/ui/workspace/IndexedListModel.h
     include/ui/workspace/RowListModel.h
     include/ui/workspace/WorkflowRunListModel.h
-    include/ui/workspace/StatementViewModel.h
+    include/ui/workspace/StatementListModel.h
     include/ui/workspace/TransactionFilterModel.h
-    include/ui/workspace/TransactionViewModel.h
-    include/ui/shared/observability/Origins.h
-    include/ui/shared/observability/Trace.h
-    include/ui/shared/payload/PayloadKeys.h
-    include/ui/shared/payload/PayloadMapper.h
-    include/ui/shared/observability/ErrorCodes.h
-    include/ui/shared/text/Text.h
-    include/ui/shared/util/StringConversions.h
+    include/ui/workspace/TransactionListModel.h
+    include/ui/observability/Origins.h
+    include/ui/observability/Trace.h
+    include/ui/presentation/PayloadKeys.h
+    include/ui/presentation/PayloadMapper.h
+    include/ui/observability/ErrorCodes.h
+    include/ui/i18n/Text.h
+    include/ui/util/StringConversions.h
     include/ui/workspace/WorkspaceFilterState.h
     include/ui/viewmodels/ActorViewModel.h
     include/ui/viewmodels/ContractViewModel.h
     include/ui/viewmodels/PropertyViewModel.h
     include/ui/viewmodels/ExportViewModel.h
     include/ui/viewmodels/ImportViewModel.h
-    include/ui/viewmodels/StatementDraftViewModel.h
-    include/ui/viewmodels/TransactionDraftViewModel.h
     include/ui/shell/NavigationState.h
     include/ui/viewmodels/SettingsViewModel.h
     include/ui/viewmodels/AnalysisViewModel.h
     include/ui/viewmodels/AnnualViewModel.h
     include/ui/viewmodels/BookingViewModel.h
     include/ui/workspace/WorkspaceSelection.h
-    include/ui/workspace/RowSelectionSupport.h
     include/ui/workspace/WorkspaceCacheModels.h
     include/ui/workspace/WorkspaceCache.h
     include/ui/workspace/WorkspaceRowProjector.h
@@ -148,21 +143,15 @@ target_include_directories(fossredder_ui PUBLIC
 target_include_directories(fossredder_ui PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/adapters
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/i18n
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/observability
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/platform
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared/config
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared/observability
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared/payload
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared/text
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shared/util
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/presentation
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shell
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shell/window
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/util
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows/analysis
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows/annual
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows/export
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows/import
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workspace
 )
 
@@ -344,21 +333,30 @@ if(BUILD_UI_TESTS)
     file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tests/qml" UI_QML_TEST_SOURCE_DIR)
 
     set(UI_UNIT_TEST_SRCS
-        tests/unit/TestAnalysisState.cpp
-        tests/unit/TestAnalysisWorkflow.cpp
-        tests/unit/TestAnnualState.cpp
-        tests/unit/TestAnnualWorkflow.cpp
-        tests/unit/TestExportState.cpp
-        tests/unit/TestExportWorkflow.cpp
-        tests/unit/TestImportWorkflow.cpp
-        tests/unit/TestNavigationState.cpp
-        tests/unit/TestSettingsState.cpp
-        tests/unit/TestWorkspaceCacheModels.cpp
-        tests/unit/TestWorkspaceStartupRehydration.cpp
-        tests/unit/TestWorkspaceFacade.cpp
-        tests/unit/TestWorkspaceRowProjector.cpp
-        tests/unit/TestWorkspaceSelection.cpp
-        tests/unit/TestWorkspaceCache.cpp
+        tests/unit/adapters/TestAnalysisAdapter.cpp
+        tests/unit/adapters/TestAnnualAdapter.cpp
+        tests/unit/adapters/TestExportAdapter.cpp
+        tests/unit/adapters/TestImportAdapter.cpp
+        tests/unit/state/TestNavigationState.cpp
+        tests/unit/viewmodels/TestActorViewModel.cpp
+        tests/unit/viewmodels/TestAnalysisViewModel.cpp
+        tests/unit/viewmodels/TestAnnualViewModel.cpp
+        tests/unit/viewmodels/TestBookingViewModel.cpp
+        tests/unit/viewmodels/TestContractViewModel.cpp
+        tests/unit/viewmodels/TestExportViewModel.cpp
+        tests/unit/viewmodels/TestImportViewModel.cpp
+        tests/unit/viewmodels/TestPropertyViewModel.cpp
+        tests/unit/viewmodels/TestSettingsViewModel.cpp
+        tests/unit/workflows/TestAnalysisWorkflow.cpp
+        tests/unit/workflows/TestAnnualWorkflow.cpp
+        tests/unit/workflows/TestExportWorkflow.cpp
+        tests/unit/workflows/TestImportWorkflow.cpp
+        tests/unit/workspace/TestWorkspaceCache.cpp
+        tests/unit/workspace/TestWorkspaceCacheModels.cpp
+        tests/unit/workspace/TestWorkspaceFacade.cpp
+        tests/unit/workspace/TestWorkspaceRowProjector.cpp
+        tests/unit/workspace/TestWorkspaceSelection.cpp
+        tests/unit/workspace/TestWorkspaceStartupRehydration.cpp
     )
 
     add_executable(ui_unit_tests ${UI_UNIT_TEST_SRCS})
@@ -379,6 +377,7 @@ if(BUILD_UI_TESTS)
     gtest_discover_tests(ui_unit_tests PROPERTIES LABELS "UNIT")
 
     set(UI_INTERACTION_TEST_SRCS
+        tests/interaction/TestFeatureWiring.cpp
         tests/interaction/TestImportState.cpp
     )
 
@@ -389,6 +388,9 @@ if(BUILD_UI_TESTS)
             FossRedder::Ui
     )
     target_compile_features(ui_interaction_tests PRIVATE cxx_std_20)
+    target_include_directories(ui_interaction_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
     fossredder_set_runtime_output_dirs(ui_interaction_tests)
     fossredder_enable_target_quality(ui_interaction_tests)
     gtest_discover_tests(ui_interaction_tests PROPERTIES LABELS "INTERACTION")

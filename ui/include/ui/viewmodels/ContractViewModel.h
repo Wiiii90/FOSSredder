@@ -1,6 +1,6 @@
 /**
  * @file ui/include/ui/viewmodels/ContractViewModel.h
- * @brief Declares the UI contract state wrapper used by the Contract view.
+ * @brief Declares the QML API for the Contract view.
  */
 
 #pragma once
@@ -15,7 +15,7 @@ namespace ui {
 class WorkspaceFacade;
 
 /**
- * @brief Owns the editable contract UI state and its selection-aware workflow.
+ * @brief Owns editable contract UI state and delegates contract CRUD to workspace.
  */
 class ContractViewModel : public QObject {
   Q_OBJECT
@@ -32,7 +32,6 @@ class ContractViewModel : public QObject {
                  setSelectedActorIds NOTIFY changed)
   Q_PROPERTY(QVariantList selectedPropertyIds READ selectedPropertyIds WRITE
                  setSelectedPropertyIds NOTIFY changed)
-  Q_PROPERTY(QVariantList actorRows READ actorRows NOTIFY changed)
   Q_PROPERTY(QVariantList actorDisplayRows READ actorDisplayRows NOTIFY changed)
   Q_PROPERTY(QVariantList contractRows READ contractRows NOTIFY changed)
   Q_PROPERTY(QVariantList propertyRows READ propertyRows NOTIFY changed)
@@ -54,16 +53,46 @@ public:
    * @return Selected contract id, or an empty string in create mode.
    */
   QString currentId() const;
+  /**
+   * @brief Returns the editable contract name.
+   * @return Current form name.
+   */
   QString name() const { return name_; }
+  /**
+   * @brief Updates the editable contract name.
+   * @param value New form name.
+   */
   void setName(const QString &value);
+  /**
+   * @brief Returns editable contract aliases.
+   * @return Current alias list.
+   */
   QVariantList aliases() const { return aliases_; }
+  /**
+   * @brief Replaces editable contract aliases.
+   * @param value New alias list.
+   */
   void setAliases(const QVariantList &value);
+  /**
+   * @brief Returns the current alias input text.
+   * @return Current alias input text.
+   */
   QString aliasInputText() const { return aliasInputText_; }
+  /**
+   * @brief Updates the current alias input text.
+   * @param value New alias input text.
+   */
   void setAliasInputText(const QString &value);
+  /**
+   * @brief Returns the selected alias index.
+   * @return Selected alias index, or `-1` when no alias is selected.
+   */
   int aliasIndex() const { return aliasIndex_; }
+  /**
+   * @brief Updates the selected alias index.
+   * @param value New selected alias index.
+   */
   void setAliasIndex(int value);
-  QString savedName() const { return savedName_; }
-  QVariantList savedAliases() const { return savedAliases_; }
 
   /**
    * @brief Returns the editable contract type.
@@ -114,12 +143,6 @@ public:
   void setSelectedPropertyIds(const QVariantList &value);
 
   /**
-   * @brief Returns actor rows for the contract actor selector.
-   * @return QML-ready actor rows from the workspace facade.
-   */
-  QVariantList actorRows() const;
-
-  /**
    * @brief Returns actor rows with an empty entry for the primary actor combo.
    * @return QML-ready display rows.
    */
@@ -160,20 +183,21 @@ public:
    * @return True when required contract fields are valid.
    */
   bool canSubmit() const;
-  Q_INVOKABLE bool canAddAlias(const QString &value) const;
-  Q_INVOKABLE bool canRemoveSelectedAlias() const;
-  Q_INVOKABLE bool isAliasSelected(int index) const;
-  Q_INVOKABLE void addAlias(const QString &value);
-  Q_INVOKABLE void removeAlias(int index);
-  Q_INVOKABLE void selectAlias(int index);
-  Q_INVOKABLE void requestRemoveSelectedAlias();
-
   /**
-   * @brief Checks whether a property id is selected.
-   * @param propertyId Property id to check.
-   * @return True when the property is selected.
+   * @brief Checks whether an alias value can be added to the form.
+   * @param value Alias text to inspect.
+   * @return `true` when the alias text is not blank.
    */
-  Q_INVOKABLE bool isPropertySelected(const QString &propertyId) const;
+  Q_INVOKABLE bool canAddAlias(const QString &value) const;
+  /**
+   * @brief Adds an alias to the contract form.
+   * @param value Alias text to add.
+   */
+  Q_INVOKABLE void addAlias(const QString &value);
+  /**
+   * @brief Removes the currently selected alias when possible.
+   */
+  Q_INVOKABLE void requestRemoveSelectedAlias();
 
   /**
    * @brief Clears the current contract form without changing workspace data.
@@ -234,6 +258,12 @@ private:
   void bindSignals();
 
   /**
+   * @brief Returns actor rows used to build the primary actor display list.
+   * @return QML-ready actor rows from the workspace facade.
+   */
+  QVariantList actorRows() const;
+
+  /**
    * @brief Reloads editable form state from the selected contract row.
    * @param forceReload Whether to reload even if the owner id did not change.
    */
@@ -250,16 +280,11 @@ private:
 
   /** @brief Clears editable contract-specific form fields. */
   void clearFormState();
-
   /**
-   * @brief Reads the selected contract allocatable mode from workspace rows.
-   * @return Normalized allocatable mode.
+   * @brief Checks whether the alias index points to an existing alias.
+   * @return `true` when the selected alias index points to an existing alias.
    */
-  QString currentAllocatableMode() const;
-  void clearBaseFormState();
-  void captureBaseSavedState();
-  void applyBaseFormState(const QVariantMap &state);
-
+  bool hasValidAliasSelection() const;
   WorkspaceFacade *workspace_ = nullptr;
   QString currentOwnerId_;
   QString name_;

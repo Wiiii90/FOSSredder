@@ -126,11 +126,16 @@ TEST(WorkspaceWorkflowServiceTest, ReplacesImportAndExportLogsAtomically) {
     ASSERT_FALSE(session.state().workflow.exportLogs.empty());
     EXPECT_EQ(session.state().workflow.importLogs.front()->id, "import-1");
     EXPECT_EQ(session.state().workflow.exportLogs.front()->id, "export-1");
+    EXPECT_TRUE(storagePtr->savedState_.workflow.importLogs.empty());
+    EXPECT_TRUE(storagePtr->savedState_.workflow.exportLogs.empty());
+
+    session.saveFile();
+
     EXPECT_EQ(storagePtr->savedState_.workflow.importLogs.size(), 1u);
     EXPECT_EQ(storagePtr->savedState_.workflow.exportLogs.size(), 1u);
 }
 
-TEST(WorkspaceWorkflowServiceTest, FinalizesImportedDraftIntoCatalogAndPersistsIt) {
+TEST(WorkspaceWorkflowServiceTest, FinalizesImportedDraftIntoCatalogInMemoryUntilSaveFile) {
     auto storage = std::make_unique<core::tests::application::workspace::FakeStorageManager>();
     auto* storagePtr = storage.get();
     WorkspaceSession session(std::move(storage));
@@ -167,6 +172,11 @@ TEST(WorkspaceWorkflowServiceTest, FinalizesImportedDraftIntoCatalogAndPersistsI
               session.state().catalog.transactions().front()->id());
     EXPECT_EQ(session.state().catalog.transactions().front()->statementId(),
               session.state().catalog.statements().front()->id());
+    EXPECT_TRUE(storagePtr->savedState_.catalog.statements().empty());
+    EXPECT_TRUE(storagePtr->savedState_.catalog.transactions().empty());
+
+    session.saveFile();
+
     EXPECT_EQ(storagePtr->savedState_.catalog.statements().size(), 1u);
     EXPECT_EQ(storagePtr->savedState_.catalog.transactions().size(), 1u);
 }

@@ -6,11 +6,42 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 namespace core::ports::workspace {
+
+enum class ValidationSeverity {
+    Info,
+    Warning,
+    Error
+};
+
+struct ValidationIssue {
+    std::string field;
+    std::string code;
+    std::string message;
+    ValidationSeverity severity = ValidationSeverity::Error;
+};
+
+struct ValidationResult {
+    std::vector<ValidationIssue> issues;
+
+    [[nodiscard]] bool valid() const noexcept {
+        for (const auto& issue : issues) {
+            if (issue.severity == ValidationSeverity::Error) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void addError(std::string field, std::string code, std::string message) {
+        issues.push_back({std::move(field), std::move(code), std::move(message), ValidationSeverity::Error});
+    }
+};
 
 struct ActorCommand {
     std::string id;
@@ -66,6 +97,7 @@ struct AnalysisCommand {
     bool includeCalculationAdjustments = true;
     std::string exportStateJson;
     std::string snapshotTransactionsJson;
+    std::string adjustmentsJson;
     std::vector<std::pair<std::string, double>> adjustments;
 };
 

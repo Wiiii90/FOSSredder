@@ -27,19 +27,17 @@ TestCase {
         property var importWorkflow: testCase.importWorkflow
         property var importLogs: testCase.importWorkflow.logs
         property string selectedDraftId: ""
-        property int refreshCalls: 0
         property int openCalls: 0
         property int deleteCalls: 0
         property var lastOpen: ({})
         property var lastDelete: ({})
-        function refreshImportState() { refreshCalls += 1 }
-        function openImportLog(index, logId, draftAttached, statementId, draftId) {
+        function openImportLog(logId, draftAttached, statementId, draftId) {
             openCalls += 1
-            lastOpen = { index: index, logId: logId, draftAttached: draftAttached, statementId: statementId, draftId: draftId }
+            lastOpen = { logId: logId, draftAttached: draftAttached, statementId: statementId, draftId: draftId }
         }
-        function deleteImportLog(index, logId, draftAttached, draftId) {
+        function deleteImportLog(logId, draftAttached, draftId) {
             deleteCalls += 1
-            lastDelete = { index: index, logId: logId, draftAttached: draftAttached, draftId: draftId }
+            lastDelete = { logId: logId, draftAttached: draftAttached, draftId: draftId }
         }
     }
 
@@ -112,7 +110,6 @@ TestCase {
         importWorkflow.logs = [
             { logId: "import-1", time: "2026-05-16 10:00:00", status: "Success", file: "/tmp/import.pdf", message: "done", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "done", draftAttached: false, draftId: "", statementId: "statement-1" }
         ]
-        importViewModel.refreshCalls = 0
         importViewModel.openCalls = 0
         importViewModel.deleteCalls = 0
         importViewModel.lastOpen = ({})
@@ -123,7 +120,6 @@ TestCase {
         const sidebar = createSidebar()
 
         compare(findRequired(sidebar, "runLogList").count, 1)
-        compare(importViewModel.refreshCalls, 1)
     }
 
     function test_IMP_S_002_draftImportLogClickDelegatesRowPayload() {

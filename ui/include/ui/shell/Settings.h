@@ -23,6 +23,10 @@ class Settings : public QObject {
       QString language READ language WRITE setLanguage NOTIFY languageChanged)
   Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY
                  themeModeChanged)
+  Q_PROPERTY(bool autosaveOnClose READ autosaveOnClose WRITE setAutosaveOnClose
+                 NOTIFY autosaveOnCloseChanged)
+  Q_PROPERTY(int autosaveIntervalMinutes READ autosaveIntervalMinutes WRITE
+                 setAutosaveIntervalMinutes NOTIFY autosaveIntervalMinutesChanged)
   Q_PROPERTY(QString importDefaultPath READ importDefaultPath WRITE
                  setImportDefaultPath NOTIFY importDefaultPathChanged)
   Q_PROPERTY(QString importPoppler READ importPoppler WRITE setImportPoppler
@@ -70,6 +74,10 @@ public:
 
   QString language() const { return values_.language; }
   QString themeMode() const { return values_.themeMode; }
+  bool autosaveOnClose() const noexcept { return values_.autosaveOnClose; }
+  int autosaveIntervalMinutes() const noexcept {
+    return values_.autosaveIntervalMinutes;
+  }
   QString importDefaultPath() const { return values_.importDefaultPath; }
   QString importPoppler() const { return values_.importPoppler; }
   QString importOpenCv() const { return values_.importOpenCv; }
@@ -115,6 +123,8 @@ public:
 
   void setLanguage(const QString &value);
   void setThemeMode(const QString &value);
+  void setAutosaveOnClose(bool value);
+  void setAutosaveIntervalMinutes(int value);
   void setImportDefaultPath(const QString &value);
   void setImportPoppler(const QString &value);
   void setImportOpenCv(const QString &value);
@@ -144,6 +154,8 @@ public:
 signals:
   void languageChanged();
   void themeModeChanged();
+  void autosaveOnCloseChanged();
+  void autosaveIntervalMinutesChanged();
   void importDefaultPathChanged();
   void importPopplerChanged();
   void importOpenCvChanged();
@@ -172,6 +184,8 @@ private:
   struct Values {
     QString language;
     QString themeMode;
+    bool autosaveOnClose = true;
+    int autosaveIntervalMinutes = 0;
     QString importDefaultPath;
     QString importPoppler;
     QString importOpenCv;
@@ -199,6 +213,7 @@ private:
   static QString normalizeText(const QString &value);
   static QString normalizeThemeMode(const QString &value);
   static int normalizeArchiveFormat(int value) noexcept;
+  static int normalizeAutosaveIntervalMinutes(int value) noexcept;
   static Values defaultValues();
 
   template <typename TValue, typename TSignal>

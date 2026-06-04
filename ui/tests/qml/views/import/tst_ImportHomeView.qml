@@ -65,7 +65,7 @@ TestCase {
         function selectNextDraft() {}
         function clearImport() {}
         function cancelCurrentImport() {}
-        function cancelAllImports() {}
+        function cancelQueuedImports() {}
         function pauseImport() {}
         function resumeImport() {}
         function startImport() {}

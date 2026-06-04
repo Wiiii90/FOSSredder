@@ -59,14 +59,6 @@ Item {
             onClicked: if (root.contractViewModel) root.contractViewModel.deleteCurrent()
         }
 
-        Controls.SecondaryButton {
-            objectName: "contractCreateModeButton"
-            visible: root.contractViewModel ? root.contractViewModel.isEdit : false
-            text: qsTr("New")
-            Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.contractViewModel) root.contractViewModel.enterCreateMode()
-        }
-
         Controls.SuccessButton {
             objectName: "contractUpdateButton"
             visible: root.contractViewModel ? root.contractViewModel.isEdit : false

@@ -26,9 +26,9 @@ TestCase {
         property var contracts: []
         property var actors: []
         property var properties: []
-        onSelectedContractIdChanged: if (testCase.contractViewModel) testCase.contractViewModel.syncFromSelection(false)
-        onSelectedContractChanged: if (testCase.contractViewModel) testCase.contractViewModel.syncFromSelection(true)
-        onDataRevisionChanged: if (testCase.contractViewModel) testCase.contractViewModel.syncFromSelection(true)
+        onSelectedContractIdChanged: if (testCase.contractViewModel) testCase.contractViewModel.reloadFakeFormFromSelection(false)
+        onSelectedContractChanged: if (testCase.contractViewModel) testCase.contractViewModel.reloadFakeFormFromSelection(true)
+        onDataRevisionChanged: if (testCase.contractViewModel) testCase.contractViewModel.reloadFakeFormFromSelection(true)
 
         function contractFormState(name, type, selectedActorIds, selectedPropertyIds, aliases) {
             var aliasValues = aliases || []
@@ -148,8 +148,8 @@ TestCase {
             if (selectedContract && selectedContract["setState"])
                 selectedContract["setState"](newId, newName, newType, newActorIds, newPropertyIds, newAliases)
             selectedContractId = String(newId || "")
-            if (testCase.contractViewModel && testCase.contractViewModel["syncFromSelection"])
-                testCase.contractViewModel["syncFromSelection"](true)
+            if (testCase.contractViewModel)
+                testCase.contractViewModel.reloadFakeFormFromSelection(true)
         }
     }
 
@@ -258,8 +258,6 @@ TestCase {
         }
 
         function canAddAlias(value) { return String(value || "").trim().length > 0 }
-        function canRemoveSelectedAlias() { return aliasIndex >= 0 && aliasIndex < aliases.length }
-        function isAliasSelected(index) { return aliasIndex === index }
 
         function clearFormState() {
             name = ""
@@ -280,7 +278,7 @@ TestCase {
             savedSelectedPropertyIds = selectedPropertyIds.slice(0)
         }
 
-        function syncFromSelection(forceReload) {
+        function reloadFakeFormFromSelection(forceReload) {
             const currentId = testCase.session.selectedContractId || ""
             if (!forceReload && currentOwnerId === currentId)
                 return
@@ -315,16 +313,15 @@ TestCase {
             aliasInputText = ""
         }
 
-        function removeAlias(index) {
-            const next = testCase.session.removeAt(aliases || [], index)
+        function requestRemoveSelectedAlias() {
+            if (aliasIndex < 0 || aliasIndex >= aliases.length)
+                return
+            const next = testCase.session.removeAt(aliases || [], aliasIndex)
             if (next.length === aliases.length)
                 return
             aliases = next
-            aliasIndex = next.length > 0 ? Math.min(index, next.length - 1) : -1
+            aliasIndex = next.length > 0 ? Math.min(aliasIndex, next.length - 1) : -1
         }
-
-        function selectAlias(index) { aliasIndex = index }
-        function requestRemoveSelectedAlias() { if (canRemoveSelectedAlias()) removeAlias(aliasIndex) }
         function selectPrimaryActor(actorId) {
             const id = String(actorId || "").trim()
             selectedActorIds = id.length > 0 ? [id] : []
@@ -349,14 +346,14 @@ TestCase {
             if (rows.length === 0) return
             testCase.session.selectedContractId = testCase.session.navigatedId(rows, isEdit ? testCase.session.selectedContractId : "", -1, rows.length - 1)
             syncSelectionObject()
-            syncFromSelection(true)
+            reloadFakeFormFromSelection(true)
         }
         function next() {
             const rows = testCase.workspaceFacade.contractRows || []
             if (rows.length === 0) return
             testCase.session.selectedContractId = testCase.session.navigatedId(rows, isEdit ? testCase.session.selectedContractId : "", 1, 0)
             syncSelectionObject()
-            syncFromSelection(true)
+            reloadFakeFormFromSelection(true)
         }
         function syncSelectionObject() {
             const id = testCase.session.selectedContractId || ""
@@ -451,7 +448,7 @@ TestCase {
         var contractObject = createContractObject(selectedContract)
         session.selectedContract = contractObject
         session.selectedContractId = contractObject ? contractObject.id : ""
-        contractViewModel.syncFromSelection(true)
+        contractViewModel.reloadFakeFormFromSelection(true)
         return createTemporaryObject(contractFormComponent, testCase)
     }
 

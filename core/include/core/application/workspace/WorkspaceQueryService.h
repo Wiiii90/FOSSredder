@@ -11,6 +11,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace core::application {
 
@@ -35,6 +36,18 @@ public:
      * @return Matching draft snapshot when found.
      */
     [[nodiscard]] std::optional<core::ports::workspace::StatementDraftSnapshot> statementDraftSnapshot(const std::string& draftId = {}) const;
+    /** @brief Finds an actor identity by normalized name. */
+    [[nodiscard]] core::ports::workspace::WorkspaceIdentitySnapshot actorIdentityByName(const std::string& name) const;
+    /** @brief Finds a property identity by normalized name. */
+    [[nodiscard]] core::ports::workspace::WorkspaceIdentitySnapshot propertyIdentityByName(const std::string& name) const;
+    /** @brief Finds a contract identity by normalized signature. */
+    [[nodiscard]] core::ports::workspace::WorkspaceIdentitySnapshot contractIdentityBySignature(
+        const std::string& name,
+        const std::string& type,
+        const std::vector<std::string>& actorIds,
+        const std::vector<std::string>& propertyIds) const;
+    /** @brief Returns the next generated contract name. */
+    [[nodiscard]] std::string nextContractName() const;
     /** @brief Returns current workspace file path. */
     const std::string& currentPath() const noexcept;
 

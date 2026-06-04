@@ -54,10 +54,6 @@ TestCase {
         function selectNoProperties() {
             selectedPropertyIds = []
         }
-
-        function selectUnassignedProperties() {
-            selectedPropertyIds = ["unassigned"]
-        }
     }
 
     Component {

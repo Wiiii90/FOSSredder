@@ -14,7 +14,7 @@
 
 namespace core::application {
 
-TEST(WorkspaceCommandServiceTest, RoutesCatalogCommandsThroughCommitBoundary) {
+TEST(WorkspaceCommandServiceTest, RoutesCatalogCommandsThroughInMemorySession) {
     auto storage = std::make_unique<core::tests::application::workspace::FakeStorageManager>();
     auto* storagePtr = storage.get();
     WorkspaceSession session(std::move(storage));
@@ -27,20 +27,24 @@ TEST(WorkspaceCommandServiceTest, RoutesCatalogCommandsThroughCommitBoundary) {
     const auto statementId = service.addStatement(addCommand);
 
     EXPECT_FALSE(statementId.empty());
-    EXPECT_EQ(storagePtr->savedState_.catalog.statements().size(), 1u);
-    ASSERT_FALSE(storagePtr->savedState_.catalog.statements().empty());
-    EXPECT_EQ(storagePtr->savedState_.catalog.statements().front()->name(), "Statement");
+    EXPECT_EQ(session.catalogState().statements().size(), 1u);
+    ASSERT_FALSE(session.catalogState().statements().empty());
+    EXPECT_EQ(session.catalogState().statements().front()->name(), "Statement");
+    EXPECT_TRUE(storagePtr->savedState_.catalog.statements().empty());
 
     core::ports::workspace::StatementCommand updateCommand;
     updateCommand.id = statementId;
     updateCommand.name = "Statement Updated";
     service.updateStatement(updateCommand);
 
-    ASSERT_FALSE(storagePtr->savedState_.catalog.statements().empty());
-    EXPECT_EQ(storagePtr->savedState_.catalog.statements().front()->name(), "Statement Updated");
+    ASSERT_FALSE(session.catalogState().statements().empty());
+    EXPECT_EQ(session.catalogState().statements().front()->name(), "Statement Updated");
 
     service.deleteStatement(statementId);
 
+    EXPECT_TRUE(session.catalogState().statements().empty());
+
+    session.saveFile();
     EXPECT_TRUE(storagePtr->savedState_.catalog.statements().empty());
 }
 
@@ -81,14 +85,14 @@ TEST(WorkspaceCommandServiceTest, InsertsTransactionAfterRequestedStatementTrans
     const auto insertedId = service.addTransaction(inserted);
     ASSERT_FALSE(insertedId.empty());
 
-    ASSERT_EQ(storagePtr->savedState_.catalog.statements().size(), 1u);
-    const auto& ids = storagePtr->savedState_.catalog.statements().front()->transactionIds();
+    ASSERT_EQ(session.catalogState().statements().size(), 1u);
+    const auto& ids = session.catalogState().statements().front()->transactionIds();
     ASSERT_EQ(ids.size(), 3u);
     EXPECT_EQ(ids[0], firstId);
     EXPECT_EQ(ids[1], insertedId);
     EXPECT_EQ(ids[2], secondId);
 
-    const auto transactions = storagePtr->savedState_.catalog.transactions();
+    const auto transactions = session.catalogState().transactions();
     const auto match = std::find_if(transactions.begin(), transactions.end(), [&](const auto& tx) {
         return tx && tx->id() == insertedId;
     });
@@ -143,11 +147,11 @@ TEST(WorkspaceCommandServiceTest, TransactionAllocatableChangeForcesContractMode
     tx.allocatable = false;
     service.updateTransaction(tx);
 
-    ASSERT_FALSE(storagePtr->savedState_.catalog.contracts().empty());
-    const auto contractIt = std::find_if(storagePtr->savedState_.catalog.contracts().begin(),
-                                         storagePtr->savedState_.catalog.contracts().end(),
+    ASSERT_FALSE(session.catalogState().contracts().empty());
+    const auto contractIt = std::find_if(session.catalogState().contracts().begin(),
+                                         session.catalogState().contracts().end(),
                                          [&](const auto& c) { return c && c->id() == contractId; });
-    ASSERT_NE(contractIt, storagePtr->savedState_.catalog.contracts().end());
+    ASSERT_NE(contractIt, session.catalogState().contracts().end());
     EXPECT_EQ((*contractIt)->allocatableMode(), "mixed");
 }
 
@@ -188,14 +192,14 @@ TEST(WorkspaceCommandServiceTest, AssigningContractToAnotherActorReplacesPreviou
     updateB.contractIds = {contractId};
     service.updateActor(updateB);
 
-    const auto& contracts = storagePtr->savedState_.catalog.contracts();
+    const auto& contracts = session.catalogState().contracts();
     const auto contractIt = std::find_if(contracts.begin(), contracts.end(),
                                          [&](const auto& c) { return c && c->id() == contractId; });
     ASSERT_NE(contractIt, contracts.end());
     ASSERT_EQ((*contractIt)->actorIds().size(), 1u);
     EXPECT_EQ((*contractIt)->actorIds().front(), actorBId);
 
-    const auto& actors = storagePtr->savedState_.catalog.actors();
+    const auto& actors = session.catalogState().actors();
     const auto actorAIt = std::find_if(actors.begin(), actors.end(),
                                        [&](const auto& a) { return a && a->id() == actorAId; });
     const auto actorBIt = std::find_if(actors.begin(), actors.end(),
@@ -246,7 +250,7 @@ TEST(WorkspaceCommandServiceTest, ContractUpdateKeepsOnlyFirstActorId) {
     updateContract.propertyIds = {propertyId};
     service.updateContract(updateContract);
 
-    const auto& contracts = storagePtr->savedState_.catalog.contracts();
+    const auto& contracts = session.catalogState().contracts();
     const auto contractIt = std::find_if(contracts.begin(), contracts.end(),
                                          [&](const auto& c) { return c && c->id() == contractId; });
     ASSERT_NE(contractIt, contracts.end());

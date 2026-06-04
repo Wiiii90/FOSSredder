@@ -15,12 +15,12 @@
 #include "ui/platform/FileSystemBrowser.h"
 #include "ui/platform/LanguageService.h"
 #include "ui/platform/FileDialogs.h"
-#include "ui/shared/observability/Origins.h"
+#include "ui/observability/Origins.h"
 #include "ui/shell/NavigationState.h"
 #include "ui/shell/Settings.h"
 #include "ui/shell/StatusState.h"
 #include "ui/workspace/WorkspaceFacade.h"
-#include "ui/shared/text/Text.h"
+#include "ui/i18n/Text.h"
 #include "ui/shell/window/MainWindowTrace.h"
 
 namespace ui::window {

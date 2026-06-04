@@ -1,231 +1,302 @@
 # UI Zielarchitektur
 
-Diese Notiz beschreibt den aktuellen Zielzustand fuer den `ui`-Refactor.
-Sie ersetzt die fruehere Uebergangsskizze: keine Alias-Bruecken, keine
-Kompatibilitaetsdateien, keine parallelen alten Pfade.
+Diese Notiz beschreibt den Zielzustand fuer den `ui`-Refactor in Richtung v0.5
+prod-ready. Sie ist keine Uebergangsskizze: keine Alias-Bruecken, keine
+Kompatibilitaetsdateien, keine parallelen alten Pfade und kein
+`WorkspaceFacade`-Kompatibilitaetsaggregat.
 
 ## Leitbild
 
-- QML konsumiert UI-State-Objekte als Presenter fuer Views.
-- Diese Presenter orchestrieren Workflows, wenn ein Use Case Arbeit ausloest.
-- Dauerhafte Daten, Mutationen und Snapshot-Refresh laufen ueber
-  `ui/workspace/WorkspaceFacade`.
+- QML konsumiert ViewModels und Shell-Services als schmale Presenter fuer Views.
+- ViewModels halten lokalen Form- und Praesentationszustand. Sie halten keine
+  Workspace-Schattenkopien und implementieren keine Domain-Regeln.
+- Dauerhafte Workspace-Daten kommen aus `core::ports::workspace::WorkspaceSnapshot`
+  und werden UI-seitig genau einmal im `WorkspaceStore` gehalten.
+- Workspace-Mutationen laufen ueber `WorkspaceCommands`.
+- Workspace-Read-Modelle fuer ViewModels und QML laufen ueber
+  `WorkspaceSelectors`.
+- Cross-View-Auswahl laeuft ueber `WorkspaceSelection`.
+- QML-Payload-Konstruktion fuer Workspace-Zeilen liegt in `WorkspacePayloads`.
+- Multi-Step-Use-Cases laufen ueber Workflows: Import, Export, Analysis und
+  Annual.
 - `ui/src`, `ui/include/ui` und `ui/tests` konsumieren nur `core/ports`, nie
   `core/application` oder `core/domain`.
-- Die State-Schicht konsumiert keine Feature-Ports wie analysis, annual,
-  import oder export. Sie darf Workspace verwenden und Workflows ansteuern.
-- Workflows sind keine QML-Oberflaeche. Sie haben keine `Q_PROPERTY` und werden
-  nicht direkt aus QML konsumiert.
-- Booking gehoert zum Catalog-Bereich, nicht in eigene `booking`-State- oder
-  ViewModel-Ordner.
 
-## Aktuelle Struktur
+## Zielstruktur
+
+Die Workspace-Dateien bleiben im Workspace-Modul. Die Struktur bleibt flach und
+vermeidet eine Verteilung ueber viele `ui/src`-Unterordner.
 
 ```text
 ui/
   include/
     MainWindow.h
     ui/
+      adapters/
+        AnalysisAdapter.h
+        AnnualAdapter.h
+        ExportAdapter.h
+        ImportAdapter.h
+      i18n/
+        Text.h
+      observability/
+        ErrorCodes.h
+        Origins.h
+        Trace.h
+      platform/
+        FileDialogs.h
+        FileSystemBrowser.h
+        LanguageService.h
+      presentation/
+        PayloadKeys.h
+        PayloadMapper.h
       shell/
         AppActions.h
         AppContext.h
+        Defaults.h
+        NavigationState.h
         QmlContracts.h
         QmlRuntime.h
+        Settings.h
+        StatusState.h
         window/
           CloseWorkflow.h
           DropHandler.h
           MainWindowContext.h
           MainWindowTrace.h
-      workspace/
-        WorkspaceFacade.h
-      workflows/
-        analysis/
-          AnalysisWorkflow.h
-        annual/
-          AnnualWorkflow.h
-        export/
-          ExportRunner.h
-          ExportWorkflow.h
-        import/
-          DraftViewMapper.h
-          ImportDraftMapper.h
-          ImportJobBridge.h
-          ImportWorkflow.h
-          ImportWorkflowState.h
-          ImportWorkflowSupport.h
-      state/
-        catalog/
-          ActorState.h
-          CatalogFormState.h
-          BookingState.h
-          CatalogStateSupport.h
-          ContractState.h
-          LinkedCatalogState.h
-          PropertyState.h
-        export/
-          ExportState.h
-          ExportStateSupport.h
-        filters/
-          FilterState.h
-        import/
-          ImportState.h
-          StatementDraftState.h
-          TransactionDraftState.h
-          TransactionDraftStateSupport.h
-        navigation/
-          NavigationState.h
-        reporting/
-          AnalysisState.h
-          AnalysisStateSupport.h
-          AnnualState.h
-          AnnualStateSupport.h
-          ReportingStateSupport.h
-        selection/
-          RowSelectionSupport.h
-          SelectionState.h
-          SelectionStateRefreshSupport.h
-        session/
-          SessionMutationState.h
-          SessionMutationStateSupport.h
-          WorkspaceSessionModels.h
-          WorkspaceSessionSelection.h
-          WorkspaceSessionState.h
-        settings/
-          SettingsState.h
-          SettingsStateSupport.h
-        status/
-          StatusState.h
+      util/
+        StringConversions.h
       viewmodels/
-        base/
-          IndexedListModel.h
-          RowListModel.h
-          WorkflowRunListModel.h
-        catalog/
-          ActorListModel.h
-          ContractListModel.h
-          PropertyListModel.h
-          StatementListModel.h
-          TransactionFilterModel.h
-          TransactionListModel.h
-        export/
-          ExportRunListModel.h
-        import/
-          ImportRunListModel.h
-          ImportSuggestionViewModel.h
-          StatementDraftViewModel.h
-          TransactionDraftListModel.h
-          TransactionDraftViewModel.h
-        reporting/
-          AnalysisListModel.h
-          AnnualListModel.h
-        system/
-          SettingsViewModel.h
-      adapters/
-        WorkspaceRowProjector.h
-      platform/
-      shared/
-        util/
-          AmountParsing.h
-          Ids.h
-          RunMetadata.h
-          StringConversions.h
+        ActorViewModel.h
+        AnalysisViewModel.h
+        AnnualViewModel.h
+        BookingViewModel.h
+        ContractViewModel.h
+        ExportViewModel.h
+        ImportViewModel.h
+        PropertyViewModel.h
+        SettingsViewModel.h
+      workflows/
+        AnalysisWorkflow.h
+        AnnualWorkflow.h
+        ExportWorkflow.h
+        ImportWorkflow.h
+      workspace/
+        WorkspaceCommands.h
+        WorkspacePayloads.h
+        WorkspaceSelection.h
+        WorkspaceSelectors.h
+        WorkspaceStore.h
+  src/
+    adapters/
+      AnalysisAdapter.cpp
+      AnnualAdapter.cpp
+      ExportAdapter.cpp
+      ImportAdapter.cpp
+    observability/
+      Trace.cpp
+    platform/
+      FileDialogs.cpp
+      FileSystemBrowser.cpp
+      LanguageService.cpp
+    shell/
+      AppActions.cpp
+      AppContext.cpp
+      Composition.cpp
+      NavigationState.cpp
+      QmlRuntime.cpp
+      Settings.cpp
+      window/
+        CloseWorkflow.cpp
+        DropHandler.cpp
+        MainWindowContext.cpp
+    viewmodels/
+      ActorViewModel.cpp
+      AnalysisViewModel.cpp
+      AnnualViewModel.cpp
+      BookingViewModel.cpp
+      ContractViewModel.cpp
+      ExportViewModel.cpp
+      ImportViewModel.cpp
+      PropertyViewModel.cpp
+      SettingsViewModel.cpp
+    workflows/
+      AnalysisWorkflow.cpp
+      AnnualWorkflow.cpp
+      ExportWorkflow.cpp
+      ImportWorkflow.cpp
+    workspace/
+      WorkspaceCommands.cpp
+      WorkspacePayloads.cpp
+      WorkspaceSelection.cpp
+      WorkspaceSelectors.cpp
+      WorkspaceStore.cpp
 ```
 
-## Bewusst entfernte Pfade
+## Workspace Rollen
 
-- `ui/adapters/core/*`
-- `ui/state/booking/*`
-- `ui/state/mutation/*`
-- `ui/viewmodels/booking/*`
-- `ui/workflows/import/ImportRunStore.*`
-- `ui/workflows/export/WorkspaceSnapshot.*`
-- `AnalysisResultMapper`, `AnnualRequestMapper`, `AnnualResultMapper`,
-  `ImportSuggestionMapper`
-- alle Application-Header-Aliases und Kompatibilitaetsbruecken
+### WorkspaceStore
 
-## Rollen
+`WorkspaceStore` besitzt den aktuellen `WorkspaceSnapshot`, die gebundenen
+Workspace-Ports fuer Refresh/Lifecycle-Anbindung und die UI-Revision. Er ist
+die einzige UI-seitige Quelle fuer geladene Workspace-Daten.
 
-### State als Presenter
+Er darf:
 
-Die Klassen unter `ui/state` bilden die QML-nahe Presenter-Schicht. Sie halten
-lokalen Formzustand, leiten View-Aktionen weiter und koordinieren Workflows.
-Sie enthalten keine Domain- oder Application-Abhaengigkeiten.
-Ihre QML-Oberflaeche exportiert keine Wiring-Dependencies wie Workspace,
-Actions, SettingsViewModel, Status oder Workflow-Zeiger. Diese Abhaengigkeiten
-werden nur im Bootstrap per C++ gesetzt.
+- Snapshots laden und ersetzen.
+- `DeletionImpact` auf den gespeicherten Snapshot anwenden.
+- die Datenrevision erhoehen und Aenderungssignale emittieren.
+- fokussierte Snapshot-Zugriffe anbieten, wenn sie reine Store-Abfragen sind.
 
-`AppContext` ist nur noch die QML-Aggregation der Presenter und Services, die
-QML tatsaechlich konsumiert. Interne Bootstrap-Objekte wie `SettingsViewModel`
-bleiben ausserhalb des AppContext.
+Er darf nicht:
 
-### WorkspaceFacade
+- QML-Zeilen bauen.
+- Commands validieren oder ausfuehren.
+- Feature-Formstate halten.
+- Workflow-Use-Cases starten.
 
-`WorkspaceFacade` ist der zentrale UI-Adapter zu den Workspace-Ports. Catalog,
-Booking, Reporting-Daten, Import-Drafts und Run-Logs werden dort persistiert
-oder aus dem Snapshot in UI-Modelle geladen.
+### WorkspaceCommands
 
-Die Implementierung ist nach Verantwortungen aufgeteilt:
+`WorkspaceCommands` ist der einzige UI-seitige Mutationspfad fuer Workspace-
+Zustand. Es mappt UI-nahe Eingaben auf `core/ports/workspace`-Commands und
+delegiert an `IWorkspaceWriter`.
 
-- `WorkspaceFacade.cpp` enthaelt Konstruktion, Port-Bindung, Snapshot-Refresh
-  und Selection/Session-Verdrahtung.
-- `WorkspaceFacadeStorage.cpp` enthaelt Dateioperationen.
-- `WorkspaceFacadeCatalog.cpp` enthaelt Catalog-, Statement- und
-  Transaction-Kommandos.
-- `WorkspaceFacadeReporting.cpp` enthaelt Analysis- und Annual-Kommandos.
-- `WorkspaceFacadeWorkflow.cpp` enthaelt Statement-Drafts sowie Import- und
-  Export-Run-Logs.
-- Workspace-nahe Katalog-Identitaetsabfragen, zum Beispiel vorhandene
-  Property-/Contract-Signaturen fuer Import-Draft-Choices, bleiben ebenfalls
-  in `WorkspaceFacade` statt in Feature-Workflows eigene Snapshot-Suchlogik
-  aufzubauen.
+Es besitzt:
 
-### Workflows
+- Catalog-Commands fuer Actor, Property, Contract, Statement und Transaction.
+- Reporting-Commands fuer Analysis und Annual.
+- Draft- und Log-Commands, wenn diese persistierter Workspace-Zustand sind.
+- Storage-Commands wie new/open/save/save-as.
+- Validation-Payload-Mapping fuer QML.
 
-Workflows sind Use-Case-Orchestrierung fuer rechen- oder jobartige Aktionen:
-Analysis, Annual, Export und Import. Sie duerfen Ports konsumieren, bleiben
-aber hinter den State-Presentern und werden nicht an QML exportiert.
+Authoritative Validation bleibt in core. `WorkspaceCommands` darf nur
+UI-Payloads fuer Validation-Ergebnisse bauen.
 
-Import-Workflow-Implementierungen sind nach Ablaufarten getrennt:
+### WorkspaceSelection
 
-- `ImportWorkflowDraftChoices.cpp` erzeugt Actor/Property/Contract-Choices.
-  Es delegiert Workspace-Katalog-Lookups an `WorkspaceFacade`.
-- `ImportWorkflowDraftEdits.cpp` schreibt direkte Draft-Edits.
-- `ImportWorkflowDraftViewState.cpp` baut Derived View State und
-  Auto-Selection-Sync.
-- `ImportWorkflowDraftNavigation.cpp` behandelt Draft-Stack-Navigation.
-- `ImportWorkflowDraftWorkspace.cpp` persistiert/finalisiert Drafts.
-- `ImportWorkflowJobs.cpp` startet Jobs und Queue-Eintraege.
-- `ImportWorkflowJobCancellation.cpp` behandelt Cancel/Pause.
-- `ImportWorkflowJobTerminal.cpp` behandelt Job-Events und Terminal-Zustaende.
-- `ImportWorkflowRuns.cpp` synchronisiert persistierte Run-Logs.
+`WorkspaceSelection` besitzt die ausgewaehlten IDs ueber Views hinweg:
+Actor, Property, Contract, Statement, Transaction, Analysis und Annual.
 
-### Adapter
+Selection validiert IDs gegen den aktuellen Store-Zustand und korrigiert
+ungueltige Auswahl nach Snapshot-Refresh oder DeletionImpact. Sie fuehrt keine
+CRUD-Operationen aus und baut keine Feature-Formulare.
 
-Adapter duerfen echte Boundary-Formen uebersetzen. Globale Adapter bleiben
-workspace-nah; Feature-spezifische Mapper liegen beim jeweiligen Workflow.
-Sie sollen keine zweite Application-Schicht bilden und keine Parallelpfade
-neben Workspace/Workflow aufmachen.
+### WorkspaceSelectors
 
-`WorkspaceRowProjector` projiziert nur Workspace-Snapshots in QML-Zeilen.
-Generische Row-Auswahl, Ordering und Delete-Reselection liegen in
-`state/selection/RowSelectionSupport`, Catalog-Form-Snapshots in
-`state/catalog/CatalogStateSupport`.
+`WorkspaceSelectors` sind reine Read-Model-Projektionen aus `WorkspaceStore`
+und optional `WorkspaceSelection`.
 
-`viewmodels/base/WorkflowRunListModel` buendelt die gemeinsame Run-Listen-
-Mechanik fuer Import und Export. `IndexedListModel::setValueItems` buendelt
-Snapshot-Listen, damit Catalog- und Reporting-Modelle keine eigenen
-`shared_ptr`-Aufbau-Schleifen duplizieren.
+Sie bauen:
+
+- `actorRows`
+- `propertyRows`
+- `contractRows`
+- `analysisRows`
+- `annualRows`
+- `statementRows`
+- `statementRowsWithTransactions`
+- `statementTransactionRows`
+- `propertyTransactionRows`
+- `transactionRowById`
+- Dropdown- und Lookup-Varianten fuer ViewModels
+
+Selectors mutieren keinen Zustand, rufen keine Writer-Ports auf und enthalten
+keine Domain-Regeln. Wenn ein Selector fachliche Regeln braucht, gehoert diese
+Regel in core und muss ueber Port/DTO verfuegbar werden.
+
+### WorkspacePayloads
+
+`WorkspacePayloads` enthaelt workspace-spezifische
+`QVariantMap`/`QVariantList`-Builder und Validation-Payload-Helfer. Generische
+Qt-Konvertierungen bleiben in `ui/presentation/PayloadMapper`.
+
+`WorkspacePayloads` ist kein Sammelort fuer Businesslogik und kein Ersatz fuer
+Selectors.
+
+## Bewusst entfernte Workspace-Pfade
+
+Diese Workspace-Dateien sind nicht Teil der Zielarchitektur:
+
+```text
+ui/include/ui/workspace/WorkspaceFacade.h
+ui/include/ui/workspace/WorkspaceCache.h
+ui/include/ui/workspace/WorkspaceCacheModels.h
+ui/include/ui/workspace/WorkspaceFilterState.h
+ui/include/ui/workspace/WorkspaceRowProjector.h
+ui/include/ui/workspace/StatementListModel.h
+ui/include/ui/workspace/TransactionListModel.h
+ui/include/ui/workspace/TransactionFilterModel.h
+ui/include/ui/workspace/AnalysisListModel.h
+ui/include/ui/workspace/AnnualListModel.h
+ui/include/ui/workspace/IndexedListModel.h
+ui/include/ui/workspace/RowListModel.h
+ui/include/ui/workspace/WorkflowRunListModel.h
+
+ui/src/workspace/WorkspaceFacade.cpp
+ui/src/workspace/WorkspaceFacadeCatalog.cpp
+ui/src/workspace/WorkspaceFacadeReporting.cpp
+ui/src/workspace/WorkspaceFacadeStorage.cpp
+ui/src/workspace/WorkspaceCache.cpp
+ui/src/workspace/WorkspaceCacheModels.cpp
+ui/src/workspace/WorkspaceFilterState.cpp
+ui/src/workspace/WorkspaceRowProjector.cpp
+ui/src/workspace/StatementListModel.cpp
+ui/src/workspace/TransactionListModel.cpp
+ui/src/workspace/TransactionFilterModel.cpp
+ui/src/workspace/AnalysisListModel.cpp
+ui/src/workspace/AnnualListModel.cpp
+```
+
+## Qt ListModel Entscheidung
+
+Workspace-`QAbstractItemModel`-Adapter sind nicht Teil des v0.5-Zielbilds.
+Die aktuelle Produktiv-UI konsumiert Workspace-Daten ueber `QVariantList`-
+Properties der ViewModels, nicht ueber direkte Workspace-ListModels.
+
+Ein neuer Workspace-ListModel-Typ darf nur eingefuehrt werden, wenn ein
+konkreter QML-Consumer `QAbstractItemModel`, Proxy-/Filter-Verhalten oder
+Model-Rollenbindung benoetigt. In diesem Fall muss der Consumer dokumentiert
+werden, damit kein zweiter stiller Read-Model-Pfad entsteht.
+
+## ViewModels
+
+ViewModels haengen nicht an einem Workspace-Facade-Aggregat. Sie bekommen die
+konkreten Workspace-Rollen, die sie brauchen:
+
+- `WorkspaceCommands` fuer Mutationen.
+- `WorkspaceSelectors` fuer Zeilen, Dropdowns und Lookups.
+- `WorkspaceSelection` fuer ausgewaehlte IDs und Selection-Aktionen.
+- `WorkspaceStore` nur fuer Revision oder direkte Snapshot-nahe Read-Anlaesse.
+
+Mehrere Dependencies sind akzeptabel, wenn sie echte Rollen sichtbar machen.
+Ein methodenreiches Bundle oder eine neue Facade ist nicht erlaubt.
+
+## Workflows
+
+Workflows orchestrieren Use-Cases, die groesser sind als ein einzelnes
+Workspace-CRUD-Command: Import, Export, Analysis und Annual. Sie duerfen
+Runner-Ports und Workspace-Rollen konsumieren, bleiben aber hinter den
+ViewModels und werden nicht direkt aus QML bedient.
+
+## Adapter
+
+Adapter uebersetzen zwischen Qt/QML-freundlichen Typen und core Use-Case-Ports.
+Sie sollen Mapping, Delegation, Cancellation-/Progress-Bridging und Payload-
+Konvertierung enthalten. Sobald Adapter fachliche Rows, Summen,
+Katalogableitungen oder Exportinhalte ableiten, gehoert diese Logik in core
+oder in einen Workspace-Selector, je nachdem ob sie fachlich oder rein
+praesentationsnah ist.
 
 ## Architektur-Guards
 
-`ui/tests/unit/TestUiArchitectureGuard.cpp` prueft derzeit:
+Neue Guard-Tests sollen diese Regeln pruefen:
 
 - UI konsumiert keine non-port-Core-Header.
 - Produktions-QML konsumiert Workflows nicht direkt.
 - Workflow-Header enthalten keine QML-Properties.
-- State konsumiert keine Feature-Ports.
-- State-Header exportieren keine Wiring-Dependencies als QML-Properties.
-- Globale Adapter bleiben workspace-scoped und enthalten keine Feature-Port-
-  Mapper.
+- ViewModels konsumieren keine `WorkspaceFacade`.
+- Workspace-ListModels existieren nicht ohne dokumentierten QML-Consumer.
+- Workspace-Dateien verwenden keine neuen `Facade`, `Manager`,
+  `Projector`- oder Kompatibilitaetsnamen.
 
 Neue Refactor-Schnitte sollen diese Regeln erweitern, nicht umgehen.

@@ -23,16 +23,19 @@ TestCase {
         property bool showClear: true
         property bool showCancel: false
         property bool showPause: false
+        property bool isPaused: false
         property bool canStart: true
         property string pauseText: "Pause"
         property int clearCalls: 0
         property int startCalls: 0
         property int cancelCalls: 0
         property int pauseCalls: 0
+        property int resumeCalls: 0
         function clearForm() { clearCalls += 1 }
         function startExport() { startCalls += 1 }
         function cancelExport() { cancelCalls += 1 }
-        function togglePause() { pauseCalls += 1 }
+        function pauseExport() { pauseCalls += 1 }
+        function resumeExport() { resumeCalls += 1 }
     }
 
     property var theme: QtObject {
@@ -59,12 +62,14 @@ TestCase {
         exportViewModel.showClear = true
         exportViewModel.showCancel = false
         exportViewModel.showPause = false
+        exportViewModel.isPaused = false
         exportViewModel.canStart = true
         exportViewModel.pauseText = "Pause"
         exportViewModel.clearCalls = 0
         exportViewModel.startCalls = 0
         exportViewModel.cancelCalls = 0
         exportViewModel.pauseCalls = 0
+        exportViewModel.resumeCalls = 0
     }
 
     function test_EXP_BB_001_createModeButtonsDelegateToExportState() {
@@ -85,9 +90,10 @@ TestCase {
         const view = createView()
 
         TestSupport.findRequired(Lookup, view, "exportCancelButton").clicked()
-        TestSupport.findRequired(Lookup, view, "exportTogglePauseButton").clicked()
+        TestSupport.findRequired(Lookup, view, "exportPauseResumeButton").clicked()
 
         compare(exportViewModel.cancelCalls, 1)
         compare(exportViewModel.pauseCalls, 1)
+        compare(exportViewModel.resumeCalls, 0)
     }
 }

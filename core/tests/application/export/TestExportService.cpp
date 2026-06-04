@@ -7,11 +7,11 @@
 #include <gtest/gtest.h>
 
 #include "core/application/export/ExportService.h"
-#include "core/ports/analysis-image-renderer/IAnalysisImageRenderer.h"
-#include "core/ports/archive/IArchive.h"
-#include "core/ports/export/ExportRequest.h"
+#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/infra/archive/IArchive.h"
+#include "core/ports/usecases/export/ExportRequest.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
-#include "core/ports/xlsx-writer/IXlsxWriter.h"
+#include "core/ports/infra/xlsx-writer/IXlsxWriter.h"
 
 #include <algorithm>
 #include <filesystem>

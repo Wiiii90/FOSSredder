@@ -8,11 +8,10 @@
 #include <algorithm>
 #include <cmath>
 
-#include <QJsonDocument>
 #include <QMetaType>
 
-#include "ui/shared/payload/PayloadMapper.h"
-#include "ui/workspace/RowSelectionSupport.h"
+#include "ui/presentation/PayloadMapper.h"
+#include "ui/observability/Trace.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui {
@@ -45,6 +44,205 @@ QVariantList normalizeStringValues(const QVariantList &values) {
     out.push_back(stringValue(value));
   }
   return out;
+}
+
+QString rowIdAt(const QVariantList &rows, int index,
+                const QString &idKey = QStringLiteral("id")) {
+  if (index < 0 || index >= rows.size()) {
+    return {};
+  }
+  return rows.at(index).toMap().value(idKey).toString();
+}
+
+int indexOfId(const QVariantList &rows, const QString &id,
+              const QString &idKey = QStringLiteral("id")) {
+  if (id.isEmpty()) {
+    return -1;
+  }
+  for (int i = 0; i < rows.size(); ++i) {
+    if (rows.at(i).toMap().value(idKey).toString() == id) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int indexOfKeyValue(const QVariantList &rows, const QString &key,
+                    const QVariant &value) {
+  for (int i = 0; i < rows.size(); ++i) {
+    if (rows.at(i).toMap().value(key) == value) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+QVariantMap rowById(const QVariantList &rows, const QString &id,
+                    const QString &idKey = QStringLiteral("id")) {
+  const int index = indexOfId(rows, id.trimmed(), idKey);
+  return index >= 0 ? rows.at(index).toMap() : QVariantMap{};
+}
+
+QString deleteNextSelectionId(const QVariantList &rows, const QString &removedId,
+                              int defaultIndex = 0,
+                              const QString &idKey = QStringLiteral("id")) {
+  if (rows.isEmpty()) {
+    return {};
+  }
+  const int removedIndex = indexOfId(rows, removedId, idKey);
+  const int nextIndex = removedIndex >= 0 ? removedIndex + 1 : defaultIndex;
+  const int wrapped = nextIndex % rows.size();
+  return rowIdAt(rows, wrapped < 0 ? wrapped + rows.size() : wrapped, idKey);
+}
+
+int wrappedIndex(int index, int count) {
+  if (count <= 0) {
+    return -1;
+  }
+  const int normalized = index % count;
+  return normalized < 0 ? normalized + count : normalized;
+}
+
+QVariantList rowIds(const QVariantList &rows,
+                    const QString &idKey = QStringLiteral("id")) {
+  QVariantList out;
+  out.reserve(rows.size());
+  for (const auto &rowValue : rows) {
+    const QString id = rowValue.toMap().value(idKey).toString();
+    if (!id.isEmpty()) {
+      out.push_back(id);
+    }
+  }
+  return out;
+}
+
+bool rowHasId(const QVariantList &rows, const QString &id,
+              const QString &idKey = QStringLiteral("id")) {
+  return indexOfId(rows, id.trimmed(), idKey) >= 0;
+}
+
+QVariantList pruneAndAppendMissingIds(const QVariantList &preferredIds,
+                                      const QVariantList &availableIds) {
+  QVariantList out;
+  for (const auto &id : preferredIds) {
+    if (availableIds.contains(id) && !out.contains(id)) {
+      out.push_back(id);
+    }
+  }
+  for (const auto &id : availableIds) {
+    if (!out.contains(id)) {
+      out.push_back(id);
+    }
+  }
+  return out;
+}
+
+QVariantList orderRowsByIds(const QVariantList &rows,
+                            const QVariantList &orderIds,
+                            const QString &idKey = QStringLiteral("id")) {
+  QVariantList out;
+  out.reserve(rows.size());
+  for (const auto &orderId : orderIds) {
+    for (const auto &rowValue : rows) {
+      if (rowValue.toMap().value(idKey).toString() == orderId.toString() &&
+          !out.contains(rowValue)) {
+        out.push_back(rowValue);
+        break;
+      }
+    }
+  }
+  for (const auto &rowValue : rows) {
+    if (!out.contains(rowValue)) {
+      out.push_back(rowValue);
+    }
+  }
+  return out;
+}
+
+QVariantList orderWithInsertedId(const QVariantList &currentOrder,
+                                 const QVariantList &availableIds,
+                                 const QString &insertedId,
+                                 int insertAfterIndex) {
+  QVariantList out = pruneAndAppendMissingIds(currentOrder, availableIds);
+  if (!insertedId.isEmpty() && !out.contains(insertedId)) {
+    const int insertIndex =
+        std::clamp(insertAfterIndex + 1, 0, static_cast<int>(out.size()));
+    out.insert(insertIndex, insertedId);
+  }
+  return out;
+}
+
+QVariantMap orderedSelectionState(const QVariantList &rows,
+                                  const QVariantList &preferredOrder,
+                                  int currentIndex,
+                                  const QString &selectedId,
+                                  const QString &idKey = QStringLiteral("id")) {
+  const QVariantList orderIds =
+      pruneAndAppendMissingIds(preferredOrder, rowIds(rows, idKey));
+  const QVariantList orderedRows = orderRowsByIds(rows, orderIds, idKey);
+  if (orderedRows.isEmpty()) {
+    return {{QStringLiteral("rows"), orderedRows},
+            {QStringLiteral("orderIds"), orderIds},
+            {QStringLiteral("index"), -1},
+            {QStringLiteral("id"), QString()}};
+  }
+  const int selectedIndex = indexOfId(orderedRows, selectedId, idKey);
+  const int lastIndex = static_cast<int>(orderedRows.size()) - 1;
+  const int resolvedIndex =
+      selectedIndex >= 0
+          ? selectedIndex
+          : std::clamp(currentIndex, 0, lastIndex);
+  const QString resolvedId = selectedIndex >= 0
+                                 ? selectedId
+                                 : rowIdAt(orderedRows, resolvedIndex, idKey);
+  return {{QStringLiteral("rows"), orderedRows},
+          {QStringLiteral("orderIds"), orderIds},
+          {QStringLiteral("index"), resolvedIndex},
+          {QStringLiteral("id"), resolvedId}};
+}
+
+QVariantMap navigateSelectionState(const QVariantList &rows, int currentIndex,
+                                   const QString &selectedId, int delta,
+                                   int defaultIndex = 0,
+                                   const QString &idKey = QStringLiteral("id")) {
+  const int selectedIndex = indexOfId(rows, selectedId, idKey);
+  const int baseIndex = selectedIndex >= 0 ? selectedIndex : defaultIndex;
+  const int nextIndex = wrappedIndex(baseIndex + delta, rows.size());
+  return {{QStringLiteral("index"), nextIndex},
+          {QStringLiteral("id"), rowIdAt(rows, nextIndex, idKey)}};
+}
+
+QVariantMap deleteReselectionState(const QVariantList &rows,
+                                   const QVariantList &preferredOrder,
+                                   int currentIndex,
+                                   const QString &removedId,
+                                   const QString &idKey = QStringLiteral("id")) {
+  QVariantList remainingRows;
+  for (const auto &rowValue : rows) {
+    if (rowValue.toMap().value(idKey).toString() != removedId) {
+      remainingRows.push_back(rowValue);
+    }
+  }
+  QVariantList remainingOrder;
+  for (const auto &id : preferredOrder) {
+    if (id.toString() != removedId) {
+      remainingOrder.push_back(id);
+    }
+  }
+  return orderedSelectionState(remainingRows, remainingOrder, currentIndex, {},
+                               idKey);
+}
+
+QString rememberedOrFirstRowId(const QVariantList &rows,
+                               const QVariantMap &rememberedIds,
+                               const QString &ownerId,
+                               const QString &idKey = QStringLiteral("id")) {
+  const QString remembered =
+      rememberedIds.value(ownerId.trimmed()).toString().trimmed();
+  if (rowHasId(rows, remembered, idKey)) {
+    return remembered;
+  }
+  return rows.isEmpty() ? QString() : rowIdAt(rows, 0, idKey);
 }
 
 bool containsTrimmed(const QVariantList &values, const QString &id) {
@@ -102,46 +300,7 @@ bool setSelectedId(QVariantList &selectedIds, const QString &id,
   return true;
 }
 
-QVariantMap mapWith(const QVariantMap &base, const QString &key,
-                    const QVariant &value) {
-  QVariantMap out = base;
-  out.insert(key, value);
-  return out;
-}
-
-bool contractSupportsActor(const QVariantMap &contractRow,
-                           const QString &actorId) {
-  const QString targetActor = actorId.trimmed();
-  if (targetActor.isEmpty() || contractRow.isEmpty()) {
-    return true;
-  }
-  const QVariantList actorIds =
-      normalizeStringValues(contractRow.value(QStringLiteral("actorIds")).toList());
-  for (const auto &actorValue : actorIds) {
-    if (actorValue.toString() == targetActor) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool contractSupportsProperties(const QVariantMap &contractRow,
-                                const QVariantList &propertyIds) {
-  if (contractRow.isEmpty()) {
-    return true;
-  }
-  const QVariantList normalizedPropertyIds = normalizeStringValues(propertyIds);
-  const QVariantList allowedPropertyIds = normalizeStringValues(
-      contractRow.value(QStringLiteral("propertyIds")).toList());
-  for (const auto &propertyValue : normalizedPropertyIds) {
-    if (!allowedPropertyIds.contains(propertyValue)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-QVariantMap emptyTransactionDraft() {
+QVariantMap emptyTransactionFormState() {
   QVariantMap tx;
   tx.insert(QStringLiteral("id"), QString());
   tx.insert(QStringLiteral("name"), QString());
@@ -158,8 +317,8 @@ QVariantMap emptyTransactionDraft() {
   return tx;
 }
 
-QVariantMap normalizeTransactionDraft(const QVariantMap &tx) {
-  QVariantMap out = emptyTransactionDraft();
+QVariantMap normalizeTransactionFormState(const QVariantMap &tx) {
+  QVariantMap out = emptyTransactionFormState();
   for (auto it = tx.constBegin(); it != tx.constEnd(); ++it) {
     out.insert(it.key(), it.value());
   }
@@ -187,17 +346,17 @@ QVariantMap normalizeTransactionDraft(const QVariantMap &tx) {
   return out;
 }
 
-QVariantList normalizeTransactionDrafts(const QVariantList &values) {
+QVariantList normalizeTransactionFormStates(const QVariantList &values) {
   QVariantList out;
   out.reserve(values.size());
   for (const auto &value : values) {
-    out.push_back(normalizeTransactionDraft(value.toMap()));
+    out.push_back(normalizeTransactionFormState(value.toMap()));
   }
   return out;
 }
 
-bool transactionDraftHasContent(const QVariantMap &tx) {
-  const QVariantMap normalized = normalizeTransactionDraft(tx);
+bool transactionFormStateHasContent(const QVariantMap &tx) {
+  const QVariantMap normalized = normalizeTransactionFormState(tx);
   const QVariant amount = normalized.value(QStringLiteral("amount"));
   const bool hasAmount = amount.userType() == QMetaType::Double
                              ? amount.toDouble() != 0.0
@@ -215,142 +374,92 @@ bool transactionDraftHasContent(const QVariantMap &tx) {
          normalized.value(QStringLiteral("status")).toInt() != 0;
 }
 
-QVariantMap transactionDraft(const QVariantMap &draft,
-                             const QVariantList &contractRows,
-                             const QVariantMap &changes) {
-  QVariantMap out = draft;
-  if (changes.contains(QStringLiteral("contractId"))) {
-    const QString normalizedContractId =
-        changes.value(QStringLiteral("contractId")).toString().trimmed();
-    const QVariantMap contractRow = rowById(contractRows, normalizedContractId);
-    const QVariantList actorIds =
-        normalizeStringValues(contractRow.value(QStringLiteral("actorIds")).toList());
-    const QVariantList propertyIds = normalizeStringValues(
-        contractRow.value(QStringLiteral("propertyIds")).toList());
-    const QString actorId =
-        actorIds.isEmpty() ? QString() : actorIds.first().toString();
-    out = mapWith(out, QStringLiteral("contractId"), normalizedContractId);
-    out = mapWith(out, QStringLiteral("actorId"), actorId);
-    out = mapWith(out, QStringLiteral("propertyIds"), propertyIds);
+QVariantMap createFormStateList(const QVariantList &states, int currentIndex,
+                                const QVariantMap &emptyState) {
+  QVariantList normalizedStates = normalizeTransactionFormStates(states);
+  if (normalizedStates.isEmpty()) {
+    normalizedStates.push_back(normalizeTransactionFormState(emptyState));
   }
-  if (changes.contains(QStringLiteral("actorId"))) {
-    const QString normalizedActorId =
-        changes.value(QStringLiteral("actorId")).toString().trimmed();
-    const QString currentContractId =
-        out.value(QStringLiteral("contractId")).toString().trimmed();
-    const QVariantMap currentContract = rowById(contractRows, currentContractId);
-    const QString nextContractId =
-        contractSupportsActor(currentContract, normalizedActorId)
-            ? currentContractId
-            : QString();
-    out = mapWith(out, QStringLiteral("actorId"), normalizedActorId);
-    out = mapWith(out, QStringLiteral("contractId"), nextContractId);
-  }
-  if (changes.contains(QStringLiteral("propertyIds"))) {
-    const QVariantList normalizedPropertyIds = normalizeStringValues(
-        changes.value(QStringLiteral("propertyIds")).toList());
-    const QString currentContractId =
-        out.value(QStringLiteral("contractId")).toString().trimmed();
-    const QVariantMap currentContract = rowById(contractRows, currentContractId);
-    const QString nextContractId =
-        contractSupportsProperties(currentContract, normalizedPropertyIds)
-            ? currentContractId
-            : QString();
-    out = mapWith(out, QStringLiteral("propertyIds"), normalizedPropertyIds);
-    out = mapWith(out, QStringLiteral("contractId"), nextContractId);
-  }
-  return out;
-}
-
-QVariantMap createDraftListState(const QVariantList &drafts, int currentIndex,
-                                 const QVariantMap &emptyDraft) {
-  QVariantList normalizedDrafts = normalizeTransactionDrafts(drafts);
-  if (normalizedDrafts.isEmpty()) {
-    normalizedDrafts.push_back(normalizeTransactionDraft(emptyDraft));
-  }
-  const int lastIndex = static_cast<int>(normalizedDrafts.size()) - 1;
+  const int lastIndex = static_cast<int>(normalizedStates.size()) - 1;
   const int index = std::clamp(currentIndex, 0, lastIndex);
-  return {{QStringLiteral("drafts"), normalizedDrafts},
+  return {{QStringLiteral("states"), normalizedStates},
           {QStringLiteral("index"), index}};
 }
 
-QVariantMap insertDraftAfterCurrent(const QVariantList &drafts,
-                                    int currentIndex,
-                                    const QVariantMap &emptyDraft) {
-  const QVariantMap base = createDraftListState(drafts, currentIndex, emptyDraft);
-  QVariantList normalizedDrafts = base.value(QStringLiteral("drafts")).toList();
+QVariantMap insertFormStateAfterCurrent(const QVariantList &states,
+                                        int currentIndex,
+                                        const QVariantMap &emptyState) {
+  const QVariantMap base =
+      createFormStateList(states, currentIndex, emptyState);
+  QVariantList normalizedStates = base.value(QStringLiteral("states")).toList();
   const int index = base.value(QStringLiteral("index")).toInt();
   const int insertIndex =
-      std::clamp(index + 1, 0, static_cast<int>(normalizedDrafts.size()));
-  normalizedDrafts.insert(insertIndex, normalizeTransactionDraft(emptyDraft));
-  return {{QStringLiteral("drafts"), normalizedDrafts},
+      std::clamp(index + 1, 0, static_cast<int>(normalizedStates.size()));
+  normalizedStates.insert(insertIndex,
+                          normalizeTransactionFormState(emptyState));
+  return {{QStringLiteral("states"), normalizedStates},
           {QStringLiteral("index"), insertIndex}};
 }
 
-QVariantMap removeDraftAt(const QVariantList &drafts, int currentIndex,
-                          const QVariantMap &emptyDraft) {
-  const QVariantMap base = createDraftListState(drafts, currentIndex, emptyDraft);
-  QVariantList normalizedDrafts = base.value(QStringLiteral("drafts")).toList();
+QVariantMap removeFormStateAt(const QVariantList &states, int currentIndex,
+                              const QVariantMap &emptyState) {
+  const QVariantMap base = createFormStateList(states, currentIndex, emptyState);
+  QVariantList normalizedStates = base.value(QStringLiteral("states")).toList();
   int index = base.value(QStringLiteral("index")).toInt();
-  if (index < 0 || index >= normalizedDrafts.size()) {
+  if (index < 0 || index >= normalizedStates.size()) {
     index = 0;
   }
-  normalizedDrafts.removeAt(index);
-  if (normalizedDrafts.isEmpty()) {
-    normalizedDrafts.push_back(normalizeTransactionDraft(emptyDraft));
+  normalizedStates.removeAt(index);
+  if (normalizedStates.isEmpty()) {
+    normalizedStates.push_back(normalizeTransactionFormState(emptyState));
     index = 0;
   } else {
     index = std::clamp(index, 0,
-                       static_cast<int>(normalizedDrafts.size()) - 1);
+                       static_cast<int>(normalizedStates.size()) - 1);
   }
-  return {{QStringLiteral("drafts"), normalizedDrafts},
+  return {{QStringLiteral("states"), normalizedStates},
           {QStringLiteral("index"), index}};
 }
 
-QVariantMap currentDraftState(const QVariantList &drafts, int currentIndex,
-                              const QVariantMap &emptyDraft) {
-  const QVariantMap base = createDraftListState(drafts, currentIndex, emptyDraft);
-  const QVariantList normalizedDrafts =
-      base.value(QStringLiteral("drafts")).toList();
+QVariantMap currentFormState(const QVariantList &states, int currentIndex,
+                             const QVariantMap &emptyState) {
+  const QVariantMap base = createFormStateList(states, currentIndex, emptyState);
+  const QVariantList normalizedStates =
+      base.value(QStringLiteral("states")).toList();
   const int index = base.value(QStringLiteral("index")).toInt();
-  return {{QStringLiteral("drafts"), normalizedDrafts},
+  return {{QStringLiteral("states"), normalizedStates},
           {QStringLiteral("index"), index},
-          {QStringLiteral("draft"),
-           normalizeTransactionDraft(normalizedDrafts.at(index).toMap())}};
+          {QStringLiteral("state"),
+           normalizeTransactionFormState(normalizedStates.at(index).toMap())}};
 }
 
-QVariantMap setCurrentRawDraft(const QVariantList &drafts, int currentIndex,
-                               const QVariantMap &draft,
-                               const QVariantMap &emptyDraft) {
-  QVariantMap state = currentDraftState(drafts, currentIndex, emptyDraft);
-  QVariantList nextDrafts = state.value(QStringLiteral("drafts")).toList();
+QVariantMap setCurrentRawFormState(const QVariantList &states, int currentIndex,
+                                   const QVariantMap &formState,
+                                   const QVariantMap &emptyState) {
+  QVariantMap state = currentFormState(states, currentIndex, emptyState);
+  QVariantList nextStates = state.value(QStringLiteral("states")).toList();
   const int index = state.value(QStringLiteral("index")).toInt();
-  if (index >= 0 && index < nextDrafts.size()) {
-    nextDrafts[index] = draft;
+  if (index >= 0 && index < nextStates.size()) {
+    nextStates[index] = formState;
   }
-  state.insert(QStringLiteral("drafts"), nextDrafts);
-  state.insert(QStringLiteral("draft"), draft);
+  state.insert(QStringLiteral("states"), nextStates);
+  state.insert(QStringLiteral("state"), formState);
   return state;
 }
 
-QString transactionDraftSnapshot(const QVariantMap &tx) {
-  return QString::fromUtf8(QJsonDocument::fromVariant(normalizeTransactionDraft(tx))
-                               .toJson(QJsonDocument::Compact));
-}
-
 bool bookingEditStateChanged(const QString &savedStatementName,
-                             const QString &savedTransactionJson,
+                             const QVariantMap &savedTransactionState,
                              const QString &currentStatementName,
                              const QVariantMap &transaction) {
   return savedStatementName != currentStatementName ||
-         savedTransactionJson != transactionDraftSnapshot(transaction);
+         savedTransactionState != normalizeTransactionFormState(transaction);
 }
 
 } // namespace
 BookingViewModel::BookingViewModel(WorkspaceFacade *workspace, QObject *parent)
     : QObject(parent), workspace_(workspace) {
-  createTransactions_ = QVariantList{emptyTransaction()};
-  currentTransactionDraft_ = emptyTransaction();
+  createTransactionStates_ = QVariantList{emptyTransaction()};
+  currentTransactionFormState_ = emptyTransaction();
   bindSignals();
   if (isCreateMode()) {
     resetCreateState();
@@ -453,10 +562,11 @@ void BookingViewModel::selectTransaction(const QString &statementId,
 
 QString BookingViewModel::transactionInfoText() const {
   if (isCreateMode()) {
-    return createTransactions_.isEmpty() ? tr("No transactions")
-                                         : tr("Transaction %1 / %2")
-                                               .arg(createTransactionIndex_ + 1)
-                                               .arg(createTransactions_.size());
+    return createTransactionStates_.isEmpty() ? tr("No transactions")
+                                               : tr("Transaction %1 / %2")
+                                                   .arg(createTransactionIndex_ + 1)
+                                               .arg(createTransactionStates_
+                                                        .size());
   }
 
   const QVariantMap state = editTransactionState();
@@ -469,7 +579,7 @@ QString BookingViewModel::transactionInfoText() const {
 }
 
 bool BookingViewModel::hasMultipleTransactions() const {
-  return isCreateMode() ? createTransactions_.size() > 1
+  return isCreateMode() ? createTransactionStates_.size() > 1
                         : editTransactionState()
                                   .value(QStringLiteral("rows"))
                                   .toList()
@@ -482,18 +592,18 @@ bool BookingViewModel::canAddTransaction() const {
 
 bool BookingViewModel::canDeleteTransaction() const {
   if (isCreateMode()) {
-    return createTransactions_.size() > 1;
+    return createTransactionStates_.size() > 1;
   }
   return hasMultipleTransactions() &&
          !editTransactionData_.value(QStringLiteral("id")).toString().isEmpty();
 }
 
 QVariantMap BookingViewModel::emptyTransaction() const {
-  return emptyTransactionDraft();
+  return emptyTransactionFormState();
 }
 
 QVariantMap BookingViewModel::normalizeTransaction(const QVariantMap &tx) const {
-  return normalizeTransactionDraft(tx);
+  return normalizeTransactionFormState(tx);
 }
 
 QVariantMap BookingViewModel::editTransactionState() const {
@@ -526,12 +636,13 @@ QVariantMap BookingViewModel::transactionById(const QString &txId) const {
   return normalizeTransaction(transaction);
 }
 
-QString BookingViewModel::transactionSnapshot(const QVariantMap &data) const {
-  return transactionDraftSnapshot(data);
+QVariantMap BookingViewModel::normalizedTransactionState(
+    const QVariantMap &data) const {
+  return normalizeTransactionFormState(data);
 }
 
 QVariantMap BookingViewModel::transactionData() const {
-  return isCreateMode() ? currentTransactionDraft_ : editTransactionData_;
+  return isCreateMode() ? currentTransactionFormState_ : editTransactionData_;
 }
 
 void BookingViewModel::setTransactionData(const QVariantMap &value) {
@@ -539,13 +650,13 @@ void BookingViewModel::setTransactionData(const QVariantMap &value) {
     if (!workspace_) {
       return;
     }
-    const QVariantMap draft = value.isEmpty() ? emptyTransaction() : value;
-    const QVariantMap state = setCurrentRawDraft(
-        createTransactions_, createTransactionIndex_, draft,
+    const QVariantMap formState = value.isEmpty() ? emptyTransaction() : value;
+    const QVariantMap state = setCurrentRawFormState(
+        createTransactionStates_, createTransactionIndex_, formState,
         emptyTransaction());
-    createTransactions_ = state.value(QStringLiteral("drafts")).toList();
+    createTransactionStates_ = state.value(QStringLiteral("states")).toList();
     createTransactionIndex_ = state.value(QStringLiteral("index")).toInt();
-    currentCreateTransaction();
+    syncCurrentCreateTransaction();
   } else {
     if (editTransactionData_ == value) {
       return;
@@ -555,97 +666,97 @@ void BookingViewModel::setTransactionData(const QVariantMap &value) {
   emit changed();
 }
 
-QVariant BookingViewModel::value(const QString &key) const {
+QVariant BookingViewModel::transactionField(const QString &key) const {
   return transactionData().value(key);
 }
 
-void BookingViewModel::setTransactionValue(const QString &key,
-                                       const QVariant &value) {
+void BookingViewModel::setTransactionField(const QString &key,
+                                           const QVariant &value) {
   QVariantMap next = transactionData();
   next.insert(key, value);
   setTransactionData(next);
 }
 
-void BookingViewModel::applyTransactionDraftChange(const QVariantMap &changes) {
+void BookingViewModel::applyTransactionFormChange(const QVariantMap &changes) {
   if (!workspace_) {
     return;
   }
-  setTransactionData(transactionDraft(
-      transactionData(), contractRows(), changes));
+  setTransactionData(
+      workspace_->transactionFormWithCatalogSelection(transactionData(), changes));
 }
 
 QString BookingViewModel::transactionName() const {
-  return value(QStringLiteral("name")).toString();
+  return transactionField(QStringLiteral("name")).toString();
 }
 
 void BookingViewModel::setTransactionName(const QString &value) {
-  setTransactionValue(QStringLiteral("name"), value);
+  setTransactionField(QStringLiteral("name"), value);
 }
 
 QString BookingViewModel::transactionBookingDate() const {
-  return value(QStringLiteral("bookingDate")).toString();
+  return transactionField(QStringLiteral("bookingDate")).toString();
 }
 
 void BookingViewModel::setTransactionBookingDate(const QString &value) {
-  setTransactionValue(QStringLiteral("bookingDate"), value);
+  setTransactionField(QStringLiteral("bookingDate"), value);
 }
 
 QString BookingViewModel::transactionValuta() const {
-  return value(QStringLiteral("valuta")).toString();
+  return transactionField(QStringLiteral("valuta")).toString();
 }
 
 void BookingViewModel::setTransactionValuta(const QString &value) {
-  setTransactionValue(QStringLiteral("valuta"), value);
+  setTransactionField(QStringLiteral("valuta"), value);
 }
 
 QString BookingViewModel::transactionAmountText() const {
-  const QVariant amount = value(QStringLiteral("amount"));
+  const QVariant amount = transactionField(QStringLiteral("amount"));
   return amount.isValid() ? amount.toString() : QString();
 }
 
 void BookingViewModel::setTransactionAmountText(const QString &value) {
-  setTransactionValue(QStringLiteral("amount"), value);
+  setTransactionField(QStringLiteral("amount"), value);
 }
 
 bool BookingViewModel::transactionAllocatable() const {
-  return value(QStringLiteral("allocatable")).toBool();
+  return transactionField(QStringLiteral("allocatable")).toBool();
 }
 
 void BookingViewModel::setTransactionAllocatable(bool value) {
-  setTransactionValue(QStringLiteral("allocatable"), value);
+  setTransactionField(QStringLiteral("allocatable"), value);
 }
 
 void BookingViewModel::captureEditState() {
   savedEditStatementName_ = editStatementName_;
-  savedEditTransactionJson_ = transactionSnapshot(editTransactionData_);
+  savedEditTransactionState_ = normalizedTransactionState(editTransactionData_);
 }
 
-void BookingViewModel::currentCreateTransaction() {
+void BookingViewModel::syncCurrentCreateTransaction() {
   if (!workspace_) {
-    createTransactions_ = QVariantList{emptyTransaction()};
+    createTransactionStates_ = QVariantList{emptyTransaction()};
     createTransactionIndex_ = 0;
-    currentTransactionDraft_ = emptyTransaction();
+    currentTransactionFormState_ = emptyTransaction();
     return;
   }
-  const QVariantMap state = currentDraftState(
-      createTransactions_, createTransactionIndex_, emptyTransaction());
-  createTransactions_ = state.value(QStringLiteral("drafts")).toList();
+  const QVariantMap state = currentFormState(
+      createTransactionStates_, createTransactionIndex_, emptyTransaction());
+  createTransactionStates_ = state.value(QStringLiteral("states")).toList();
   createTransactionIndex_ = state.value(QStringLiteral("index")).toInt();
-  currentTransactionDraft_ = state.value(QStringLiteral("draft")).toMap();
+  currentTransactionFormState_ = state.value(QStringLiteral("state")).toMap();
 }
 
 void BookingViewModel::resetCreateState() {
   createStatementName_.clear();
   if (workspace_) {
-    const QVariantMap state = createDraftListState(
+    const QVariantMap state = createFormStateList(
         QVariantList(), 0, emptyTransaction());
-    createTransactions_ = state.value(QStringLiteral("drafts")).toList();
+    createTransactionStates_ = state.value(QStringLiteral("states")).toList();
     createTransactionIndex_ = state.value(QStringLiteral("index")).toInt();
-    currentTransactionDraft_ = state.value(QStringLiteral("draft")).toMap();
+    currentTransactionFormState_ = state.value(QStringLiteral("state")).toMap();
   } else {
-    createTransactions_ = QVariantList{emptyTransaction()};
+    createTransactionStates_ = QVariantList{emptyTransaction()};
     createTransactionIndex_ = 0;
-    currentTransactionDraft_ = emptyTransaction();
+    currentTransactionFormState_ = emptyTransaction();
   }
   emit changed();
 }
@@ -655,11 +766,11 @@ void BookingViewModel::addTransactionAfterCurrent() {
     return;
   }
   if (isCreateMode()) {
-    const QVariantMap state = insertDraftAfterCurrent(
-        createTransactions_, createTransactionIndex_, emptyTransaction());
-    createTransactions_ = state.value(QStringLiteral("drafts")).toList();
+    const QVariantMap state = insertFormStateAfterCurrent(
+        createTransactionStates_, createTransactionIndex_, emptyTransaction());
+    createTransactionStates_ = state.value(QStringLiteral("states")).toList();
     createTransactionIndex_ = state.value(QStringLiteral("index")).toInt();
-    currentCreateTransaction();
+    syncCurrentCreateTransaction();
     emit changed();
     return;
   }
@@ -698,11 +809,11 @@ void BookingViewModel::deleteCurrentTransaction() {
     return;
   }
   if (isCreateMode()) {
-    const QVariantMap state = removeDraftAt(
-        createTransactions_, createTransactionIndex_, emptyTransaction());
-    createTransactions_ = state.value(QStringLiteral("drafts")).toList();
+    const QVariantMap state = removeFormStateAt(
+        createTransactionStates_, createTransactionIndex_, emptyTransaction());
+    createTransactionStates_ = state.value(QStringLiteral("states")).toList();
     createTransactionIndex_ = state.value(QStringLiteral("index")).toInt();
-    currentCreateTransaction();
+    syncCurrentCreateTransaction();
     emit changed();
     return;
   }
@@ -854,12 +965,13 @@ void BookingViewModel::previousTransaction() {
     return;
   }
   if (isCreateMode()) {
-    if (createTransactions_.isEmpty()) {
+    if (createTransactionStates_.isEmpty()) {
       return;
     }
     createTransactionIndex_ =
-        wrappedIndex(createTransactionIndex_ - 1, createTransactions_.size());
-    currentCreateTransaction();
+        wrappedIndex(createTransactionIndex_ - 1,
+                     createTransactionStates_.size());
+    syncCurrentCreateTransaction();
     emit changed();
     return;
   }
@@ -886,12 +998,13 @@ void BookingViewModel::nextTransaction() {
     return;
   }
   if (isCreateMode()) {
-    if (createTransactions_.isEmpty()) {
+    if (createTransactionStates_.isEmpty()) {
       return;
     }
     createTransactionIndex_ =
-        wrappedIndex(createTransactionIndex_ + 1, createTransactions_.size());
-    currentCreateTransaction();
+        wrappedIndex(createTransactionIndex_ + 1,
+                     createTransactionStates_.size());
+    syncCurrentCreateTransaction();
     emit changed();
     return;
   }
@@ -912,13 +1025,14 @@ void BookingViewModel::nextTransaction() {
   emit changed();
 }
 
-bool BookingViewModel::transactionDraftCanSubmit(const QVariantMap &draft) const {
+bool BookingViewModel::transactionFormStateCanSubmit(
+    const QVariantMap &state) const {
   if (!workspace_) {
     return false;
   }
 
-  const QVariantMap tx = normalizeTransaction(draft);
-  if (!transactionDraftHasContent(tx)) {
+  const QVariantMap tx = normalizeTransaction(state);
+  if (!transactionFormStateHasContent(tx)) {
     return true;
   }
 
@@ -929,27 +1043,27 @@ bool BookingViewModel::transactionDraftCanSubmit(const QVariantMap &draft) const
   }
 
   const double amount = workspace_->amountForTransactionCommit(
-      draft.value(QStringLiteral("amount")), QString(),
+      state.value(QStringLiteral("amount")), QString(),
       tx.value(QStringLiteral("amount")).toDouble());
   return std::isfinite(amount);
 }
 
-QVariantList BookingViewModel::submittableTransactionDrafts() const {
+QVariantList BookingViewModel::submittableTransactionFormStates() const {
   QVariantList out;
   if (!workspace_) {
     return out;
   }
 
-  for (const QVariant &draftValue : createTransactions_) {
-    const QVariantMap draft = draftValue.toMap();
-    const QVariantMap normalized = normalizeTransaction(draft);
-    if (!transactionDraftHasContent(normalized)) {
+  for (const QVariant &stateValue : createTransactionStates_) {
+    const QVariantMap state = stateValue.toMap();
+    const QVariantMap normalized = normalizeTransaction(state);
+    if (!transactionFormStateHasContent(normalized)) {
       continue;
     }
-    if (!transactionDraftCanSubmit(draft)) {
+    if (!transactionFormStateCanSubmit(state)) {
       continue;
     }
-    out.push_back(draft);
+    out.push_back(state);
   }
   return out;
 }
@@ -958,8 +1072,8 @@ bool BookingViewModel::canCreate() const {
   if (createStatementName_.trimmed().isEmpty()) {
     return false;
   }
-  for (const QVariant &draftValue : createTransactions_) {
-    if (!transactionDraftCanSubmit(draftValue.toMap())) {
+  for (const QVariant &stateValue : createTransactionStates_) {
+    if (!transactionFormStateCanSubmit(stateValue.toMap())) {
       return false;
     }
   }
@@ -971,7 +1085,7 @@ bool BookingViewModel::canUpdate() const {
     return false;
   }
   return bookingEditStateChanged(
-      savedEditStatementName_, savedEditTransactionJson_, editStatementName_,
+      savedEditStatementName_, savedEditTransactionState_, editStatementName_,
       editTransactionData_);
 }
 
@@ -979,14 +1093,19 @@ QString BookingViewModel::submit() {
   if (!workspace_ || !canCreate()) {
     return QString();
   }
+  observability::traceViewModel(
+      "BookingViewModel::submit", "Booking create submitted",
+      {{observability::context::kName, createStatementName_.toStdString()},
+       {"transactionCount",
+        std::to_string(submittableTransactionFormStates().size())}});
   const QString statementName = createStatementName_;
-  const QVariantList transactionDrafts = submittableTransactionDrafts();
+  const QVariantList transactionStates = submittableTransactionFormStates();
   const QString statementId = workspace_->addStatement(statementName);
   if (statementId.isEmpty()) {
     return QString();
   }
-  for (const QVariant &draftValue : transactionDrafts) {
-    const QVariantMap rawTx = draftValue.toMap();
+  for (const QVariant &stateValue : transactionStates) {
+    const QVariantMap rawTx = stateValue.toMap();
     const QVariantMap tx = normalizeTransaction(rawTx);
     workspace_->addTransaction(
         tx.value(QStringLiteral("name")).toString(),
@@ -1011,13 +1130,17 @@ void BookingViewModel::updateCurrent() {
   if (isCreateMode() || !workspace_ || selectedStatementId().isEmpty()) {
     return;
   }
+  observability::traceViewModel(
+      "BookingViewModel::updateCurrent", "Booking update submitted",
+      {{"statementId", selectedStatementId().toStdString()},
+       {"transactionId", selectedTransactionId().toStdString()}});
   const QString statementId = selectedStatementId();
   const bool statementChanged = savedEditStatementName_ != editStatementName_;
   const QString statementName = editStatementName_;
   const QVariantMap transactionData = editTransactionData_;
   const QString txId = transactionData.value(QStringLiteral("id")).toString();
   const bool transactionChanged =
-      savedEditTransactionJson_ != transactionSnapshot(transactionData);
+      savedEditTransactionState_ != normalizedTransactionState(transactionData);
   const QVariantMap normalizedTx = normalizeTransaction(transactionData);
   if (transactionChanged && !txId.isEmpty()) {
     workspace_->updateTransaction(
@@ -1046,6 +1169,10 @@ void BookingViewModel::deleteCurrentStatement() {
   if (isCreateMode() || !workspace_) {
     return;
   }
+  observability::traceViewModel(
+      "BookingViewModel::deleteCurrentStatement",
+      "Statement delete submitted",
+      {{"statementId", selectedStatementId().toStdString()}});
   const QString removedId = selectedStatementId();
   workspace_->deleteStatement(removedId);
   const QString nextId = deleteNextSelectionId(statementRows(), removedId, 0,
@@ -1072,18 +1199,10 @@ int BookingViewModel::transactionStatusIndex() const {
 void BookingViewModel::setTransactionStatusIndex(int index) {
   const QVariantList options = transactionStatusOptions();
   const QVariantMap option = options.value(index).toMap();
-  setTransactionValue(
+  setTransactionField(
       payload::keys::common::kStatus,
       option.value(payload::keys::common::kValue,
                    payload::transaction_status::kNeutral));
-}
-
-QVariantList BookingViewModel::actorRows() const {
-  return workspace_ ? workspace_->actorRows() : QVariantList();
-}
-
-QVariantList BookingViewModel::contractRows() const {
-  return workspace_ ? workspace_->contractRows() : QVariantList();
 }
 
 QVariantList BookingViewModel::propertyRows() const {
@@ -1102,15 +1221,11 @@ QVariantList BookingViewModel::transactionStatusOptions() const {
 }
 
 QVariantList BookingViewModel::actorDisplayRows() const {
-  return workspace_ ? displayRowsWithEmpty(actorRows(), tr("No actor"),
-                                           payload::keys::common::kDisplay)
-                    : QVariantList();
+  return workspace_ ? workspace_->actorDropdownRows() : QVariantList();
 }
 
 QVariantList BookingViewModel::contractDisplayRows() const {
-  return workspace_ ? displayRowsWithEmpty(contractRows(), tr("No contract"),
-                                           payload::keys::common::kDisplay)
-                    : QVariantList();
+  return workspace_ ? workspace_->contractDropdownRows() : QVariantList();
 }
 
 int BookingViewModel::selectedIndexFor(const QVariantList &rows,
@@ -1124,18 +1239,14 @@ int BookingViewModel::selectedIndexFor(const QVariantList &rows,
 
 int BookingViewModel::selectedActorIndex() const {
   return selectedIndexFor(actorDisplayRows(),
-                          value(payload::keys::transaction::kActorId)
+                          transactionField(payload::keys::transaction::kActorId)
                               .toString());
 }
 
 int BookingViewModel::selectedContractIndex() const {
   return selectedIndexFor(contractDisplayRows(),
-                          value(payload::keys::transaction::kContractId)
+                          transactionField(payload::keys::transaction::kContractId)
                               .toString());
-}
-
-bool BookingViewModel::isPropertySelected(const QString &propertyId) const {
-  return containsTrimmed(selectedPropertyIds(), propertyId);
 }
 
 void BookingViewModel::setPropertySelected(const QString &propertyId,
@@ -1150,7 +1261,7 @@ void BookingViewModel::setPropertySelected(const QString &propertyId,
   if (!setSelectedId(propertyIds, propertyId, selected)) {
     return;
   }
-  applyTransactionDraftChange(
+  applyTransactionFormChange(
       {{payload::keys::transaction::kPropertyIds, propertyIds}});
 }
 
@@ -1158,14 +1269,14 @@ void BookingViewModel::selectActorIndex(int index) {
   const QVariantList rows = actorDisplayRows();
   const QString id =
       rows.value(index).toMap().value(payload::keys::common::kId).toString();
-  applyTransactionDraftChange({{payload::keys::transaction::kActorId, id}});
+  applyTransactionFormChange({{payload::keys::transaction::kActorId, id}});
 }
 
 void BookingViewModel::selectContractIndex(int index) {
   const QVariantList rows = contractDisplayRows();
   const QString id =
       rows.value(index).toMap().value(payload::keys::common::kId).toString();
-  applyTransactionDraftChange({{payload::keys::transaction::kContractId, id}});
+  applyTransactionFormChange({{payload::keys::transaction::kContractId, id}});
 }
 
 } // namespace ui

@@ -102,6 +102,26 @@ WorkspaceFacade::statementDraftSnapshot(const std::string& draftId) const {
     return queries_->statementDraftSnapshot(draftId);
 }
 
+core::ports::workspace::WorkspaceIdentitySnapshot WorkspaceFacade::actorIdentityByName(const std::string& name) const {
+    return queries_->actorIdentityByName(name);
+}
+
+core::ports::workspace::WorkspaceIdentitySnapshot WorkspaceFacade::propertyIdentityByName(const std::string& name) const {
+    return queries_->propertyIdentityByName(name);
+}
+
+core::ports::workspace::WorkspaceIdentitySnapshot WorkspaceFacade::contractIdentityBySignature(
+    const std::string& name,
+    const std::string& type,
+    const std::vector<std::string>& actorIds,
+    const std::vector<std::string>& propertyIds) const {
+    return queries_->contractIdentityBySignature(name, type, actorIds, propertyIds);
+}
+
+std::string WorkspaceFacade::nextContractName() const {
+    return queries_->nextContractName();
+}
+
 void WorkspaceFacade::openLatest() {
     session_->openLatest();
 }
@@ -128,6 +148,34 @@ void WorkspaceFacade::commit() {
 
 void WorkspaceFacade::notifySnapshot() {
     session_->notifyState();
+}
+
+core::ports::workspace::ValidationResult WorkspaceFacade::validateActor(const core::ports::workspace::ActorCommand& command) const {
+    return commands_->validate(command);
+}
+
+core::ports::workspace::ValidationResult WorkspaceFacade::validateProperty(const core::ports::workspace::PropertyCommand& command) const {
+    return commands_->validate(command);
+}
+
+core::ports::workspace::ValidationResult WorkspaceFacade::validateContract(const core::ports::workspace::ContractCommand& command) const {
+    return commands_->validate(command);
+}
+
+core::ports::workspace::ValidationResult WorkspaceFacade::validateStatement(const core::ports::workspace::StatementCommand& command) const {
+    return commands_->validate(command);
+}
+
+core::ports::workspace::ValidationResult WorkspaceFacade::validateTransaction(const core::ports::workspace::TransactionCommand& command) const {
+    return commands_->validate(command);
+}
+
+core::ports::workspace::ValidationResult WorkspaceFacade::validateAnalysis(const core::ports::workspace::AnalysisCommand& command) const {
+    return commands_->validate(command);
+}
+
+core::ports::workspace::ValidationResult WorkspaceFacade::validateAnnual(const core::ports::workspace::AnnualCommand& command) const {
+    return commands_->validate(command);
 }
 
 std::string WorkspaceFacade::addActor(const core::ports::workspace::ActorCommand& command) {

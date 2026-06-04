@@ -40,7 +40,7 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionViewModel: QtObject {
+    property var importViewModel: QtObject {
         property string actorName: ""
         property var actorOptions: [{ id: "", display: "" }]
         property int selectedActorOptionIndex: 0
@@ -83,7 +83,7 @@ TestCase {
         Import.TransactionDraftContractPanel {
             width: testCase.width
             theme: testCase.theme
-            transactionViewModel: testCase.transactionViewModel
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -102,8 +102,8 @@ TestCase {
         typeField.textEdited()
         findRequired(panel, "transactionDraftContractAddButton").clicked()
 
-        compare(transactionViewModel.contractName, "Office Rent")
-        compare(transactionViewModel.contractType, "Rent")
-        compare(transactionViewModel.addContractCalls, 1)
+        compare(importViewModel.contractName, "Office Rent")
+        compare(importViewModel.contractType, "Rent")
+        compare(importViewModel.addContractCalls, 1)
     }
 }

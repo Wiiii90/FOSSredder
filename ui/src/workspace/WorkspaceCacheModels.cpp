@@ -10,8 +10,8 @@
 #include <QVariant>
 #include <utility>
 
-#include "ui/shared/payload/PayloadKeys.h"
-#include "ui/shared/payload/PayloadMapper.h"
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/presentation/PayloadMapper.h"
 #include "ui/workspace/IndexedListModel.h"
 
 namespace ui {
@@ -185,8 +185,8 @@ WorkspaceCacheModels::WorkspaceCacheModels(QObject *objectParent)
       analyses_(std::make_unique<AnalysisList>(objectParent)),
       properties_(std::make_unique<PropertyCatalogModel>(objectParent)),
       contracts_(std::make_unique<ContractCatalogModel>(objectParent)),
-      statements_(std::make_unique<StatementViewModel>(objectParent)),
-      transactions_(std::make_unique<TransactionViewModel>(objectParent)),
+      statements_(std::make_unique<StatementListModel>(objectParent)),
+      transactions_(std::make_unique<TransactionListModel>(objectParent)),
       annuals_(std::make_unique<AnnualList>(objectParent)) {}
 
 WorkspaceCacheModels::~WorkspaceCacheModels() = default;

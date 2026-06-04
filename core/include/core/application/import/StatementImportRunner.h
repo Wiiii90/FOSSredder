@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/ports/import/IImportRunner.h"
+#include "core/ports/usecases/import/IImportRunner.h"
 
 #include <memory>
 #include <string>
@@ -41,7 +41,7 @@ public:
 
   [[nodiscard]] core::ports::importing::StatementImportHandle
   startStatementImport(
-      const core::ports::importing::StatementImportStartRequest &request,
+      const core::ports::importing::ImportRequest &request,
       core::ports::importing::StatementImportEventCallback callback) override;
   void unsubscribe(
       const core::ports::importing::StatementImportHandle &handle) override;
@@ -61,55 +61,21 @@ public:
       const core::ports::workspace::WorkspaceSnapshot &state,
       const core::ports::importing::draft::TransactionDraft &transaction) const
       override;
-  [[nodiscard]] core::ports::importing::draft::DraftTextSignals
-  buildDraftTextSignals(
-      const core::ports::workspace::WorkspaceSnapshot &state,
-      const core::ports::importing::draft::TransactionDraft &transaction) const
-      override;
   [[nodiscard]] core::ports::importing::draft::DraftDerivedState
   buildDraftDerivedState(
       const core::ports::workspace::WorkspaceSnapshot &state,
       const core::ports::importing::draft::DraftLinkSelection &selection) const
       override;
-  bool applyDerivedSelections(
-      core::ports::importing::draft::TransactionDraft &draft,
-      const core::ports::importing::draft::DraftDerivedState &derived,
-      core::ports::importing::draft::DraftAutoSelectionMode mode) const
-      override;
-  bool applyActorSelection(
-      core::ports::importing::draft::TransactionDraft &draft,
-      const std::string &actorId) const override;
-  bool clearActorSelection(
-      core::ports::importing::draft::TransactionDraft &draft) const override;
-  bool applyPropertySelection(
-      core::ports::importing::draft::TransactionDraft &draft,
-      const std::string &propertyId) const override;
-  bool setPropertySelected(
-      core::ports::importing::draft::TransactionDraft &draft,
-      const std::string &propertyId,
-      bool selected) const override;
-  bool applyContractSelection(
-      core::ports::importing::draft::TransactionDraft &draft,
-      const core::ports::importing::draft::DraftChoiceRow &contract) const
-      override;
-  bool applyContractSelection(
+  bool updateTransactionDraft(
       core::ports::importing::draft::TransactionDraft &draft,
       const core::ports::workspace::WorkspaceSnapshot &state,
-      const std::string &contractId) const override;
-  bool clearContractSelection(
-      core::ports::importing::draft::TransactionDraft &draft) const override;
-  bool applyTransactionPatch(
-      core::ports::importing::draft::TransactionDraft &draft,
-      const core::ports::importing::draft::TransactionDraftPatch &patch) const
-      override;
-  int insertTransactionAfter(
+      const core::ports::importing::draft::TransactionDraftEdit &edit)
+      const override;
+  core::ports::importing::draft::StatementDraftEditResult
+  updateStatementDraft(
       core::ports::importing::draft::StatementDraft &draft,
-      int currentIndex) const override;
-  int removeTransactionAt(core::ports::importing::draft::StatementDraft &draft,
-                          int index) const override;
-  bool renameStatementDraft(
-      core::ports::importing::draft::StatementDraft &draft,
-      const std::string &name) const override;
+      const core::ports::importing::draft::StatementDraftEdit &edit)
+      const override;
   [[nodiscard]] core::ports::importing::draft::StatementDraft
   buildStatementDraft(
       const std::string &sourceFile,
@@ -118,13 +84,6 @@ public:
       const std::vector<core::ports::importing::draft::TransactionDraft>
           &transactions,
       const std::string &draftId) const override;
-  [[nodiscard]] core::ports::workspace::StatementDraftSnapshot
-  buildImportedStatementDraftSnapshot(
-      const std::string &sourceFile,
-      const std::string &draftId,
-      const core::ports::workspace::StatementSnapshot &statement,
-      const std::vector<core::ports::importing::draft::TransactionDraft>
-          &transactions) const override;
   [[nodiscard]] core::ports::importing::draft::StatementDraft
   restoreStatementDraft(
       const core::ports::workspace::StatementDraftSnapshot &draft) const
@@ -133,20 +92,9 @@ public:
   buildStatementDraftSnapshot(
       const core::ports::importing::draft::StatementDraft &draft,
       const core::ports::workspace::WorkspaceSnapshot &state) const override;
-  [[nodiscard]] std::string resolveActorId(
-      const core::ports::workspace::WorkspaceSnapshot &state,
-      const std::string &text) const override;
-  [[nodiscard]] std::string resolveContractId(
-      const core::ports::workspace::WorkspaceSnapshot &state,
-      const std::string &text) const override;
-  [[nodiscard]] bool contractIsFullyAllocatable(
-      const core::ports::workspace::WorkspaceSnapshot &state,
-      const std::string &contractId) const override;
   [[nodiscard]] core::ports::workspace::WorkspaceSnapshot mergeWorkspaceState(
       core::ports::workspace::WorkspaceSnapshot primary,
       const core::ports::workspace::WorkspaceSnapshot &secondary) const override;
-  [[nodiscard]] std::vector<std::string>
-  referenceAliasesFromMetadata(const std::string &metadata) const override;
 
 private:
   class Impl;

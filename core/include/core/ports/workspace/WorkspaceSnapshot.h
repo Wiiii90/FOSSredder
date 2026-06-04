@@ -149,6 +149,19 @@ struct ExportLogSnapshot {
     std::vector<std::string> analysisIds;
 };
 
+struct WorkspaceIdentitySnapshot {
+    std::string id;
+    std::string name;
+    std::string type;
+    std::string allocatableMode;
+    std::vector<std::string> actorIds;
+    std::vector<std::string> propertyIds;
+
+    [[nodiscard]] bool empty() const noexcept {
+        return id.empty();
+    }
+};
+
 struct WorkspaceSnapshot {
     std::string currentPath;
     bool hasCurrentPath = false;

@@ -28,6 +28,26 @@ public:
         return draft;
     }
 
+    WorkspaceIdentitySnapshot actorIdentityByName(const std::string&) const override {
+        return {};
+    }
+
+    WorkspaceIdentitySnapshot propertyIdentityByName(const std::string&) const override {
+        return {};
+    }
+
+    WorkspaceIdentitySnapshot contractIdentityBySignature(
+        const std::string&,
+        const std::string&,
+        const std::vector<std::string>&,
+        const std::vector<std::string>&) const override {
+        return {};
+    }
+
+    std::string nextContractName() const override {
+        return "Contract 1";
+    }
+
 };
 
 } // namespace

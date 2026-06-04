@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include "core/ports/image-processing/ImageProcessingRequest.h"
-#include "core/ports/image-processing/ImageProcessingResult.h"
-#include "core/ports/pdf-rendering/PdfRenderingResult.h"
-#include "core/ports/text-recognition/TextRecognitionRequest.h"
+#include "core/ports/infra/image-processing/ImageProcessingRequest.h"
+#include "core/ports/infra/image-processing/ImageProcessingResult.h"
+#include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
+#include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
 #include "core/constants/import.h"
 #include "core/application/import/ImportRequest.h"
 #include "../../utils/UniqId.h"

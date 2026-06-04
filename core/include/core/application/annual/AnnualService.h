@@ -7,9 +7,9 @@
 
 #include <string>
 
-#include "core/ports/annual/AnnualRequest.h"
-#include "core/ports/annual/AnnualResult.h"
-#include "core/ports/annual/IAnnualRunner.h"
+#include "core/ports/usecases/annual/AnnualRequest.h"
+#include "core/ports/usecases/annual/AnnualResult.h"
+#include "core/ports/usecases/annual/IAnnualRunner.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 namespace core::application::annual {

@@ -32,6 +32,14 @@ public:
     void commit() override {}
     void notifySnapshot() override {}
 
+    ValidationResult validateActor(const ActorCommand&) const override { return {}; }
+    ValidationResult validateProperty(const PropertyCommand&) const override { return {}; }
+    ValidationResult validateContract(const ContractCommand&) const override { return {}; }
+    ValidationResult validateStatement(const StatementCommand&) const override { return {}; }
+    ValidationResult validateTransaction(const TransactionCommand&) const override { return {}; }
+    ValidationResult validateAnalysis(const AnalysisCommand&) const override { return {}; }
+    ValidationResult validateAnnual(const AnnualCommand&) const override { return {}; }
+
     std::string addActor(const ActorCommand& command) override {
         lastAddedActor = command.name;
         return command.id.empty() ? "actor-1" : command.id;

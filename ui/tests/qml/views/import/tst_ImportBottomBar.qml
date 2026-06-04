@@ -37,7 +37,7 @@ TestCase {
         property int startCalls: 0
         property int clearCalls: 0
         property int cancelCalls: 0
-        property int cancelAllCalls: 0
+        property int cancelQueuedCalls: 0
         property int pauseCalls: 0
         property int resumeCalls: 0
         property int previousDraftCalls: 0
@@ -45,7 +45,7 @@ TestCase {
         function startImport() { startCalls += 1 }
         function clearImport() { clearCalls += 1 }
         function cancelCurrentImport() { cancelCalls += 1 }
-        function cancelAllImports() { cancelAllCalls += 1 }
+        function cancelQueuedImports() { cancelQueuedCalls += 1 }
         function pauseImport() { pauseCalls += 1 }
         function resumeImport() { resumeCalls += 1 }
         function selectPreviousDraft() { previousDraftCalls += 1 }
@@ -81,7 +81,7 @@ TestCase {
         importViewModel.startCalls = 0
         importViewModel.clearCalls = 0
         importViewModel.cancelCalls = 0
-        importViewModel.cancelAllCalls = 0
+        importViewModel.cancelQueuedCalls = 0
         importViewModel.pauseCalls = 0
         importViewModel.resumeCalls = 0
         importViewModel.previousDraftCalls = 0
@@ -119,7 +119,7 @@ TestCase {
         findRequired(bar, "importPauseButton").clicked()
 
         compare(importViewModel.cancelCalls, 1)
-        compare(importViewModel.cancelAllCalls, 1)
+        compare(importViewModel.cancelQueuedCalls, 1)
         compare(importViewModel.pauseCalls, 1)
         compare(importViewModel.resumeCalls, 0)
     }

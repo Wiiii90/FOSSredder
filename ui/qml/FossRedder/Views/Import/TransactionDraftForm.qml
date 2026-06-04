@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 ColumnLayout {
     id: root
     required property var theme
-    required property var transactionViewModel
+    required property var importViewModel
     spacing: root.theme.spacingSmall
 
     TransactionDraftFieldRow {
@@ -27,12 +27,12 @@ ColumnLayout {
         leftContent: Component {
             Controls.TextField {
                 objectName: "transactionDraftNameField"
-                text: root.transactionViewModel.nameText
-                onTextEdited: root.transactionViewModel.nameText = text
-                onEditingFinished: root.transactionViewModel.commitNameText()
-                onAccepted: root.transactionViewModel.commitNameText()
+                text: root.importViewModel.nameText
+                onTextEdited: root.importViewModel.nameText = text
+                onEditingFinished: root.importViewModel.commitNameText()
+                onAccepted: root.importViewModel.commitNameText()
                 onActiveFocusChanged: if (!activeFocus)
-                    root.transactionViewModel.commitNameText()
+                    root.importViewModel.commitNameText()
             }
         }
 
@@ -40,10 +40,10 @@ ColumnLayout {
             Controls.DropdownMenu {
                 objectName: "transactionDraftStatusCombo"
                 textRole: "label"
-                model: root.transactionViewModel.statusOptions
-                currentIndex: root.transactionViewModel.statusIndex
+                model: root.importViewModel.statusOptions
+                currentIndex: root.importViewModel.statusIndex
                 onActivated: function (index) {
-                    root.transactionViewModel.selectStatusAtIndex(index);
+                    root.importViewModel.selectStatusAtIndex(index);
                 }
             }
         }
@@ -60,24 +60,24 @@ ColumnLayout {
         leftContent: Component {
             Controls.TextField {
                 objectName: "transactionDraftBookingDateField"
-                text: root.transactionViewModel.bookingDateText
-                onTextEdited: root.transactionViewModel.bookingDateText = text
-                onEditingFinished: root.transactionViewModel.commitBookingDateText()
-                onAccepted: root.transactionViewModel.commitBookingDateText()
+                text: root.importViewModel.bookingDateText
+                onTextEdited: root.importViewModel.bookingDateText = text
+                onEditingFinished: root.importViewModel.commitBookingDateText()
+                onAccepted: root.importViewModel.commitBookingDateText()
                 onActiveFocusChanged: if (!activeFocus)
-                    root.transactionViewModel.commitBookingDateText()
+                    root.importViewModel.commitBookingDateText()
             }
         }
 
         rightContent: Component {
             Controls.TextField {
                 objectName: "transactionDraftValutaField"
-                text: root.transactionViewModel.valutaText
-                onTextEdited: root.transactionViewModel.valutaText = text
-                onEditingFinished: root.transactionViewModel.commitValutaText()
-                onAccepted: root.transactionViewModel.commitValutaText()
+                text: root.importViewModel.valutaText
+                onTextEdited: root.importViewModel.valutaText = text
+                onEditingFinished: root.importViewModel.commitValutaText()
+                onAccepted: root.importViewModel.commitValutaText()
                 onActiveFocusChanged: if (!activeFocus)
-                    root.transactionViewModel.commitValutaText()
+                    root.importViewModel.commitValutaText()
             }
         }
     }
@@ -95,12 +95,12 @@ ColumnLayout {
         Controls.TextField {
             objectName: "transactionDraftAmountField"
             Layout.fillWidth: true
-            text: root.transactionViewModel.amountText
-            onTextEdited: root.transactionViewModel.amountText = text
-            onEditingFinished: root.transactionViewModel.commitAmountText()
-            onAccepted: root.transactionViewModel.commitAmountText()
+            text: root.importViewModel.amountText
+            onTextEdited: root.importViewModel.amountText = text
+            onEditingFinished: root.importViewModel.commitAmountText()
+            onAccepted: root.importViewModel.commitAmountText()
             onActiveFocusChanged: if (!activeFocus)
-                root.transactionViewModel.commitAmountText()
+                root.importViewModel.commitAmountText()
         }
     }
 }

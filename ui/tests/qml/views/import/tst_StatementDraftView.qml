@@ -42,9 +42,7 @@ TestCase {
     }
 
     property var importViewModel: QtObject {
-        property var importWorkflow: null
-        property var navigation: null
-        property var workspace: null
+        property bool hasDraft: false
     }
 
     Component {
@@ -65,7 +63,7 @@ TestCase {
         const view = createTemporaryObject(statementViewComponent, null)
         wait(0)
 
-        compare(findRequired(view, "statementDraftViewModel").hasDraft, false)
+        compare(view.importViewModel.hasDraft, false)
         compare(findRequired(view, "statementDraftEmptyLabel").visible, true)
     }
 }

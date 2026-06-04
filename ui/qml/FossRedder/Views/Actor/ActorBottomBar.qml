@@ -59,14 +59,6 @@ Item {
             onClicked: if (root.actorViewModel) root.actorViewModel.deleteCurrent()
         }
 
-        Controls.SecondaryButton {
-            objectName: "actorCreateModeButton"
-            visible: root.actorViewModel ? root.actorViewModel.isEdit : false
-            text: qsTr("New")
-            Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.actorViewModel) root.actorViewModel.enterCreateMode()
-        }
-
         Controls.SuccessButton {
             objectName: "actorUpdateButton"
             visible: root.actorViewModel ? root.actorViewModel.isEdit : false

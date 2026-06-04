@@ -13,13 +13,13 @@
 #include "core/application/import/StatementImportRunner.h"
 #include "core/application/workspace/WorkspaceSessionState.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
-#include "core/ports/analysis/IAnalysisRunner.h"
-#include "core/ports/annual/IAnnualRunner.h"
-#include "core/ports/export/IExportRunner.h"
-#include "core/ports/image-processing/IImageProcessor.h"
-#include "core/ports/import/IImportRunner.h"
-#include "core/ports/pdf-rendering/IPdfRenderer.h"
-#include "core/ports/text-recognition/ITextRecognizer.h"
+#include "core/ports/usecases/analysis/IAnalysisRunner.h"
+#include "core/ports/usecases/annual/IAnnualRunner.h"
+#include "core/ports/usecases/export/IExportRunner.h"
+#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/usecases/import/IImportRunner.h"
+#include "core/ports/infra/pdf-rendering/IPdfRenderer.h"
+#include "core/ports/infra/text-recognition/ITextRecognizer.h"
 #include "core/ports/workspace/IWorkspaceReader.h"
 #include "core/ports/workspace/IWorkspaceWriter.h"
 #include <QApplication>
@@ -43,8 +43,7 @@
 #include "debug/ErrorReporter.h"
 #include "debug/FileDebugger.h"
 #include "debug/IDebugger.h"
-#include "ui/shared/config/Defaults.h"
-#include "ui/shared/observability/ErrorCodes.h"
+#include "ui/shell/Defaults.h"
 #include "xlsx-writer/XlntTableWriterAdapter.h"
 
 #include <QDir>
@@ -90,27 +89,27 @@ static void qtMessageHandler(QtMsgType type, const QMessageLogContext &context,
   switch (type) {
   case QtDebugMsg:
     core::errors::report(core::errors::ErrorSeverity::Info,
-                         ui::observability::codes::QtDebug,
+                         core::errors::codes::QtDebug,
                          "app::qtMessageHandler", text, ctx);
     break;
   case QtInfoMsg:
     core::errors::report(core::errors::ErrorSeverity::Info,
-                         ui::observability::codes::QtInfo,
+                         core::errors::codes::QtInfo,
                          "app::qtMessageHandler", text, ctx);
     break;
   case QtWarningMsg:
     core::errors::report(core::errors::ErrorSeverity::Warning,
-                         ui::observability::codes::QtWarning,
+                         core::errors::codes::QtWarning,
                          "app::qtMessageHandler", text, ctx);
     break;
   case QtCriticalMsg:
     core::errors::report(core::errors::ErrorSeverity::Error,
-                         ui::observability::codes::QtCritical,
+                         core::errors::codes::QtCritical,
                          "app::qtMessageHandler", text, ctx);
     break;
   case QtFatalMsg:
     core::errors::report(core::errors::ErrorSeverity::Critical,
-                         ui::observability::codes::QtFatal,
+                         core::errors::codes::QtFatal,
                          "app::qtMessageHandler", text, ctx);
     abort();
   }

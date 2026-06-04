@@ -45,6 +45,27 @@ namespace core::application::exporting {
 
 namespace export_ports = core::ports::exporting;
 
+namespace {
+
+bool shouldStop(const export_ports::ExportRequest &request) {
+  if (request.waitIfPaused) {
+    request.waitIfPaused();
+  }
+  return request.shouldCancel && request.shouldCancel();
+}
+
+export_ports::ExportResult canceledResult(
+    const export_ports::ExportRequest &request) {
+  export_ports::ExportResult result;
+  result.actualFormat = export_ports::ExportFormat::Csv;
+  result.resolvedOutputPath = request.outputPath;
+  result.status = export_ports::ExportStatus::Canceled;
+  result.message = "Canceled";
+  return result;
+}
+
+} // namespace
+
 export_ports::ExportResult
 CsvExporter::exportData(
     const core::domain::catalog::WorkspaceCatalog &state,
@@ -52,6 +73,10 @@ CsvExporter::exportData(
   export_ports::ExportResult result;
   result.actualFormat = export_ports::ExportFormat::Csv;
   result.resolvedOutputPath = request.outputPath;
+
+  if (shouldStop(request)) {
+    return canceledResult(request);
+  }
 
   if (request.outputPath.empty()) {
     result.status = export_ports::ExportStatus::InvalidInput;
@@ -106,6 +131,9 @@ CsvExporter::exportData(
          << std::string(core::constants::exportFlow::labels::kTotal) << "\n";
 
   for (const auto &propertyName : matrix.propertyNames) {
+    if (shouldStop(request)) {
+      return canceledResult(request);
+    }
     output << escapeCsv(propertyName, separator);
     double rowSum = 0.0;
     const auto propertyIt = matrix.amountsByProperty.find(propertyName);

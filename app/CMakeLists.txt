@@ -88,6 +88,7 @@ target_include_directories(fossredder PRIVATE
 # Translation sources.
 set(TRANSLATION_TS_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/i18n/fossredder_de.ts
+    ${CMAKE_CURRENT_SOURCE_DIR}/i18n/fossredder_fr.ts
 )
 
 set(TRANSLATION_SOURCE_DIRS

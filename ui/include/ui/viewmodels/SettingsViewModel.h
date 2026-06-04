@@ -7,43 +7,10 @@
 
 #include <QObject>
 #include <QString>
-#include <QVariant>
 #include <QVariantList>
-#include <QVariantMap>
 #include <qqmlintegration.h>
 
 namespace ui {
-
-namespace settings_view_model {
-inline constexpr int kGeneralCategory = 0;
-inline constexpr int kImportCategory = 1;
-inline constexpr int kExportCategory = 2;
-inline constexpr int kMiscellaneousCategory = 3;
-
-inline QVariantMap categoryRow(int value, const QString &text, bool selected) {
-  return {{QStringLiteral("category"), value},
-          {QStringLiteral("text"), text},
-          {QStringLiteral("selected"), selected}};
-}
-
-inline QString languageCode(const QVariant &value) {
-  return value.toMap().value(QStringLiteral("code")).toString();
-}
-
-inline bool languageAvailable(const QVariant &value) {
-  const QVariantMap map = value.toMap();
-  return !map.contains(QStringLiteral("available")) ||
-         map.value(QStringLiteral("available")).toBool();
-}
-
-inline QVariantMap themeModeOption(const QString &code, const QString &label) {
-  return {{QStringLiteral("code"), code}, {QStringLiteral("label"), label}};
-}
-
-inline QString themeModeCode(const QVariant &value) {
-  return value.toMap().value(QStringLiteral("code")).toString();
-}
-} // namespace settings_view_model
 
 class Actions;
 class LanguageService;
@@ -68,6 +35,12 @@ class SettingsViewModel : public QObject {
 
   Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY changed)
   Q_PROPERTY(QString themeMode READ themeMode WRITE setThemeMode NOTIFY changed)
+  Q_PROPERTY(bool autosaveOnClose READ autosaveOnClose WRITE setAutosaveOnClose
+                 NOTIFY changed)
+  Q_PROPERTY(QVariantList autosaveIntervalOptions READ autosaveIntervalOptions
+                 NOTIFY changed)
+  Q_PROPERTY(
+      int autosaveIntervalIndex READ autosaveIntervalIndex NOTIFY changed)
   Q_PROPERTY(QString importDefaultPath READ importDefaultPath WRITE
                  setImportDefaultPath NOTIFY changed)
   Q_PROPERTY(QString importPoppler READ importPoppler WRITE setImportPoppler
@@ -106,92 +79,435 @@ class SettingsViewModel : public QObject {
                  setToolbarShowSettings NOTIFY changed)
 
 public:
-  explicit SettingsViewModel(QObject *parent = nullptr);
+  /**
+   * @brief Creates the settings view model.
+   * @param parent Optional Qt parent object.
+   */
+  explicit SettingsViewModel(QObject* parent = nullptr);
 
-  NavigationState *navigation() const noexcept { return navigation_; }
-  Settings *settings() const noexcept { return settings_; }
-  Actions *actions() const noexcept { return actions_; }
-  LanguageService *languageService() const noexcept { return languageService_; }
+  /**
+   * @brief Sets the shell navigation object used by the settings page.
+   * @param value Navigation object or nullptr.
+   */
+  void setNavigation(NavigationState* value);
 
-  void setNavigation(NavigationState *value);
-  void setSettings(Settings *value);
-  void setActions(Actions *value);
-  void setLanguageService(LanguageService *value);
+  /**
+   * @brief Sets the settings state object used for persisted settings values.
+   * @param value Settings object or nullptr.
+   */
+  void setSettings(Settings* value);
 
+  /**
+   * @brief Sets shell actions used for file browsing.
+   * @param value Actions object or nullptr.
+   */
+  void setActions(Actions* value);
+
+  /**
+   * @brief Sets the language service used to build language options.
+   * @param value Language service or nullptr.
+   */
+  void setLanguageService(LanguageService* value);
+
+  /**
+   * @brief Returns the currently selected settings category.
+   * @return Category index.
+   */
   int currentCategory() const;
+
+  /**
+   * @brief Returns settings category rows for the sidebar.
+   * @return Category rows.
+   */
   QVariantList categoryRows() const;
+
+  /**
+   * @brief Returns whether category navigation is available.
+   * @return True when navigation state is attached.
+   */
   bool canNavigateCategories() const noexcept;
+
+  /**
+   * @brief Returns available language options.
+   * @return Language option rows.
+   */
   QVariantList languageOptions() const;
+
+  /**
+   * @brief Returns the selected language option index.
+   * @return Index into languageOptions().
+   */
   int languageIndex() const;
+
+  /**
+   * @brief Returns available theme mode options.
+   * @return Theme mode option rows.
+   */
   QVariantList themeModeOptions() const;
+
+  /**
+   * @brief Returns the selected theme mode index.
+   * @return Index into themeModeOptions().
+   */
   int themeModeIndex() const;
 
+  /**
+   * @brief Returns the configured language code.
+   * @return Language code.
+   */
   QString language() const;
-  void setLanguage(const QString &value);
+
+  /**
+   * @brief Updates the configured language code.
+   * @param value Language code.
+   */
+  void setLanguage(const QString& value);
+
+  /**
+   * @brief Returns the configured theme mode.
+   * @return Theme mode key.
+   */
   QString themeMode() const;
-  void setThemeMode(const QString &value);
+
+  /**
+   * @brief Updates the configured theme mode.
+   * @param value Theme mode key.
+   */
+  void setThemeMode(const QString& value);
+
+  /**
+   * @brief Returns whether autosave on close is enabled.
+   * @return True when autosave on close is enabled.
+   */
+  bool autosaveOnClose() const;
+
+  /**
+   * @brief Updates whether autosave on close is enabled.
+   * @param value True to enable autosave on close.
+   */
+  void setAutosaveOnClose(bool value);
+
+  /**
+   * @brief Returns autosave interval options.
+   * @return Autosave interval rows.
+   */
+  QVariantList autosaveIntervalOptions() const;
+
+  /**
+   * @brief Returns the selected autosave interval index.
+   * @return Index into autosaveIntervalOptions().
+   */
+  int autosaveIntervalIndex() const;
+
+  /**
+   * @brief Returns the default import path.
+   * @return Import path text.
+   */
   QString importDefaultPath() const;
-  void setImportDefaultPath(const QString &value);
+
+  /**
+   * @brief Updates the default import path.
+   * @param value Import path text.
+   */
+  void setImportDefaultPath(const QString& value);
+
+  /**
+   * @brief Returns the configured Poppler path.
+   * @return Poppler path text.
+   */
   QString importPoppler() const;
-  void setImportPoppler(const QString &value);
+
+  /**
+   * @brief Updates the configured Poppler path.
+   * @param value Poppler path text.
+   */
+  void setImportPoppler(const QString& value);
+
+  /**
+   * @brief Returns the configured OpenCV path.
+   * @return OpenCV path text.
+   */
   QString importOpenCv() const;
-  void setImportOpenCv(const QString &value);
+
+  /**
+   * @brief Updates the configured OpenCV path.
+   * @param value OpenCV path text.
+   */
+  void setImportOpenCv(const QString& value);
+
+  /**
+   * @brief Returns the configured Tesseract path.
+   * @return Tesseract path text.
+   */
   QString importTesseract() const;
-  void setImportTesseract(const QString &value);
+
+  /**
+   * @brief Updates the configured Tesseract path.
+   * @param value Tesseract path text.
+   */
+  void setImportTesseract(const QString& value);
+
+  /**
+   * @brief Returns the configured import parser key.
+   * @return Parser key.
+   */
   QString importParser() const;
-  void setImportParser(const QString &value);
+
+  /**
+   * @brief Updates the configured import parser key.
+   * @param value Parser key.
+   */
+  void setImportParser(const QString& value);
+
+  /**
+   * @brief Returns the configured import matcher key.
+   * @return Matcher key.
+   */
   QString importMatcher() const;
-  void setImportMatcher(const QString &value);
+
+  /**
+   * @brief Updates the configured import matcher key.
+   * @param value Matcher key.
+   */
+  void setImportMatcher(const QString& value);
+
+  /**
+   * @brief Returns the default export directory.
+   * @return Export directory text.
+   */
   QString exportDefaultDirectory() const;
-  void setExportDefaultDirectory(const QString &value);
+
+  /**
+   * @brief Updates the default export directory.
+   * @param value Export directory text.
+   */
+  void setExportDefaultDirectory(const QString& value);
+
+  /**
+   * @brief Returns the configured export archive format index.
+   * @return Archive format index.
+   */
   int exportArchiveFormat() const;
+
+  /**
+   * @brief Updates the configured export archive format index.
+   * @param value Archive format index.
+   */
   void setExportArchiveFormat(int value);
+
+  /**
+   * @brief Returns whether exported spreadsheets include formulas.
+   * @return True when formulas are included.
+   */
   bool exportIncludeFormulas() const;
+
+  /**
+   * @brief Updates whether exported spreadsheets include formulas.
+   * @param value True to include formulas.
+   */
   void setExportIncludeFormulas(bool value);
+
+  /**
+   * @brief Returns whether the booking toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowBooking() const;
+
+  /**
+   * @brief Updates whether the booking toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowBooking(bool value);
+
+  /**
+   * @brief Returns whether the import toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowImport() const;
+
+  /**
+   * @brief Updates whether the import toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowImport(bool value);
+
+  /**
+   * @brief Returns whether the actor toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowActors() const;
+
+  /**
+   * @brief Updates whether the actor toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowActors(bool value);
+
+  /**
+   * @brief Returns whether the export toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowExport() const;
+
+  /**
+   * @brief Updates whether the export toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowExport(bool value);
+
+  /**
+   * @brief Returns whether the property toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowProperties() const;
+
+  /**
+   * @brief Updates whether the property toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowProperties(bool value);
+
+  /**
+   * @brief Returns whether the analysis toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowAnalysis() const;
+
+  /**
+   * @brief Updates whether the analysis toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowAnalysis(bool value);
+
+  /**
+   * @brief Returns whether the contract toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowContracts() const;
+
+  /**
+   * @brief Updates whether the contract toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowContracts(bool value);
+
+  /**
+   * @brief Returns whether the annual toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowAnnual() const;
+
+  /**
+   * @brief Updates whether the annual toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowAnnual(bool value);
+
+  /**
+   * @brief Returns whether the settings toolbar entry is visible.
+   * @return True when visible.
+   */
   bool toolbarShowSettings() const;
+
+  /**
+   * @brief Updates whether the settings toolbar entry is visible.
+   * @param value True when visible.
+   */
   void setToolbarShowSettings(bool value);
 
+  /**
+   * @brief Activates the settings page state.
+   */
   Q_INVOKABLE void activate();
+
+  /**
+   * @brief Navigates settings categories by a relative delta.
+   * @param delta Relative movement.
+   */
   Q_INVOKABLE void navigateCategory(int delta);
+
+  /**
+   * @brief Selects a settings category.
+   * @param category Category index.
+   */
   Q_INVOKABLE void selectCategory(int category);
+
+  /**
+   * @brief Persists the current settings values.
+   */
   Q_INVOKABLE void saveSettings();
+
+  /**
+   * @brief Resets settings values to defaults.
+   */
   Q_INVOKABLE void resetSettings();
+
+  /**
+   * @brief Selects a language option by index.
+   * @param index Index into languageOptions().
+   */
   Q_INVOKABLE void selectLanguageAt(int index);
+
+  /**
+   * @brief Selects a theme mode option by index.
+   * @param index Index into themeModeOptions().
+   */
   Q_INVOKABLE void selectThemeModeAt(int index);
+
+  /**
+   * @brief Selects an autosave interval option by index.
+   * @param index Index into autosaveIntervalOptions().
+   */
+  Q_INVOKABLE void selectAutosaveIntervalAt(int index);
+
+  /**
+   * @brief Opens a browser for the import default path.
+   */
   Q_INVOKABLE void browseImportPath();
+
+  /**
+   * @brief Opens a browser for the export default directory.
+   */
   Q_INVOKABLE void browseExportDirectory();
 
 signals:
   void changed();
 
 private:
+  /**
+   * @brief Returns the first settings category index.
+   * @return First category index.
+   */
   int firstCategory() const noexcept;
+  /**
+   * @brief Returns the last settings category index.
+   * @return Last category index.
+   */
   int lastCategory() const noexcept;
-  void bindNavigation(NavigationState *value);
-  void bindSettings(Settings *value);
-  void bindActions(Actions *value);
+  /**
+   * @brief Connects navigation signals.
+   * @param value Navigation state or nullptr.
+   */
+  void bindNavigation(NavigationState* value);
+  /**
+   * @brief Connects settings signals.
+   * @param value Settings object or nullptr.
+   */
+  void bindSettings(Settings* value);
+  /**
+   * @brief Connects shell action signals.
+   * @param value Actions object or nullptr.
+   */
+  void bindActions(Actions* value);
+  /**
+   * @brief Emits the shared changed signal.
+   */
   void emitChanged();
 
-  NavigationState *navigation_ = nullptr;
-  Settings *settings_ = nullptr;
-  Actions *actions_ = nullptr;
-  LanguageService *languageService_ = nullptr;
+  NavigationState* navigation_ = nullptr;
+  Settings* settings_ = nullptr;
+  Actions* actions_ = nullptr;
+  LanguageService* languageService_ = nullptr;
 };
 
 } // namespace ui

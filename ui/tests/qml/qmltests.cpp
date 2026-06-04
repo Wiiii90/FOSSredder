@@ -10,7 +10,7 @@
 #include <QQuickStyle>
 #include <QString>
 
-#include "ui/shared/config/Defaults.h"
+#include "ui/shell/Defaults.h"
 #include "ui/shell/QmlRuntime.h"
 
 class UiQmlTestSetup : public QObject {

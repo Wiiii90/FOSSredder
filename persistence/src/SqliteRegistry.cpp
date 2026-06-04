@@ -3,7 +3,7 @@
  * @brief Implements the SQLite-backed latest-path registry factory.
  */
 
-#include "core/ports/storage/IRegistry.h"
+#include "core/ports/infra/storage/IRegistry.h"
 
 #include <optional>
 #include <sqlite3.h>

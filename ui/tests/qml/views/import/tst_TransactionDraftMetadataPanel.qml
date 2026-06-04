@@ -26,7 +26,7 @@ TestCase {
         property color surfaceAlt: "#f5f5f5"
     }
 
-    property var transactionViewModel: QtObject {
+    property var importViewModel: QtObject {
         property string metadataText: "Kundennr: 12345"
     }
 
@@ -35,7 +35,7 @@ TestCase {
         Import.TransactionDraftMetadataPanel {
             width: testCase.width
             theme: testCase.theme
-            transactionViewModel: testCase.transactionViewModel
+            importViewModel: testCase.importViewModel
         }
     }
 

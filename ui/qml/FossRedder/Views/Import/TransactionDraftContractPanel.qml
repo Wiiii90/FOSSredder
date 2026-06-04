@@ -13,7 +13,7 @@ import FossRedder.Views.Import 1.0 as Import
 
 Item {
     id: root
-    required property var transactionViewModel
+    required property var importViewModel
     required property var theme
 
     readonly property real splitColumnSpacing: root.theme.panelPadding + (root.theme.borderWidthThin * 2)
@@ -21,7 +21,7 @@ Item {
     readonly property real contractMainRightWeight: 1.8
     readonly property real contractInnerNameWeight: 2
     readonly property real contractInnerTypeWeight: 1.2
-    readonly property int suggestionTone: root.transactionViewModel.suggestionTone(root.transactionViewModel.contractSuggestionConfidence)
+    readonly property int suggestionTone: root.importViewModel.suggestionTone(root.importViewModel.contractSuggestionConfidence)
     readonly property color suggestionColor: root.suggestionTone === 2 ? root.theme.successStrong : (root.suggestionTone === 1 ? root.theme.warning : root.theme.danger)
 
     Layout.fillWidth: true
@@ -98,24 +98,24 @@ Item {
                                     objectName: "transactionDraftContractNameField"
                                     Layout.fillWidth: true
                                     Layout.preferredWidth: root.contractInnerNameWeight
-                                    placeholderText: root.transactionViewModel.contractNamePlaceholder
-                                    text: root.transactionViewModel.contractName
-                                    onTextEdited: root.transactionViewModel.contractName = text
-                                    onEditingFinished: root.transactionViewModel.contractName = text
-                                    onAccepted: root.transactionViewModel.contractName = text
+                                    placeholderText: root.importViewModel.contractNamePlaceholder
+                                    text: root.importViewModel.contractName
+                                    onTextEdited: root.importViewModel.contractName = text
+                                    onEditingFinished: root.importViewModel.contractName = text
+                                    onAccepted: root.importViewModel.contractName = text
                                     onActiveFocusChanged: if (!activeFocus)
-                                        root.transactionViewModel.contractName = text
+                                        root.importViewModel.contractName = text
                                 }
                                 Controls.TextField {
                                     objectName: "transactionDraftContractTypeField"
                                     Layout.fillWidth: true
                                     Layout.preferredWidth: root.contractInnerTypeWeight
-                                    text: root.transactionViewModel.contractType
-                                    onTextEdited: root.transactionViewModel.contractType = text
-                                    onEditingFinished: root.transactionViewModel.contractType = text
-                                    onAccepted: root.transactionViewModel.contractType = text
+                                    text: root.importViewModel.contractType
+                                    onTextEdited: root.importViewModel.contractType = text
+                                    onEditingFinished: root.importViewModel.contractType = text
+                                    onAccepted: root.importViewModel.contractType = text
                                     onActiveFocusChanged: if (!activeFocus)
-                                        root.transactionViewModel.contractType = text
+                                        root.importViewModel.contractType = text
                                 }
                             }
                         }
@@ -137,17 +137,17 @@ Item {
                                     objectName: "transactionDraftContractAllocatableModeCombo"
                                     Layout.fillWidth: true
                                     textRole: "label"
-                                    model: root.transactionViewModel.contractAllocatableModes
-                                    currentIndex: root.transactionViewModel.contractAllocatableModeIndex
+                                    model: root.importViewModel.contractAllocatableModes
+                                    currentIndex: root.importViewModel.contractAllocatableModeIndex
                                     onActivated: function (index) {
-                                        root.transactionViewModel.contractAllocatableModeIndex = index;
+                                        root.importViewModel.contractAllocatableModeIndex = index;
                                     }
                                 }
 
                                 Controls.CompactAddButton {
                                     objectName: "transactionDraftContractAddButton"
-                                    enabled: root.transactionViewModel.canAddContract
-                                    onClicked: root.transactionViewModel.addContract()
+                                    enabled: root.importViewModel.canAddContract
+                                    onClicked: root.importViewModel.addContract()
                                 }
                             }
                         }
@@ -197,10 +197,10 @@ Item {
                                                 objectName: "transactionDraftContractCombo"
                                                 Layout.fillWidth: true
                                                 textRole: "display"
-                                                model: root.transactionViewModel.contractOptions
-                                                currentIndex: root.transactionViewModel.selectedContractOptionIndex
+                                                model: root.importViewModel.contractOptions
+                                                currentIndex: root.importViewModel.selectedContractOptionIndex
                                                 onActivated: function (index) {
-                                                    root.transactionViewModel.selectContractAtIndex(index);
+                                                    root.importViewModel.selectContractAtIndex(index);
                                                 }
                                             }
                                         }
@@ -218,7 +218,7 @@ Item {
                                                 objectName: "transactionDraftContractSelectedTypeField"
                                                 Layout.fillWidth: true
                                                 readOnly: true
-                                                text: root.transactionViewModel.selectedContractType
+                                                text: root.importViewModel.selectedContractType
                                                 color: root.theme.textMuted
                                                 background: Rectangle {
                                                     radius: root.theme.radius
@@ -235,7 +235,7 @@ Item {
 
                             Label {
                                 objectName: "transactionDraftContractSuggestionLabel"
-                                text: root.transactionViewModel.contractSuggestionSummary
+                                text: root.importViewModel.contractSuggestionSummary
                                 color: root.suggestionColor
                                 Layout.fillWidth: true
                             }
@@ -249,20 +249,20 @@ Item {
 
                     rightContent: Component {
                         Import.TransactionDraftContractAllocatablePanel {
-                            transactionViewModel: root.transactionViewModel
+                            importViewModel: root.importViewModel
                             theme: root.theme
                         }
                     }
                 }
 
                 Import.TransactionDraftContractActorPanel {
-                    transactionViewModel: root.transactionViewModel
+                    importViewModel: root.importViewModel
                     theme: root.theme
                     embedded: true
                 }
 
                 Import.TransactionDraftContractPropertyPanel {
-                    transactionViewModel: root.transactionViewModel
+                    importViewModel: root.importViewModel
                     theme: root.theme
                     embedded: true
                 }

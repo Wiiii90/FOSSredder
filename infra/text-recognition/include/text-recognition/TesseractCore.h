@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "core/ports/text-recognition/TextRecognitionRequest.h"
-#include "core/ports/text-recognition/TextRecognitionTypes.h"
+#include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
+#include "core/ports/infra/text-recognition/TextRecognitionTypes.h"
 #include <string>
 #include <vector>
 #include <memory>

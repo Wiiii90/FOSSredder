@@ -7,10 +7,10 @@
 
 #include "MainWindow.h"
 #include "core/errors/IErrorReporter.h"
-#include "core/ports/analysis/IAnalysisRunner.h"
-#include "core/ports/annual/IAnnualRunner.h"
-#include "core/ports/export/IExportRunner.h"
-#include "core/ports/import/IImportRunner.h"
+#include "core/ports/usecases/analysis/IAnalysisRunner.h"
+#include "core/ports/usecases/annual/IAnnualRunner.h"
+#include "core/ports/usecases/export/IExportRunner.h"
+#include "core/ports/usecases/import/IImportRunner.h"
 #include "core/ports/workspace/IWorkspaceReader.h"
 #include "core/ports/workspace/IWorkspaceWriter.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
@@ -30,10 +30,10 @@
 #include "ui/viewmodels/ImportViewModel.h"
 #include "ui/viewmodels/PropertyViewModel.h"
 #include "ui/viewmodels/SettingsViewModel.h"
-#include "ui/workflows/analysis/AnalysisWorkflow.h"
-#include "ui/workflows/annual/AnnualWorkflow.h"
-#include "ui/workflows/export/ExportWorkflow.h"
-#include "ui/workflows/import/ImportWorkflow.h"
+#include "ui/workflows/AnalysisWorkflow.h"
+#include "ui/workflows/AnnualWorkflow.h"
+#include "ui/workflows/ExportWorkflow.h"
+#include "ui/workflows/ImportWorkflow.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 #include <QApplication>
@@ -104,10 +104,13 @@ Composition createComposition(
     settings = new ui::Settings(&w);
   }
 
-  auto importAdapter = std::make_shared<ui::adapters::ImportAdapter>(
-      w.workspace(), std::move(importRunner));
+  auto importAdapter =
+      std::make_shared<ui::adapters::ImportAdapter>(std::move(importRunner));
   state->importWorkflow =
       new ui::ImportWorkflow(importAdapter, errorReporter, w.workspace(), &w);
+  if (w.workspace()) {
+    w.workspace()->setImportWorkflowForSave(state->importWorkflow);
+  }
 
   if (auto *appContext = w.appContext()) {
     auto *actorViewModel = new ui::ActorViewModel(w.workspace(), &w);

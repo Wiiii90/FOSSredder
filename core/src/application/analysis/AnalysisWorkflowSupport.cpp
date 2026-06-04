@@ -6,7 +6,7 @@
 #include "core/application/analysis/AnalysisWorkflowSupport.h"
 
 #include "core/constants/analysis.h"
-#include "core/ports/analysis/AnalysisRequest.h"
+#include "core/ports/usecases/analysis/AnalysisRequest.h"
 
 #include <nlohmann/json.hpp>
 

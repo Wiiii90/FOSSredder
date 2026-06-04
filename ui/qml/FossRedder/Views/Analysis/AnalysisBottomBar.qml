@@ -31,11 +31,11 @@ Item {
         Item { Layout.fillWidth: true }
 
         Controls.SecondaryButton {
-            objectName: "analysisToggleWorkspaceButton"
+            objectName: "analysisToggleFilterContentButton"
             visible: !root.analysisViewModel.isEdit && root.analysisViewModel.filterEditMode
             text: "⇆"
             Layout.preferredWidth: 48
-            onClicked: root.analysisViewModel.toggleFilterWorkspace()
+            onClicked: root.analysisViewModel.toggleFilterContent()
         }
 
         Controls.DangerButton {

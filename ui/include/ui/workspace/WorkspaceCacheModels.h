@@ -8,8 +8,8 @@
 #include <memory>
 
 #include "core/ports/workspace/WorkspaceSnapshot.h"
-#include "ui/workspace/StatementViewModel.h"
-#include "ui/workspace/TransactionViewModel.h"
+#include "ui/workspace/StatementListModel.h"
+#include "ui/workspace/TransactionListModel.h"
 #include "ui/workspace/AnalysisListModel.h"
 #include "ui/workspace/AnnualListModel.h"
 
@@ -28,13 +28,13 @@ public:
   explicit WorkspaceCacheModels(QObject *objectParent = nullptr);
   ~WorkspaceCacheModels();
 
-  StatementViewModel &statements() noexcept { return *statements_; }
-  TransactionViewModel &transactions() noexcept { return *transactions_; }
+  StatementListModel &statements() noexcept { return *statements_; }
+  TransactionListModel &transactions() noexcept { return *transactions_; }
   AnalysisList &analyses() noexcept { return *analyses_; }
   AnnualList &annuals() noexcept { return *annuals_; }
 
-  const StatementViewModel &statements() const noexcept { return *statements_; }
-  const TransactionViewModel &transactions() const noexcept {
+  const StatementListModel &statements() const noexcept { return *statements_; }
+  const TransactionListModel &transactions() const noexcept {
     return *transactions_;
   }
   const AnalysisList &analyses() const noexcept { return *analyses_; }
@@ -73,8 +73,8 @@ private:
   std::unique_ptr<AnalysisList> analyses_;
   std::unique_ptr<PropertyCatalogModel> properties_;
   std::unique_ptr<ContractCatalogModel> contracts_;
-  std::unique_ptr<StatementViewModel> statements_;
-  std::unique_ptr<TransactionViewModel> transactions_;
+  std::unique_ptr<StatementListModel> statements_;
+  std::unique_ptr<TransactionListModel> transactions_;
   std::unique_ptr<AnnualList> annuals_;
 };
 

@@ -32,7 +32,7 @@ TestCase {
         property int updateCalls: 0
         property int deleteCalls: 0
         function navigate(delta) { navigateCalls += 1; lastDelta = delta }
-        function toggleWorkspace() { toggleCalls += 1 }
+        function toggleContent() { toggleCalls += 1 }
         function resetCreateState() { resetCalls += 1 }
         function submitCreate() { createCalls += 1 }
         function submitUpdate() { updateCalls += 1 }
@@ -82,7 +82,7 @@ TestCase {
     function test_ANN_BB_001_createModeActionsDelegateToAnnualState() {
         const bar = createBar()
         TestSupport.findRequired(Lookup, bar, "annualPreviousButton").clicked()
-        TestSupport.findRequired(Lookup, bar, "annualToggleWorkspaceButton").clicked()
+        TestSupport.findRequired(Lookup, bar, "annualToggleContentButton").clicked()
         TestSupport.findRequired(Lookup, bar, "annualClearButton").clicked()
         TestSupport.findRequired(Lookup, bar, "annualCreateButton").clicked()
         TestSupport.findRequired(Lookup, bar, "annualNextButton").clicked()

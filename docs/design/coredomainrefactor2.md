@@ -276,26 +276,35 @@ domain invariants.
 
 ## UI Alignment
 
-`UI_ARCHITECTURE_TARGET.md` is still directionally good.
+`docs/design/tmp/ui_architecture_target2.md` defines the current UI target.
 
 The strict core-aligned rule is:
 
-- UI reads `core/ports/workspace/IWorkspaceReader`
-- UI writes through `core/ports/workspace/IWorkspaceWriter`
+- UI reads workspace data from `core/ports/workspace/IWorkspaceReader`
+- UI writes workspace data through `core/ports/workspace/IWorkspaceWriter`
 - UI receives `WorkspaceSnapshot`
-- UI maps snapshots to Qt models in `ui/adapters` and `ui/viewmodels`
+- UI stores the current snapshot once in `ui/workspace/WorkspaceStore`
+- UI derives QML rows and dropdowns through `ui/workspace/WorkspaceSelectors`
+- UI submits workspace mutations through `ui/workspace/WorkspaceCommands`
+- UI tracks cross-view selected ids through `ui/workspace/WorkspaceSelection`
+- UI builds workspace-specific QML payloads through
+  `ui/workspace/WorkspacePayloads`
 - UI does not include `core/domain/*` or `core/application/*`
 
-Relevant UI mapping stays:
+Relevant UI workspace mapping:
 
 | Current | Target |
 | --- | --- |
-| `ui/src/state/StateFacadeProjection.cpp` | `ui/src/adapters/WorkspaceRowProjector.cpp` |
-| `ui/src/state/WorkspaceClone.*` | `ui/src/application/snapshots/WorkspaceSnapshotFactory.*` or remove if core snapshot is sufficient |
-| `ui/src/import/ImportJobBridge.*` | `ui/src/application/jobs/ImportStatementJobClient.*` |
-| `ui/src/import/ImportRunStore.*` | `ui/src/application/runs/RunArtifactStore.*` |
-| `ui/src/export/ExportRunner.*` | `ui/src/application/workflows/export/ExportWorkflow.*` |
-| `ui/src/import/ImportState.*` | `ui/src/application/workflows/import/ImportWorkflowState.*` |
+| `ui/include/ui/workspace/WorkspaceFacade.h` | remove; split into `WorkspaceStore.h`, `WorkspaceCommands.h`, `WorkspaceSelection.h`, `WorkspaceSelectors.h`, and `WorkspacePayloads.h` |
+| `ui/src/workspace/WorkspaceFacade*.cpp` | remove; split by role into `WorkspaceStore.cpp`, `WorkspaceCommands.cpp`, `WorkspaceSelection.cpp`, `WorkspaceSelectors.cpp`, and `WorkspacePayloads.cpp` |
+| `ui/include/ui/workspace/WorkspaceCache*.h` | remove; store current snapshot in `WorkspaceStore` |
+| `ui/src/workspace/WorkspaceCache*.cpp` | remove; store current snapshot in `WorkspaceStore` |
+| `ui/include/ui/workspace/WorkspaceFilterState.h` | remove; filtered transaction rows are selectors |
+| `ui/src/workspace/WorkspaceFilterState.cpp` | remove; filtered transaction rows are selectors |
+| `ui/include/ui/workspace/WorkspaceRowProjector.h` | remove; use `WorkspaceSelectors.h` and `WorkspacePayloads.h` |
+| `ui/src/workspace/WorkspaceRowProjector.cpp` | remove; use `WorkspaceSelectors.cpp` and `WorkspacePayloads.cpp` |
+| `ui/include/ui/workspace/*ListModel.h`, `IndexedListModel.h`, `RowListModel.h`, `WorkflowRunListModel.h` | remove unless a documented QML `QAbstractItemModel` consumer requires an adapter |
+| `ui/src/workspace/*ListModel.cpp`, `TransactionFilterModel.cpp` | remove unless a documented QML `QAbstractItemModel` consumer requires an adapter |
 
 ## Stable Areas
 
@@ -309,7 +318,7 @@ Stable by default:
 - `core/src/application/export/*`
 - `core/src/application/import/*` except the draft touchpoints above
 - `ui/qml/*`
-- `ui/shared/*`
+- `ui/presentation/*`, `ui/i18n/*`, `ui/observability/*`, `ui/util/*`
 - `ui/platform/*`
 
 ## Definition Of Done

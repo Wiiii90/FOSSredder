@@ -10,7 +10,7 @@
 #include <QObject>
 
 #include "ui/workspace/TransactionFilterModel.h"
-#include "ui/workspace/TransactionViewModel.h"
+#include "ui/workspace/TransactionListModel.h"
 
 namespace ui {
 
@@ -18,7 +18,7 @@ namespace {
 
 TransactionFilter *
 ensureFilter(QHash<QString, TransactionFilter *> &filters, const QString &key,
-             TransactionViewModel &sourceModel, QObject *owner,
+             TransactionListModel &sourceModel, QObject *owner,
              const std::function<void(TransactionFilter &)> &configure) {
   if (key.isEmpty() || !owner) {
     return nullptr;
@@ -60,7 +60,7 @@ WorkspaceFilterState::WorkspaceFilterState(QObject *owner) : owner_(owner) {}
 
 TransactionFilter *
 WorkspaceFilterState::statementTransactions(const QString &statementId,
-                                            TransactionViewModel &sourceModel) {
+                                            TransactionListModel &sourceModel) {
   return ensureFilter(statementFilters_, statementId, sourceModel, owner_,
                       [&statementId](TransactionFilter &filter) {
                         filter.setStatementId(statementId);
@@ -69,7 +69,7 @@ WorkspaceFilterState::statementTransactions(const QString &statementId,
 
 TransactionFilter *
 WorkspaceFilterState::propertyTransactions(const QString &propertyId,
-                                           TransactionViewModel &sourceModel) {
+                                           TransactionListModel &sourceModel) {
   return ensureFilter(propertyFilters_, propertyId, sourceModel, owner_,
                       [&propertyId](TransactionFilter &filter) {
                         filter.setPropertyId(propertyId);

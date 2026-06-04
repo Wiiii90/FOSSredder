@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/ports/image-processing/ImageProcessingTypes.h"
+#include "core/ports/infra/image-processing/ImageProcessingTypes.h"
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <vector>

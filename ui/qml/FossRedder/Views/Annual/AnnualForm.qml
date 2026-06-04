@@ -110,10 +110,10 @@ Item {
                 }
 
                 StackLayout {
-                    id: annualWorkspaceStack
+                    id: annualContentStack
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    currentIndex: root.annualViewModel.workspaceIndex
+                    currentIndex: root.annualViewModel.contentIndex
 
                     Annual.AnnualAnalysesPanel {
                         Layout.fillWidth: true

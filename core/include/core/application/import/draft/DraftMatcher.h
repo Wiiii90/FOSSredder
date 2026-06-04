@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "core/domain/catalog/WorkspaceCatalog.h"
+#include "core/application/import/draft/StatementDraft.h"
 #include "core/application/import/draft/TransactionDraft.h"
 
 namespace core::application::importing::draft {

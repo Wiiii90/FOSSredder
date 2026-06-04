@@ -9,8 +9,8 @@
 #include <QCoreApplication>
 #include <QGuiApplication>
 
-#include "ui/shared/config/Defaults.h"
-#include "ui/shared/text/Text.h"
+#include "ui/i18n/Text.h"
+#include "ui/shell/Defaults.h"
 
 namespace ui {
 

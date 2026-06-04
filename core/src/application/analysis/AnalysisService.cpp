@@ -6,6 +6,7 @@
 #include "core/application/analysis/AnalysisService.h"
 
 #include "adjustment/AdjustmentCalculation.h"
+#include "core/application/analysis/AnalysisWorkflowSupport.h"
 #include "core/application/workspace/WorkspaceSnapshotCatalogMapper.h"
 #include "core/constants/analysis.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
@@ -13,15 +14,17 @@
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Property.h"
 #include "core/domain/entities/Transaction.h"
-#include "core/ports/analysis/AnalysisResult.h"
-#include "core/ports/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/usecases/analysis/AnalysisResult.h"
+#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
 #include "internal/AnalysisFilter.h"
 #include "presentation/PlotAnalysis.h"
 #include "presentation/TableAnalysis.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <iomanip>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <unordered_map>
@@ -34,6 +37,20 @@
 namespace core::application::analysis {
 
 namespace {
+
+double parseNumber(const std::string &value) {
+  char *end = nullptr;
+  const double parsed = std::strtod(value.c_str(), &end);
+  return end != value.c_str() ? parsed : 0.0;
+}
+
+void appendUnique(std::vector<std::string> &values, const std::string &value) {
+  if (value.empty() ||
+      std::find(values.begin(), values.end(), value) != values.end()) {
+    return;
+  }
+  values.push_back(value);
+}
 
 std::vector<core::ports::analysis::AnalysisTransaction>
 projectAnalysisTransactions(
@@ -409,7 +426,7 @@ AnalysisService::filterTransactions(
                                      parseAnalysisFilterSpec(filterSpec));
 }
 
-std::vector<core::ports::analysis::AnalysisPreviewTransaction>
+core::ports::analysis::AnalysisPreviewResult
 AnalysisService::previewTransactions(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
     const std::string &filterSpec) const {
@@ -435,9 +452,28 @@ AnalysisService::previewTransactions(
     propertyNameById.emplace(property->id(), property->name());
   }
 
+  std::unordered_map<std::string, std::string> actorNameById;
+  actorNameById.reserve(workspace.actors.size());
+  for (const auto &actor : workspace.actors) {
+    if (!actor.id.empty()) {
+      actorNameById.emplace(actor.id, actor.name);
+    }
+  }
+
+  std::unordered_map<std::string, std::string> statementNameById;
+  statementNameById.reserve(workspace.statements.size());
+  for (const auto &statement : workspace.statements) {
+    if (!statement.id.empty()) {
+      statementNameById.emplace(statement.id, statement.name);
+    }
+  }
+
   const auto filtered = filterTransactions(state, filterSpec);
-  std::vector<core::ports::analysis::AnalysisPreviewTransaction> out;
-  out.reserve(filtered.size());
+  core::ports::analysis::AnalysisPreviewResult result;
+  result.transactions.reserve(filtered.size());
+  std::unordered_set<std::string> statementIds;
+  double amountSum = 0.0;
+
   for (const auto &transaction : filtered) {
     if (!transaction) {
       continue;
@@ -454,6 +490,15 @@ AnalysisService::previewTransactions(
     row.contractId = transaction->contractId();
     row.allocatable = transaction->isAllocatable();
     row.propertyIds = transaction->propertyIds();
+
+    const auto actorIt = actorNameById.find(row.actorId);
+    if (actorIt != actorNameById.end()) {
+      row.actorName = actorIt->second;
+    }
+    const auto statementIt = statementNameById.find(row.statementId);
+    if (statementIt != statementNameById.end()) {
+      row.statementName = statementIt->second;
+    }
 
     const auto contractIt = contractById.find(row.contractId);
     if (contractIt != contractById.end() && contractIt->second) {
@@ -476,9 +521,149 @@ AnalysisService::previewTransactions(
                                       : propertyId);
     }
 
-    out.push_back(std::move(row));
+    if (!row.statementId.empty()) {
+      statementIds.insert(row.statementId);
+    }
+    amountSum += row.amount;
+    result.transactions.push_back(std::move(row));
   }
-  return out;
+
+  result.metrics.transactionCount =
+      static_cast<int>(result.transactions.size());
+  result.metrics.statementCount = static_cast<int>(statementIds.size());
+  result.metrics.amountSum = amountSum;
+  return result;
+}
+
+core::ports::analysis::AnalysisFilterSelection
+AnalysisService::filterSelectionFromFields(
+    const std::string &dateField, const std::string &dateMode,
+    const std::string &year, const std::string &dateFrom,
+    const std::string &dateTo, const std::vector<std::string> &propertyIds,
+    const std::vector<std::string> &contractTypes,
+    const std::string &allocatableMode) const {
+  return analysis::filterSelectionFromFields(
+      dateField, dateMode, year, dateFrom, dateTo, propertyIds, contractTypes,
+      allocatableMode);
+}
+
+std::string AnalysisService::buildAnalysisConfigJson(
+    const core::ports::analysis::AnalysisConfigInput &input) const {
+  AnalysisConfigInput coreInput;
+  coreInput.type = input.type;
+  coreInput.plotType = input.plotType;
+  coreInput.plotMeasure = input.plotMeasure;
+  coreInput.propertyIds = input.propertyIds;
+  coreInput.contractTypes = input.contractTypes;
+  coreInput.taxPercent = input.taxPercent;
+  return analysis::buildAnalysisConfigJson(coreInput);
+}
+
+std::string AnalysisService::buildAnalysisAdjustmentsJson(
+    const std::vector<core::ports::analysis::AnalysisAdjustmentTransactionInput>
+        &transactions,
+    const std::vector<std::string> &selectedTransactionIds,
+    double taxPercent) const {
+  std::vector<AnalysisAdjustmentTransactionInput> coreTransactions;
+  coreTransactions.reserve(transactions.size());
+  for (const auto &transaction : transactions) {
+    coreTransactions.push_back({transaction.id, transaction.amount});
+  }
+  return analysis::buildAnalysisAdjustmentsJson(coreTransactions,
+                                                selectedTransactionIds,
+                                                taxPercent);
+}
+
+void AnalysisService::applyAnalysisPreviewOverrides(
+    core::ports::workspace::WorkspaceSnapshot &workspace,
+    const std::string &analysisId, bool includeCalculationAdjustments,
+    const std::string &adjustmentsJson) const {
+  analysis::applyAnalysisPreviewOverrides(
+      workspace, analysisId, includeCalculationAdjustments,
+      analysis::parseAnalysisAdjustmentsJson(adjustmentsJson));
+}
+
+core::ports::analysis::AnalysisTableState AnalysisService::projectTableState(
+    const core::ports::analysis::AnalysisResult &result,
+    const std::string &adjustmentsJson, bool includeCalculationAdjustments,
+    const std::string &unassignedLabel) const {
+  core::ports::analysis::AnalysisTableState state;
+  const auto adjustments = analysis::parseAnalysisAdjustmentsJson(adjustmentsJson);
+
+  std::map<std::string, std::map<std::string, double>> amountsByProperty;
+  std::map<std::string, double> totalsByProperty;
+
+  auto appendAmount = [&](const std::string &transactionId,
+                          const std::string &contractType,
+                          const std::vector<std::string> &propertyNames,
+                          double baseAmount) {
+    const auto adjustmentIt =
+        std::find_if(adjustments.begin(), adjustments.end(),
+                     [&](const auto &adjustment) {
+                       return adjustment.first == transactionId;
+                     });
+    const double amount = includeCalculationAdjustments &&
+                                  adjustmentIt != adjustments.end()
+                              ? adjustmentIt->second
+                              : baseAmount;
+    const std::string effectiveContract =
+        contractType.empty() ? unassignedLabel : contractType;
+
+    state.grandTotal += amount;
+    appendUnique(state.contractTypes, effectiveContract);
+
+    if (propertyNames.empty()) {
+      amountsByProperty[unassignedLabel][effectiveContract] += amount;
+      totalsByProperty[unassignedLabel] += amount;
+      return;
+    }
+    for (const auto &propertyName : propertyNames) {
+      const std::string effectiveProperty =
+          propertyName.empty() ? unassignedLabel : propertyName;
+      amountsByProperty[effectiveProperty][effectiveContract] += amount;
+      totalsByProperty[effectiveProperty] += amount;
+    }
+  };
+
+  if (!result.transactions.empty()) {
+    for (const auto &transaction : result.transactions) {
+      std::vector<std::string> propertyNames = transaction.propertyNames;
+      if (propertyNames.empty()) {
+        propertyNames = transaction.propertyIds;
+      }
+      appendAmount(transaction.id, transaction.contractType, propertyNames,
+                   transaction.amount);
+    }
+  } else {
+    for (std::size_t i = 0; i < result.table.size(); ++i) {
+      const auto &row = result.table[i];
+      if (row.size() < 3) {
+        continue;
+      }
+      appendAmount("table-row-" + std::to_string(i), unassignedLabel,
+                   {unassignedLabel}, parseNumber(row[2]));
+    }
+  }
+
+  std::sort(state.contractTypes.begin(), state.contractTypes.end());
+
+  for (const auto &[propertyName, amountsByContract] : amountsByProperty) {
+    core::ports::analysis::AnalysisTablePropertyRow row;
+    row.propertyName = propertyName;
+    row.total = totalsByProperty[propertyName];
+    row.amounts.reserve(state.contractTypes.size());
+    for (const auto &contractType : state.contractTypes) {
+      const auto it = amountsByContract.find(contractType);
+      row.amounts.push_back(it != amountsByContract.end() ? it->second : 0.0);
+    }
+    state.propertyRows.push_back(std::move(row));
+  }
+  return state;
+}
+
+std::vector<std::string> AnalysisService::contractTypes(
+    const core::ports::workspace::WorkspaceSnapshot &workspace) const {
+  return analysis::contractTypesFromSnapshot(workspace);
 }
 
 } // namespace core::application::analysis

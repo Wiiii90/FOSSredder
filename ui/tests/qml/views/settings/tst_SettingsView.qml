@@ -24,7 +24,8 @@ TestCase {
         property bool canNavigateCategories: true
         property var languageOptions: [
             { code: "en", label: "English", available: true },
-            { code: "de", label: "Deutsch", available: true }
+            { code: "de", label: "Deutsch", available: true },
+            { code: "fr", label: "Français", available: true }
         ]
         property int languageIndex: 0
         property string importDefaultPath: ""

@@ -6,16 +6,19 @@
 #pragma once
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
-#include "core/ports/analysis/IAnalysisRunner.h"
-#include "core/ports/annual/IAnnualRunner.h"
+#include "core/ports/usecases/analysis/IAnalysisRunner.h"
+#include "core/ports/usecases/annual/IAnnualRunner.h"
+#include "core/ports/usecases/export/IExportRunner.h"
 #include "core/ports/workspace/IWorkspaceReader.h"
 #include "core/ports/workspace/IWorkspaceWriter.h"
 
@@ -63,6 +66,56 @@ public:
     return std::nullopt;
   }
 
+  [[nodiscard]] core::ports::workspace::WorkspaceIdentitySnapshot
+  actorIdentityByName(const std::string &name) const override {
+    const auto target = normalized(name);
+    for (const auto &actor : snapshot_.actors) {
+      if (normalized(actor.name) == target) {
+        return identity(actor.id, actor.name);
+      }
+    }
+    return {};
+  }
+
+  [[nodiscard]] core::ports::workspace::WorkspaceIdentitySnapshot
+  propertyIdentityByName(const std::string &name) const override {
+    const auto target = normalized(name);
+    for (const auto &property : snapshot_.properties) {
+      if (normalized(property.name) == target) {
+        return identity(property.id, property.name);
+      }
+    }
+    return {};
+  }
+
+  [[nodiscard]] core::ports::workspace::WorkspaceIdentitySnapshot
+  contractIdentityBySignature(
+      const std::string &name, const std::string &type,
+      const std::vector<std::string> &actorIds,
+      const std::vector<std::string> &propertyIds) const override {
+    const auto targetName = normalized(name);
+    const auto targetType = normalized(type);
+    for (const auto &contract : snapshot_.contracts) {
+      if (normalized(contract.name) != targetName ||
+          normalized(contract.type) != targetType ||
+          sorted(contract.actorIds) != sorted(actorIds) ||
+          sorted(contract.propertyIds) != sorted(propertyIds)) {
+        continue;
+      }
+      auto out = identity(contract.id, contract.name);
+      out.type = contract.type;
+      out.allocatableMode = contract.allocatableMode;
+      out.actorIds = sorted(contract.actorIds);
+      out.propertyIds = sorted(contract.propertyIds);
+      return out;
+    }
+    return {};
+  }
+
+  [[nodiscard]] std::string nextContractName() const override {
+    return "Contract " + std::to_string(snapshot_.contracts.size() + 1);
+  }
+
   void setSnapshotChangedCallback(SnapshotChanged cb) override {
     snapshotChanged_ = std::move(cb);
   }
@@ -107,6 +160,41 @@ public:
   }
 
   void notifySnapshot() override { publish(); }
+
+  [[nodiscard]] core::ports::workspace::ValidationResult validateActor(
+      const core::ports::workspace::ActorCommand &) const override {
+    return {};
+  }
+
+  [[nodiscard]] core::ports::workspace::ValidationResult validateProperty(
+      const core::ports::workspace::PropertyCommand &) const override {
+    return {};
+  }
+
+  [[nodiscard]] core::ports::workspace::ValidationResult validateContract(
+      const core::ports::workspace::ContractCommand &) const override {
+    return {};
+  }
+
+  [[nodiscard]] core::ports::workspace::ValidationResult validateStatement(
+      const core::ports::workspace::StatementCommand &) const override {
+    return {};
+  }
+
+  [[nodiscard]] core::ports::workspace::ValidationResult validateTransaction(
+      const core::ports::workspace::TransactionCommand &) const override {
+    return {};
+  }
+
+  [[nodiscard]] core::ports::workspace::ValidationResult validateAnalysis(
+      const core::ports::workspace::AnalysisCommand &) const override {
+    return {};
+  }
+
+  [[nodiscard]] core::ports::workspace::ValidationResult validateAnnual(
+      const core::ports::workspace::AnnualCommand &) const override {
+    return {};
+  }
 
   [[nodiscard]] std::string
   addActor(const core::ports::workspace::ActorCommand &command) override {
@@ -408,6 +496,29 @@ public:
   }
 
 private:
+  static std::string normalized(std::string value) {
+    auto notSpace = [](unsigned char ch) { return !std::isspace(ch); };
+    value.erase(value.begin(), std::find_if(value.begin(), value.end(), notSpace));
+    value.erase(std::find_if(value.rbegin(), value.rend(), notSpace).base(),
+                value.end());
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return value;
+  }
+
+  static std::vector<std::string> sorted(std::vector<std::string> values) {
+    std::sort(values.begin(), values.end());
+    return values;
+  }
+
+  static core::ports::workspace::WorkspaceIdentitySnapshot identity(
+      const std::string &id, const std::string &name) {
+    core::ports::workspace::WorkspaceIdentitySnapshot out;
+    out.id = id;
+    out.name = name;
+    return out;
+  }
+
   template <typename Row>
   static Row *findById(std::vector<Row> &rows, const std::string &id) {
     const auto it =
@@ -541,8 +652,9 @@ public:
     result.generatedAt = "2026-06-01T00:00:00Z";
 
     double total = 0.0;
-    auto rows = previewTransactions(workspace, request.filterSpecification);
-    for (const auto &row : rows) {
+    const auto preview =
+        previewTransactions(workspace, request.filterSpecification);
+    for (const auto &row : preview.transactions) {
       core::ports::analysis::AnalysisTransaction transaction;
       transaction.id = row.id;
       transaction.name = row.name;
@@ -566,13 +678,15 @@ public:
     return result;
   }
 
-  [[nodiscard]] std::vector<core::ports::analysis::AnalysisPreviewTransaction>
+  [[nodiscard]] core::ports::analysis::AnalysisPreviewResult
   previewTransactions(
       const core::ports::workspace::WorkspaceSnapshot &workspace,
       const std::string &filterSpec) const override {
-    std::vector<core::ports::analysis::AnalysisPreviewTransaction> out;
+    core::ports::analysis::AnalysisPreviewResult result;
     const bool requireLargeAmount =
         filterSpec.find("amount>=1000") != std::string::npos;
+    std::unordered_set<std::string> statementIds;
+    double amountSum = 0.0;
 
     for (const auto &transaction : workspace.transactions) {
       if (requireLargeAmount && transaction.amount < 1000.0) {
@@ -590,6 +704,13 @@ public:
       row.contractId = transaction.contractId;
       row.allocatable = transaction.allocatable;
       row.propertyIds = transaction.propertyIds;
+      if (const auto *actor = findActor(workspace, transaction.actorId)) {
+        row.actorName = actor->name;
+      }
+      if (const auto *statement =
+              findStatement(workspace, transaction.statementId)) {
+        row.statementName = statement->name;
+      }
       if (const auto *contract =
               findContract(workspace, transaction.contractId)) {
         row.contractType = contract->type;
@@ -600,9 +721,75 @@ public:
           row.propertyNames.push_back(property->name);
         }
       }
-      out.push_back(std::move(row));
+      if (!row.statementId.empty()) {
+        statementIds.insert(row.statementId);
+      }
+      amountSum += row.amount;
+      result.transactions.push_back(std::move(row));
     }
 
+    result.metrics.transactionCount =
+        static_cast<int>(result.transactions.size());
+    result.metrics.statementCount = static_cast<int>(statementIds.size());
+    result.metrics.amountSum = amountSum;
+    return result;
+  }
+
+  [[nodiscard]] core::ports::analysis::AnalysisFilterSelection
+  filterSelectionFromFields(
+      const std::string &dateField, const std::string &dateMode,
+      const std::string &year, const std::string &dateFrom,
+      const std::string &dateTo, const std::vector<std::string> &propertyIds,
+      const std::vector<std::string> &contractTypes,
+      const std::string &allocatableMode) const override {
+    return {dateField, dateMode, year, dateFrom, dateTo, propertyIds,
+            contractTypes, allocatableMode};
+  }
+
+  [[nodiscard]] std::string buildAnalysisConfigJson(
+      const core::ports::analysis::AnalysisConfigInput &) const override {
+    return "{}";
+  }
+
+  [[nodiscard]] std::string buildAnalysisAdjustmentsJson(
+      const std::vector<core::ports::analysis::AnalysisAdjustmentTransactionInput>
+          &,
+      const std::vector<std::string> &, double) const override {
+    return "{}";
+  }
+
+  void applyAnalysisPreviewOverrides(
+      core::ports::workspace::WorkspaceSnapshot &, const std::string &, bool,
+      const std::string &) const override {}
+
+  [[nodiscard]] core::ports::analysis::AnalysisTableState projectTableState(
+      const core::ports::analysis::AnalysisResult &result,
+      const std::string &, bool,
+      const std::string &unassignedLabel) const override {
+    core::ports::analysis::AnalysisTableState state;
+    state.contractTypes.push_back(unassignedLabel);
+    for (const auto &transaction : result.transactions) {
+      core::ports::analysis::AnalysisTablePropertyRow row;
+      row.propertyName = transaction.propertyNames.empty()
+                             ? unassignedLabel
+                             : transaction.propertyNames.front();
+      row.amounts.push_back(transaction.amount);
+      row.total = transaction.amount;
+      state.grandTotal += transaction.amount;
+      state.propertyRows.push_back(std::move(row));
+    }
+    return state;
+  }
+
+  [[nodiscard]] std::vector<std::string> contractTypes(
+      const core::ports::workspace::WorkspaceSnapshot &workspace) const override {
+    std::vector<std::string> out;
+    std::unordered_set<std::string> seen;
+    for (const auto &contract : workspace.contracts) {
+      if (!contract.type.empty() && seen.insert(contract.type).second) {
+        out.push_back(contract.type);
+      }
+    }
     return out;
   }
 
@@ -623,6 +810,27 @@ private:
         std::find_if(workspace.contracts.begin(), workspace.contracts.end(),
                      [&id](const auto &contract) { return contract.id == id; });
     return it == workspace.contracts.end() ? nullptr : &*it;
+  }
+
+  static const core::ports::workspace::ActorSnapshot *
+  findActor(const core::ports::workspace::WorkspaceSnapshot &workspace,
+            const std::string &id) {
+    const auto it = std::find_if(workspace.actors.begin(), workspace.actors.end(),
+                                 [&id](const auto &actor) {
+                                   return actor.id == id;
+                                 });
+    return it == workspace.actors.end() ? nullptr : &*it;
+  }
+
+  static const core::ports::workspace::StatementSnapshot *
+  findStatement(const core::ports::workspace::WorkspaceSnapshot &workspace,
+                const std::string &id) {
+    const auto it =
+        std::find_if(workspace.statements.begin(), workspace.statements.end(),
+                     [&id](const auto &statement) {
+                       return statement.id == id;
+                     });
+    return it == workspace.statements.end() ? nullptr : &*it;
   }
 
   static const core::ports::workspace::PropertySnapshot *
@@ -713,6 +921,16 @@ private:
     row.statementId = "statement-1";
     row.sourceAnalysisIds = std::move(sourceAnalysisIds);
     return row;
+  }
+};
+
+class ExportRunnerStub final : public core::ports::exporting::IExportRunner {
+public:
+  [[nodiscard]] core::ports::exporting::ExportResult runExport(
+      const core::ports::workspace::WorkspaceSnapshot &,
+      core::ports::exporting::ExportRequest request) const override {
+    return {true, core::ports::exporting::ExportStatus::Ok,
+            request.format, request.outputPath, {}, {}};
   }
 };
 

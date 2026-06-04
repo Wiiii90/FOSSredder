@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/ports/analysis/AnalysisResult.h"
+#include "core/ports/usecases/analysis/AnalysisResult.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
 #include "core/domain/entities/Analysis.h"
 

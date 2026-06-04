@@ -190,7 +190,6 @@ void WorkspaceSelection::setSelectedAnalysisId(const QString &id) {
                            });
       }))
     return;
-  clearAnalysisResult();
   emit selectedAnalysisIdChanged();
 }
 
@@ -202,13 +201,6 @@ void WorkspaceSelection::setSelectedAnnualId(const QString &id) {
                            });
       }))
     emit selectedAnnualIdChanged();
-}
-
-void WorkspaceSelection::setLastAnalysisResult(const QVariant &value) {
-  if (lastAnalysisResult_ == value)
-    return;
-  lastAnalysisResult_ = value;
-  emit lastAnalysisResultChanged();
 }
 
 void WorkspaceSelection::validateSelections() {
@@ -244,7 +236,6 @@ void WorkspaceSelection::validateSelections() {
 
 void WorkspaceSelection::loadFromState() {
   refreshSelections();
-  clearAnalysisResult();
 }
 
 void WorkspaceSelection::bindModelSignals() {
@@ -262,16 +253,7 @@ void WorkspaceSelection::refreshSelections() {
   const auto before = captureSelectionIds(*this);
   validateSelections();
 
-  if (selectedAnalysisId() != before.analysisId)
-    clearAnalysisResult();
   emitSelectionChanges(*this, before);
-}
-
-void WorkspaceSelection::clearAnalysisResult() {
-  if (!lastAnalysisResult_.isValid())
-    return;
-  lastAnalysisResult_.clear();
-  emit lastAnalysisResultChanged();
 }
 
 } // namespace ui

@@ -30,33 +30,33 @@ Controls.Panel {
             Layout.fillWidth: true
             Label {
                 color: root.theme.textPrimary
-                text: qsTr("Calc name")
+                text: qsTr("Adjustment name")
                 Layout.preferredWidth: root.theme.formLabelWidth
             }
             Controls.TextField {
-                id: calcNameField
-                objectName: "analysisCalcNameField"
+                id: adjustmentNameField
+                objectName: "analysisAdjustmentNameField"
                 Layout.preferredWidth: root.theme.formFieldWidth
                 placeholderText: qsTr("e.g. VAT")
-                text: root.analysisViewModel.calcName
-                onTextChanged: root.analysisViewModel.calcName = text
+                text: root.analysisViewModel.adjustmentName
+                onTextChanged: root.analysisViewModel.adjustmentName = text
             }
             Label {
                 color: root.theme.textPrimary
-                text: qsTr("Calc %")
+                text: qsTr("Adjustment %")
             }
             Controls.TextField {
-                id: calcPercentField
-                objectName: "analysisCalcPercentField"
-                Layout.preferredWidth: root.txTheme.calcPercentFieldWidth
+                id: adjustmentPercentField
+                objectName: "analysisAdjustmentPercentField"
+                Layout.preferredWidth: root.txTheme.adjustmentPercentFieldWidth
                 placeholderText: qsTr("0")
-                text: root.analysisViewModel.calcPercentText
-                onTextChanged: root.analysisViewModel.calcPercentText = text
+                text: root.analysisViewModel.adjustmentPercentText
+                onTextChanged: root.analysisViewModel.adjustmentPercentText = text
             }
             Controls.Button {
-                objectName: "analysisApplyCalcButton"
+                objectName: "analysisApplyAdjustmentButton"
                 text: qsTr("Apply to selected")
-                onClicked: root.analysisViewModel.applySelectedCalc()
+                onClicked: root.analysisViewModel.applySelectedAdjustment()
             }
         }
 

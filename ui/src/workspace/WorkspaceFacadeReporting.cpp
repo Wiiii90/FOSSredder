@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
-#include "core/application/analysis/AnalysisWorkflowSupport.h"
 #include "core/ports/workspace/WorkspaceCommands.h"
-#include "ui/shared/util/StringConversions.h"
+#include "ui/observability/Trace.h"
+#include "ui/util/StringConversions.h"
 
 namespace ui {
 namespace {
@@ -33,8 +33,7 @@ core::ports::workspace::AnalysisCommand makeAnalysisCommand(
   command.exportStateJson = strings::toStdString(exportStateJson);
   command.snapshotTransactionsJson =
       strings::toStdString(snapshotTransactionsJson);
-  command.adjustments = core::application::analysis::parseAnalysisAdjustmentsJson(
-      adjustmentsJson.toStdString());
+  command.adjustmentsJson = strings::toStdString(adjustmentsJson);
   return command;
 }
 
@@ -76,10 +75,40 @@ QString WorkspaceFacade::addAnalysis(
     const QString &exportStateJson, const QString &snapshotTransactionsJson,
     const QString &adjustmentsJson) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace("WorkspaceFacade::addAnalysis",
+                                  "Analysis create ignored; no writer bound");
     return {};
   }
-  return QString::fromStdString(workspaceWriter_->addAnalysis(
+  const auto command =
       makeAnalysisCommand({}, name, type, configJson, filterSpec, exportFormat,
+                          includeCalcAdjustments, exportStateJson,
+                          snapshotTransactionsJson, adjustmentsJson);
+  if (rejectInvalidCommand("WorkspaceFacade::addAnalysis",
+                           workspaceWriter_->validateAnalysis(command))) {
+    return {};
+  }
+  const QString createdId =
+      QString::fromStdString(workspaceWriter_->addAnalysis(command));
+  observability::traceWorkspace(
+      "WorkspaceFacade::addAnalysis", "Analysis created",
+      {{observability::context::kId, createdId.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"type", type.toStdString()},
+       {observability::context::kFormat, exportFormat.toStdString()}});
+  return createdId;
+}
+
+QVariantMap WorkspaceFacade::validateAnalysis(
+    const QString &id, const QString &name, const QString &type,
+    const QString &configJson, const QString &filterSpec,
+    const QString &exportFormat, bool includeCalcAdjustments,
+    const QString &exportStateJson, const QString &snapshotTransactionsJson,
+    const QString &adjustmentsJson) const {
+  if (!workspaceWriter_) {
+    return validationResultToMap({});
+  }
+  return validationResultToMap(workspaceWriter_->validateAnalysis(
+      makeAnalysisCommand(id, name, type, configJson, filterSpec, exportFormat,
                           includeCalcAdjustments, exportStateJson,
                           snapshotTransactionsJson, adjustmentsJson)));
 }
@@ -93,14 +122,28 @@ void WorkspaceFacade::updateAnalysis(
   if (!workspaceWriter_ || id.trimmed().isEmpty()) {
     return;
   }
-  workspaceWriter_->updateAnalysis(makeAnalysisCommand(
+  const auto command = makeAnalysisCommand(
       id, name, type, configJson, filterSpec, exportFormat,
       includeCalcAdjustments, exportStateJson, snapshotTransactionsJson,
-      adjustmentsJson));
+      adjustmentsJson);
+  if (rejectInvalidCommand("WorkspaceFacade::updateAnalysis",
+                           workspaceWriter_->validateAnalysis(command))) {
+    return;
+  }
+  workspaceWriter_->updateAnalysis(command);
+  observability::traceWorkspace(
+      "WorkspaceFacade::updateAnalysis", "Analysis updated",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"type", type.toStdString()},
+       {observability::context::kFormat, exportFormat.toStdString()}});
 }
 
 void WorkspaceFacade::deleteAnalysis(const QString &id) {
   if (workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::deleteAnalysis", "Analysis delete requested",
+        {{observability::context::kId, id.toStdString()}});
     workspaceWriter_->deleteAnalysis(strings::toStdString(id));
   }
 }
@@ -108,10 +151,34 @@ void WorkspaceFacade::deleteAnalysis(const QString &id) {
 QString WorkspaceFacade::addAnnual(const QString &name, int year,
                                    const QStringList &analysisIds) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace("WorkspaceFacade::addAnnual",
+                                  "Annual create ignored; no writer bound");
     return {};
   }
-  return QString::fromStdString(
-      workspaceWriter_->addAnnual(makeAnnualCommand({}, name, year, analysisIds)));
+  const auto command = makeAnnualCommand({}, name, year, analysisIds);
+  if (rejectInvalidCommand("WorkspaceFacade::addAnnual",
+                           workspaceWriter_->validateAnnual(command))) {
+    return {};
+  }
+  const QString createdId =
+      QString::fromStdString(workspaceWriter_->addAnnual(command));
+  observability::traceWorkspace(
+      "WorkspaceFacade::addAnnual", "Annual created",
+      {{observability::context::kId, createdId.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"year", std::to_string(year)},
+       {"analysisCount", std::to_string(analysisIds.size())}});
+  return createdId;
+}
+
+QVariantMap WorkspaceFacade::validateAnnual(
+    const QString &id, const QString &name, int year,
+    const QStringList &analysisIds) const {
+  if (!workspaceWriter_) {
+    return validationResultToMap({});
+  }
+  return validationResultToMap(workspaceWriter_->validateAnnual(
+      makeAnnualCommand(id, name, year, analysisIds)));
 }
 
 void WorkspaceFacade::updateAnnual(const QString &id, const QString &name,
@@ -120,11 +187,25 @@ void WorkspaceFacade::updateAnnual(const QString &id, const QString &name,
   if (!workspaceWriter_ || id.trimmed().isEmpty()) {
     return;
   }
-  workspaceWriter_->updateAnnual(makeAnnualCommand(id, name, year, analysisIds));
+  const auto command = makeAnnualCommand(id, name, year, analysisIds);
+  if (rejectInvalidCommand("WorkspaceFacade::updateAnnual",
+                           workspaceWriter_->validateAnnual(command))) {
+    return;
+  }
+  workspaceWriter_->updateAnnual(command);
+  observability::traceWorkspace(
+      "WorkspaceFacade::updateAnnual", "Annual updated",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"year", std::to_string(year)},
+       {"analysisCount", std::to_string(analysisIds.size())}});
 }
 
 void WorkspaceFacade::deleteAnnual(const QString &id) {
   if (workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::deleteAnnual", "Annual delete requested",
+        {{observability::context::kId, id.toStdString()}});
     workspaceWriter_->deleteAnnual(strings::toStdString(id));
   }
 }
@@ -145,7 +226,17 @@ void WorkspaceFacade::updateAnalysisExportFormat(const QString &analysisId,
   if (it == analyses.end()) {
     return;
   }
-  workspaceWriter_->updateAnalysis(makeAnalysisCommand(*it, exportFormat));
+  const auto command = makeAnalysisCommand(*it, exportFormat);
+  if (rejectInvalidCommand("WorkspaceFacade::updateAnalysisExportFormat",
+                           workspaceWriter_->validateAnalysis(command))) {
+    return;
+  }
+  workspaceWriter_->updateAnalysis(command);
+  observability::traceWorkspace(
+      "WorkspaceFacade::updateAnalysisExportFormat",
+      "Analysis export format updated",
+      {{observability::context::kId, analysisId.toStdString()},
+       {observability::context::kFormat, exportFormat.toStdString()}});
 }
 
 } // namespace ui

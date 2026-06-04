@@ -7,7 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.3
+import QtQuick.Layouts 1.15
 import FossRedder.Controls 1.0 as Controls
 
 Flickable {
@@ -70,6 +70,54 @@ Flickable {
                         currentIndex: root.settingsViewModel.languageIndex
                         onActivated: function (index) {
                             root.settingsViewModel.selectLanguageAt(index);
+                        }
+                    }
+                }
+            }
+        }
+
+        Controls.Panel {
+            Layout.fillWidth: true
+            contentSpacing: root.theme.spacingSmall
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: root.theme.spacingSmall
+
+                Text {
+                    text: qsTr("Workspace")
+                    color: root.theme.textPrimary
+                    font.bold: true
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        text: qsTr("Save on close")
+                        color: root.theme.textPrimary
+                        Layout.preferredWidth: root.theme.formLabelWidth
+                    }
+                    Controls.CheckBox {
+                        objectName: "settingsAutosaveOnCloseCheckBox"
+                        checked: root.settingsViewModel.autosaveOnClose
+                        onToggled: root.settingsViewModel.autosaveOnClose = checked
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        text: qsTr("Autosave interval")
+                        color: root.theme.textPrimary
+                        Layout.preferredWidth: root.theme.formLabelWidth
+                    }
+                    Controls.DropdownMenu {
+                        objectName: "settingsAutosaveIntervalDropdown"
+                        model: root.settingsViewModel.autosaveIntervalOptions
+                        textRole: "label"
+                        currentIndex: root.settingsViewModel.autosaveIntervalIndex
+                        onActivated: function (index) {
+                            root.settingsViewModel.selectAutosaveIntervalAt(index);
                         }
                     }
                 }

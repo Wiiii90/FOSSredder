@@ -119,20 +119,19 @@ TestCase {
         }
 
         function canAddAlias(value) { return String(value || "").trim().length > 0 }
-        function canRemoveSelectedAlias() { return aliasIndex >= 0 && aliasIndex < aliases.length }
-        function isAliasSelected(index) { return aliasIndex === index }
         function addAlias(value) {
             aliases = testCase.session.addUniqueTrimmed(aliases, value)
             aliasIndex = aliases.length > 0 ? aliases.length - 1 : -1
             aliasInputText = ""
             hasChanges = true
         }
-        function removeAlias(index) {
-            aliases = testCase.session.removeAt(aliases, index)
-            aliasIndex = aliases.length > 0 ? Math.min(index, aliases.length - 1) : -1
+        function requestRemoveSelectedAlias() {
+            if (aliasIndex < 0 || aliasIndex >= aliases.length)
+                return
+            aliases = testCase.session.removeAt(aliases, aliasIndex)
+            aliasIndex = aliases.length > 0 ? Math.min(aliasIndex, aliases.length - 1) : -1
             hasChanges = true
         }
-        function requestRemoveSelectedAlias() { if (canRemoveSelectedAlias()) removeAlias(aliasIndex) }
         function selectPrimaryActor(actorId) {
             const id = String(actorId || "").trim()
             selectedActorIds = id.length > 0 ? [id] : []

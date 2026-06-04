@@ -4,9 +4,9 @@
  */
 
 #include "pdf-rendering/pch.h"
-#include "core/ports/pdf-rendering/IPdfRenderer.h"
-#include "core/ports/pdf-rendering/PdfRenderingRequest.h"
-#include "core/ports/pdf-rendering/PdfRenderingResult.h"
+#include "core/ports/infra/pdf-rendering/IPdfRenderer.h"
+#include "core/ports/infra/pdf-rendering/PdfRenderingRequest.h"
+#include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "pdf-rendering/PopplerCore.h"
 #include "debug/IDebugger.h"
 #include <nlohmann/json.hpp>

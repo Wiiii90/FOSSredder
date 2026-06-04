@@ -5,8 +5,8 @@
 
 #include "ui/workspace/WorkspaceRowProjector.h"
 
-#include "ui/shared/payload/PayloadKeys.h"
-#include "ui/shared/payload/PayloadMapper.h"
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/presentation/PayloadMapper.h"
 #include "ui/workspace/WorkspaceCache.h"
 
 #include "core/ports/workspace/WorkspaceSnapshot.h"

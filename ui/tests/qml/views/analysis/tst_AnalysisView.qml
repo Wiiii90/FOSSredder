@@ -70,7 +70,7 @@ TestCase {
                 property int horizontalPaddingCount: 2
                 property int headerHeight: 32
                 property int rowHeight: 30
-                property int calcPercentFieldWidth: 90
+                property int adjustmentPercentFieldWidth: 90
                 property int metricsStatementWidth: 160
                 property int metricsTransactionWidth: 170
                 property int metricsAmountWidth: 180
@@ -89,9 +89,9 @@ TestCase {
         property var exportFormatOptions: [{ value: "png", label: "PNG" }]
         property string exportFormat: "png"
         property int exportFormatIndex: 0
-        property bool includeCalcAdjustments: true
+        property bool includeAdjustments: true
         property bool filterEditMode: true
-        property int filterWorkspaceIndex: 0
+        property int filterContentIndex: 0
         property int dateFieldIndex: 0
         property int dateModeIndex: 0
         property string yearValue: "2025"
@@ -102,17 +102,13 @@ TestCase {
         property var selectedPropertyIds: []
         property var selectedContractTypes: []
         property string allocatableMode: "all"
-        property var previewTransactions: []
         property var previewTransactionRows: []
-        property var previewMetrics: ({ statementCount: 0, transactionCount: 0, amountSum: 0.0 })
         property string previewStatementCountText: "Statements: 0"
         property string previewTransactionCountText: "Transactions: 0"
         property string previewAmountSumText: "Amount sum: 0.00"
         property var selectedAdjustmentTxIds: []
-        property var adjustmentAmountsById: ({})
-        property string calcName: ""
-        property string calcPercentText: ""
-        property string pendingAdjustmentsJson: "{}"
+        property string adjustmentName: ""
+        property string adjustmentPercentText: ""
         property string currentResultType: "plot"
         property bool currentResultIsTable: false
         property string renderedPreviewSource: ""
@@ -124,23 +120,20 @@ TestCase {
 
         function refreshFromSelection() { testCase.refreshCalls += 1 }
         function navigate(delta) { testCase.navigateCalls += 1 }
-        function toggleFilterWorkspace() { filterWorkspaceIndex = filterWorkspaceIndex === 0 ? 1 : 0 }
+        function toggleFilterContent() { filterContentIndex = filterContentIndex === 0 ? 1 : 0 }
         function clearFilters() {}
         function submitCreate() { testCase.submitCreateCalls += 1 }
         function submitUpdate() {}
         function deleteCurrent() {}
-        function applySelectedCalc() {}
+        function applySelectedAdjustment() {}
         function isPropertySelected(id) { return selectedPropertyIds.indexOf(id) !== -1 }
         function setPropertySelected(id, selected) {}
         function selectAllProperties() {}
         function selectNoProperties() {}
-        function selectUnassignedProperties() {}
         function isContractTypeSelected(type) { return selectedContractTypes.indexOf(type) !== -1 }
         function setContractTypeSelected(type, selected) {}
         function selectAllContractTypes() {}
         function selectNoContractTypes() {}
-        function selectUnassignedContractTypes() {}
-        function isAdjustmentTransactionSelected(id) { return selectedAdjustmentTxIds.indexOf(id) !== -1 }
         function setAdjustmentTransactionSelected(id, selected) {}
         function setAllocatableModeIndex(index) {}
     }
@@ -168,7 +161,7 @@ TestCase {
         navigateCalls = 0
         analysisViewModel.isEdit = false
         analysisViewModel.name = ""
-        analysisViewModel.filterWorkspaceIndex = 0
+        analysisViewModel.filterContentIndex = 0
     }
 
     function test_ANL_V_001_containerRefreshCallsState() {

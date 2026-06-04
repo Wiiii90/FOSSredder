@@ -11,7 +11,7 @@
 #include <QQmlEngine>
 #include <qqml.h>
 
-#include "ui/shared/config/Defaults.h"
+#include "ui/shell/Defaults.h"
 #include "ui/platform/FileSystemBrowser.h"
 #include "ui/platform/LanguageService.h"
 #include "ui/shell/AppActions.h"
@@ -27,8 +27,6 @@
 #include "ui/viewmodels/ImportViewModel.h"
 #include "ui/viewmodels/PropertyViewModel.h"
 #include "ui/viewmodels/SettingsViewModel.h"
-#include "ui/viewmodels/StatementDraftViewModel.h"
-#include "ui/viewmodels/TransactionDraftViewModel.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui::bootstrap {
@@ -72,14 +70,6 @@ void registerTypes() {
   registerContextObjectType<ui::ExportViewModel>("ExportViewModel");
   registerContextObjectType<ui::ImportViewModel>("ImportViewModel");
   registerContextObjectType<ui::SettingsViewModel>("SettingsViewModel");
-  qmlRegisterType<ui::StatementDraftViewModel>(
-      ui::qml::contracts::module::kName,
-      ui::qml::contracts::module::kMajorVersion,
-      ui::qml::contracts::module::kMinorVersion, "StatementDraftViewModel");
-  qmlRegisterType<ui::TransactionDraftViewModel>(
-      ui::qml::contracts::module::kName,
-      ui::qml::contracts::module::kMajorVersion,
-      ui::qml::contracts::module::kMinorVersion, "TransactionDraftViewModel");
   qmlRegisterUncreatableMetaObject(
       ui::qml::contracts::staticMetaObject, ui::qml::contracts::module::kName,
       ui::qml::contracts::module::kMajorVersion,

@@ -20,6 +20,19 @@ namespace export_ports = core::ports::exporting;
 
 namespace {
 
+bool shouldStop(const export_ports::ExportRequest &request) {
+  if (request.waitIfPaused) {
+    request.waitIfPaused();
+  }
+  return request.shouldCancel && request.shouldCancel();
+}
+
+export_ports::ExportResult canceledResult(
+    const export_ports::ExportRequest &request) {
+  return {false, export_ports::ExportStatus::Canceled, request.format,
+          request.outputPath, {}, "Canceled"};
+}
+
 std::string dedupeKey(const export_ports::ExportObjectRequest &item) {
   return item.annualId + "|" + item.objectId + "|" +
          std::to_string(static_cast<int>(item.format));
@@ -102,6 +115,9 @@ export_ports::ExportResult
 ExportService::runExport(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
     export_ports::ExportRequest request) const {
+  if (shouldStop(request)) {
+    return canceledResult(request);
+  }
   return exportData(core::application::workspace::toWorkspaceCatalog(workspace),
                     request);
 }
@@ -112,8 +128,14 @@ export_ports::ExportResult ExportService::exportData(
   if (!request.objectRequests.empty()) {
     auto normalized = request;
     normalized.objectRequests = expandObjectRequests(state, request);
+    if (shouldStop(normalized)) {
+      return canceledResult(normalized);
+    }
     if (normalized.progressCallback) {
       normalized.progressCallback(0.05, "Preparing export");
+      if (shouldStop(normalized)) {
+        return canceledResult(normalized);
+      }
       normalized.progressCallback(0.20, "Resolving export objects");
     }
     auto result = exportObjectRequests(state, normalized, archive_, xlsxWriter_,
@@ -127,8 +149,14 @@ export_ports::ExportResult ExportService::exportData(
 
   switch (request.format) {
   case export_ports::ExportFormat::Csv:
+    if (shouldStop(request)) {
+      return canceledResult(request);
+    }
     return CsvExporter{}.exportData(state, request);
   case export_ports::ExportFormat::Xlsx:
+    if (shouldStop(request)) {
+      return canceledResult(request);
+    }
     return XlsxExporter{xlsxWriter_}.exportData(state, request);
   }
 

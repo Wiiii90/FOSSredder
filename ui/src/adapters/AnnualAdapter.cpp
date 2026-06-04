@@ -5,8 +5,8 @@
 
 #include "ui/adapters/AnnualAdapter.h"
 
-#include "core/application/annual/AnnualWorkflowSupport.h"
-#include "ui/shared/payload/PayloadMapper.h"
+#include "ui/observability/Trace.h"
+#include "ui/presentation/PayloadMapper.h"
 
 #include <utility>
 
@@ -66,42 +66,43 @@ AnnualAdapter::AnnualAdapter(
 core::ports::annual::AnnualResult AnnualAdapter::runAnnual(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
     const core::ports::annual::AnnualRequest &request) const {
+  observability::traceAdapter(
+      "AnnualAdapter::runAnnual", "Annual runner invoked",
+      {{"annualId", request.annualId}});
   return runner_ ? runner_->runAnnual(workspace, request)
                  : core::ports::annual::AnnualResult{};
 }
 
 QVariantMap AnnualAdapter::mapAnnualResult(
     const core::ports::annual::AnnualResult &result) const {
-  const auto projected = core::application::annual::sortAnnualResult(result);
-
   QVariantMap out;
   out.insert(QStringLiteral("annualId"),
-             QString::fromStdString(projected.annualId));
+             QString::fromStdString(result.annualId));
   out.insert(QStringLiteral("annualName"),
-             QString::fromStdString(projected.annualName));
-  out.insert(QStringLiteral("year"), projected.year);
+             QString::fromStdString(result.annualName));
+  out.insert(QStringLiteral("year"), result.year);
 
   QVariantMap stats;
   stats.insert(QStringLiteral("assignedAnalysisCount"),
-               projected.stats.assignedAnalysisCount);
+               result.stats.assignedAnalysisCount);
   stats.insert(QStringLiteral("snapshotTransactionCount"),
-               projected.stats.snapshotTransactionCount);
+               result.stats.snapshotTransactionCount);
   stats.insert(QStringLiteral("missingFromYear"),
-               projected.stats.missingFromYear);
-  stats.insert(QStringLiteral("mixedYear"), projected.stats.mixedYear);
+               result.stats.missingFromYear);
+  stats.insert(QStringLiteral("mixedYear"), result.stats.mixedYear);
   stats.insert(QStringLiteral("duplicateCount"),
-               projected.stats.duplicateCount);
-  stats.insert(QStringLiteral("missingLive"), projected.stats.missingLive);
-  stats.insert(QStringLiteral("neutral"), projected.stats.neutral);
-  stats.insert(QStringLiteral("unverified"), projected.stats.unverified);
-  stats.insert(QStringLiteral("verified"), projected.stats.verified);
-  stats.insert(QStringLiteral("completed"), projected.stats.completed);
+               result.stats.duplicateCount);
+  stats.insert(QStringLiteral("missingLive"), result.stats.missingLive);
+  stats.insert(QStringLiteral("neutral"), result.stats.neutral);
+  stats.insert(QStringLiteral("unverified"), result.stats.unverified);
+  stats.insert(QStringLiteral("verified"), result.stats.verified);
+  stats.insert(QStringLiteral("completed"), result.stats.completed);
   out.insert(QStringLiteral("stats"), stats);
 
-  const QVariantList deduplicated = toAnnualRows(projected.deduplicated);
-  const QVariantList similar = toAnnualRows(projected.similar);
-  const QVariantList divergent = toAnnualRows(projected.divergent);
-  const QVariantList workspaceOnly = toAnnualRows(projected.workspaceOnly);
+  const QVariantList deduplicated = toAnnualRows(result.deduplicated);
+  const QVariantList similar = toAnnualRows(result.similar);
+  const QVariantList divergent = toAnnualRows(result.divergent);
+  const QVariantList workspaceOnly = toAnnualRows(result.workspaceOnly);
 
   out.insert(QStringLiteral("deduplicated"), deduplicated);
   out.insert(QStringLiteral("similar"), similar);

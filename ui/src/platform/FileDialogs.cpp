@@ -7,7 +7,7 @@
 
 #include <QFileDialog>
 
-#include "ui/shared/text/Text.h"
+#include "ui/i18n/Text.h"
 
 namespace ui::dialogs {
 

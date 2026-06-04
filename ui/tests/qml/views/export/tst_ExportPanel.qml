@@ -31,7 +31,7 @@ TestCase {
         ]
         property var addRows: addMode === "annual" ? annualRows : analysisRows
         property string addTextRole: addMode === "annual" ? "display" : "name"
-        property int pendingIndex: 0
+        property int selectedAddIndex: 0
         property bool canAddEntry: true
         property var exportEntries: []
         property int addCalls: 0
@@ -41,8 +41,8 @@ TestCase {
         property int updateStandaloneCalls: 0
         property int updateExportTypeCalls: 0
         property int collapseCalls: 0
-        function selectPendingRow(index) { pendingIndex = index; selectCalls += 1 }
-        function addPendingEntry() {
+        function selectAddRow(index) { selectedAddIndex = index; selectCalls += 1 }
+        function addSelectedEntry() {
             addCalls += 1
             if (addMode === "annual") {
                 exportEntries = [{
@@ -149,7 +149,7 @@ TestCase {
 
     function init() {
         exportViewModel.addMode = "annual"
-        exportViewModel.pendingIndex = 0
+        exportViewModel.selectedAddIndex = 0
         exportViewModel.exportEntries = []
         exportViewModel.addCalls = 0
         exportViewModel.removeCalls = 0

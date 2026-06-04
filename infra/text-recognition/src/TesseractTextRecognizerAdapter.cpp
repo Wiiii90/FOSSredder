@@ -4,10 +4,10 @@
  */
 
 #include "text-recognition/pch.h"
-#include "core/ports/text-recognition/ITextRecognizer.h"
-#include "core/ports/text-recognition/TextRecognitionRequest.h"
-#include "core/ports/text-recognition/TextRecognitionResult.h"
-#include "core/ports/text-recognition/TextRecognitionTypes.h"
+#include "core/ports/infra/text-recognition/ITextRecognizer.h"
+#include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
+#include "core/ports/infra/text-recognition/TextRecognitionResult.h"
+#include "core/ports/infra/text-recognition/TextRecognitionTypes.h"
 #include "text-recognition/TesseractCore.h"
 #include "debug/IDebugger.h"
 #include <sstream>

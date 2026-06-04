@@ -9,7 +9,7 @@
 #include "core/domain/entities/Analysis.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Transaction.h"
-#include "core/ports/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
 
 namespace core::application::analysis {
 

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/ports/analysis/AnalysisRequest.h"
+#include "core/ports/usecases/analysis/AnalysisRequest.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 #include <string>

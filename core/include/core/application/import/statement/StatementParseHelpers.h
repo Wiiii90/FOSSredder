@@ -9,9 +9,9 @@
 #include "core/application/import/transaction/TransactionParserTypes.h"
 #include "core/application/import/statement/StatementParserTypes.h"
 #include "core/application/import/internal/ParserHelpers.h"
-#include "core/ports/image-processing/ImageProcessingRequest.h"
-#include "core/ports/image-processing/IImageProcessor.h"
-#include "core/ports/text-recognition/TextRecognitionResult.h"
+#include "core/ports/infra/image-processing/ImageProcessingRequest.h"
+#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/application/import/draft/TransactionDraft.h"
 
 #include <filesystem>

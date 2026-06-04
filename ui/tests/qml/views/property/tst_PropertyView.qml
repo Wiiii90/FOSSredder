@@ -97,14 +97,9 @@ TestCase {
         readonly property var propertyRows: testCase.session.propertyRowsData
         readonly property var contractRows: testCase.session.contracts
         function canAddAlias(value) { return String(value || "").trim().length > 0 }
-        function canRemoveSelectedAlias() { return aliasIndex >= 0 && aliasIndex < aliases.length }
-        function isAliasSelected(index) { return aliasIndex === index }
-        function isContractSelected(contractId) { return selectedContractIds.indexOf(String(contractId || "").trim()) !== -1 }
         function clear() { clearCalls += 1 }
         function enterCreateMode() { enterCreateModeCalls += 1; testCase.session.selectedPropertyId = ""; isEdit = false }
         function addAlias(value) {}
-        function removeAlias(index) {}
-        function selectAlias(index) {}
         function requestRemoveSelectedAlias() {}
         function setContractSelected(contractId, selected) {
             const id = String(contractId || "").trim()

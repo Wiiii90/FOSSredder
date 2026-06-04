@@ -26,7 +26,6 @@ TestCase {
 
     property var propertyViewModel: QtObject {
         property var selectedContractIds: []
-        function isContractSelected(contractId) { return selectedContractIds.indexOf(String(contractId || "").trim()) !== -1 }
         function setContractSelected(contractId, selected) {
             var next = selectedContractIds ? selectedContractIds.slice(0) : []
             var id = String(contractId || "").trim()

@@ -3,7 +3,7 @@
  * @brief Implements analysis filter-spec parsing for analysis port requests.
  */
 
-#include "core/ports/analysis/AnalysisRequest.h"
+#include "core/ports/usecases/analysis/AnalysisRequest.h"
 
 #include "core/constants/filters.h"
 #include "core/domain/values/FilterSpec.h"

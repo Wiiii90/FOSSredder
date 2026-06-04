@@ -27,13 +27,14 @@ TestCase {
         property var analysisRows: [{ id: "analysis-1", name: "Analysis 1", type: "tab" }]
         property var addRows: annualRows
         property string addTextRole: "display"
-        property int pendingIndex: 0
+        property int selectedAddIndex: 0
         property bool canAddEntry: true
         property var exportEntries: []
         property bool canStart: true
         property bool showClear: true
         property bool showCancel: false
         property bool showPause: false
+        property bool isPaused: false
         property string pauseText: "Pause"
         property real progress: 0.0
         property string statusText: "Ready"
@@ -46,9 +47,10 @@ TestCase {
         function clearForm() {}
         function startExport() { startCalls += 1 }
         function cancelExport() {}
-        function togglePause() {}
-        function selectPendingRow(index) { pendingIndex = index }
-        function addPendingEntry() {}
+        function pauseExport() {}
+        function resumeExport() {}
+        function selectAddRow(index) { selectedAddIndex = index }
+        function addSelectedEntry() {}
         function removeEntry(index) {}
         function updateAnnualEntryAtIndex(entryIndex, annualIndex) {}
         function updateAnnualCollapsed(entryIndex, collapsed) {}

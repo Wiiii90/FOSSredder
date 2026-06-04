@@ -40,7 +40,7 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionViewModel: QtObject {
+    property var importViewModel: QtObject {
         property string nameText: "Tx 1"
         property string bookingDateText: "2026-05-16"
         property string valutaText: "2026-05-17"
@@ -95,7 +95,7 @@ TestCase {
         Import.TransactionDraftView {
             width: testCase.width
             theme: testCase.theme
-            transactionViewModel: testCase.transactionViewModel
+            importViewModel: testCase.importViewModel
         }
     }
 

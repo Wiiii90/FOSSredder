@@ -8,7 +8,7 @@
 #include <QDate>
 #include <QSettings>
 
-#include "ui/shared/config/Defaults.h"
+#include "ui/shell/Defaults.h"
 
 namespace ui {
 
@@ -37,6 +37,19 @@ int Settings::normalizeArchiveFormat(int value) noexcept {
   return value == 1 ? 1 : 0;
 }
 
+int Settings::normalizeAutosaveIntervalMinutes(int value) noexcept {
+  switch (value) {
+  case config::autosave::kInterval1Minute:
+  case config::autosave::kInterval5Minutes:
+  case config::autosave::kInterval10Minutes:
+  case config::autosave::kInterval15Minutes:
+  case config::autosave::kInterval30Minutes:
+    return value;
+  default:
+    return config::autosave::kIntervalOff;
+  }
+}
+
 QString Settings::normalizeThemeMode(const QString &value) {
   const QString normalized = value.trimmed().toLower();
   return normalized == QStringLiteral("dark") ? QStringLiteral("dark")
@@ -62,6 +75,8 @@ Settings::Values Settings::defaultValues() {
   out.exportIncludeFormulas = true;
   out.analysisDefaultDateMode = QStringLiteral("year");
   out.analysisDefaultYear = QDate::currentDate().year() - 1;
+  out.autosaveOnClose = true;
+  out.autosaveIntervalMinutes = config::autosave::kIntervalOff;
   return out;
 }
 
@@ -76,6 +91,13 @@ void Settings::loadFromPersistentStore() {
   values_.themeMode = normalizeThemeMode(
       settings.value(preferenceKeys::kThemeMode, QStringLiteral("light"))
           .toString());
+  values_.autosaveOnClose =
+      settings.value(preferenceKeys::kAutosaveOnClose, true).toBool();
+  values_.autosaveIntervalMinutes = normalizeAutosaveIntervalMinutes(
+      settings
+          .value(preferenceKeys::kAutosaveIntervalMinutes,
+                 config::autosave::kIntervalOff)
+          .toInt());
   values_.importDefaultPath = normalizeText(
       settings.value(preferenceKeys::kImportDefaultPath).toString());
   values_.importPoppler =
@@ -126,6 +148,9 @@ void Settings::persistToStore() const {
   auto settings = openSettings();
   settings.setValue(preferenceKeys::kLanguage, values_.language);
   settings.setValue(preferenceKeys::kThemeMode, values_.themeMode);
+  settings.setValue(preferenceKeys::kAutosaveOnClose, values_.autosaveOnClose);
+  settings.setValue(preferenceKeys::kAutosaveIntervalMinutes,
+                    values_.autosaveIntervalMinutes);
   settings.setValue(preferenceKeys::kImportDefaultPath,
                     values_.importDefaultPath);
   settings.setValue(preferenceKeys::kImportPoppler, values_.importPoppler);
@@ -170,6 +195,8 @@ void Settings::captureSavedState() { savedValues_ = values_; }
 void Settings::emitAllValueChanged() {
   emit languageChanged();
   emit themeModeChanged();
+  emit autosaveOnCloseChanged();
+  emit autosaveIntervalMinutesChanged();
   emit importDefaultPathChanged();
   emit importPopplerChanged();
   emit importOpenCvChanged();
@@ -202,6 +229,17 @@ void Settings::setLanguage(const QString &value) {
 void Settings::setThemeMode(const QString &value) {
   updateSetting(values_.themeMode, normalizeThemeMode(value),
                 &Settings::themeModeChanged);
+}
+
+void Settings::setAutosaveOnClose(bool value) {
+  updateSetting(values_.autosaveOnClose, value,
+                &Settings::autosaveOnCloseChanged);
+}
+
+void Settings::setAutosaveIntervalMinutes(int value) {
+  updateSetting(values_.autosaveIntervalMinutes,
+                normalizeAutosaveIntervalMinutes(value),
+                &Settings::autosaveIntervalMinutesChanged);
 }
 
 void Settings::setImportDefaultPath(const QString &value) {

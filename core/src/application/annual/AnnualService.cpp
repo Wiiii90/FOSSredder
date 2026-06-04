@@ -6,6 +6,7 @@
 #include "core/pch.h"
 
 #include "core/application/annual/AnnualService.h"
+#include "core/application/annual/AnnualWorkflowSupport.h"
 
 #include <algorithm>
 #include <cmath>
@@ -130,7 +131,16 @@ std::string exactKey(const SnapshotTx &tx) {
 annual_ports::AnnualResult AnnualService::runAnnual(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
     const annual_ports::AnnualRequest &request) const {
-  return buildAnnualResult(workspace, request.annualId);
+  if (!request.previewAnalysisIds.empty() || request.previewYear != 0) {
+    const auto previewWorkspace =
+        withPreviewAnnual(workspace, request.annualId,
+                          request.previewAnalysisIds, request.previewYear);
+    return sortAnnualResult(buildAnnualResult(previewWorkspace,
+                                              request.annualId.empty()
+                                                  ? std::string(kPreviewAnnualId)
+                                                  : request.annualId));
+  }
+  return sortAnnualResult(buildAnnualResult(workspace, request.annualId));
 }
 
 annual_ports::AnnualResult AnnualService::buildAnnualResult(

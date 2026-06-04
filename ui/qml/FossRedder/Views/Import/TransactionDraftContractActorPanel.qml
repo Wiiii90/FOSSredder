@@ -11,11 +11,11 @@ pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var transactionViewModel
+    required property var importViewModel
     required property var theme
     property bool embedded: false
 
-    readonly property int suggestionTone: root.transactionViewModel.suggestionTone(root.transactionViewModel.actorSuggestionConfidence)
+    readonly property int suggestionTone: root.importViewModel.suggestionTone(root.importViewModel.actorSuggestionConfidence)
     readonly property color suggestionColor: root.suggestionTone === 2 ? root.theme.successStrong : (root.suggestionTone === 1 ? root.theme.warning : root.theme.danger)
 
     Layout.fillWidth: true
@@ -62,9 +62,9 @@ Item {
                             objectName: "transactionDraftActorCombo"
                             Layout.fillWidth: true
                             textRole: "display"
-                            model: root.transactionViewModel.actorOptions
-                            currentIndex: root.transactionViewModel.selectedActorOptionIndex
-                            onActivated: function(index) { root.transactionViewModel.selectActorAtIndex(index) }
+                            model: root.importViewModel.actorOptions
+                            currentIndex: root.importViewModel.selectedActorOptionIndex
+                            onActivated: function(index) { root.importViewModel.selectActorAtIndex(index) }
                         }
                     }
 
@@ -76,17 +76,17 @@ Item {
                                 objectName: "transactionDraftActorNameField"
                                 Layout.fillWidth: true
                                 placeholderText: ""
-                                text: root.transactionViewModel.actorName
-                                onTextEdited: root.transactionViewModel.actorName = text
-                                onAccepted: root.transactionViewModel.actorName = text
-                                onEditingFinished: root.transactionViewModel.actorName = text
-                                onActiveFocusChanged: if (!activeFocus) root.transactionViewModel.actorName = text
+                                text: root.importViewModel.actorName
+                                onTextEdited: root.importViewModel.actorName = text
+                                onAccepted: root.importViewModel.actorName = text
+                                onEditingFinished: root.importViewModel.actorName = text
+                                onActiveFocusChanged: if (!activeFocus) root.importViewModel.actorName = text
                             }
 
                             Controls.CompactAddButton {
                                 objectName: "transactionDraftActorAddFromTextButton"
-                                enabled: root.transactionViewModel.canAddActor
-                                onClicked: root.transactionViewModel.addActor()
+                                enabled: root.importViewModel.canAddActor
+                                onClicked: root.importViewModel.addActor()
                             }
                         }
                     }
@@ -96,7 +96,7 @@ Item {
 
         Label {
             objectName: "transactionDraftActorSuggestionLabel"
-            text: root.transactionViewModel.actorSuggestionSummary
+            text: root.importViewModel.actorSuggestionSummary
             color: root.suggestionColor
             Layout.fillWidth: true
         }

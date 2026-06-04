@@ -199,7 +199,7 @@ std::optional<AnalysisFilterClause> parseClause(const std::string &token) {
     AnalysisFilterOperator op;
   };
 
-  static constexpr OperatorSpec operators[] = {
+  static const OperatorSpec operators[] = {
       {core::constants::filters::operators::kGreaterEqual,
        AnalysisFilterOperator::GreaterEqual},
       {core::constants::filters::operators::kLessEqual,

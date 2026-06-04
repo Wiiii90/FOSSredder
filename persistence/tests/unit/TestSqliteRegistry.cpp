@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include "core/ports/storage/IRegistry.h"
+#include "core/ports/infra/storage/IRegistry.h"
 #include "persistence/Factory.h"
 #include "support/PersistenceTestData.h"
 

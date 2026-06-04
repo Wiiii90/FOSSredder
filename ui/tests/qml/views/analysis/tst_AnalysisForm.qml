@@ -70,7 +70,7 @@ TestCase {
                 property int horizontalPaddingCount: 2
                 property int headerHeight: 32
                 property int rowHeight: 30
-                property int calcPercentFieldWidth: 90
+                property int adjustmentPercentFieldWidth: 90
                 property int metricsStatementWidth: 160
                 property int metricsTransactionWidth: 170
                 property int metricsAmountWidth: 180
@@ -86,10 +86,9 @@ TestCase {
         property var plotTypeOptions: [{ value: "pie", label: "Pie chart" }, { value: "histogram", label: "Histogram" }]
         property var exportFormatOptions: [{ value: "png", label: "PNG" }, { value: "jpg", label: "JPG" }]
         property string exportFormat: "png"
-        property bool includeCalcAdjustments: true
-        property string exportStateJson: "{}"
+        property bool includeAdjustments: true
         property bool filterEditMode: true
-        property int filterWorkspaceIndex: 0
+        property int filterContentIndex: 0
         property int dateFieldIndex: 0
         property int dateModeIndex: 0
         property string yearValue: "2025"
@@ -102,24 +101,20 @@ TestCase {
         property var selectedPropertyIds: ["property-1", "unassigned"]
         property var selectedContractTypes: ["lease", "unassigned"]
         property string allocatableMode: "all"
-        property var previewTransactions: [{ id: "tx-1", transactionName: "Rent", amount: 10.0 }]
         property var previewTransactionRows: [{ id: "tx-1", statementName: "S1", transactionName: "Rent", date: "2026-01-01", valuta: "2026-01-02", actorName: "Alice", contractName: "Lease", contractType: "lease", propertiesLabel: "Lot", amountText: "10.00" }]
-        property var previewMetrics: ({ statementCount: 1, transactionCount: 1, amountSum: 10.0 })
         property string previewStatementCountText: "Statements: 1"
         property string previewTransactionCountText: "Transactions: 1"
         property string previewAmountSumText: "Amount sum: 10.00"
         property var selectedAdjustmentTxIds: []
-        property var adjustmentAmountsById: ({})
-        property string calcName: ""
-        property string calcPercentText: ""
-        property string pendingAdjustmentsJson: "{}"
+        property string adjustmentName: ""
+        property string adjustmentPercentText: ""
         property string currentResultType: "plot"
         property string renderedPreviewSource: ""
         property var tableContractTypes: []
         property var tablePropertyRows: []
         property real tableGrandTotal: 0.0
 
-        function applySelectedCalc() {}
+        function applySelectedAdjustment() {}
         function setExportFormatIndex(index) { exportFormatIndex = index; exportFormat = exportFormatOptions[index].value }
         function isPropertySelected(id) { return selectedPropertyIds.indexOf(id) !== -1 }
         function setPropertySelected(id, selected) {
@@ -133,7 +128,6 @@ TestCase {
         }
         function selectAllProperties() { selectedPropertyIds = ["property-1", "unassigned"] }
         function selectNoProperties() { selectedPropertyIds = [] }
-        function selectUnassignedProperties() { selectedPropertyIds = ["unassigned"] }
         function isContractTypeSelected(type) { return selectedContractTypes.indexOf(type) !== -1 }
         function setContractTypeSelected(type, selected) {
             let next = selectedContractTypes.slice()
@@ -146,8 +140,6 @@ TestCase {
         }
         function selectAllContractTypes() { selectedContractTypes = ["lease", "unassigned"] }
         function selectNoContractTypes() { selectedContractTypes = [] }
-        function selectUnassignedContractTypes() { selectedContractTypes = ["unassigned"] }
-        function isAdjustmentTransactionSelected(id) { return selectedAdjustmentTxIds.indexOf(id) !== -1 }
         function setAdjustmentTransactionSelected(id, selected) { selectedAdjustmentTxIds = selected ? [id] : [] }
         function setAllocatableModeIndex(index) { allocatableMode = index === 1 ? "allocatable" : (index === 2 ? "non-allocatable" : "all") }
     }
@@ -218,17 +210,17 @@ TestCase {
         verify(TestSupport.findRequired(Lookup, form, "analysisPreviewImage") !== null)
     }
 
-    function test_ANL_F_004_includeCalcToggleWritesState() {
+    function test_ANL_F_004_includeAdjustmentsToggleWritesState() {
         analysisViewModel.isEdit = true
-        analysisViewModel.includeCalcAdjustments = true
+        analysisViewModel.includeAdjustments = true
         const form = createForm()
         compare(form.isEdit, true)
 
-        const includeCalcMouseArea = TestSupport.findRequired(Lookup, form, "analysisIncludeCalcAdjustmentsMouseArea")
-        includeCalcMouseArea.clicked(null)
+        const includeAdjustmentsMouseArea = TestSupport.findRequired(Lookup, form, "analysisIncludeAdjustmentsMouseArea")
+        includeAdjustmentsMouseArea.clicked(null)
 
-        compare(analysisViewModel.includeCalcAdjustments, false)
-        const includeCalcCheckBox = TestSupport.findRequired(Lookup, form, "analysisIncludeCalcAdjustmentsCheckBox")
-        compare(includeCalcCheckBox.checked, false)
+        compare(analysisViewModel.includeAdjustments, false)
+        const includeAdjustmentsCheckBox = TestSupport.findRequired(Lookup, form, "analysisIncludeAdjustmentsCheckBox")
+        compare(includeAdjustmentsCheckBox.checked, false)
     }
 }

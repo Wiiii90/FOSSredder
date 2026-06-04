@@ -1,6 +1,6 @@
 /**
  * @file ui/include/ui/viewmodels/ImportViewModel.h
- * @brief Declares the UI state adapter for the import overview page.
+ * @brief Declares the QML API for import overview and draft review.
  */
 
 #pragma once
@@ -16,17 +16,13 @@
 #include "ui/shell/NavigationState.h"
 #include "ui/shell/Settings.h"
 #include "ui/shell/StatusState.h"
-#include "ui/workflows/import/ImportWorkflow.h"
+#include "ui/workflows/ImportWorkflow.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui {
 
 /**
- * @brief Exposes import overview state and commands to QML.
- *
- * ImportViewModel is the API surface for the import start page, import
- * controls, and import log sidebar. Draft detail editing belongs to
- * StatementDraftViewModel and TransactionDraftViewModel.
+ * @brief Exposes import overview, statement draft, and transaction draft state to QML.
  */
 class ImportViewModel : public QObject {
   Q_OBJECT
@@ -50,263 +46,554 @@ class ImportViewModel : public QObject {
                  NOTIFY changed)
   Q_PROPERTY(QStringList importFiles READ importFiles NOTIFY changed)
   Q_PROPERTY(QString importFileSummary READ importFileSummary NOTIFY changed)
-  Q_PROPERTY(
-      ui::ImportWorkflow *importWorkflow READ importWorkflow NOTIFY changed)
-  Q_PROPERTY(ui::WorkspaceFacade *workspace READ workspace NOTIFY changed)
-  Q_PROPERTY(ui::NavigationState *navigation READ navigation NOTIFY changed)
+  Q_PROPERTY(ui::NavigationState* navigation READ navigation NOTIFY changed)
   Q_PROPERTY(int queuedCount READ queuedCount NOTIFY changed)
   Q_PROPERTY(QVariantList importLogs READ importLogs NOTIFY changed)
   Q_PROPERTY(QString selectedDraftId READ selectedDraftId NOTIFY changed)
   Q_PROPERTY(QStringList importSourceLabels READ importSourceLabels CONSTANT)
-  Q_PROPERTY(QStringList statementStrategyLabels READ statementStrategyLabels
+  Q_PROPERTY(
+      QStringList statementStrategyLabels READ statementStrategyLabels CONSTANT)
+
+  Q_PROPERTY(QString statementName READ statementName WRITE setStatementName
+                 NOTIFY changed)
+  Q_PROPERTY(int currentTransactionNumber READ currentTransactionNumber NOTIFY
+                 changed)
+  Q_PROPERTY(int transactionCount READ transactionCount NOTIFY changed)
+  Q_PROPERTY(bool canDeleteTransaction READ canDeleteTransaction NOTIFY changed)
+  Q_PROPERTY(bool canSelectPreviousTransactionDraft READ
+                 canSelectPreviousTransactionDraft NOTIFY changed)
+  Q_PROPERTY(bool canSelectNextTransactionDraft READ
+                 canSelectNextTransactionDraft NOTIFY changed)
+
+  Q_PROPERTY(QString nameText READ nameText WRITE setNameText NOTIFY changed)
+  Q_PROPERTY(QString bookingDateText READ bookingDateText WRITE
+                 setBookingDateText NOTIFY changed)
+  Q_PROPERTY(
+      QString valutaText READ valutaText WRITE setValutaText NOTIFY changed)
+  Q_PROPERTY(
+      QString amountText READ amountText WRITE setAmountText NOTIFY changed)
+  Q_PROPERTY(QVariantList statusOptions READ statusOptions NOTIFY changed)
+  Q_PROPERTY(int statusIndex READ statusIndex NOTIFY changed)
+  Q_PROPERTY(QString metadataText READ metadataText NOTIFY changed)
+  Q_PROPERTY(QString proofSource READ proofSource NOTIFY changed)
+  Q_PROPERTY(bool effectiveAllocatable READ effectiveAllocatable NOTIFY changed)
+  Q_PROPERTY(QVariantList actorOptions READ actorOptions NOTIFY changed)
+  Q_PROPERTY(int selectedActorOptionIndex READ selectedActorOptionIndex NOTIFY
+                 changed)
+  Q_PROPERTY(QString actorName READ actorName WRITE setActorName NOTIFY changed)
+  Q_PROPERTY(bool canAddActor READ canAddActor NOTIFY changed)
+  Q_PROPERTY(QVariantList contractOptions READ contractOptions NOTIFY changed)
+  Q_PROPERTY(
+      int selectedContractOptionIndex READ selectedContractOptionIndex NOTIFY changed)
+  Q_PROPERTY(QString contractName READ contractName WRITE setContractName NOTIFY
+                 changed)
+  Q_PROPERTY(QString contractType READ contractType WRITE setContractType NOTIFY
+                 changed)
+  Q_PROPERTY(QString contractNamePlaceholder READ contractNamePlaceholder NOTIFY
+                 changed)
+  Q_PROPERTY(QVariantList contractAllocatableModes READ contractAllocatableModes
                  CONSTANT)
+  Q_PROPERTY(int contractAllocatableModeIndex READ contractAllocatableModeIndex
+                 WRITE setContractAllocatableModeIndex NOTIFY changed)
+  Q_PROPERTY(
+      QString selectedContractType READ selectedContractType NOTIFY changed)
+  Q_PROPERTY(bool canAddContract READ canAddContract NOTIFY changed)
+  Q_PROPERTY(QVariantList propertyOptions READ propertyOptions NOTIFY changed)
+  Q_PROPERTY(QString propertyName READ propertyName WRITE setPropertyName NOTIFY
+                 changed)
+  Q_PROPERTY(bool canAddProperty READ canAddProperty NOTIFY changed)
+  Q_PROPERTY(double actorSuggestionConfidence READ actorSuggestionConfidence
+                 NOTIFY changed)
+  Q_PROPERTY(
+      QString actorSuggestionSummary READ actorSuggestionSummary NOTIFY changed)
+  Q_PROPERTY(double propertySuggestionConfidence READ
+                 propertySuggestionConfidence NOTIFY changed)
+  Q_PROPERTY(QString propertySuggestionSummary READ propertySuggestionSummary
+                 NOTIFY changed)
+  Q_PROPERTY(double contractSuggestionConfidence READ
+                 contractSuggestionConfidence NOTIFY changed)
+  Q_PROPERTY(QString contractSuggestionSummary READ contractSuggestionSummary
+                 NOTIFY changed)
+  Q_PROPERTY(double allocatableSuggestionConfidence READ
+                 allocatableSuggestionConfidence NOTIFY changed)
+  Q_PROPERTY(QString allocatableSuggestionText READ allocatableSuggestionText
+                 NOTIFY changed)
 
 public:
   /**
-   * @brief Creates an import overview view model.
-   * @param parent Optional QObject parent.
+   * @brief Creates the import view model.
+   * @param parent Optional Qt parent object.
    */
-  explicit ImportViewModel(QObject *parent = nullptr);
-
-  ImportWorkflow *importWorkflow() const noexcept { return importWorkflow_; }
+  explicit ImportViewModel(QObject* parent = nullptr);
 
   /**
-   * @brief Returns settings used for import defaults.
-   * @return Bound settings, or nullptr when not wired.
+   * @brief Sets the import workflow used for import runs and draft review.
+   * @param value Import workflow or nullptr.
    */
-  Settings *settings() const noexcept { return settings_; }
+  void setImportWorkflow(ImportWorkflow* value);
 
   /**
-   * @brief Returns the application actions bridge used for file dialogs.
-   * @return Bound action object, or nullptr when not wired.
+   * @brief Sets settings used for import defaults.
+   * @param value Settings object or nullptr.
    */
-  Actions *actions() const noexcept { return actions_; }
+  void setSettings(Settings* value);
 
   /**
-   * @brief Returns navigation state used when opening imported statements.
-   * @return Bound navigation state, or nullptr when not wired.
+   * @brief Sets shell actions used for browsing files.
+   * @param value Actions object or nullptr.
    */
-  NavigationState *navigation() const noexcept { return navigation_; }
+  void setActions(Actions* value);
 
   /**
-   * @brief Returns status state used for import status messages.
-   * @return Bound status state, or nullptr when not wired.
+   * @brief Sets shell navigation used by import transitions.
+   * @param value Navigation state or nullptr.
    */
-  StatusState *status() const noexcept { return status_; }
+  void setNavigation(NavigationState* value);
 
   /**
-   * @brief Returns workspace facade used for selecting imported statements.
-   * @return Bound workspace facade, or nullptr when not wired.
+   * @brief Returns shell navigation used by import transitions.
+   * @return Navigation state or nullptr.
    */
-  WorkspaceFacade *workspace() const noexcept { return workspace_; }
+  NavigationState* navigation() const noexcept { return navigation_; }
 
   /**
-   * @brief Binds the import workflow and listens for workflow state changes.
-   * @param value Workflow to expose to QML; may be nullptr.
+   * @brief Sets shell status output used by import actions.
+   * @param value Status state or nullptr.
    */
-  void setImportWorkflow(ImportWorkflow *value);
+  void setStatus(StatusState* value);
 
   /**
-   * @brief Binds settings and listens for import default path changes.
-   * @param value Settings to read from; may be nullptr.
+   * @brief Sets the workspace API used for import logs and catalog mutations.
+   * @param value Workspace facade or nullptr.
    */
-  void setSettings(Settings *value);
+  void setWorkspace(WorkspaceFacade* value);
 
   /**
-   * @brief Binds application actions for file picking and drag events.
-   * @param value Actions object to use; may be nullptr.
-   */
-  void setActions(Actions *value);
-
-  /**
-   * @brief Binds navigation state for view changes triggered by import logs.
-   * @param value Navigation state to update; may be nullptr.
-   */
-  void setNavigation(NavigationState *value);
-
-  /**
-   * @brief Binds status state for visible import messages.
-   * @param value Status state to update; may be nullptr.
-   */
-  void setStatus(StatusState *value);
-
-  /**
-   * @brief Binds workspace facade and refreshes import state from workspace.
-   * @param value Workspace facade to use; may be nullptr.
-   */
-  void setWorkspace(WorkspaceFacade *value);
-
-  /**
-   * @brief Returns the visible content index for the import overview stack.
-   * @return 1 when a statement draft is open, otherwise 0.
+   * @brief Returns the active import content index.
+   * @return Content stack index.
    */
   int contentIndex() const noexcept;
 
   /**
-   * @brief Reports whether an import workflow is available.
-   * @return True when importWorkflow() is not nullptr.
+   * @brief Returns whether an import workflow is attached.
+   * @return True when workflow commands can run.
    */
   bool hasImportWorkflow() const noexcept;
 
   /**
-   * @brief Reports whether the workflow currently exposes a statement draft.
-   * @return True when a draft is active.
+   * @brief Returns whether a statement draft is active.
+   * @return True when draft review content is available.
    */
   bool hasDraft() const noexcept;
 
   /**
-   * @brief Reports whether multiple statement drafts can be navigated.
-   * @return True when the workflow has draft navigation state.
+   * @brief Returns whether draft navigation is available.
+   * @return True when previous/next draft actions can be shown.
    */
   bool hasDraftNavigation() const noexcept;
 
   /**
-   * @brief Reports whether the import overview can be cleared.
-   * @return True when a workflow is bound and no import is running.
+   * @brief Returns whether the import form can be cleared.
+   * @return True when local import selection can be cleared.
    */
   bool canClearImport() const noexcept;
 
   /**
-   * @brief Reports whether the current import can be canceled.
-   * @return True while an import is running.
+   * @brief Returns whether the current import can be canceled.
+   * @return True when cancel is available.
    */
   bool canCancel() const noexcept;
 
   /**
-   * @brief Reports whether the current import can be paused or resumed.
-   * @return True while an import is running.
+   * @brief Returns whether the current import can be paused.
+   * @return True when pause is available.
    */
   bool canPause() const noexcept;
 
   /**
-   * @brief Reports whether an import can be started.
-   * @return True when a selected or queued file exists and no import is
-   * running.
+   * @brief Returns whether import can be started.
+   * @return True when selected files can be queued.
    */
   bool canStart() const noexcept;
 
   /**
-   * @brief Reports whether an import job is currently running.
-   * @return True while the workflow is running.
+   * @brief Returns whether an import is running.
+   * @return True while import work is active.
    */
   bool importRunning() const noexcept;
 
   /**
-   * @brief Reports whether the running import is paused.
-   * @return True when the workflow is paused.
+   * @brief Returns whether the import workflow is paused.
+   * @return True when paused.
    */
   bool importPaused() const noexcept;
 
   /**
-   * @brief Returns the label for the pause/resume button.
-   * @return Translated "Pause" or "Resume".
+   * @brief Returns the pause/resume button text.
+   * @return Localized pause state text.
    */
   QString pauseText() const;
 
   /**
-   * @brief Returns the visible import progress text.
-   * @return Error text, workflow phase, or a translated ready text.
+   * @brief Returns the import progress text.
+   * @return Localized progress text.
    */
   QString progressText() const;
 
   /**
-   * @brief Reports whether the progress text represents an error.
-   * @return True when the workflow has a non-empty error.
+   * @brief Returns whether progress currently represents an error.
+   * @return True when the progress state has an error.
    */
   bool progressHasError() const noexcept;
 
   /**
-   * @brief Returns the numeric import progress value.
-   * @return Workflow progress in the range provided by the workflow.
+   * @brief Returns the import progress value.
+   * @return Progress value between 0 and 1 when available.
    */
   double progressValue() const noexcept;
 
   /**
-   * @brief Returns the manual import path text field value.
-   * @return Current manual path text.
+   * @brief Returns the manual import path field.
+   * @return Manual path text.
    */
   QString manualPathText() const { return manualPathText_; }
 
   /**
-   * @brief Updates the manual import path text and clears pending picked files.
-   * @param value New text field value.
+   * @brief Updates the manual import path field.
+   * @param value Manual path text.
    */
-  void setManualPathText(const QString &value);
+  void setManualPathText(const QString& value);
 
   /**
-   * @brief Returns selected and queued import files for display.
-   * @return File paths currently known to the import workflow.
+   * @brief Returns selected import files.
+   * @return File path list.
    */
   QStringList importFiles() const;
 
   /**
-   * @brief Returns a human-readable summary of selected import files.
-   * @return Translated summary text, or an empty string when no file is queued.
+   * @brief Returns a short summary of selected import files.
+   * @return Localized file summary text.
    */
   QString importFileSummary() const;
 
   /**
-   * @brief Returns the number of queued import files.
-   * @return Workflow queued file count, or 0 without a workflow.
+   * @brief Returns queued import count.
+   * @return Number of queued import files.
    */
   int queuedCount() const noexcept;
 
   /**
    * @brief Returns import logs for the sidebar.
-   * @return QML-friendly import log entries from the workspace.
+   * @return Import log rows.
    */
   QVariantList importLogs() const;
 
   /**
-   * @brief Returns the currently open statement draft id.
-   * @return Current draft id, or an empty string without a workflow.
+   * @brief Returns the active draft id.
+   * @return Draft id or an empty string.
    */
   QString selectedDraftId() const;
+
+  /**
+   * @brief Returns import source labels.
+   * @return Source labels.
+   */
   QStringList importSourceLabels() const;
+
+  /**
+   * @brief Returns statement strategy labels.
+   * @return Strategy labels.
+   */
   QStringList statementStrategyLabels() const;
 
   /**
-   * @brief Initializes the import view and applies the default import path.
+   * @brief Returns the active statement draft name field.
+   * @return Statement name.
+   */
+  QString statementName() const;
+
+  /**
+   * @brief Updates the active statement draft name field.
+   * @param value Statement name.
+   */
+  void setStatementName(const QString& value);
+
+  /**
+   * @brief Returns the current transaction draft number.
+   * @return One-based transaction number.
+   */
+  int currentTransactionNumber() const noexcept;
+
+  /**
+   * @brief Returns the transaction draft count.
+   * @return Transaction count.
+   */
+  int transactionCount() const noexcept;
+
+  /**
+   * @brief Returns whether the current transaction draft can be deleted.
+   * @return True when deletion is available.
+   */
+  bool canDeleteTransaction() const noexcept;
+
+  /**
+   * @brief Returns whether the previous transaction draft can be selected.
+   * @return True when previous draft navigation is available.
+   */
+  bool canSelectPreviousTransactionDraft() const noexcept;
+
+  /**
+   * @brief Returns whether the next transaction draft can be selected.
+   * @return True when next draft navigation is available.
+   */
+  bool canSelectNextTransactionDraft() const noexcept;
+
+  /**
+   * @brief Returns the transaction name field.
+   * @return Transaction name text.
+   */
+  QString nameText() const { return nameText_; }
+
+  /**
+   * @brief Updates the transaction name field.
+   * @param value Transaction name text.
+   */
+  void setNameText(const QString& value);
+
+  /**
+   * @brief Returns the booking date field.
+   * @return Booking date text.
+   */
+  QString bookingDateText() const { return bookingDateText_; }
+
+  /**
+   * @brief Updates the booking date field.
+   * @param value Booking date text.
+   */
+  void setBookingDateText(const QString& value);
+
+  /**
+   * @brief Returns the valuta field.
+   * @return Valuta text.
+   */
+  QString valutaText() const { return valutaText_; }
+
+  /**
+   * @brief Updates the valuta field.
+   * @param value Valuta text.
+   */
+  void setValutaText(const QString& value);
+
+  /**
+   * @brief Returns the amount field.
+   * @return Amount text.
+   */
+  QString amountText() const { return amountText_; }
+
+  /**
+   * @brief Updates the amount field.
+   * @param value Amount text.
+   */
+  void setAmountText(const QString& value);
+
+  /**
+   * @brief Returns transaction status options.
+   * @return Status option rows.
+   */
+  QVariantList statusOptions() const;
+
+  /**
+   * @brief Returns selected transaction status index.
+   * @return Index into statusOptions().
+   */
+  int statusIndex() const;
+
+  /**
+   * @brief Returns metadata text for the current transaction draft.
+   * @return Metadata text.
+   */
+  QString metadataText() const;
+
+  /**
+   * @brief Returns proof image source for the current draft.
+   * @return QML image source string.
+   */
+  QString proofSource() const;
+
+  /**
+   * @brief Returns the effective allocatable state.
+   * @return True when the transaction draft is allocatable.
+   */
+  bool effectiveAllocatable() const;
+
+  /**
+   * @brief Returns actor dropdown options.
+   * @return Actor option rows.
+   */
+  QVariantList actorOptions() const;
+
+  /**
+   * @brief Returns selected actor option index.
+   * @return Index into actorOptions().
+   */
+  int selectedActorOptionIndex() const;
+
+  /**
+   * @brief Returns the quick-create actor name field.
+   * @return Actor name text.
+   */
+  QString actorName() const { return actorName_; }
+
+  /**
+   * @brief Updates the quick-create actor name field.
+   * @param value Actor name text.
+   */
+  void setActorName(const QString& value);
+
+  /**
+   * @brief Returns whether quick-create actor is available.
+   * @return True when actor can be added.
+   */
+  bool canAddActor() const;
+
+  /**
+   * @brief Returns contract dropdown options.
+   * @return Contract option rows.
+   */
+  QVariantList contractOptions() const;
+
+  /**
+   * @brief Returns selected contract option index.
+   * @return Index into contractOptions().
+   */
+  int selectedContractOptionIndex() const;
+
+  /**
+   * @brief Returns the quick-create contract name field.
+   * @return Contract name text.
+   */
+  QString contractName() const { return contractName_; }
+
+  /**
+   * @brief Updates the quick-create contract name field.
+   * @param value Contract name text.
+   */
+  void setContractName(const QString& value);
+
+  /**
+   * @brief Returns the quick-create contract type field.
+   * @return Contract type text.
+   */
+  QString contractType() const { return contractType_; }
+
+  /**
+   * @brief Updates the quick-create contract type field.
+   * @param value Contract type text.
+   */
+  void setContractType(const QString& value);
+
+  /**
+   * @brief Returns the quick-create contract name placeholder.
+   * @return Placeholder text.
+   */
+  QString contractNamePlaceholder() const;
+
+  /**
+   * @brief Returns contract allocatable mode options.
+   * @return Allocatable mode rows.
+   */
+  QVariantList contractAllocatableModes() const;
+
+  /**
+   * @brief Returns selected contract allocatable mode index.
+   * @return Index into contractAllocatableModes().
+   */
+  int contractAllocatableModeIndex() const;
+
+  /**
+   * @brief Updates selected contract allocatable mode index.
+   * @param index Index into contractAllocatableModes().
+   */
+  void setContractAllocatableModeIndex(int index);
+
+  /**
+   * @brief Returns the selected contract type.
+   * @return Contract type key.
+   */
+  QString selectedContractType() const;
+
+  /**
+   * @brief Returns whether quick-create contract is available.
+   * @return True when contract can be added.
+   */
+  bool canAddContract() const;
+
+  /**
+   * @brief Returns property checkbox options.
+   * @return Property option rows.
+   */
+  QVariantList propertyOptions() const;
+
+  /**
+   * @brief Returns the quick-create property name field.
+   * @return Property name text.
+   */
+  QString propertyName() const { return propertyName_; }
+
+  /**
+   * @brief Updates the quick-create property name field.
+   * @param value Property name text.
+   */
+  void setPropertyName(const QString& value);
+
+  /**
+   * @brief Returns whether quick-create property is available.
+   * @return True when property can be added.
+   */
+  bool canAddProperty() const;
+
+  /**
+   * @brief Initializes import view state when the view is opened.
    */
   Q_INVOKABLE void initializeImportView();
 
   /**
-   * @brief Opens the import PDF file picker.
+   * @brief Opens a file browser for import PDFs.
    */
   Q_INVOKABLE void browseImportPdf();
 
   /**
-   * @brief Adds the manually entered or picked files to the import queue.
+   * @brief Adds the manual path field to the selected import files.
    */
   Q_INVOKABLE void addSelectedImportFiles();
 
   /**
-   * @brief Clears import overview status through the workflow.
+   * @brief Clears the local import selection and progress display.
    */
   Q_INVOKABLE void clearImport();
 
   /**
-   * @brief Cancels the currently running import.
+   * @brief Cancels the current import job.
    */
   Q_INVOKABLE void cancelCurrentImport();
 
   /**
-   * @brief Cancels the current import and all queued import files.
+   * @brief Cancels queued import jobs.
    */
-  Q_INVOKABLE void cancelAllImports();
+  Q_INVOKABLE void cancelQueuedImports();
 
   /**
-   * @brief Pauses the current import when it is running and not paused.
+   * @brief Pauses the current import job.
    */
   Q_INVOKABLE void pauseImport();
 
   /**
-   * @brief Resumes the current import when it is running and paused.
+   * @brief Resumes a paused import job.
    */
   Q_INVOKABLE void resumeImport();
 
   /**
-   * @brief Starts import execution for the selected or queued files.
+   * @brief Starts importing the selected files.
    */
   Q_INVOKABLE void startImport();
 
@@ -321,102 +608,307 @@ public:
   Q_INVOKABLE void selectNextDraft();
 
   /**
-   * @brief Opens a sidebar import log.
-   * @param logId Import log id carried by the row.
-   * @param draftAttached True when the log points to a persisted draft.
-   * @param statementId Statement id to open for finalized logs.
-   * @param draftId Draft id to open for draft logs.
+   * @brief Opens an import log from the sidebar.
+   * @param logId Import log id.
+   * @param draftAttached True when a draft is attached.
+   * @param statementId Statement id associated with finished logs.
+   * @param draftId Draft id associated with draft logs.
    */
-  Q_INVOKABLE void openImportLog(const QString &logId, bool draftAttached,
-                                 const QString &statementId,
-                                 const QString &draftId);
+  Q_INVOKABLE void openImportLog(const QString& logId, bool draftAttached,
+                                 const QString& statementId,
+                                 const QString& draftId);
 
   /**
-   * @brief Deletes a sidebar import log and its draft when attached.
-   * @param logId Import log id carried by the row.
-   * @param draftAttached True when a persisted draft should also be deleted.
-   * @param draftId Draft id to delete when draftAttached is true.
+   * @brief Deletes an import log and attached draft state when requested.
+   * @param logId Import log id.
+   * @param draftAttached True when a draft is attached.
+   * @param draftId Draft id associated with the log.
    */
-  Q_INVOKABLE void deleteImportLog(const QString &logId, bool draftAttached,
-                                   const QString &draftId);
+  Q_INVOKABLE void deleteImportLog(const QString& logId, bool draftAttached,
+                                   const QString& draftId);
+
+  /**
+   * @brief Returns from draft review to the import overview.
+   */
+  Q_INVOKABLE void returnToImport();
+
+  /**
+   * @brief Discards the active statement draft.
+   */
+  Q_INVOKABLE void discard();
+
+  /**
+   * @brief Adds a transaction draft after the current one.
+   */
+  Q_INVOKABLE void addTransactionAfterCurrent();
+
+  /**
+   * @brief Deletes the current transaction draft.
+   */
+  Q_INVOKABLE void deleteCurrentTransaction();
+
+  /**
+   * @brief Finalizes the active statement draft through the import workflow.
+   */
+  Q_INVOKABLE void finalize();
+
+  /**
+   * @brief Selects the previous transaction draft.
+   */
+  Q_INVOKABLE void selectPreviousTransactionDraft();
+
+  /**
+   * @brief Selects the next transaction draft.
+   */
+  Q_INVOKABLE void selectNextTransactionDraft();
+
+  /**
+   * @brief Commits the transaction name field to the workflow draft.
+   */
+  Q_INVOKABLE void commitNameText();
+
+  /**
+   * @brief Commits the booking date field to the workflow draft.
+   */
+  Q_INVOKABLE void commitBookingDateText();
+
+  /**
+   * @brief Commits the valuta field to the workflow draft.
+   */
+  Q_INVOKABLE void commitValutaText();
+
+  /**
+   * @brief Commits the amount field to the workflow draft.
+   */
+  Q_INVOKABLE void commitAmountText();
+
+  /**
+   * @brief Selects a transaction status option.
+   * @param index Index into statusOptions().
+   */
+  Q_INVOKABLE void selectStatusAtIndex(int index);
+
+  /**
+   * @brief Maps suggestion confidence to a presentation tone.
+   * @param confidence Suggestion confidence.
+   * @return Tone index for QML styling.
+   */
+  Q_INVOKABLE int suggestionTone(double confidence) const;
+
+  /**
+   * @brief Selects an actor option.
+   * @param index Index into actorOptions().
+   */
+  Q_INVOKABLE void selectActorAtIndex(int index);
+
+  /**
+   * @brief Creates and selects an actor for the current draft.
+   */
+  Q_INVOKABLE void addActor();
+
+  /**
+   * @brief Selects a contract option.
+   * @param index Index into contractOptions().
+   */
+  Q_INVOKABLE void selectContractAtIndex(int index);
+
+  /**
+   * @brief Creates and selects a contract for the current draft.
+   */
+  Q_INVOKABLE void addContract();
+
+  /**
+   * @brief Returns whether a property is selected for the current draft.
+   * @param propertyId Property id.
+   * @return True when selected.
+   */
+  Q_INVOKABLE bool isPropertySelected(const QString& propertyId) const;
+
+  /**
+   * @brief Updates whether a property is selected for the current draft.
+   * @param propertyId Property id.
+   * @param selected True to select, false to remove.
+   */
+  Q_INVOKABLE void setPropertySelected(const QString& propertyId, bool selected);
+
+  /**
+   * @brief Creates and selects a property for the current draft.
+   */
+  Q_INVOKABLE void addProperty();
+
+  /**
+   * @brief Toggles the current draft allocatable state.
+   */
+  Q_INVOKABLE void toggleAllocatable();
+
+  /**
+   * @brief Returns actor suggestion confidence.
+   * @return Confidence between 0 and 1.
+   */
+  double actorSuggestionConfidence() const;
+
+  /**
+   * @brief Returns actor suggestion summary text.
+   * @return Summary text.
+   */
+  QString actorSuggestionSummary() const;
+
+  /**
+   * @brief Returns property suggestion confidence.
+   * @return Confidence between 0 and 1.
+   */
+  double propertySuggestionConfidence() const;
+
+  /**
+   * @brief Returns property suggestion summary text.
+   * @return Summary text.
+   */
+  QString propertySuggestionSummary() const;
+
+  /**
+   * @brief Returns contract suggestion confidence.
+   * @return Confidence between 0 and 1.
+   */
+  double contractSuggestionConfidence() const;
+
+  /**
+   * @brief Returns contract suggestion summary text.
+   * @return Summary text.
+   */
+  QString contractSuggestionSummary() const;
+
+  /**
+   * @brief Returns allocatable suggestion confidence.
+   * @return Confidence between 0 and 1.
+   */
+  double allocatableSuggestionConfidence() const;
+
+  /**
+   * @brief Returns allocatable suggestion text.
+   * @return Suggestion text.
+   */
+  QString allocatableSuggestionText() const;
 
 signals:
-  /**
-   * @brief Emitted whenever visible import overview state changes.
-   */
   void changed();
 
 private:
   /**
-   * @brief Replaces the bound import workflow and connects workflow signals.
-   * @param value Workflow to bind; may be nullptr.
+   * @brief Connects import workflow signals.
+   * @param value Import workflow or nullptr.
    */
-  void bindImportWorkflow(ImportWorkflow *value);
-
+  void bindImportWorkflow(ImportWorkflow* value);
   /**
-   * @brief Replaces the bound settings store and connects settings signals.
-   * @param value Settings to bind; may be nullptr.
+   * @brief Connects settings signals.
+   * @param value Settings object or nullptr.
    */
-  void bindSettings(Settings *value);
-
+  void bindSettings(Settings* value);
   /**
-   * @brief Replaces the bound actions object and connects file events.
-   * @param value Actions object to bind; may be nullptr.
+   * @brief Connects shell action signals.
+   * @param value Actions object or nullptr.
    */
-  void bindActions(Actions *value);
-
+  void bindActions(Actions* value);
   /**
-   * @brief Replaces the bound workspace facade and connects revision changes.
-   * @param value Workspace facade to bind; may be nullptr.
+   * @brief Connects workspace signals.
+   * @param value Workspace facade or nullptr.
    */
-  void bindWorkspace(WorkspaceFacade *value);
-
+  void bindWorkspace(WorkspaceFacade* value);
   /**
-   * @brief Applies the configured default import path when it can be adopted.
+   * @brief Applies the default import path when the import view is opened.
    */
   void applyDefaultImportSelection();
-
   /**
    * @brief Copies the workflow-selected file into the manual path field.
    */
   void updateManualPathFromWorkflow();
-
   /**
-   * @brief Stores picked files before the user adds them to the import queue.
-   * @param paths Picked file paths.
+   * @brief Replaces locally selected import files.
+   * @param paths Import file paths.
    */
-  void setPendingFiles(const QStringList &paths);
-
+  void setSelectedImportFiles(const QStringList& paths);
   /**
-   * @brief Writes visible status text through StatusState.
-   * @param text Status text to display.
+   * @brief Updates the shell status text.
+   * @param text Status text.
    */
-  void setStatusText(const QString &text);
-
+  void setStatusText(const QString& text);
   /**
-   * @brief Filters and queues supported import files in the workflow.
-   * @param paths Candidate file paths.
+   * @brief Queues supported files for the import workflow.
+   * @param paths File paths to queue.
    */
-  void queueImportFiles(const QStringList &paths);
-
+  void queueImportFiles(const QStringList& paths);
   /**
-   * @brief Filters a list of paths to supported import files.
-   * @param paths Candidate file paths.
-   * @return PDF paths accepted for import.
+   * @brief Filters paths to supported import files.
+   * @param paths Candidate paths.
+   * @return Supported import file paths.
    */
-  QStringList supportedImportFiles(const QStringList &paths) const;
+  QStringList supportedImportFiles(const QStringList& paths) const;
+  /**
+   * @brief Returns the active statement draft stack index.
+   * @return Active draft index.
+   */
   int activeDraftStackIndex() const;
+  /**
+   * @brief Opens a statement draft by stack index.
+   * @param index Draft stack index.
+   * @return True when a draft was opened.
+   */
   bool openDraftAtStackIndex(int index);
 
-  ImportWorkflow *importWorkflow_ = nullptr;
-  Settings *settings_ = nullptr;
-  Actions *actions_ = nullptr;
-  NavigationState *navigation_ = nullptr;
-  StatusState *status_ = nullptr;
-  WorkspaceFacade *workspace_ = nullptr;
+  /**
+   * @brief Synchronizes transaction draft fields from workflow state.
+   */
+  void syncTransactionDraftFromWorkflow();
+  /**
+   * @brief Reloads the current transaction draft presentation payload.
+   */
+  void reloadCurrentTransactionView();
+  /**
+   * @brief Clears local transaction draft form fields.
+   */
+  void resetTransactionDraftFields();
+  /**
+   * @brief Returns a fallback suggestion text.
+   * @param value Suggested value.
+   * @return Suggestion text.
+   */
+  QString suggestionText(const QString& value) const;
+  /**
+   * @brief Returns the current transaction draft id.
+   * @return Transaction draft id.
+   */
+  QString currentTransactionId() const;
+  /**
+   * @brief Returns property ids selected on the current transaction draft.
+   * @return Property ids.
+   */
+  QStringList currentTransactionPropertyIds() const;
+  /**
+   * @brief Returns the actor id selected on the current transaction draft.
+   * @return Actor id.
+   */
+  QString currentTransactionActorId() const;
+
+  ImportWorkflow* importWorkflow_ = nullptr;
+  Settings* settings_ = nullptr;
+  Actions* actions_ = nullptr;
+  NavigationState* navigation_ = nullptr;
+  StatusState* status_ = nullptr;
+  WorkspaceFacade* workspace_ = nullptr;
   QString manualPathText_;
-  QStringList pendingFiles_;
+  QStringList selectedImportFiles_;
   QString appliedDefaultImportPath_;
+
+  TransactionDraftView currentTransactionView_;
+  QString lastTransactionId_;
+  QString nameText_;
+  QString bookingDateText_;
+  QString valutaText_;
+  QString amountText_;
+  QString actorName_;
+  QString contractName_;
+  QString contractType_;
+  QString contractAllocatableMode_;
+  QString propertyName_;
 };
 
 } // namespace ui

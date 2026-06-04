@@ -235,7 +235,7 @@ QtObject {
                 horizontalPaddingCount: 2,
                 headerHeight: 32,
                 rowHeight: 30,
-                calcPercentFieldWidth: 90,
+                adjustmentPercentFieldWidth: 90,
                 metricsStatementWidth: 160,
                 metricsTransactionWidth: 170,
                 metricsAmountWidth: 180

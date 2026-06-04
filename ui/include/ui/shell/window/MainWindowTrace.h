@@ -11,7 +11,7 @@
 #include <QString>
 #include <QStringList>
 
-#include "ui/shared/observability/Trace.h"
+#include "ui/observability/Trace.h"
 
 namespace ui::window {
 

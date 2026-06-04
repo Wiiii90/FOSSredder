@@ -4,9 +4,9 @@
  */
 
 #include "image-processing/pch.h"
-#include "core/ports/image-processing/IImageProcessor.h"
-#include "core/ports/image-processing/ImageProcessingRequest.h"
-#include "core/ports/image-processing/ImageProcessingResult.h"
+#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/image-processing/ImageProcessingRequest.h"
+#include "core/ports/infra/image-processing/ImageProcessingResult.h"
 #include "image-processing/DenoiseAdapter.h"
 #include "image-processing/MaskAdapter.h"
 #include "image-processing/DetectAdapter.h"

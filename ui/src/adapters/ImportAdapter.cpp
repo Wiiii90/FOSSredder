@@ -12,10 +12,9 @@
 
 #include <QVariant>
 
-#include "ui/shared/payload/PayloadKeys.h"
-#include "ui/shared/payload/PayloadMapper.h"
-#include "ui/shared/util/StringConversions.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/observability/Trace.h"
+#include "ui/util/StringConversions.h"
 
 namespace ui::adapters {
 
@@ -23,42 +22,11 @@ namespace core_importing = core::ports::importing::draft;
 
 namespace {
 
-QVariantMap createdDraftCatalogRow(const QString &id, const QString &display,
-                                   const QString &type,
-                                   const QStringList &actorIds = {},
-                                   const QStringList &propertyIds = {},
-                                   const QString &allocatableMode = {}) {
-  QVariantMap row;
-  row.insert(payload::keys::common::kId, id);
-  row.insert(payload::keys::common::kName, display);
-  row.insert(payload::keys::common::kDisplay, display);
-  row.insert(payload::keys::common::kType, type);
-  row.insert(payload::keys::actor::kAliases, QStringList{});
-  row.insert(payload::keys::contract::kActorIds, actorIds);
-  row.insert(payload::keys::contract::kPropertyIds, propertyIds);
-  row.insert(QStringLiteral("synthetic"), false);
-  row.insert(QStringLiteral("confidence"), 1.0);
-  row.insert(QStringLiteral("sourceText"), display);
-  if (!allocatableMode.isEmpty()) {
-    row.insert(payload::keys::contract::kAllocatableMode, allocatableMode);
-  }
-  return row;
-}
-
 QStringList toQStringList(const std::vector<std::string> &values) {
   QStringList out;
   out.reserve(static_cast<int>(values.size()));
   for (const auto &value : values) {
     out.push_back(QString::fromStdString(value));
-  }
-  return out;
-}
-
-std::vector<std::string> toStdStringVector(const QStringList &values) {
-  std::vector<std::string> out;
-  out.reserve(static_cast<std::size_t>(values.size()));
-  for (const auto &value : values) {
-    out.push_back(strings::toStdString(value));
   }
   return out;
 }
@@ -85,14 +53,16 @@ toVariantMap(const core_importing::DraftSuggestionCandidate &suggestion) {
 } // namespace
 
 ImportAdapter::ImportAdapter(
-    ui::WorkspaceFacade *uiWorkspace,
     std::shared_ptr<core::ports::importing::IImportRunner> runner)
-    : uiWorkspace_(uiWorkspace), runner_(std::move(runner)) {}
+    : runner_(std::move(runner)) {}
 
 core::ports::importing::StatementImportHandle
 ImportAdapter::startStatementImport(
-    const core::ports::importing::StatementImportStartRequest &request,
+    const core::ports::importing::ImportRequest &request,
     core::ports::importing::StatementImportEventCallback callback) {
+  observability::traceAdapter(
+      "ImportAdapter::startStatementImport", "Import runner invoked",
+      {{observability::context::kFile, request.sourcePath}});
   return runner_ ? runner_->startStatementImport(request, std::move(callback))
                  : core::ports::importing::StatementImportHandle{};
 }
@@ -127,22 +97,6 @@ core::ports::importing::ImportResult ImportAdapter::importResult(
                  : core::ports::importing::ImportResult{};
 }
 
-core::ports::importing::draft::DraftImportSuggestions
-ImportAdapter::buildImportSuggestions(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const core::ports::importing::draft::TransactionDraft &transaction) const {
-  return runner_ ? runner_->buildImportSuggestions(state, transaction)
-                 : core::ports::importing::draft::DraftImportSuggestions{};
-}
-
-core::ports::importing::draft::DraftTextSignals
-ImportAdapter::buildDraftTextSignals(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const core::ports::importing::draft::TransactionDraft &transaction) const {
-  return runner_ ? runner_->buildDraftTextSignals(state, transaction)
-                 : core::ports::importing::draft::DraftTextSignals{};
-}
-
 core::ports::importing::draft::DraftDerivedState
 ImportAdapter::buildDraftDerivedState(
     const core::ports::workspace::WorkspaceSnapshot &state,
@@ -151,35 +105,11 @@ ImportAdapter::buildDraftDerivedState(
                  : core::ports::importing::draft::DraftDerivedState{};
 }
 
-std::string ImportAdapter::resolveActorId(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::string &text) const {
-  return runner_ ? runner_->resolveActorId(state, text) : std::string{};
-}
-
-std::string ImportAdapter::resolveContractId(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::string &text) const {
-  return runner_ ? runner_->resolveContractId(state, text) : std::string{};
-}
-
-bool ImportAdapter::contractIsFullyAllocatable(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::string &contractId) const {
-  return runner_ && runner_->contractIsFullyAllocatable(state, contractId);
-}
-
 core::ports::workspace::WorkspaceSnapshot ImportAdapter::mergeWorkspaceState(
     core::ports::workspace::WorkspaceSnapshot primary,
     const core::ports::workspace::WorkspaceSnapshot &secondary) const {
   return runner_ ? runner_->mergeWorkspaceState(std::move(primary), secondary)
                  : std::move(primary);
-}
-
-std::vector<std::string>
-ImportAdapter::referenceAliasesFromMetadata(const std::string &metadata) const {
-  return runner_ ? runner_->referenceAliasesFromMetadata(metadata)
-                 : std::vector<std::string>{};
 }
 
 core_importing::DraftLinkSelection
@@ -200,72 +130,18 @@ ImportAdapter::toCoreSelection(const core_importing::TransactionDraft &draft) {
   return out;
 }
 
-bool ImportAdapter::applyDerivedSelections(
-    core_importing::TransactionDraft &draft,
-    const core_importing::DraftDerivedState &derived,
-    core_importing::DraftAutoSelectionMode mode) const {
-  return runner_ && runner_->applyDerivedSelections(draft, derived, mode);
-}
-
-bool ImportAdapter::applyActorSelection(core_importing::TransactionDraft &draft,
-                                        const std::string &actorId) const {
-  return runner_ && runner_->applyActorSelection(draft, actorId);
-}
-
-bool ImportAdapter::clearActorSelection(
-    core_importing::TransactionDraft &draft) const {
-  return runner_ && runner_->clearActorSelection(draft);
-}
-
-bool ImportAdapter::applyPropertySelection(
-    core_importing::TransactionDraft &draft,
-    const std::string &propertyId) const {
-  return runner_ && runner_->applyPropertySelection(draft, propertyId);
-}
-
-bool ImportAdapter::setPropertySelected(core_importing::TransactionDraft &draft,
-                                        const std::string &propertyId,
-                                        bool selected) const {
-  return runner_ && runner_->setPropertySelected(draft, propertyId, selected);
-}
-
-bool ImportAdapter::applyContractSelection(
-    core_importing::TransactionDraft &draft,
-    const core_importing::DraftChoiceRow &contract) const {
-  return runner_ && runner_->applyContractSelection(draft, contract);
-}
-
-bool ImportAdapter::applyContractSelection(
+bool ImportAdapter::updateTransactionDraft(
     core_importing::TransactionDraft &draft,
     const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::string &contractId) const {
-  return runner_ && runner_->applyContractSelection(draft, state, contractId);
+    const core_importing::TransactionDraftEdit &edit) const {
+  return runner_ && runner_->updateTransactionDraft(draft, state, edit);
 }
 
-bool ImportAdapter::clearContractSelection(
-    core_importing::TransactionDraft &draft) const {
-  return runner_ && runner_->clearContractSelection(draft);
-}
-
-bool ImportAdapter::applyTransactionPatch(
-    core_importing::TransactionDraft &draft,
-    const core_importing::TransactionDraftPatch &patch) const {
-  return runner_ && runner_->applyTransactionPatch(draft, patch);
-}
-
-int ImportAdapter::insertTransactionAfter(core_importing::StatementDraft &draft,
-                                          int currentIndex) const {
-  return runner_ ? runner_->insertTransactionAfter(draft, currentIndex) : -1;
-}
-
-int ImportAdapter::removeTransactionAt(core_importing::StatementDraft &draft,
-                                       int index) const {
-  return runner_ ? runner_->removeTransactionAt(draft, index) : -1;
-}
-
-bool ImportAdapter::renameStatementDraft(core_importing::StatementDraft &draft,
-                                         const std::string &name) const {
-  return runner_ && runner_->renameStatementDraft(draft, name);
+core_importing::StatementDraftEditResult ImportAdapter::updateStatementDraft(
+    core_importing::StatementDraft &draft,
+    const core_importing::StatementDraftEdit &edit) const {
+  return runner_ ? runner_->updateStatementDraft(draft, edit)
+                 : core_importing::StatementDraftEditResult{};
 }
 
 core_importing::StatementDraft ImportAdapter::buildStatementDraft(
@@ -277,16 +153,6 @@ core_importing::StatementDraft ImportAdapter::buildStatementDraft(
   return runner_ ? runner_->buildStatementDraft(sourceFile, statement, state,
                                                 transactions, draftId)
                  : core_importing::StatementDraft{};
-}
-
-core::ports::workspace::StatementDraftSnapshot
-ImportAdapter::buildImportedStatementDraftSnapshot(
-    const std::string &sourceFile, const std::string &draftId,
-    const core::ports::workspace::StatementSnapshot &statement,
-    const std::vector<core_importing::TransactionDraft> &transactions) const {
-  return runner_ ? runner_->buildImportedStatementDraftSnapshot(
-                       sourceFile, draftId, statement, transactions)
-                 : core::ports::workspace::StatementDraftSnapshot{};
 }
 
 core_importing::StatementDraft ImportAdapter::restoreStatementDraft(
@@ -405,174 +271,6 @@ TransactionDraftView ImportAdapter::toTransactionDraftView(
       viewState.value(payload::keys::draftView::kAllocatableSuggestionSummary)
           .toString();
   return view;
-}
-
-QVariantMap ImportAdapter::actorIdentityByName(const QString &name) const {
-  return uiWorkspace_ ? uiWorkspace_->actorIdentityByName(name) : QVariantMap{};
-}
-
-QVariantMap ImportAdapter::propertyIdentityByName(const QString &name) const {
-  return uiWorkspace_ ? uiWorkspace_->propertyIdentityByName(name)
-                      : QVariantMap{};
-}
-
-QVariantMap ImportAdapter::contractIdentityBySignature(
-    const QString &name, const QString &type, const QStringList &actorIds,
-    const QStringList &propertyIds) const {
-  return uiWorkspace_ ? uiWorkspace_->contractIdentityBySignature(
-                            name, type, actorIds, propertyIds)
-                      : QVariantMap{};
-}
-
-QString ImportAdapter::nextContractName() const {
-  return uiWorkspace_ ? uiWorkspace_->nextContractName() : QString{};
-}
-
-QString ImportAdapter::saveActor(const QString &name) {
-  return uiWorkspace_ ? uiWorkspace_->saveActor({}, name) : QString{};
-}
-
-QString ImportAdapter::saveProperty(const QString &name) {
-  return uiWorkspace_ ? uiWorkspace_->saveProperty({}, name) : QString{};
-}
-
-QString ImportAdapter::saveContract(const QString &name, const QString &type,
-                                    const QStringList &actorIds,
-                                    const QStringList &propertyIds,
-                                    const QString &allocatableMode) {
-  return uiWorkspace_
-             ? uiWorkspace_->saveContract({}, name, type, actorIds, propertyIds,
-                                          {}, allocatableMode)
-             : QString{};
-}
-
-QVariantMap ImportAdapter::createActorForDraft(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const QString &actorName) {
-  const QString trimmedName = actorName.trimmed();
-  if (trimmedName.isEmpty()) {
-    return {};
-  }
-
-  QString actorId;
-  QString displayName = trimmedName;
-  const QVariantMap existing = actorIdentityByName(trimmedName);
-  if (!existing.isEmpty()) {
-    actorId = existing.value(payload::keys::common::kId).toString();
-    displayName =
-        existing.value(payload::keys::common::kDisplay, displayName)
-            .toString();
-  }
-
-  if (actorId.isEmpty()) {
-    actorId = saveActor(trimmedName);
-    if (actorId.isEmpty()) {
-      return {};
-    }
-  }
-
-  if (!runner_) {
-    return {};
-  }
-  applyActorSelection(draft, strings::toStdString(actorId));
-  return createdDraftCatalogRow(actorId, displayName, QStringLiteral("actor"));
-}
-
-QVariantMap ImportAdapter::createPropertyForDraft(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const QString &propertyName) {
-  const QString trimmedName = propertyName.trimmed();
-  if (trimmedName.isEmpty()) {
-    return {};
-  }
-
-  QString propertyId;
-  QString displayName = trimmedName;
-  const QVariantMap existing = propertyIdentityByName(trimmedName);
-  if (!existing.isEmpty()) {
-    propertyId = existing.value(payload::keys::common::kId).toString();
-    displayName =
-        existing.value(payload::keys::common::kDisplay, displayName)
-            .toString();
-  }
-
-  if (propertyId.isEmpty()) {
-    propertyId = saveProperty(trimmedName);
-    if (propertyId.isEmpty()) {
-      return {};
-    }
-  }
-
-  if (!runner_) {
-    return {};
-  }
-  applyPropertySelection(draft, strings::toStdString(propertyId));
-  return createdDraftCatalogRow(propertyId, displayName,
-                                QStringLiteral("property"));
-}
-
-QVariantMap ImportAdapter::createOrSelectContractForDraft(
-    core::ports::importing::draft::TransactionDraft &draft,
-    const QString &contractName, const QString &contractType,
-    const QString &allocatableMode) {
-  const QString trimmedType = contractType.trimmed();
-  if (trimmedType.isEmpty()) {
-    return {};
-  }
-
-  const QString effectiveName =
-      contractName.trimmed().isEmpty() ? nextContractName()
-                                       : contractName.trimmed();
-  QStringList actorIds;
-  const QString currentActorId = QString::fromStdString(draft.actorId);
-  if (!currentActorId.trimmed().isEmpty()) {
-    actorIds.push_back(currentActorId.trimmed());
-  }
-  const QStringList propertyIds = toQStringList(draft.propertyIds);
-
-  QString contractId;
-  QString displayName = effectiveName;
-  QString contractAllocatableMode = allocatableMode.trimmed().toLower();
-  if (contractAllocatableMode.isEmpty()) {
-    contractAllocatableMode = QStringLiteral("mixed");
-  }
-
-  const QVariantMap existing = contractIdentityBySignature(
-      effectiveName, trimmedType, actorIds, propertyIds);
-  if (!existing.isEmpty()) {
-    contractId = existing.value(payload::keys::common::kId).toString();
-    displayName =
-        existing.value(payload::keys::common::kDisplay, displayName)
-            .toString();
-    contractAllocatableMode =
-        existing
-            .value(payload::keys::contract::kAllocatableMode,
-                   contractAllocatableMode)
-            .toString();
-  }
-
-  if (contractId.isEmpty()) {
-    contractId = saveContract(effectiveName, trimmedType, actorIds, propertyIds,
-                              contractAllocatableMode);
-    if (contractId.isEmpty()) {
-      return {};
-    }
-  }
-
-  core_importing::DraftChoiceRow contractRow;
-  contractRow.id = strings::toStdString(contractId);
-  contractRow.name = strings::toStdString(displayName);
-  contractRow.display = strings::toStdString(displayName);
-  contractRow.type = strings::toStdString(trimmedType);
-  contractRow.allocatableMode = strings::toStdString(contractAllocatableMode);
-  contractRow.actorIds = toStdStringVector(actorIds);
-  contractRow.propertyIds = toStdStringVector(propertyIds);
-  if (!runner_) {
-    return {};
-  }
-  applyContractSelection(draft, contractRow);
-  return createdDraftCatalogRow(contractId, displayName, trimmedType, actorIds,
-                                propertyIds, contractAllocatableMode);
 }
 
 } // namespace ui::adapters

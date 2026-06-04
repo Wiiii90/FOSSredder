@@ -23,7 +23,7 @@ TestCase {
         property bool isEdit: false
         property string name: ""
         property int year: 2026
-        property int workspaceIndex: 0
+        property int contentIndex: 0
         property var availableAnalysisRows: [
             { id: "analysis-1", display: "Analysis 1", typeLabel: "Table", exportFormatOptions: ["XLSX", "CSV"], exportFormatIndex: 0 }
         ]
@@ -111,7 +111,7 @@ TestCase {
     function init() {
         annualViewModel.name = ""
         annualViewModel.year = 2026
-        annualViewModel.workspaceIndex = 0
+        annualViewModel.contentIndex = 0
         annualViewModel.assignedAnalysisRows = []
         annualViewModel.availableAnalysisRows = [
             { id: "analysis-1", display: "Analysis 1", typeLabel: "Table", exportFormatOptions: ["XLSX", "CSV"], exportFormatIndex: 0 }
@@ -134,7 +134,7 @@ TestCase {
         const form = createForm()
         verify(TestSupport.findRequired(Lookup, form, "annualAddAnalysisComboBox") !== null)
 
-        annualViewModel.workspaceIndex = 1
+        annualViewModel.contentIndex = 1
         wait(0)
         verify(Lookup.findObject(form, "annualTransactionsSectionToggle_deduplicated") !== null)
     }

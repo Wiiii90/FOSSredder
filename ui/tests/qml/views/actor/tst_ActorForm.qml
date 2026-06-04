@@ -31,12 +31,12 @@ TestCase {
             if (selectedActorId.length === 0) {
                 selectedActor = null
                 if (testCase.actorViewModel)
-                    testCase.actorViewModel.syncFromSelection(false)
+                    testCase.actorViewModel.reloadFakeFormFromSelection(false)
                 return
             }
             if (selectedActor && String(selectedActor.id || "") === selectedActorId) {
                 if (testCase.actorViewModel)
-                    testCase.actorViewModel.syncFromSelection(false)
+                    testCase.actorViewModel.reloadFakeFormFromSelection(false)
                 return
             }
 
@@ -51,7 +51,7 @@ TestCase {
                         contractIds: row.contractIds || []
                     }
                     if (testCase.actorViewModel)
-                        testCase.actorViewModel.syncFromSelection(false)
+                        testCase.actorViewModel.reloadFakeFormFromSelection(false)
                     return
                 }
             }
@@ -63,10 +63,10 @@ TestCase {
                 contractIds: []
             }
             if (testCase.actorViewModel)
-                testCase.actorViewModel.syncFromSelection(false)
+                testCase.actorViewModel.reloadFakeFormFromSelection(false)
         }
-        onDataRevisionChanged: if (testCase.actorViewModel) testCase.actorViewModel.syncFromSelection(true)
-        onSelectedActorChanged: if (testCase.actorViewModel) testCase.actorViewModel.syncFromSelection(true)
+        onDataRevisionChanged: if (testCase.actorViewModel) testCase.actorViewModel.reloadFakeFormFromSelection(true)
+        onSelectedActorChanged: if (testCase.actorViewModel) testCase.actorViewModel.reloadFakeFormFromSelection(true)
 
         function basicFormState(name, aliases, selectedIds) {
             const aliasValues = aliases || []
@@ -256,18 +256,6 @@ TestCase {
             return String(value || "").trim().length > 0
         }
 
-        function canRemoveSelectedAlias() {
-            return aliasIndex >= 0 && aliasIndex < aliases.length
-        }
-
-        function isAliasSelected(index) {
-            return aliasIndex === index
-        }
-
-        function isContractSelected(contractId) {
-            return selectedContractIds.indexOf(String(contractId || "").trim()) !== -1
-        }
-
         function clearFormState() {
             name = ""
             aliases = []
@@ -282,7 +270,7 @@ TestCase {
             savedSelectedContractIds = selectedContractIds.slice(0)
         }
 
-        function syncFromSelection(forceReload) {
+        function reloadFakeFormFromSelection(forceReload) {
             const currentId = testCase.session.selectedActorId || ""
             if (!forceReload && currentOwnerId === currentId)
                 return
@@ -318,22 +306,14 @@ TestCase {
             aliasInputText = ""
         }
 
-        function removeAlias(index) {
-            const next = testCase.session.removeAt(aliases || [], index)
+        function requestRemoveSelectedAlias() {
+            if (aliasIndex < 0 || aliasIndex >= aliases.length)
+                return
+            const next = testCase.session.removeAt(aliases || [], aliasIndex)
             if (next.length === aliases.length)
                 return
             aliases = next
-            aliasIndex = next.length > 0 ? Math.min(index, next.length - 1) : -1
-        }
-
-        function selectAlias(index) {
-            aliasIndex = index
-        }
-
-        function requestRemoveSelectedAlias() {
-            if (!canRemoveSelectedAlias())
-                return
-            removeAlias(aliasIndex)
+            aliasIndex = next.length > 0 ? Math.min(aliasIndex, next.length - 1) : -1
         }
 
         function setContractSelected(contractId, selected) {

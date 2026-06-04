@@ -6,7 +6,7 @@
 #include "text-recognition/pch.h"
 #include "text-recognition/TesseractCore.h"
 #include "debug/IDebugger.h"
-#include "core/ports/text-recognition/TextRecognitionTypes.h"
+#include "core/ports/infra/text-recognition/TextRecognitionTypes.h"
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
 #include <sstream>

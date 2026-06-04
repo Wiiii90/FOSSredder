@@ -5,16 +5,16 @@
 
 #pragma once
 
-#include "core/ports/image-processing/ImageProcessingResult.h"
-#include "core/ports/pdf-rendering/PdfRenderingResult.h"
-#include "core/ports/text-recognition/TextRecognitionResult.h"
+#include "core/ports/infra/image-processing/ImageProcessingResult.h"
+#include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
+#include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/errors/IErrorReporter.h"
 #include "core/application/import/ImportRequest.h"
 #include "core/application/import/ImportResult.h"
 #include "core/jobs/Scheduler.h"
 #include "core/application/import/draft/TransactionDraft.h"
-#include "core/ports/image-processing/IImageProcessor.h"
-#include "core/ports/text-recognition/ITextRecognizer.h"
+#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/text-recognition/ITextRecognizer.h"
 
 #include <atomic>
 #include <filesystem>

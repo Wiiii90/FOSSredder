@@ -45,7 +45,7 @@ TestCase {
                 property int horizontalPaddingCount: 2
                 property int headerHeight: 32
                 property int rowHeight: 30
-                property int calcPercentFieldWidth: 90
+                property int adjustmentPercentFieldWidth: 90
                 property int metricsStatementWidth: 160
                 property int metricsTransactionWidth: 170
                 property int metricsAmountWidth: 180
@@ -54,12 +54,12 @@ TestCase {
     }
 
     property var selectedIds: []
-    property string calcName: ""
-    property string calcPercent: ""
+    property string adjustmentName: ""
+    property string adjustmentPercent: ""
     property int applyCalls: 0
     property var analysisViewModel: QtObject {
-        property string calcName: testCase.calcName
-        property string calcPercentText: testCase.calcPercent
+        property string adjustmentName: testCase.adjustmentName
+        property string adjustmentPercentText: testCase.adjustmentPercent
         property var selectedAdjustmentTxIds: testCase.selectedIds
         property var previewTransactionRows: [
             { id: "tx-1", statementName: "S1", transactionName: "Rent", date: "2026-01-01", valuta: "2026-01-02", actorName: "Alice", contractName: "Lease", contractType: "lease", propertiesLabel: "Lot", amountText: "100.00" }
@@ -67,9 +67,8 @@ TestCase {
         property string previewStatementCountText: "Statements: 1"
         property string previewTransactionCountText: "Transactions: 1"
         property string previewAmountSumText: "Amount sum: 100.00"
-        function isAdjustmentTransactionSelected(id) { return testCase.selectedIds.indexOf(id) !== -1 }
         function setAdjustmentTransactionSelected(id, selected) { testCase.selectedIds = selected ? [id] : [] }
-        function applySelectedCalc() { testCase.applyCalls += 1 }
+        function applySelectedAdjustment() { testCase.applyCalls += 1 }
     }
 
     Component {
@@ -90,33 +89,33 @@ TestCase {
 
     function init() {
         selectedIds = []
-        calcName = ""
-        calcPercent = ""
-        analysisViewModel.calcName = ""
-        analysisViewModel.calcPercentText = ""
+        adjustmentName = ""
+        adjustmentPercent = ""
+        analysisViewModel.adjustmentName = ""
+        analysisViewModel.adjustmentPercentText = ""
         analysisViewModel.selectedAdjustmentTxIds = []
         applyCalls = 0
     }
 
-    function test_ANL_TP_001_transactionSelectionAndCalcSignals() {
+    function test_ANL_TP_001_transactionSelectionAndAdjustmentSignals() {
         const panel = createPanel()
         tryVerify(function() { return Lookup.findObject(panel, "analysisTransactionSelectionCheckBox") !== null })
         const txCheck = TestSupport.findRequired(Lookup, panel, "analysisTransactionSelectionCheckBox")
-        const calcNameField = TestSupport.findRequired(Lookup, panel, "analysisCalcNameField")
-        const calcPercentField = TestSupport.findRequired(Lookup, panel, "analysisCalcPercentField")
-        const applyCalcButton = TestSupport.findRequired(Lookup, panel, "analysisApplyCalcButton")
+        const adjustmentNameField = TestSupport.findRequired(Lookup, panel, "analysisAdjustmentNameField")
+        const adjustmentPercentField = TestSupport.findRequired(Lookup, panel, "analysisAdjustmentPercentField")
+        const applyAdjustmentButton = TestSupport.findRequired(Lookup, panel, "analysisApplyAdjustmentButton")
 
         txCheck.checked = true
         txCheck.toggled()
         compare(selectedIds.length, 1)
         compare(selectedIds[0], "tx-1")
 
-        calcNameField.text = "VAT"
-        calcPercentField.text = "19"
-        compare(analysisViewModel.calcName, "VAT")
-        compare(analysisViewModel.calcPercentText, "19")
+        adjustmentNameField.text = "VAT"
+        adjustmentPercentField.text = "19"
+        compare(analysisViewModel.adjustmentName, "VAT")
+        compare(analysisViewModel.adjustmentPercentText, "19")
 
-        applyCalcButton.clicked()
+        applyAdjustmentButton.clicked()
         compare(applyCalls, 1)
     }
 }

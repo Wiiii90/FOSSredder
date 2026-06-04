@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 ColumnLayout {
     id: root
     required property var theme
-    required property var statementViewModel
+    required property var importViewModel
     spacing: root.theme.spacingSmall
 
     RowLayout {
@@ -28,12 +28,12 @@ ColumnLayout {
         Controls.TextField {
             objectName: "statementDraftNameField"
             Layout.fillWidth: true
-            text: root.statementViewModel.statementName
-            onTextEdited: root.statementViewModel.statementName = text
-            onEditingFinished: root.statementViewModel.statementName = text
-            onAccepted: root.statementViewModel.statementName = text
+            text: root.importViewModel.statementName
+            onTextEdited: root.importViewModel.statementName = text
+            onEditingFinished: root.importViewModel.statementName = text
+            onAccepted: root.importViewModel.statementName = text
             onActiveFocusChanged: if (!activeFocus)
-                root.statementViewModel.statementName = text
+                root.importViewModel.statementName = text
         }
     }
 
@@ -43,21 +43,21 @@ ColumnLayout {
         Label {
             color: root.theme.textPrimary
             Layout.fillWidth: true
-            text: root.statementViewModel.hasDraft
-                  ? qsTr("Transaction %1 / %2").arg(root.statementViewModel.currentTransactionNumber).arg(root.statementViewModel.transactionCount)
+            text: root.importViewModel.hasDraft
+                  ? qsTr("Transaction %1 / %2").arg(root.importViewModel.currentTransactionNumber).arg(root.importViewModel.transactionCount)
                   : qsTr("No current transaction")
         }
 
         Controls.CompactAddButton {
             objectName: "statementDraftAddTransactionButton"
-            visible: root.statementViewModel.hasDraft
-            onClicked: root.statementViewModel.addTransactionAfterCurrent()
+            visible: root.importViewModel.hasDraft
+            onClicked: root.importViewModel.addTransactionAfterCurrent()
         }
 
         Controls.CompactRemoveButton {
             objectName: "statementDraftDeleteTransactionButton"
-            visible: root.statementViewModel.canDeleteTransaction
-            onClicked: root.statementViewModel.deleteCurrentTransaction()
+            visible: root.importViewModel.canDeleteTransaction
+            onClicked: root.importViewModel.deleteCurrentTransaction()
         }
     }
 }

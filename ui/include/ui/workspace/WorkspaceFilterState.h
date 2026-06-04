@@ -12,7 +12,7 @@ class QObject;
 
 namespace ui {
 
-class TransactionViewModel;
+class TransactionListModel;
 class TransactionFilter;
 
 class WorkspaceFilterState {
@@ -20,9 +20,9 @@ public:
   explicit WorkspaceFilterState(QObject *owner = nullptr);
 
   TransactionFilter *statementTransactions(const QString &statementId,
-                                           TransactionViewModel &sourceModel);
+                                           TransactionListModel &sourceModel);
   TransactionFilter *propertyTransactions(const QString &propertyId,
-                                          TransactionViewModel &sourceModel);
+                                          TransactionListModel &sourceModel);
 
   void clear();
   void removeStatement(const QString &statementId);

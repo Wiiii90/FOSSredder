@@ -9,38 +9,13 @@
 #include <vector>
 
 #include "core/ports/workspace/WorkspaceCommands.h"
+#include "ui/observability/Trace.h"
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/util/StringConversions.h"
 #include "ui/workspace/WorkspaceRowProjector.h"
-#include "ui/shared/payload/PayloadKeys.h"
-#include "ui/shared/util/StringConversions.h"
 
 namespace ui {
 namespace {
-
-QString contractBaseName() { return QStringLiteral("Contract"); }
-
-int trailingContractIndex(const QString &value) {
-  const QString simplified = value.trimmed().simplified();
-  const QString prefix = contractBaseName() + QStringLiteral(" ");
-  if (!simplified.startsWith(prefix, Qt::CaseInsensitive)) {
-    return -1;
-  }
-  bool ok = false;
-  const int index = simplified.mid(prefix.size()).toInt(&ok);
-  return ok ? index : -1;
-}
-
-QStringList sortedTrimmed(QStringList values) {
-  QStringList out;
-  out.reserve(values.size());
-  for (const auto &value : values) {
-    const QString trimmed = value.trimmed();
-    if (!trimmed.isEmpty()) {
-      out.push_back(trimmed);
-    }
-  }
-  out.sort();
-  return out;
-}
 
 QStringList sortedStdStrings(const std::vector<std::string> &values) {
   QStringList out;
@@ -55,15 +30,36 @@ QStringList sortedStdStrings(const std::vector<std::string> &values) {
   return out;
 }
 
-bool sameStringSet(const std::vector<std::string> &lhs,
-                   const QStringList &rhs) {
-  return sortedStdStrings(lhs) == sortedTrimmed(rhs);
-}
-
 QVariantMap catalogIdentityRow(const QString &id, const QString &name) {
   return {{payload::keys::common::kId, id},
           {payload::keys::common::kName, name},
           {payload::keys::common::kDisplay, name}};
+}
+
+QVariantMap catalogIdentityRow(
+    const core::ports::workspace::WorkspaceIdentitySnapshot &identity) {
+  if (identity.empty()) {
+    return {};
+  }
+  QVariantMap row = catalogIdentityRow(QString::fromStdString(identity.id),
+                                       QString::fromStdString(identity.name));
+  if (!identity.type.empty()) {
+    row.insert(payload::keys::common::kType,
+               QString::fromStdString(identity.type));
+  }
+  if (!identity.actorIds.empty()) {
+    row.insert(payload::keys::contract::kActorIds,
+               sortedStdStrings(identity.actorIds));
+  }
+  if (!identity.propertyIds.empty()) {
+    row.insert(payload::keys::contract::kPropertyIds,
+               sortedStdStrings(identity.propertyIds));
+  }
+  if (!identity.allocatableMode.empty()) {
+    row.insert(payload::keys::contract::kAllocatableMode,
+               QString::fromStdString(identity.allocatableMode));
+  }
+  return row;
 }
 
 QVariantMap dropdownRow(const QString &id, const QString &display,
@@ -84,6 +80,85 @@ QVariantMap dropdownRow(const QString &id, const QString &display,
 
 void prependEmptyDropdownRow(QVariantList &rows, const QString &display) {
   rows.push_front(dropdownRow({}, display));
+}
+
+QString catalogStringValue(const QVariant &value) {
+  const QVariantMap map = value.toMap();
+  if (!map.isEmpty()) {
+    const QString valueText = map.value(QStringLiteral("value")).toString();
+    if (!valueText.isEmpty()) {
+      return valueText;
+    }
+    const QString source = map.value(QStringLiteral("source")).toString();
+    if (!source.isEmpty()) {
+      return source;
+    }
+    const QString id = map.value(payload::keys::common::kId).toString();
+    if (!id.isEmpty()) {
+      return id;
+    }
+  }
+  return value.toString();
+}
+
+QVariantList normalizedCatalogIds(const QVariantList &values) {
+  QVariantList out;
+  out.reserve(values.size());
+  for (const QVariant &value : values) {
+    const QString id = catalogStringValue(value).trimmed();
+    if (!id.isEmpty()) {
+      out.push_back(id);
+    }
+  }
+  return out;
+}
+
+QVariantMap catalogRowById(const QVariantList &rows, const QString &id) {
+  const QString normalizedId = id.trimmed();
+  if (normalizedId.isEmpty()) {
+    return {};
+  }
+  for (const QVariant &value : rows) {
+    const QVariantMap row = value.toMap();
+    if (row.value(payload::keys::common::kId).toString() == normalizedId) {
+      return row;
+    }
+  }
+  return {};
+}
+
+QVariantMap withFormValue(const QVariantMap &base, const QString &key,
+                          const QVariant &value) {
+  QVariantMap out = base;
+  out.insert(key, value);
+  return out;
+}
+
+bool contractSupportsActor(const QVariantMap &contractRow,
+                           const QString &actorId) {
+  const QString targetActor = actorId.trimmed();
+  if (targetActor.isEmpty() || contractRow.isEmpty()) {
+    return true;
+  }
+  const QVariantList actorIds = normalizedCatalogIds(
+      contractRow.value(payload::keys::contract::kActorIds).toList());
+  return actorIds.contains(targetActor);
+}
+
+bool contractSupportsProperties(const QVariantMap &contractRow,
+                                const QVariantList &propertyIds) {
+  if (contractRow.isEmpty()) {
+    return true;
+  }
+  const QVariantList normalizedPropertyIds = normalizedCatalogIds(propertyIds);
+  const QVariantList allowedPropertyIds = normalizedCatalogIds(
+      contractRow.value(payload::keys::contract::kPropertyIds).toList());
+  for (const QVariant &propertyValue : normalizedPropertyIds) {
+    if (!allowedPropertyIds.contains(propertyValue)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 std::vector<core::ports::workspace::AliasSnapshot>
@@ -170,38 +245,16 @@ QVariantMap WorkspaceFacade::actorIdentityByName(const QString &name) const {
   if (!workspaceReader_) {
     return {};
   }
-  const QString target = strings::normalizedText(name);
-  if (target.isEmpty()) {
-    return {};
-  }
-  const auto snapshot = workspaceReader_->workspaceSnapshot();
-  for (const auto &actor : snapshot.actors) {
-    const QString existingName = QString::fromStdString(actor.name);
-    if (strings::normalizedText(existingName) == target) {
-      return catalogIdentityRow(QString::fromStdString(actor.id),
-                                existingName);
-    }
-  }
-  return {};
+  return catalogIdentityRow(
+      workspaceReader_->actorIdentityByName(strings::toStdString(name)));
 }
 
 QVariantMap WorkspaceFacade::propertyIdentityByName(const QString &name) const {
   if (!workspaceReader_) {
     return {};
   }
-  const QString target = strings::normalizedText(name);
-  if (target.isEmpty()) {
-    return {};
-  }
-  const auto snapshot = workspaceReader_->workspaceSnapshot();
-  for (const auto &property : snapshot.properties) {
-    const QString existingName = QString::fromStdString(property.name);
-    if (strings::normalizedText(existingName) == target) {
-      return catalogIdentityRow(QString::fromStdString(property.id),
-                                existingName);
-    }
-  }
-  return {};
+  return catalogIdentityRow(
+      workspaceReader_->propertyIdentityByName(strings::toStdString(name)));
 }
 
 QVariantMap WorkspaceFacade::contractIdentityBySignature(
@@ -210,55 +263,16 @@ QVariantMap WorkspaceFacade::contractIdentityBySignature(
   if (!workspaceReader_) {
     return {};
   }
-  const QString normalizedName = strings::normalizedText(name);
-  const QString normalizedType = strings::normalizedText(type);
-  if (normalizedName.isEmpty() || normalizedType.isEmpty()) {
-    return {};
-  }
-  const auto snapshot = workspaceReader_->workspaceSnapshot();
-  for (const auto &contract : snapshot.contracts) {
-    if (strings::normalizedText(QString::fromStdString(contract.name)) !=
-        normalizedName) {
-      continue;
-    }
-    if (strings::normalizedText(QString::fromStdString(contract.type)) !=
-        normalizedType) {
-      continue;
-    }
-    if (!sameStringSet(contract.actorIds, actorIds) ||
-        !sameStringSet(contract.propertyIds, propertyIds)) {
-      continue;
-    }
-
-    QVariantMap row = catalogIdentityRow(QString::fromStdString(contract.id),
-                                         QString::fromStdString(contract.name));
-    row.insert(payload::keys::common::kType,
-               QString::fromStdString(contract.type));
-    row.insert(payload::keys::contract::kActorIds,
-               sortedStdStrings(contract.actorIds));
-    row.insert(payload::keys::contract::kPropertyIds,
-               sortedStdStrings(contract.propertyIds));
-    row.insert(payload::keys::contract::kAllocatableMode,
-               QString::fromStdString(contract.allocatableMode));
-    return row;
-  }
-  return {};
+  return catalogIdentityRow(workspaceReader_->contractIdentityBySignature(
+      strings::toStdString(name), strings::toStdString(type),
+      stdStrings(actorIds), stdStrings(propertyIds)));
 }
 
 QString WorkspaceFacade::nextContractName() const {
   if (!workspaceReader_) {
-    return QStringLiteral("%1 1").arg(contractBaseName());
+    return QStringLiteral("Contract 1");
   }
-  int maxIndex = 0;
-  const auto snapshot = workspaceReader_->workspaceSnapshot();
-  for (const auto &contract : snapshot.contracts) {
-    const int index =
-        trailingContractIndex(QString::fromStdString(contract.name));
-    if (index > maxIndex) {
-      maxIndex = index;
-    }
-  }
-  return QStringLiteral("%1 %2").arg(contractBaseName()).arg(maxIndex + 1);
+  return QString::fromStdString(workspaceReader_->nextContractName());
 }
 
 QVariantList WorkspaceFacade::actorRows() const {
@@ -328,6 +342,59 @@ QVariantList WorkspaceFacade::contractDropdownRows() const {
   return rows;
 }
 
+QVariantMap WorkspaceFacade::transactionFormWithCatalogSelection(
+    const QVariantMap &formData, const QVariantMap &changes) const {
+  QVariantMap out = formData;
+  const QVariantList contracts = contractRows();
+
+  if (changes.contains(payload::keys::transaction::kContractId)) {
+    const QString contractId =
+        changes.value(payload::keys::transaction::kContractId)
+            .toString()
+            .trimmed();
+    const QVariantMap contractRow = catalogRowById(contracts, contractId);
+    const QVariantList actorIds = normalizedCatalogIds(
+        contractRow.value(payload::keys::contract::kActorIds).toList());
+    const QVariantList propertyIds = normalizedCatalogIds(
+        contractRow.value(payload::keys::contract::kPropertyIds).toList());
+    const QString actorId =
+        actorIds.isEmpty() ? QString() : actorIds.first().toString();
+    out = withFormValue(out, payload::keys::transaction::kContractId,
+                        contractId);
+    out = withFormValue(out, payload::keys::transaction::kActorId, actorId);
+    out = withFormValue(out, payload::keys::transaction::kPropertyIds,
+                        propertyIds);
+  }
+
+  if (changes.contains(payload::keys::transaction::kActorId)) {
+    const QString actorId =
+        changes.value(payload::keys::transaction::kActorId).toString().trimmed();
+    const QString contractId =
+        out.value(payload::keys::transaction::kContractId).toString().trimmed();
+    const QVariantMap contractRow = catalogRowById(contracts, contractId);
+    out = withFormValue(out, payload::keys::transaction::kActorId, actorId);
+    out = withFormValue(
+        out, payload::keys::transaction::kContractId,
+        contractSupportsActor(contractRow, actorId) ? contractId : QString());
+  }
+
+  if (changes.contains(payload::keys::transaction::kPropertyIds)) {
+    const QVariantList propertyIds = normalizedCatalogIds(
+        changes.value(payload::keys::transaction::kPropertyIds).toList());
+    const QString contractId =
+        out.value(payload::keys::transaction::kContractId).toString().trimmed();
+    const QVariantMap contractRow = catalogRowById(contracts, contractId);
+    out = withFormValue(out, payload::keys::transaction::kPropertyIds,
+                        propertyIds);
+    out = withFormValue(out, payload::keys::transaction::kContractId,
+                        contractSupportsProperties(contractRow, propertyIds)
+                            ? contractId
+                            : QString());
+  }
+
+  return out;
+}
+
 double WorkspaceFacade::amountForTransactionCommit(
     const QVariant &rawAmount, const QString &transactionId,
     double fallbackAmount) const {
@@ -343,46 +410,127 @@ void WorkspaceFacade::setTransactionPropertyIdsImmediate(
   }
 }
 
+QVariantMap WorkspaceFacade::validateActor(const QString &id,
+                                           const QString &name,
+                                           const QStringList &aliases,
+                                           const QStringList &contractIds) const {
+  if (!workspaceWriter_) {
+    return validationResultToMap({});
+  }
+  return validationResultToMap(workspaceWriter_->validateActor(
+      makeActorCommand(id, name, aliases, contractIds)));
+}
+
 QString WorkspaceFacade::saveActor(const QString &id, const QString &name,
                                    const QStringList &aliases,
                                    const QStringList &contractIds) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace("WorkspaceFacade::saveActor",
+                                  "Actor save ignored; no writer bound");
+    return {};
+  }
+  observability::traceWorkspace(
+      "WorkspaceFacade::saveActor",
+      id.isEmpty() ? "Actor create requested" : "Actor update requested",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"contractCount", std::to_string(contractIds.size())}});
+  const auto command = makeActorCommand(id, name, aliases, contractIds);
+  if (rejectInvalidCommand("WorkspaceFacade::saveActor",
+                           workspaceWriter_->validateActor(command))) {
     return {};
   }
   if (id.isEmpty()) {
-    return QString::fromStdString(workspaceWriter_->addActor(
-        makeActorCommand({}, name, aliases, contractIds)));
+    const QString createdId =
+        QString::fromStdString(workspaceWriter_->addActor(command));
+    observability::traceWorkspace(
+        "WorkspaceFacade::saveActor", "Actor created",
+        {{observability::context::kId, createdId.toStdString()},
+         {observability::context::kName, name.toStdString()}});
+    return createdId;
   }
-  workspaceWriter_->updateActor(
-      makeActorCommand(id, name, aliases, contractIds));
+  workspaceWriter_->updateActor(command);
+  observability::traceWorkspace(
+      "WorkspaceFacade::saveActor", "Actor updated",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()}});
   return id;
 }
 
 void WorkspaceFacade::deleteActor(const QString &id) {
   if (workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::deleteActor", "Actor delete requested",
+        {{observability::context::kId, id.toStdString()}});
     workspaceWriter_->deleteActor(strings::toStdString(id));
   }
+}
+
+QVariantMap WorkspaceFacade::validateProperty(
+    const QString &id, const QString &name, const QStringList &aliases,
+    const QStringList &contractIds) const {
+  if (!workspaceWriter_) {
+    return validationResultToMap({});
+  }
+  return validationResultToMap(workspaceWriter_->validateProperty(
+      makePropertyCommand(id, name, aliases, contractIds)));
 }
 
 QString WorkspaceFacade::saveProperty(const QString &id, const QString &name,
                                       const QStringList &aliases,
                                       const QStringList &contractIds) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace("WorkspaceFacade::saveProperty",
+                                  "Property save ignored; no writer bound");
+    return {};
+  }
+  observability::traceWorkspace(
+      "WorkspaceFacade::saveProperty",
+      id.isEmpty() ? "Property create requested" : "Property update requested",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"contractCount", std::to_string(contractIds.size())}});
+  const auto command = makePropertyCommand(id, name, aliases, contractIds);
+  if (rejectInvalidCommand("WorkspaceFacade::saveProperty",
+                           workspaceWriter_->validateProperty(command))) {
     return {};
   }
   if (id.isEmpty()) {
-    return QString::fromStdString(workspaceWriter_->addProperty(
-        makePropertyCommand({}, name, aliases, contractIds)));
+    const QString createdId =
+        QString::fromStdString(workspaceWriter_->addProperty(command));
+    observability::traceWorkspace(
+        "WorkspaceFacade::saveProperty", "Property created",
+        {{observability::context::kId, createdId.toStdString()},
+         {observability::context::kName, name.toStdString()}});
+    return createdId;
   }
-  workspaceWriter_->updateProperty(
-      makePropertyCommand(id, name, aliases, contractIds));
+  workspaceWriter_->updateProperty(command);
+  observability::traceWorkspace(
+      "WorkspaceFacade::saveProperty", "Property updated",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()}});
   return id;
 }
 
 void WorkspaceFacade::deleteProperty(const QString &id) {
   if (workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::deleteProperty", "Property delete requested",
+        {{observability::context::kId, id.toStdString()}});
     workspaceWriter_->deleteProperty(strings::toStdString(id));
   }
+}
+
+QVariantMap WorkspaceFacade::validateContract(
+    const QString &id, const QString &name, const QString &type,
+    const QStringList &actorIds, const QStringList &propertyIds,
+    const QStringList &aliases, const QString &allocatableMode) const {
+  if (!workspaceWriter_) {
+    return validationResultToMap({});
+  }
+  return validationResultToMap(workspaceWriter_->validateContract(
+      makeContractCommand(id, name, type, allocatableMode, actorIds,
+                          propertyIds, aliases)));
 }
 
 QString WorkspaceFacade::saveContract(const QString &id, const QString &name,
@@ -392,31 +540,81 @@ QString WorkspaceFacade::saveContract(const QString &id, const QString &name,
                                       const QStringList &aliases,
                                       const QString &allocatableMode) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace("WorkspaceFacade::saveContract",
+                                  "Contract save ignored; no writer bound");
+    return {};
+  }
+  observability::traceWorkspace(
+      "WorkspaceFacade::saveContract",
+      id.isEmpty() ? "Contract create requested" : "Contract update requested",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"type", type.toStdString()},
+       {"actorCount", std::to_string(actorIds.size())},
+       {"propertyCount", std::to_string(propertyIds.size())}});
+  const auto command =
+      makeContractCommand(id, name, type, allocatableMode, actorIds,
+                          propertyIds, aliases);
+  if (rejectInvalidCommand("WorkspaceFacade::saveContract",
+                           workspaceWriter_->validateContract(command))) {
     return {};
   }
   if (id.isEmpty()) {
-    return QString::fromStdString(
-        workspaceWriter_->addContract(makeContractCommand(
-            {}, name, type, allocatableMode, actorIds, propertyIds, aliases)));
+    const QString createdId =
+        QString::fromStdString(workspaceWriter_->addContract(command));
+    observability::traceWorkspace(
+        "WorkspaceFacade::saveContract", "Contract created",
+        {{observability::context::kId, createdId.toStdString()},
+         {observability::context::kName, name.toStdString()}});
+    return createdId;
   }
-  workspaceWriter_->updateContract(makeContractCommand(
-      id, name, type, allocatableMode, actorIds, propertyIds, aliases));
+  workspaceWriter_->updateContract(command);
+  observability::traceWorkspace(
+      "WorkspaceFacade::saveContract", "Contract updated",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()}});
   return id;
 }
 
 void WorkspaceFacade::deleteContract(const QString &id) {
   if (workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::deleteContract", "Contract delete requested",
+        {{observability::context::kId, id.toStdString()}});
     workspaceWriter_->deleteContract(strings::toStdString(id));
   }
 }
 
+QVariantMap WorkspaceFacade::validateStatement(const QString &id,
+                                               const QString &name) const {
+  if (!workspaceWriter_) {
+    return validationResultToMap({});
+  }
+  core::ports::workspace::StatementCommand command;
+  command.id = strings::toStdString(id);
+  command.name = strings::toStdString(name);
+  return validationResultToMap(workspaceWriter_->validateStatement(command));
+}
+
 QString WorkspaceFacade::addStatement(const QString &name) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace("WorkspaceFacade::addStatement",
+                                  "Statement create ignored; no writer bound");
     return {};
   }
   core::ports::workspace::StatementCommand command;
   command.name = strings::toStdString(name);
-  return QString::fromStdString(workspaceWriter_->addStatement(command));
+  if (rejectInvalidCommand("WorkspaceFacade::addStatement",
+                           workspaceWriter_->validateStatement(command))) {
+    return {};
+  }
+  const QString createdId =
+      QString::fromStdString(workspaceWriter_->addStatement(command));
+  observability::traceWorkspace(
+      "WorkspaceFacade::addStatement", "Statement created",
+      {{observability::context::kId, createdId.toStdString()},
+       {observability::context::kName, name.toStdString()}});
+  return createdId;
 }
 
 void WorkspaceFacade::updateStatement(const QString &id, const QString &name) {
@@ -426,13 +624,38 @@ void WorkspaceFacade::updateStatement(const QString &id, const QString &name) {
   core::ports::workspace::StatementCommand command;
   command.id = strings::toStdString(id);
   command.name = strings::toStdString(name);
+  if (rejectInvalidCommand("WorkspaceFacade::updateStatement",
+                           workspaceWriter_->validateStatement(command))) {
+    return;
+  }
   workspaceWriter_->updateStatement(command);
+  observability::traceWorkspace(
+      "WorkspaceFacade::updateStatement", "Statement updated",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()}});
 }
 
 void WorkspaceFacade::deleteStatement(const QString &id) {
   if (workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::deleteStatement", "Statement delete requested",
+        {{observability::context::kId, id.toStdString()}});
     workspaceWriter_->deleteStatement(strings::toStdString(id));
   }
+}
+
+QVariantMap WorkspaceFacade::validateTransaction(
+    const QString &id, const QString &name, const QString &bookingDate,
+    const QString &valuta, double amount, const QString &statementId,
+    int status, const QString &actorId, const QString &contractId,
+    bool allocatable, const QStringList &propertyIds) const {
+  if (!workspaceWriter_) {
+    return validationResultToMap({});
+  }
+  return validationResultToMap(workspaceWriter_->validateTransaction(
+      makeTransactionCommand(id, name, bookingDate, valuta, amount, statementId,
+                             {}, status, actorId, contractId, allocatable,
+                             propertyIds)));
 }
 
 QString WorkspaceFacade::addTransaction(
@@ -441,12 +664,27 @@ QString WorkspaceFacade::addTransaction(
     const QString &actorId, const QString &contractId, bool allocatable,
     const QStringList &propertyIds) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace("WorkspaceFacade::addTransaction",
+                                  "Transaction create ignored; no writer bound");
     return {};
   }
-  return QString::fromStdString(workspaceWriter_->addTransaction(
+  const auto command =
       makeTransactionCommand({}, name, bookingDate, valuta, amount, statementId,
                              {}, status, actorId, contractId, allocatable,
-                             propertyIds)));
+                             propertyIds);
+  if (rejectInvalidCommand("WorkspaceFacade::addTransaction",
+                           workspaceWriter_->validateTransaction(command))) {
+    return {};
+  }
+  const QString createdId =
+      QString::fromStdString(workspaceWriter_->addTransaction(command));
+  observability::traceWorkspace(
+      "WorkspaceFacade::addTransaction", "Transaction created",
+      {{observability::context::kId, createdId.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"statementId", statementId.toStdString()},
+       {"amount", std::to_string(amount)}});
+  return createdId;
 }
 
 QString WorkspaceFacade::insertTransactionAfter(
@@ -456,12 +694,28 @@ QString WorkspaceFacade::insertTransactionAfter(
     const QString &contractId, bool allocatable,
     const QStringList &propertyIds) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::insertTransactionAfter",
+        "Transaction insert ignored; no writer bound");
     return {};
   }
-  return QString::fromStdString(workspaceWriter_->addTransaction(
+  const auto command =
       makeTransactionCommand({}, name, bookingDate, valuta, amount, statementId,
                              afterTransactionId, status, actorId, contractId,
-                             allocatable, propertyIds)));
+                             allocatable, propertyIds);
+  if (rejectInvalidCommand("WorkspaceFacade::insertTransactionAfter",
+                           workspaceWriter_->validateTransaction(command))) {
+    return {};
+  }
+  const QString createdId =
+      QString::fromStdString(workspaceWriter_->addTransaction(command));
+  observability::traceWorkspace(
+      "WorkspaceFacade::insertTransactionAfter", "Transaction inserted",
+      {{observability::context::kId, createdId.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"statementId", statementId.toStdString()},
+       {"afterTransactionId", afterTransactionId.toStdString()}});
+  return createdId;
 }
 
 void WorkspaceFacade::updateTransaction(
@@ -472,13 +726,27 @@ void WorkspaceFacade::updateTransaction(
   if (!workspaceWriter_) {
     return;
   }
-  workspaceWriter_->updateTransaction(makeTransactionCommand(
+  const auto command = makeTransactionCommand(
       id, name, bookingDate, valuta, amount, statementId, {}, status, actorId,
-      contractId, allocatable, propertyIds));
+      contractId, allocatable, propertyIds);
+  if (rejectInvalidCommand("WorkspaceFacade::updateTransaction",
+                           workspaceWriter_->validateTransaction(command))) {
+    return;
+  }
+  workspaceWriter_->updateTransaction(command);
+  observability::traceWorkspace(
+      "WorkspaceFacade::updateTransaction", "Transaction updated",
+      {{observability::context::kId, id.toStdString()},
+       {observability::context::kName, name.toStdString()},
+       {"statementId", statementId.toStdString()},
+       {"amount", std::to_string(amount)}});
 }
 
 void WorkspaceFacade::deleteTransaction(const QString &id) {
   if (workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::deleteTransaction", "Transaction delete requested",
+        {{observability::context::kId, id.toStdString()}});
     workspaceWriter_->deleteTransaction(strings::toStdString(id));
   }
 }

@@ -33,7 +33,7 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionViewModel: QtObject {
+    property var importViewModel: QtObject {
         property var actorOptions: [{ id: "", display: "" }, { id: "actor-1", display: "Alice" }]
         property int selectedActorOptionIndex: 0
         property string actorName: ""
@@ -51,7 +51,7 @@ TestCase {
         Import.TransactionDraftContractActorPanel {
             width: testCase.width
             theme: testCase.theme
-            transactionViewModel: testCase.transactionViewModel
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -60,10 +60,10 @@ TestCase {
     }
 
     function init() {
-        transactionViewModel.actorSuggestionConfidence = 0
-        transactionViewModel.actorSuggestionSummary = "0% Confidence - No suggestion"
-        transactionViewModel.actorName = ""
-        transactionViewModel.addActorCalls = 0
+        importViewModel.actorSuggestionConfidence = 0
+        importViewModel.actorSuggestionSummary = "0% Confidence - No suggestion"
+        importViewModel.actorName = ""
+        importViewModel.addActorCalls = 0
     }
 
     function test_IMP_D_014_actorPanelDelegatesQuickCreate() {
@@ -74,8 +74,8 @@ TestCase {
         input.textEdited()
         findRequired(panel, "transactionDraftActorAddFromTextButton").clicked()
 
-        compare(transactionViewModel.actorName, "Alice Example")
-        compare(transactionViewModel.addActorCalls, 1)
+        compare(importViewModel.actorName, "Alice Example")
+        compare(importViewModel.addActorCalls, 1)
     }
 
     function test_IMP_D_020_actorSuggestionLabelRebindsWhenMatcherStateChanges() {
@@ -85,8 +85,8 @@ TestCase {
         compare(label.text, "0% Confidence - No suggestion")
         compare(label.color, theme.danger)
 
-        transactionViewModel.actorSuggestionConfidence = 0.8
-        transactionViewModel.actorSuggestionSummary = "80% Confidence - Alice"
+        importViewModel.actorSuggestionConfidence = 0.8
+        importViewModel.actorSuggestionSummary = "80% Confidence - Alice"
         wait(0)
 
         compare(label.text, "80% Confidence - Alice")

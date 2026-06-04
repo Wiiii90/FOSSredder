@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/ports/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
 
 namespace infra::analysis_image_renderer {
 

@@ -6,11 +6,10 @@
 #include "ui/adapters/ExportAdapter.h"
 
 #include "core/constants/export.h"
+#include "ui/observability/Trace.h"
 #include "ui/shell/QmlContracts.h"
 
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include <QVariantList>
 
 #include <utility>
 
@@ -39,6 +38,10 @@ ExportAdapter::ExportAdapter(
 core::ports::exporting::ExportResult ExportAdapter::runExport(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
     core::ports::exporting::ExportRequest request) const {
+  observability::traceAdapter(
+      "ExportAdapter::runExport", "Export runner invoked",
+      {{observability::context::kPath, request.outputPath},
+       {"objectCount", std::to_string(request.objectRequests.size())}});
   if (!runner_) {
     return {false,
             core::ports::exporting::ExportStatus::InternalError,
@@ -65,33 +68,26 @@ ExportAdapter::exportFormatFromQmlIndex(int formatIndex) const {
 
 void ExportAdapter::applySelectionPayload(
     core::ports::exporting::ExportRequest &request,
-    const QString &selectionPayloadJson) const {
-  if (selectionPayloadJson.isEmpty()) {
+    const QVariantMap &selectionPayload) const {
+  if (selectionPayload.isEmpty()) {
     return;
   }
 
-  QJsonParseError parseError;
-  const QJsonDocument payloadDoc =
-      QJsonDocument::fromJson(selectionPayloadJson.toUtf8(), &parseError);
-  if (parseError.error != QJsonParseError::NoError || !payloadDoc.isObject()) {
-    return;
-  }
-
-  const QJsonObject payloadObj = payloadDoc.object();
   const int packageFormatIndex =
-      payloadObj.value(QStringLiteral("packageFormatIndex")).toInt(0);
+      selectionPayload.value(QStringLiteral("packageFormatIndex")).toInt();
   request.packageFormat = packageFormatIndex == 1
                               ? core::ports::exporting::PackageFormat::Zip
                               : core::ports::exporting::PackageFormat::None;
 
-  const QJsonArray items = payloadObj.value(QStringLiteral("items")).toArray();
+  const QVariantList items =
+      selectionPayload.value(QStringLiteral("items")).toList();
   request.objectRequests.clear();
   request.objectRequests.reserve(static_cast<std::size_t>(items.size()));
-  for (const QJsonValue &value : items) {
-    if (!value.isObject()) {
+  for (const QVariant &value : items) {
+    const QVariantMap item = value.toMap();
+    if (item.isEmpty()) {
       continue;
     }
-    const QJsonObject item = value.toObject();
     const QString objectId =
         item.value(QStringLiteral("objectId")).toString();
     if (objectId.isEmpty()) {
@@ -119,7 +115,7 @@ void ExportAdapter::applySelectionPayload(
 
 core::ports::exporting::ExportRequest ExportAdapter::buildExportRequest(
     int formatIndex, const QString &path, bool includeFormulas,
-    const QString &locale, const QString &selectionPayload) const {
+    const QString &locale, const QVariantMap &selectionPayload) const {
   core::ports::exporting::ExportRequest request;
   request.format = exportFormatFromQmlIndex(formatIndex);
   request.outputPath = path.toStdString();

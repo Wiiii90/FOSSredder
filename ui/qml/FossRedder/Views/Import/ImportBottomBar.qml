@@ -56,7 +56,7 @@ Item {
                      && root.importViewModel.queuedCount > 0
             enabled: root.importViewModel.canCancel
                      && root.importViewModel.queuedCount > 0
-            onClicked: root.importViewModel.cancelAllImports()
+            onClicked: root.importViewModel.cancelQueuedImports()
         }
 
         Controls.SuccessButton {

@@ -24,8 +24,9 @@ TestCase {
         property int viewNavigationButtonWidth: 42
     }
 
-    property var statementViewModel: QtObject {
+    property var importViewModel: QtObject {
         property bool hasDraft: true
+        property bool hasDraftNavigation: true
         property bool canSelectPreviousTransactionDraft: true
         property bool canSelectNextTransactionDraft: true
         property int returnCalls: 0
@@ -33,17 +34,13 @@ TestCase {
         property int finalizeCalls: 0
         property int previousTransactionCalls: 0
         property int nextTransactionCalls: 0
+        property int previousDraftCalls: 0
+        property int nextDraftCalls: 0
         function returnToImport() { returnCalls += 1 }
         function discard() { discardCalls += 1 }
         function finalize() { finalizeCalls += 1 }
         function selectPreviousTransactionDraft() { previousTransactionCalls += 1 }
         function selectNextTransactionDraft() { nextTransactionCalls += 1 }
-    }
-
-    property var importViewModel: QtObject {
-        property bool hasDraftNavigation: true
-        property int previousDraftCalls: 0
-        property int nextDraftCalls: 0
         function selectPreviousDraft() { previousDraftCalls += 1 }
         function selectNextDraft() { nextDraftCalls += 1 }
     }
@@ -54,7 +51,6 @@ TestCase {
             width: testCase.width
             theme: testCase.theme
             importViewModel: testCase.importViewModel
-            statementViewModel: testCase.statementViewModel
         }
     }
 
@@ -67,15 +63,15 @@ TestCase {
     }
 
     function init() {
-        statementViewModel.hasDraft = true
-        statementViewModel.canSelectPreviousTransactionDraft = true
-        statementViewModel.canSelectNextTransactionDraft = true
+        importViewModel.hasDraft = true
+        importViewModel.canSelectPreviousTransactionDraft = true
+        importViewModel.canSelectNextTransactionDraft = true
         importViewModel.hasDraftNavigation = true
-        statementViewModel.returnCalls = 0
-        statementViewModel.discardCalls = 0
-        statementViewModel.finalizeCalls = 0
-        statementViewModel.previousTransactionCalls = 0
-        statementViewModel.nextTransactionCalls = 0
+        importViewModel.returnCalls = 0
+        importViewModel.discardCalls = 0
+        importViewModel.finalizeCalls = 0
+        importViewModel.previousTransactionCalls = 0
+        importViewModel.nextTransactionCalls = 0
         importViewModel.previousDraftCalls = 0
         importViewModel.nextDraftCalls = 0
     }
@@ -85,7 +81,7 @@ TestCase {
 
         findRequired(bar, "statementDraftReturnButton").clicked()
 
-        compare(statementViewModel.returnCalls, 1)
+        compare(importViewModel.returnCalls, 1)
     }
 
     function test_IMP_D_002_statementBottomBarDiscardDelegatesToState() {
@@ -93,7 +89,7 @@ TestCase {
 
         findRequired(bar, "statementDraftDiscardButton").clicked()
 
-        compare(statementViewModel.discardCalls, 1)
+        compare(importViewModel.discardCalls, 1)
     }
 
     function test_IMP_D_003_statementBottomBarFinalizeDelegatesToState() {
@@ -101,11 +97,11 @@ TestCase {
 
         findRequired(bar, "statementDraftFinalizeButton").clicked()
 
-        compare(statementViewModel.finalizeCalls, 1)
+        compare(importViewModel.finalizeCalls, 1)
     }
 
     function test_IMP_D_004_statementBottomBarDisablesLifecycleActionsWithoutDraft() {
-        statementViewModel.hasDraft = false
+        importViewModel.hasDraft = false
         const bar = createBar()
 
         compare(findRequired(bar, "statementDraftReturnButton").enabled, false)
@@ -121,15 +117,15 @@ TestCase {
         findRequired(bar, "statementDraftPrevPageButton").clicked()
         findRequired(bar, "statementDraftNextPageButton").clicked()
 
-        compare(statementViewModel.previousTransactionCalls, 1)
-        compare(statementViewModel.nextTransactionCalls, 1)
+        compare(importViewModel.previousTransactionCalls, 1)
+        compare(importViewModel.nextTransactionCalls, 1)
         compare(importViewModel.previousDraftCalls, 1)
         compare(importViewModel.nextDraftCalls, 1)
     }
 
     function test_IMP_D_007_statementBottomBarDisablesUnavailableNavigation() {
-        statementViewModel.canSelectPreviousTransactionDraft = false
-        statementViewModel.canSelectNextTransactionDraft = false
+        importViewModel.canSelectPreviousTransactionDraft = false
+        importViewModel.canSelectNextTransactionDraft = false
         importViewModel.hasDraftNavigation = false
         const bar = createBar()
 

@@ -25,7 +25,7 @@ TestCase {
         property int controlHeight: 32
     }
 
-    property var transactionViewModel: QtObject {
+    property var importViewModel: QtObject {
         property string nameText: "Tx 1"
         property string bookingDateText: "2026-05-16"
         property string valutaText: "2026-05-17"
@@ -48,7 +48,7 @@ TestCase {
         Import.TransactionDraftForm {
             width: testCase.width
             theme: testCase.theme
-            transactionViewModel: testCase.transactionViewModel
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -61,15 +61,15 @@ TestCase {
     }
 
     function init() {
-        transactionViewModel.nameText = "Tx 1"
-        transactionViewModel.bookingDateText = "2026-05-16"
-        transactionViewModel.valutaText = "2026-05-17"
-        transactionViewModel.amountText = "12.50"
-        transactionViewModel.statusIndex = 0
-        transactionViewModel.commitNameCalls = 0
-        transactionViewModel.commitBookingDateCalls = 0
-        transactionViewModel.commitValutaCalls = 0
-        transactionViewModel.commitAmountCalls = 0
+        importViewModel.nameText = "Tx 1"
+        importViewModel.bookingDateText = "2026-05-16"
+        importViewModel.valutaText = "2026-05-17"
+        importViewModel.amountText = "12.50"
+        importViewModel.statusIndex = 0
+        importViewModel.commitNameCalls = 0
+        importViewModel.commitBookingDateCalls = 0
+        importViewModel.commitValutaCalls = 0
+        importViewModel.commitAmountCalls = 0
     }
 
     function test_IMP_D_010_amountTextCommitsOnlyOnEditingFinished() {
@@ -79,11 +79,11 @@ TestCase {
         amountField.text = "99.99"
         amountField.textEdited()
 
-        compare(transactionViewModel.amountText, "99.99")
-        compare(transactionViewModel.commitAmountCalls, 0)
+        compare(importViewModel.amountText, "99.99")
+        compare(importViewModel.commitAmountCalls, 0)
 
         amountField.editingFinished()
-        compare(transactionViewModel.commitAmountCalls, 1)
+        compare(importViewModel.commitAmountCalls, 1)
     }
 
     function test_IMP_D_011_amountFieldFollowsCommittedStateChanges() {
@@ -91,7 +91,7 @@ TestCase {
         const amountField = findRequired(form, "transactionDraftAmountField")
 
         compare(amountField.text, "12.50")
-        transactionViewModel.amountText = "42.00"
+        importViewModel.amountText = "42.00"
         wait(0)
 
         compare(amountField.text, "42.00")
@@ -107,8 +107,8 @@ TestCase {
 
         findRequired(form, "transactionDraftStatusCombo").activated(1)
 
-        compare(transactionViewModel.nameText, "Updated")
-        compare(transactionViewModel.commitNameCalls, 1)
-        compare(transactionViewModel.statusIndex, 1)
+        compare(importViewModel.nameText, "Updated")
+        compare(importViewModel.commitNameCalls, 1)
+        compare(importViewModel.statusIndex, 1)
     }
 }

@@ -5,8 +5,8 @@
 
 #include <gtest/gtest.h>
 
-#include "core/ports/text-recognition/ITextRecognizer.h"
-#include "core/ports/text-recognition/TextRecognitionRequest.h"
+#include "core/ports/infra/text-recognition/ITextRecognizer.h"
+#include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
 #include "text-recognition/TesseractCore.h"
 
 #include <opencv2/imgcodecs.hpp>

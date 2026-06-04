@@ -17,11 +17,10 @@ Item {
     required property var analysisViewModel
 
     readonly property bool isEdit: root.analysisViewModel.isEdit
-    readonly property int filterWorkspaceIndex: root.analysisViewModel.filterWorkspaceIndex
+    readonly property int filterContentIndex: root.analysisViewModel.filterContentIndex
     readonly property string allocatableMode: root.analysisViewModel.allocatableMode
     readonly property var selectedPropertyIds: root.analysisViewModel.selectedPropertyIds
     readonly property var selectedContractTypes: root.analysisViewModel.selectedContractTypes
-    readonly property string pendingAdjustmentsJson: root.analysisViewModel.pendingAdjustmentsJson
 
     ColumnLayout {
         anchors.fill: root
@@ -154,26 +153,26 @@ Item {
                         }
 
                         Item {
-                            id: includeCalcAdjustmentsRow
-                            objectName: "analysisIncludeCalcAdjustmentsRow"
+                            id: includeAdjustmentsRow
+                            objectName: "analysisIncludeAdjustmentsRow"
                             Layout.fillWidth: true
-                            Layout.preferredHeight: Math.max(includeCalcAdjustmentsCheckBox.implicitHeight, includeCalcAdjustmentsLabel.implicitHeight)
+                            Layout.preferredHeight: Math.max(includeAdjustmentsCheckBox.implicitHeight, includeAdjustmentsLabel.implicitHeight)
 
                             RowLayout {
                                 anchors.fill: parent
 
                                 Controls.CheckBox {
-                                    id: includeCalcAdjustmentsCheckBox
-                                    objectName: "analysisIncludeCalcAdjustmentsCheckBox"
+                                    id: includeAdjustmentsCheckBox
+                                    objectName: "analysisIncludeAdjustmentsCheckBox"
                                     Layout.fillWidth: false
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                                    checked: root.analysisViewModel.includeCalcAdjustments
+                                    checked: root.analysisViewModel.includeAdjustments
                                 }
 
                                 Label {
-                                    id: includeCalcAdjustmentsLabel
+                                    id: includeAdjustmentsLabel
                                     color: root.theme.textPrimary
-                                    text: qsTr("Include Calc Adjustments")
+                                    text: qsTr("Include adjustments")
                                     Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
                                 }
 
@@ -183,10 +182,10 @@ Item {
                             }
 
                             MouseArea {
-                                objectName: "analysisIncludeCalcAdjustmentsMouseArea"
+                                objectName: "analysisIncludeAdjustmentsMouseArea"
                                 anchors.fill: parent
                                 z: 1
-                                onClicked: root.analysisViewModel.includeCalcAdjustments = !root.analysisViewModel.includeCalcAdjustments
+                                onClicked: root.analysisViewModel.includeAdjustments = !root.analysisViewModel.includeAdjustments
                             }
                         }
                     }
@@ -217,7 +216,7 @@ Item {
             StackLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                currentIndex: root.analysisViewModel.filterWorkspaceIndex
+                currentIndex: root.analysisViewModel.filterContentIndex
 
                 Item {
                     Layout.fillWidth: true

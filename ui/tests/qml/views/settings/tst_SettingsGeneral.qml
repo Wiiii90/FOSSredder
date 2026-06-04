@@ -22,7 +22,8 @@ TestCase {
     property var settingsViewModel: QtObject {
         property var languageOptions: [
             { code: "en", label: "English", available: true },
-            { code: "de", label: "Deutsch", available: true }
+            { code: "de", label: "Deutsch", available: true },
+            { code: "fr", label: "Français", available: true }
         ]
         property int languageIndex: 0
         property string language: "en"
@@ -34,6 +35,13 @@ TestCase {
         property int themeModeIndex: 0
         property string themeMode: "light"
         property int selectedThemeModeIndex: -1
+        property bool autosaveOnClose: true
+        property var autosaveIntervalOptions: [
+            { minutes: 0, label: "Off" },
+            { minutes: 5, label: "Every 5 minutes" }
+        ]
+        property int autosaveIntervalIndex: 0
+        property int selectedAutosaveIntervalIndex: -1
 
         function selectLanguageAt(index) {
             selectedLanguageIndex = index
@@ -51,6 +59,14 @@ TestCase {
                 return
             themeMode = option.code
             themeModeIndex = index
+        }
+
+        function selectAutosaveIntervalAt(index) {
+            selectedAutosaveIntervalIndex = index
+            const option = autosaveIntervalOptions[index]
+            if (!option)
+                return
+            autosaveIntervalIndex = index
         }
     }
 
@@ -78,7 +94,8 @@ TestCase {
     function init() {
         settingsViewModel.languageOptions = [
             { code: "en", label: "English", available: true },
-            { code: "de", label: "Deutsch", available: true }
+            { code: "de", label: "Deutsch", available: true },
+            { code: "fr", label: "Français", available: true }
         ]
         settingsViewModel.language = "en"
         settingsViewModel.languageIndex = 0
@@ -134,5 +151,21 @@ TestCase {
 
         compare(settingsViewModel.selectedThemeModeIndex, 1)
         compare(settingsViewModel.themeMode, "dark")
+    }
+
+    function test_SET_G_005_autosaveControlsDelegateToSettingsState() {
+        const view = createView()
+        const saveOnCloseCheck = TestSupport.findRequired(
+                    Lookup, view, "settingsAutosaveOnCloseCheckBox")
+        const intervalDropdown = TestSupport.findRequired(
+                    Lookup, view, "settingsAutosaveIntervalDropdown")
+
+        saveOnCloseCheck.checked = false
+        compare(settingsViewModel.autosaveOnClose, false)
+
+        intervalDropdown.currentIndex = 1
+        intervalDropdown.activated(1)
+        compare(settingsViewModel.selectedAutosaveIntervalIndex, 1)
+        compare(settingsViewModel.autosaveIntervalIndex, 1)
     }
 }

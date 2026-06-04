@@ -13,7 +13,7 @@
 #include <QMetaType>
 #include <QSet>
 
-#include "ui/shared/util/StringConversions.h"
+#include "ui/util/StringConversions.h"
 #include "ui/workspace/TransactionFilterModel.h"
 
 namespace ui {

@@ -7,7 +7,7 @@
 
 #include "PropertyContractMatrix.h"
 #include "core/constants/export.h"
-#include "core/ports/xlsx-writer/IXlsxWriter.h"
+#include "core/ports/infra/xlsx-writer/IXlsxWriter.h"
 
 #include <vector>
 
@@ -16,6 +16,23 @@ namespace core::application::exporting {
 namespace export_ports = core::ports::exporting;
 
 namespace {
+
+bool shouldStop(const export_ports::ExportRequest &request) {
+  if (request.waitIfPaused) {
+    request.waitIfPaused();
+  }
+  return request.shouldCancel && request.shouldCancel();
+}
+
+export_ports::ExportResult canceledResult(
+    const export_ports::ExportRequest &request) {
+  export_ports::ExportResult result;
+  result.actualFormat = export_ports::ExportFormat::Xlsx;
+  result.resolvedOutputPath = request.outputPath;
+  result.status = export_ports::ExportStatus::Canceled;
+  result.message = "Canceled";
+  return result;
+}
 
 std::string columnRef(int column) {
   std::string ref;
@@ -114,6 +131,9 @@ XlsxExporter::exportData(
   result.resolvedOutputPath = request.outputPath;
 
   try {
+    if (shouldStop(request)) {
+      return canceledResult(request);
+    }
     if (request.outputPath.empty()) {
       result.status = export_ports::ExportStatus::InvalidInput;
       result.errorCode =
@@ -133,7 +153,13 @@ XlsxExporter::exportData(
 
     const auto matrix = internal::buildPropertyContractMatrix(
         state, "core::exporting::XlsxExporter::exportData");
+    if (shouldStop(request)) {
+      return canceledResult(request);
+    }
     const auto rows = buildRows(matrix, request.includeFormulas);
+    if (shouldStop(request)) {
+      return canceledResult(request);
+    }
 
     if (!writer_->writeTable(request.outputPath, rows, "Export")) {
       result.status = export_ports::ExportStatus::XlsxGenerationFailed;

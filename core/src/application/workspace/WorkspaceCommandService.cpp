@@ -5,6 +5,7 @@
 
 #include "core/application/workspace/WorkspaceCommandService.h"
 
+#include "core/application/analysis/AnalysisWorkflowSupport.h"
 #include "core/application/workspace/WorkspaceSession.h"
 
 #include "../../utils/StableId.h"
@@ -17,9 +18,15 @@
 #include "core/domain/entities/Statement.h"
 #include "core/domain/entities/Transaction.h"
 #include "core/domain/policies/AliasPolicy.h"
+#include "core/domain/policies/AnalysisPolicy.h"
 #include "core/domain/policies/AnnualPolicy.h"
+#include "core/domain/policies/TransactionPolicy.h"
+#include "core/domain/values/AnalysisType.h"
+#include "core/domain/values/BookingDate.h"
 #include "core/domain/values/ContractType.h"
 #include "core/domain/values/EntityName.h"
+#include "core/domain/values/ExportFormat.h"
+#include "core/domain/values/FilterSpec.h"
 #include "core/domain/values/MoneyAmount.h"
 #include "core/domain/values/Year.h"
 #include "core/utils/Time.h"
@@ -174,8 +181,50 @@ void applyTransactionDraft(core::domain::Transaction& tx, const core::applicatio
     tx.setPropertyIds(input.propertyIds);
 }
 
+std::vector<std::pair<std::string, double>>
+analysisAdjustmentsFromCommand(
+    const core::ports::workspace::AnalysisCommand& command) {
+    if (!command.adjustmentsJson.empty()) {
+        return core::application::analysis::parseAnalysisAdjustmentsJson(
+            command.adjustmentsJson);
+    }
+    return command.adjustments;
+}
+
 bool isBlank(const std::string& value) {
     return core::domain::policies::alias::trimCopy(value).empty();
+}
+
+void requireText(core::ports::workspace::ValidationResult& result,
+                 const std::string& field,
+                 const std::string& value,
+                 const std::string& label) {
+    if (isBlank(value)) {
+        result.addError(field, "required", label + " is required.");
+    }
+}
+
+void requireEntityName(core::ports::workspace::ValidationResult& result,
+                       const std::string& field,
+                       const std::string& value,
+                       const std::string& label) {
+    requireText(result, field, value, label);
+    if (!isBlank(value) && !core::domain::EntityName::isValid(value)) {
+        result.addError(field, "invalid", label + " is invalid.");
+    }
+}
+
+void requireId(core::ports::workspace::ValidationResult& result,
+               const std::string& field,
+               const std::string& value,
+               const std::string& label) {
+    if (isBlank(value)) {
+        result.addError(field, "required", label + " is required.");
+    }
+}
+
+bool valid(const core::ports::workspace::ValidationResult& result) {
+    return result.valid();
 }
 
 bool syncActorRelations(core::domain::catalog::WorkspaceCatalog& state,
@@ -684,26 +733,107 @@ void WorkspaceCommandService::commit() {
     session_->commit();
 }
 
+void WorkspaceCommandService::notifyCatalogChanged() {
+    session_->notifyState();
+}
+
 std::string WorkspaceCommandService::commitCreated(WorkspaceCommandService& service, std::string id) {
     if (id.empty()) {
         return {};
     }
 
-    service.commit();
+    service.notifyCatalogChanged();
     return id;
 }
 
 void WorkspaceCommandService::commitIfChanged(WorkspaceCommandService& service, bool changed) {
     if (changed) {
-        service.commit();
+        service.notifyCatalogChanged();
     }
 }
 
+core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const core::ports::workspace::ActorCommand& command) const {
+    core::ports::workspace::ValidationResult result;
+    requireEntityName(result, "name", command.name, "Actor name");
+    return result;
+}
+
+core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const core::ports::workspace::PropertyCommand& command) const {
+    core::ports::workspace::ValidationResult result;
+    requireEntityName(result, "name", command.name, "Property name");
+    return result;
+}
+
+core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const core::ports::workspace::ContractCommand& command) const {
+    core::ports::workspace::ValidationResult result;
+    requireEntityName(result, "name", command.name, "Contract name");
+    requireText(result, "type", command.type, "Contract type");
+    if (!isBlank(command.type) && !core::domain::ContractType::isValid(command.type)) {
+        result.addError("type", "invalid", "Contract type is invalid.");
+    }
+    return result;
+}
+
+core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const core::ports::workspace::StatementCommand& command) const {
+    core::ports::workspace::ValidationResult result;
+    requireEntityName(result, "name", command.name, "Statement name");
+    return result;
+}
+
+core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const core::ports::workspace::TransactionCommand& command) const {
+    core::ports::workspace::ValidationResult result;
+    requireText(result, "bookingDate", command.bookingDate, "Booking date");
+    if (!isBlank(command.bookingDate) && !core::domain::policies::transaction::hasValidBookingDate(command.bookingDate)) {
+        result.addError("bookingDate", "invalid", "Booking date is invalid.");
+    }
+    if (!core::domain::policies::transaction::hasValidAmount(command.amount)) {
+        result.addError("amount", "invalid", "Amount is invalid.");
+    }
+    requireId(result, "statementId", command.statementId, "Statement");
+    return result;
+}
+
+core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const core::ports::workspace::AnalysisCommand& command) const {
+    core::ports::workspace::ValidationResult result;
+    requireEntityName(result, "name", command.name, "Analysis name");
+    requireText(result, "type", command.type, "Analysis type");
+    if (!isBlank(command.type) && !core::domain::AnalysisType::isValid(command.type)) {
+        result.addError("type", "invalid", "Analysis type is invalid.");
+    }
+    if (!isBlank(command.type) && !core::domain::policies::analysis::supportsResultType(command.type)) {
+        result.addError("type", "unsupported", "Analysis type is not supported.");
+    }
+    if (!isBlank(command.filterSpec) && !core::domain::FilterSpec::isValid(command.filterSpec)) {
+        result.addError("filterSpec", "invalid", "Filter specification is invalid.");
+    }
+    if (!isBlank(command.exportFormat) && !core::domain::ExportFormat::isValid(command.exportFormat)) {
+        result.addError("exportFormat", "invalid", "Export format is invalid.");
+    }
+    return result;
+}
+
+core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const core::ports::workspace::AnnualCommand& command) const {
+    core::ports::workspace::ValidationResult result;
+    requireEntityName(result, "name", command.name, "Annual name");
+    if (!core::domain::policies::annual::isValidYear(command.year)) {
+        result.addError("year", "invalid", "Year is invalid.");
+    }
+    return result;
+}
+
 std::string WorkspaceCommandService::addActor(const core::ports::workspace::ActorCommand& command) {
+    if (!valid(validate(command))) {
+        return {};
+    }
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addActor(mutableCatalogState(), {command.name, toAliases(command.aliases), command.contractIds}));
 }
 
 void WorkspaceCommandService::updateActor(const core::ports::workspace::ActorCommand& command) {
+    auto validation = validate(command);
+    requireId(validation, "id", command.id, "Actor");
+    if (!valid(validation)) {
+        return;
+    }
     WorkspaceCommandService::commitIfChanged(*this, catalogMutator().updateActor(mutableCatalogState(), command.id, {command.name, toAliases(command.aliases), command.contractIds}));
 }
 
@@ -712,10 +842,18 @@ void WorkspaceCommandService::deleteActor(const std::string& id) {
 }
 
 std::string WorkspaceCommandService::addProperty(const core::ports::workspace::PropertyCommand& command) {
+    if (!valid(validate(command))) {
+        return {};
+    }
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addProperty(mutableCatalogState(), {command.name, toAliases(command.aliases), command.contractIds}));
 }
 
 void WorkspaceCommandService::updateProperty(const core::ports::workspace::PropertyCommand& command) {
+    auto validation = validate(command);
+    requireId(validation, "id", command.id, "Property");
+    if (!valid(validation)) {
+        return;
+    }
     WorkspaceCommandService::commitIfChanged(*this, catalogMutator().updateProperty(mutableCatalogState(), command.id, {command.name, toAliases(command.aliases), command.contractIds}));
 }
 
@@ -724,6 +862,9 @@ void WorkspaceCommandService::deleteProperty(const std::string& id) {
 }
 
 std::string WorkspaceCommandService::addContract(const core::ports::workspace::ContractCommand& command) {
+    if (!valid(validate(command))) {
+        return {};
+    }
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addContract(mutableCatalogState(), {
         command.name,
         command.type,
@@ -735,6 +876,11 @@ std::string WorkspaceCommandService::addContract(const core::ports::workspace::C
 }
 
 void WorkspaceCommandService::updateContract(const core::ports::workspace::ContractCommand& command) {
+    auto validation = validate(command);
+    requireId(validation, "id", command.id, "Contract");
+    if (!valid(validation)) {
+        return;
+    }
     WorkspaceCommandService::commitIfChanged(*this, catalogMutator().updateContract(mutableCatalogState(),
                                                                                      command.id,
                                                                                      {command.name,
@@ -750,10 +896,18 @@ void WorkspaceCommandService::deleteContract(const std::string& id) {
 }
 
 std::string WorkspaceCommandService::addStatement(const core::ports::workspace::StatementCommand& command) {
+    if (!valid(validate(command))) {
+        return {};
+    }
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addStatement(mutableCatalogState(), command.name));
 }
 
 void WorkspaceCommandService::updateStatement(const core::ports::workspace::StatementCommand& command) {
+    auto validation = validate(command);
+    requireId(validation, "id", command.id, "Statement");
+    if (!valid(validation)) {
+        return;
+    }
     WorkspaceCommandService::commitIfChanged(*this, catalogMutator().updateStatement(mutableCatalogState(), command.id, command.name));
 }
 
@@ -762,6 +916,9 @@ void WorkspaceCommandService::deleteStatement(const std::string& id) {
 }
 
 std::string WorkspaceCommandService::addTransaction(const core::ports::workspace::TransactionCommand& command) {
+    if (!valid(validate(command))) {
+        return {};
+    }
     TransactionInput input;
     input.name = command.name;
     input.bookingDate = core::domain::BookingDate(command.bookingDate);
@@ -778,6 +935,11 @@ std::string WorkspaceCommandService::addTransaction(const core::ports::workspace
 }
 
 void WorkspaceCommandService::updateTransaction(const core::ports::workspace::TransactionCommand& command) {
+    auto validation = validate(command);
+    requireId(validation, "id", command.id, "Transaction");
+    if (!valid(validation)) {
+        return;
+    }
     TransactionInput input;
     input.name = command.name;
     input.bookingDate = core::domain::BookingDate(command.bookingDate);
@@ -797,6 +959,9 @@ void WorkspaceCommandService::deleteTransaction(const std::string& id) {
 }
 
 std::string WorkspaceCommandService::addAnalysis(const core::ports::workspace::AnalysisCommand& command) {
+    if (!valid(validate(command))) {
+        return {};
+    }
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addAnalysis(mutableCatalogState(), {
         command.name,
         core::domain::AnalysisType(command.type),
@@ -806,11 +971,16 @@ std::string WorkspaceCommandService::addAnalysis(const core::ports::workspace::A
         command.includeCalculationAdjustments,
         command.exportStateJson,
         command.snapshotTransactionsJson,
-        command.adjustments
+        analysisAdjustmentsFromCommand(command)
     }));
 }
 
 void WorkspaceCommandService::updateAnalysis(const core::ports::workspace::AnalysisCommand& command) {
+    auto validation = validate(command);
+    requireId(validation, "id", command.id, "Analysis");
+    if (!valid(validation)) {
+        return;
+    }
     WorkspaceCommandService::commitIfChanged(*this, catalogMutator().updateAnalysis(mutableCatalogState(), command.id, {
         command.name,
         core::domain::AnalysisType(command.type),
@@ -820,7 +990,7 @@ void WorkspaceCommandService::updateAnalysis(const core::ports::workspace::Analy
         command.includeCalculationAdjustments,
         command.exportStateJson,
         command.snapshotTransactionsJson,
-        command.adjustments
+        analysisAdjustmentsFromCommand(command)
     }));
 }
 
@@ -829,10 +999,18 @@ void WorkspaceCommandService::deleteAnalysis(const std::string& id) {
 }
 
 std::string WorkspaceCommandService::addAnnual(const core::ports::workspace::AnnualCommand& command) {
+    if (!valid(validate(command))) {
+        return {};
+    }
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addAnnual(mutableCatalogState(), command.name, command.year, command.assignedAnalysisIds));
 }
 
 void WorkspaceCommandService::updateAnnual(const core::ports::workspace::AnnualCommand& command) {
+    auto validation = validate(command);
+    requireId(validation, "id", command.id, "Annual");
+    if (!valid(validation)) {
+        return;
+    }
     WorkspaceCommandService::commitIfChanged(*this, catalogMutator().updateAnnual(mutableCatalogState(), command.id, command.name, command.year, command.assignedAnalysisIds));
 }
 

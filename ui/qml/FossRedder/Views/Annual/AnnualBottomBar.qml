@@ -31,10 +31,10 @@ Item {
         Item { Layout.fillWidth: true }
 
         Controls.SecondaryButton {
-            objectName: "annualToggleWorkspaceButton"
+            objectName: "annualToggleContentButton"
             text: "⇆"
             Layout.preferredWidth: root.theme.viewNavigationButtonWidth
-            onClicked: root.annualViewModel.toggleWorkspace()
+            onClicked: root.annualViewModel.toggleContent()
         }
 
         Controls.DangerButton {

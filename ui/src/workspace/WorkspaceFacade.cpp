@@ -8,14 +8,16 @@
 #include <algorithm>
 #include <cstddef>
 #include <exception>
+#include <utility>
 
 #include <QDateTime>
 #include <QFileInfo>
 #include <QUuid>
 
 #include "core/ports/workspace/WorkspaceCommands.h"
-#include "ui/shared/payload/PayloadKeys.h"
-#include "ui/shared/util/StringConversions.h"
+#include "ui/observability/Trace.h"
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/util/StringConversions.h"
 
 namespace ui {
 
@@ -25,6 +27,19 @@ QString displayFileName(const QString &path) {
   const QFileInfo info(path);
   const QString name = info.fileName();
   return name.isEmpty() ? path : name;
+}
+
+QString validationSeverityName(
+    core::ports::workspace::ValidationSeverity severity) {
+  switch (severity) {
+  case core::ports::workspace::ValidationSeverity::Info:
+    return QStringLiteral("info");
+  case core::ports::workspace::ValidationSeverity::Warning:
+    return QStringLiteral("warning");
+  case core::ports::workspace::ValidationSeverity::Error:
+    return QStringLiteral("error");
+  }
+  return QStringLiteral("error");
 }
 
 } // namespace
@@ -46,8 +61,6 @@ WorkspaceFacade::WorkspaceFacade(QObject *parent)
           &WorkspaceFacade::selectedAnalysisIdChanged);
   connect(selection_.get(), &WorkspaceSelection::selectedAnnualIdChanged, this,
           &WorkspaceFacade::selectedAnnualIdChanged);
-  connect(selection_.get(), &WorkspaceSelection::lastAnalysisResultChanged, this,
-          &WorkspaceFacade::lastAnalysisResultChanged);
 }
 
 WorkspaceFacade::WorkspaceFacade(
@@ -71,14 +84,62 @@ void WorkspaceFacade::bumpDataRevision() {
 void WorkspaceFacade::runStorageOperation(
     const QString &operation, const std::function<void()> &action) {
   if (!workspaceWriter_) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::runStorageOperation",
+        "Storage operation ignored because no workspace writer is bound",
+        {{observability::context::kOperation, operation.toStdString()}});
     return;
   }
   try {
+    observability::traceWorkspace(
+        "WorkspaceFacade::runStorageOperation", "Storage operation started",
+        {{observability::context::kOperation, operation.toStdString()}});
     action();
+    observability::traceWorkspace(
+        "WorkspaceFacade::runStorageOperation", "Storage operation succeeded",
+        {{observability::context::kOperation, operation.toStdString()}});
     emit operationSucceeded(operation);
   } catch (const std::exception &ex) {
+    observability::traceWorkspace(
+        "WorkspaceFacade::runStorageOperation", "Storage operation failed",
+        {{observability::context::kOperation, operation.toStdString()},
+         {observability::context::kException, ex.what()}});
     emit operationFailed(operation, QString::fromUtf8(ex.what()));
   }
+}
+
+QVariantMap WorkspaceFacade::validationResultToMap(
+    const core::ports::workspace::ValidationResult &result) const {
+  QVariantList issues;
+  issues.reserve(static_cast<int>(result.issues.size()));
+  for (const auto &issue : result.issues) {
+    issues.push_back(QVariantMap{
+        {QStringLiteral("field"), QString::fromStdString(issue.field)},
+        {QStringLiteral("code"), QString::fromStdString(issue.code)},
+        {QStringLiteral("message"), QString::fromStdString(issue.message)},
+        {QStringLiteral("severity"), validationSeverityName(issue.severity)}});
+  }
+  return {{QStringLiteral("valid"), result.valid()},
+          {QStringLiteral("issues"), issues}};
+}
+
+bool WorkspaceFacade::rejectInvalidCommand(
+    const char *origin,
+    const core::ports::workspace::ValidationResult &result) const {
+  if (result.valid()) {
+    return false;
+  }
+  core::errors::ErrorContext context{
+      {"issueCount", std::to_string(result.issues.size())}};
+  if (!result.issues.empty()) {
+    context.emplace_back(observability::context::kError,
+                         result.issues.front().message);
+    context.emplace_back("field", result.issues.front().field);
+    context.emplace_back("code", result.issues.front().code);
+  }
+  observability::traceWorkspace(origin, "Workspace command rejected",
+                                std::move(context));
+  return true;
 }
 
 void WorkspaceFacade::setWorkspacePorts(
@@ -86,6 +147,10 @@ void WorkspaceFacade::setWorkspacePorts(
     core::ports::workspace::IWorkspaceReader *workspaceReader) {
   workspaceWriter_ = workspaceWriter;
   workspaceReader_ = workspaceReader;
+  observability::traceWorkspace(
+      "WorkspaceFacade::setWorkspacePorts", "Workspace ports bound",
+      {{"writer", workspaceWriter_ ? "true" : "false"},
+       {"reader", workspaceReader_ ? "true" : "false"}});
   if (workspaceReader_) {
     loadFromState(workspaceReader_->workspaceSnapshot());
   }
@@ -93,6 +158,15 @@ void WorkspaceFacade::setWorkspacePorts(
 
 void WorkspaceFacade::loadFromState(
     const core::ports::workspace::WorkspaceSnapshot &state) {
+  observability::traceWorkspace(
+      "WorkspaceFacade::loadFromState", "Workspace snapshot loaded",
+      {{"actors", std::to_string(state.actors.size())},
+       {"properties", std::to_string(state.properties.size())},
+       {"contracts", std::to_string(state.contracts.size())},
+       {"statements", std::to_string(state.statements.size())},
+       {"transactions", std::to_string(state.transactions.size())},
+       {"analyses", std::to_string(state.analyses.size())},
+       {"annuals", std::to_string(state.annuals.size())}});
   cache_->loadFromState(state);
   selection_->loadFromState();
   bumpDataRevision();
@@ -184,10 +258,6 @@ QString WorkspaceFacade::selectedAnnualId() const {
   return selection_ ? selection_->selectedAnnualId() : QString();
 }
 
-QVariant WorkspaceFacade::lastAnalysisResult() const {
-  return selection_ ? selection_->lastAnalysisResult() : QVariant();
-}
-
 void WorkspaceFacade::selectActor(const QString &id) {
   if (selection_) {
     selection_->setSelectedActorId(id.trimmed());
@@ -230,12 +300,6 @@ void WorkspaceFacade::selectAnalysis(const QString &id) {
 void WorkspaceFacade::selectAnnual(const QString &id) {
   if (selection_) {
     selection_->setSelectedAnnualId(id.trimmed());
-  }
-}
-
-void WorkspaceFacade::setLastAnalysisResult(const QVariant &value) {
-  if (selection_) {
-    selection_->setLastAnalysisResult(value);
   }
 }
 

@@ -59,14 +59,6 @@ Item {
             onClicked: if (root.propertyViewModel) root.propertyViewModel.deleteCurrent()
         }
 
-        Controls.SecondaryButton {
-            objectName: "propertyCreateModeButton"
-            visible: root.propertyViewModel ? root.propertyViewModel.isEdit : false
-            text: qsTr("New")
-            Layout.preferredWidth: root.theme.viewActionButtonWidth
-            onClicked: if (root.propertyViewModel) root.propertyViewModel.enterCreateMode()
-        }
-
         Controls.SuccessButton {
             objectName: "propertyUpdateButton"
             visible: root.propertyViewModel ? root.propertyViewModel.isEdit : false

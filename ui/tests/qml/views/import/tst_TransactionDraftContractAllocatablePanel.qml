@@ -34,7 +34,7 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionViewModel: QtObject {
+    property var importViewModel: QtObject {
         property bool effectiveAllocatable: false
         property real allocatableSuggestionConfidence: 0.8
         property string allocatableSuggestionText: "Allocatable suggestion"
@@ -48,7 +48,7 @@ TestCase {
         Import.TransactionDraftContractAllocatablePanel {
             width: testCase.width
             theme: testCase.theme
-            transactionViewModel: testCase.transactionViewModel
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -61,7 +61,7 @@ TestCase {
 
         findRequired(panel, "transactionDraftAllocatableToggle").clicked(null)
 
-        compare(transactionViewModel.toggleCalls, 1)
-        compare(transactionViewModel.effectiveAllocatable, true)
+        compare(importViewModel.toggleCalls, 1)
+        compare(importViewModel.effectiveAllocatable, true)
     }
 }

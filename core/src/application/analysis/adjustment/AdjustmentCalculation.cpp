@@ -1,6 +1,6 @@
 #include "AdjustmentCalculation.h"
 #include "../internal/AnalysisFilter.h"
-#include "core/ports/analysis/AnalysisResult.h"
+#include "core/ports/usecases/analysis/AnalysisResult.h"
 
 #include "core/constants/analysis.h"
 #include "core/errors/ErrorReporterRegistry.h"

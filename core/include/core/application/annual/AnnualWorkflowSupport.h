@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/ports/annual/AnnualResult.h"
+#include "core/ports/usecases/annual/AnnualResult.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 #include <string>

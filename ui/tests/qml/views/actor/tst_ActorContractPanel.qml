@@ -20,9 +20,6 @@ TestCase {
 
     property var actorViewModel: QtObject {
         property var selectedContractIds: []
-        function isContractSelected(contractId) {
-            return selectedContractIds.indexOf(String(contractId || "").trim()) !== -1
-        }
         function setContractSelected(contractId, selected) {
             const next = selected
                     ? selectedContractIds.concat([String(contractId || "").trim()]).filter(function(value, index, list) { return value.length > 0 && list.indexOf(value) === index })

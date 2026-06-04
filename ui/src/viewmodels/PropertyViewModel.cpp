@@ -1,17 +1,15 @@
 /**
  * @file ui/src/viewmodels/PropertyViewModel.cpp
- * @brief Implements the selection-aware property UI state wrapper.
+ * @brief Implements the QML API for editable property state.
  */
 
 #include "ui/viewmodels/PropertyViewModel.h"
 
-#include <QJsonArray>
-#include <QJsonDocument>
 #include <QStringList>
 
-#include "ui/shared/payload/PayloadKeys.h"
-#include "ui/shared/payload/PayloadMapper.h"
-#include "ui/workspace/RowSelectionSupport.h"
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/presentation/PayloadMapper.h"
+#include "ui/observability/Trace.h"
 #include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui {
@@ -44,6 +42,72 @@ QVariantList normalizeStringValues(const QVariantList &values) {
     out.push_back(stringValue(value));
   }
   return out;
+}
+
+QString rowIdAt(const QVariantList &rows, int index,
+                const QString &idKey = payload::keys::common::kId) {
+  if (index < 0 || index >= rows.size()) {
+    return {};
+  }
+  return rows.at(index).toMap().value(idKey).toString();
+}
+
+int rowIndexOfId(const QVariantList &rows, const QString &id,
+                 const QString &idKey = payload::keys::common::kId) {
+  if (id.isEmpty()) {
+    return -1;
+  }
+  for (int i = 0; i < rows.size(); ++i) {
+    if (rows.at(i).toMap().value(idKey).toString() == id) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+QVariantMap rowById(const QVariantList &rows, const QString &id,
+                    const QString &idKey = payload::keys::common::kId) {
+  const int index = rowIndexOfId(rows, id.trimmed(), idKey);
+  return index >= 0 ? rows.at(index).toMap() : QVariantMap{};
+}
+
+QString navigatedSelectionId(const QVariantList &rows, const QString &currentId,
+                             int delta, int defaultIndex = 0,
+                             const QString &idKey = payload::keys::common::kId) {
+  const int currentIndex = rowIndexOfId(rows, currentId, idKey);
+  if (currentIndex < 0) {
+    if (rows.isEmpty()) {
+      return {};
+    }
+    if (delta > 0) {
+      return rowIdAt(rows, 0, idKey);
+    }
+    if (delta < 0) {
+      return rowIdAt(rows, rows.size() - 1, idKey);
+    }
+    return rowIdAt(rows, defaultIndex, idKey);
+  }
+  if (delta > 0) {
+    return currentIndex >= rows.size() - 1 ? QString()
+                                           : rowIdAt(rows, currentIndex + 1, idKey);
+  }
+  if (delta < 0) {
+    return currentIndex <= 0 ? QString()
+                             : rowIdAt(rows, currentIndex - 1, idKey);
+  }
+  return rowIdAt(rows, currentIndex, idKey);
+}
+
+QString deleteNextSelectionId(const QVariantList &rows, const QString &removedId,
+                              int defaultIndex = 0,
+                              const QString &idKey = payload::keys::common::kId) {
+  const int removedIndex = rowIndexOfId(rows, removedId, idKey);
+  if (rows.isEmpty()) {
+    return {};
+  }
+  const int nextIndex = removedIndex >= 0 ? removedIndex + 1 : defaultIndex;
+  const int wrapped = nextIndex % rows.size();
+  return rowIdAt(rows, wrapped < 0 ? wrapped + rows.size() : wrapped, idKey);
 }
 
 bool canAddText(const QString &value) { return !value.trimmed().isEmpty(); }
@@ -145,7 +209,7 @@ bool setSelectedId(QVariantList &selectedIds, const QString &id,
   return true;
 }
 
-QString normalizedStringListKey(const QVariantList &values) {
+QStringList normalizedStringList(const QVariantList &values) {
   const QVariantList normalized = normalizeStringValues(values);
   QStringList out;
   out.reserve(normalized.size());
@@ -153,12 +217,7 @@ QString normalizedStringListKey(const QVariantList &values) {
     out.push_back(value.toString());
   }
   out.sort();
-
-  QJsonArray array;
-  for (const auto &value : out) {
-    array.append(value);
-  }
-  return QString::fromUtf8(QJsonDocument(array).toJson(QJsonDocument::Compact));
+  return out;
 }
 
 bool formStateChanged(const QString &savedName,
@@ -168,14 +227,14 @@ bool formStateChanged(const QString &savedName,
                       const QVariantList &aliases,
                       const QVariantList &contractIds) {
   return savedName != currentName ||
-         normalizedStringListKey(savedAliases) !=
-             normalizedStringListKey(aliases) ||
-         normalizedStringListKey(savedContractIds) !=
-             normalizedStringListKey(contractIds);
+         normalizedStringList(savedAliases) != normalizedStringList(aliases) ||
+         normalizedStringList(savedContractIds) !=
+             normalizedStringList(contractIds);
 }
 
-QVariantMap basicFormState(const QString &name, const QVariantList &aliases,
-                           const QVariantList &selectedIds = {}) {
+QVariantMap propertyFormStateFromRow(const QString &name,
+                                     const QVariantList &aliases,
+                                     const QVariantList &selectedIds = {}) {
   QVariantMap out;
   const QVariantList normalizedAliases = normalizeStringValues(aliases);
   out.insert(payload::keys::common::kName, name);
@@ -255,12 +314,8 @@ bool PropertyViewModel::canAddAlias(const QString &value) const {
   return canAddText(value);
 }
 
-bool PropertyViewModel::canRemoveSelectedAlias() const {
+bool PropertyViewModel::hasValidAliasSelection() const {
   return canRemoveAt(aliases_, aliasIndex_);
-}
-
-bool PropertyViewModel::isAliasSelected(int index) const {
-  return aliasIndex_ == index;
 }
 
 void PropertyViewModel::addAlias(const QString &value) {
@@ -270,23 +325,12 @@ void PropertyViewModel::addAlias(const QString &value) {
   emit changed();
 }
 
-void PropertyViewModel::removeAlias(int index) {
-  if (!removeAliasValue(aliases_, aliasIndex_, index)) {
+void PropertyViewModel::requestRemoveSelectedAlias() {
+  if (!hasValidAliasSelection() ||
+      !removeAliasValue(aliases_, aliasIndex_, aliasIndex_)) {
     return;
   }
   emit changed();
-}
-
-void PropertyViewModel::selectAlias(int index) { setAliasIndex(index); }
-
-void PropertyViewModel::requestRemoveSelectedAlias() {
-  if (canRemoveSelectedAlias()) {
-    removeAlias(aliasIndex_);
-  }
-}
-
-bool PropertyViewModel::isContractSelected(const QString &contractId) const {
-  return containsTrimmed(selectedContractIds_, contractId);
 }
 
 void PropertyViewModel::enterCreateMode() {
@@ -297,7 +341,7 @@ void PropertyViewModel::enterCreateMode() {
 }
 
 void PropertyViewModel::previous() {
-  const QVariantList rows = primaryRows();
+  const QVariantList rows = propertyRows();
   if (rows.isEmpty()) {
     return;
   }
@@ -306,7 +350,7 @@ void PropertyViewModel::previous() {
 }
 
 void PropertyViewModel::next() {
-  const QVariantList rows = primaryRows();
+  const QVariantList rows = propertyRows();
   if (rows.isEmpty()) {
     return;
   }
@@ -318,10 +362,15 @@ QString PropertyViewModel::submit() {
   if (!workspace_) {
     return {};
   }
-  const QString id = saveLinkedCatalogObject(
-      isEdit() ? currentId() : QString(), name_,
-      payload::mapper::toQStringList(aliases_),
-      payload::mapper::toQStringList(selectedContractIds_));
+  observability::traceViewModel(
+      "PropertyViewModel::submit",
+      isEdit() ? "Property update submitted" : "Property create submitted",
+      {{observability::context::kId, currentId().toStdString()},
+       {observability::context::kName, name_.toStdString()}});
+  const QString id =
+      workspace_->saveProperty(isEdit() ? currentId() : QString(), name_,
+                               payload::mapper::toQStringList(aliases_),
+                               payload::mapper::toQStringList(selectedContractIds_));
   if (!id.isEmpty()) {
     setCurrentId(id);
   }
@@ -333,9 +382,12 @@ void PropertyViewModel::deleteCurrent() {
   if (!workspace_ || currentId().isEmpty()) {
     return;
   }
+  observability::traceViewModel(
+      "PropertyViewModel::deleteCurrent", "Property delete submitted",
+      {{observability::context::kId, currentId().toStdString()}});
   const QString removedId = currentId();
-  deleteLinkedCatalogObject(removedId);
-  setCurrentId(deleteNextSelectionId(primaryRows(), removedId, 0,
+  workspace_->deleteProperty(removedId);
+  setCurrentId(deleteNextSelectionId(propertyRows(), removedId, 0,
                                      QStringLiteral("id")));
 }
 
@@ -365,8 +417,6 @@ QVariantList PropertyViewModel::contractRows() const {
   return workspace_ ? workspace_->contractRows() : QVariantList{};
 }
 
-QVariantList PropertyViewModel::primaryRows() const { return propertyRows(); }
-
 void PropertyViewModel::setCurrentId(const QString &id) {
   if (workspace_) {
     workspace_->selectProperty(id);
@@ -374,21 +424,6 @@ void PropertyViewModel::setCurrentId(const QString &id) {
 }
 
 void PropertyViewModel::selectProperty(const QString &id) { setCurrentId(id); }
-
-QString PropertyViewModel::saveLinkedCatalogObject(
-    const QString &id, const QString &name, const QStringList &aliases,
-    const QStringList &contractIds) {
-  if (!workspace_) {
-    return {};
-  }
-  return workspace_->saveProperty(id, name, aliases, contractIds);
-}
-
-void PropertyViewModel::deleteLinkedCatalogObject(const QString &id) {
-  if (workspace_) {
-    workspace_->deleteProperty(id);
-  }
-}
 
 void PropertyViewModel::bindSignals() {
   if (!workspace_) {
@@ -408,7 +443,7 @@ void PropertyViewModel::reloadFromSelection(bool forceReload) {
 
   const QString selectedId = currentId();
   if (selectedId.isEmpty()) {
-    reloadLinkedFormState(forceReload, {});
+    reloadFormState(forceReload, {});
     return;
   }
 
@@ -416,12 +451,11 @@ void PropertyViewModel::reloadFromSelection(bool forceReload) {
   const QVariantMap state =
       row.isEmpty()
           ? QVariantMap{}
-          : basicFormState(row.value(payload::keys::common::kName).toString(),
-                           row.value(payload::keys::property::kAliases)
-                               .toList(),
-                           row.value(payload::keys::state::kSelectedIds)
-                               .toList());
-  reloadLinkedFormState(forceReload, state);
+          : propertyFormStateFromRow(
+                row.value(payload::keys::common::kName).toString(),
+                row.value(payload::keys::property::kAliases).toList(),
+                row.value(payload::keys::state::kSelectedIds).toList());
+  reloadFormState(forceReload, state);
 }
 
 void PropertyViewModel::clearFormState() {
@@ -451,8 +485,8 @@ void PropertyViewModel::applyFormState(const QVariantMap &state) {
   emit changed();
 }
 
-void PropertyViewModel::reloadLinkedFormState(bool forceReload,
-                                              const QVariantMap &state) {
+void PropertyViewModel::reloadFormState(bool forceReload,
+                                        const QVariantMap &state) {
   const QString nextOwnerId = currentId();
   if (!forceReload && currentOwnerId_ == nextOwnerId) {
     return;

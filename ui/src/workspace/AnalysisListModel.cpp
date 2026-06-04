@@ -5,7 +5,7 @@
 
 #include "ui/workspace/AnalysisListModel.h"
 
-#include "ui/shared/payload/PayloadKeys.h"
+#include "ui/presentation/PayloadKeys.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>

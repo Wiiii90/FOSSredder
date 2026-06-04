@@ -43,12 +43,14 @@ Item {
         Item { Layout.fillWidth: true }
 
         Controls.SuccessButton {
-            objectName: "exportTogglePauseButton"
+            objectName: "exportPauseResumeButton"
             text: root.exportViewModel.pauseText
             Layout.preferredWidth: root.theme.viewActionButtonWidth
             visible: root.exportViewModel.showPause
             enabled: root.exportViewModel.showPause
-            onClicked: root.exportViewModel.togglePause()
+            onClicked: root.exportViewModel.isPaused
+                       ? root.exportViewModel.resumeExport()
+                       : root.exportViewModel.pauseExport()
         }
 
         Controls.SuccessButton {

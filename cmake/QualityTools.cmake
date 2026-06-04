@@ -4,7 +4,7 @@ option(FOSSREDDER_ENABLE_CLANG_TIDY "Run clang-tidy for first-party C++ targets"
 option(FOSSREDDER_ENABLE_COVERAGE "Enable LLVM source-based coverage instrumentation for first-party targets" OFF)
 
 set(FOSSREDDER_CLANG_TIDY_HEADER_FILTER
-    "^${CMAKE_SOURCE_DIR}/(api|app|core|debug|persistence|services|ui)/"
+    "^${CMAKE_SOURCE_DIR}/(app|core|debug|infra|persistence|ui)/"
     CACHE STRING "Header filter used for clang-tidy on first-party code"
 )
 

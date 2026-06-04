@@ -31,12 +31,12 @@ TestCase {
             if (selectedActorId.length === 0) {
                 selectedActor = null
                 if (testCase.actorViewModel)
-                    testCase.actorViewModel.syncFromSelection(false)
+                    testCase.actorViewModel.reloadFakeFormFromSelection(false)
                 return
             }
             if (selectedActor && String(selectedActor.id || "") === selectedActorId) {
                 if (testCase.actorViewModel)
-                    testCase.actorViewModel.syncFromSelection(false)
+                    testCase.actorViewModel.reloadFakeFormFromSelection(false)
                 return
             }
 
@@ -51,7 +51,7 @@ TestCase {
                         contractIds: row.contractIds || []
                     }
                     if (testCase.actorViewModel)
-                        testCase.actorViewModel.syncFromSelection(false)
+                        testCase.actorViewModel.reloadFakeFormFromSelection(false)
                     return
                 }
             }
@@ -63,9 +63,9 @@ TestCase {
                 contractIds: []
             }
             if (testCase.actorViewModel)
-                testCase.actorViewModel.syncFromSelection(false)
+                testCase.actorViewModel.reloadFakeFormFromSelection(false)
         }
-        onSelectedActorChanged: if (testCase.actorViewModel) testCase.actorViewModel.syncFromSelection(true)
+        onSelectedActorChanged: if (testCase.actorViewModel) testCase.actorViewModel.reloadFakeFormFromSelection(true)
         function addUniqueTrimmed(values, value) {
             const out = values ? values.slice(0) : []
             const next = String(value || "").trim()
@@ -174,18 +174,6 @@ TestCase {
             return String(value || "").trim().length > 0
         }
 
-        function canRemoveSelectedAlias() {
-            return aliasIndex >= 0 && aliasIndex < aliases.length
-        }
-
-        function isAliasSelected(index) {
-            return aliasIndex === index
-        }
-
-        function isContractSelected(contractId) {
-            return selectedContractIds.indexOf(String(contractId || "").trim()) !== -1
-        }
-
         function addAlias(value) {
             const next = testCase.session.addUniqueTrimmed(aliases || [], value || "")
             if (next.length === aliases.length)
@@ -195,22 +183,14 @@ TestCase {
             aliasInputText = ""
         }
 
-        function removeAlias(index) {
-            const next = testCase.session.removeAt(aliases || [], index)
+        function requestRemoveSelectedAlias() {
+            if (aliasIndex < 0 || aliasIndex >= aliases.length)
+                return
+            const next = testCase.session.removeAt(aliases || [], aliasIndex)
             if (next.length === aliases.length)
                 return
             aliases = next
-            aliasIndex = next.length > 0 ? Math.min(index, next.length - 1) : -1
-        }
-
-        function selectAlias(index) {
-            aliasIndex = index
-        }
-
-        function requestRemoveSelectedAlias() {
-            if (!canRemoveSelectedAlias())
-                return
-            removeAlias(aliasIndex)
+            aliasIndex = next.length > 0 ? Math.min(aliasIndex, next.length - 1) : -1
         }
 
         function setContractSelected(contractId, selected) {
@@ -236,7 +216,7 @@ TestCase {
             savedSelectedContractIds = selectedContractIds.slice(0)
         }
 
-        function syncFromSelection(forceReload) {
+        function reloadFakeFormFromSelection(forceReload) {
             const currentId = testCase.session.selectedActorId || ""
             if (!forceReload && currentOwnerId === currentId)
                 return
@@ -341,7 +321,7 @@ TestCase {
         ]
         session.contracts = []
         if (testCase.actorViewModel)
-            testCase.actorViewModel.syncFromSelection(true)
+            testCase.actorViewModel.reloadFakeFormFromSelection(true)
     }
 
     function test_ACT_V_005_navigationStaysEnabledWithSingleRow() {

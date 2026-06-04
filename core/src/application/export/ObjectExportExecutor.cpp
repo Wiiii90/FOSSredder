@@ -3,9 +3,9 @@
 #include "core/application/analysis/AnalysisService.h"
 #include "core/constants/analysis.h"
 #include "core/constants/export.h"
-#include "core/ports/analysis-image-renderer/IAnalysisImageRenderer.h"
-#include "core/ports/archive/IArchive.h"
-#include "core/ports/xlsx-writer/IXlsxWriter.h"
+#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/infra/archive/IArchive.h"
+#include "core/ports/infra/xlsx-writer/IXlsxWriter.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -254,6 +254,27 @@ std::filesystem::path outputPathForItem(
 
 namespace core::application::exporting {
 
+namespace {
+
+bool shouldStop(const core::ports::exporting::ExportRequest &request) {
+  if (request.waitIfPaused) {
+    request.waitIfPaused();
+  }
+  return request.shouldCancel && request.shouldCancel();
+}
+
+core::ports::exporting::ExportResult canceledResult(
+    const core::ports::exporting::ExportRequest &request) {
+  core::ports::exporting::ExportResult result;
+  result.actualFormat = request.format;
+  result.resolvedOutputPath = request.outputPath;
+  result.status = core::ports::exporting::ExportStatus::Canceled;
+  result.message = "Canceled";
+  return result;
+}
+
+} // namespace
+
 core::ports::exporting::ExportResult exportObjectRequests(
     const core::domain::catalog::WorkspaceCatalog &state,
     const core::ports::exporting::ExportRequest &request,
@@ -276,6 +297,9 @@ core::ports::exporting::ExportResult exportObjectRequests(
   }
 
   try {
+    if (shouldStop(request)) {
+      return canceledResult(request);
+    }
     std::filesystem::path baseOutput =
         std::filesystem::path(request.outputPath);
     if (baseOutput.has_extension())
@@ -293,6 +317,9 @@ core::ports::exporting::ExportResult exportObjectRequests(
 
     const std::size_t total = analysisItems.size();
     for (size_t i = 0; i < total; ++i) {
+      if (shouldStop(request)) {
+        return canceledResult(request);
+      }
       const auto &item = analysisItems[i];
       if (request.progressCallback) {
         request.progressCallback(
@@ -303,6 +330,9 @@ core::ports::exporting::ExportResult exportObjectRequests(
       }
       const auto computed = analysisService.runAnalysisById(
           state, item.objectId);
+      if (shouldStop(request)) {
+        return canceledResult(request);
+      }
       if (!computed.found)
         continue;
       const std::filesystem::path outputFile =
@@ -340,6 +370,9 @@ core::ports::exporting::ExportResult exportObjectRequests(
     }
 
     if (request.packageFormat == PackageFormat::Zip) {
+      if (shouldStop(request)) {
+        return canceledResult(request);
+      }
       if (request.progressCallback)
         request.progressCallback(0.88, "Packaging export");
       const std::filesystem::path archivePath =
@@ -359,6 +392,9 @@ core::ports::exporting::ExportResult exportObjectRequests(
 
     if (request.progressCallback)
       request.progressCallback(0.95, "Finalizing export");
+    if (shouldStop(request)) {
+      return canceledResult(request);
+    }
     result.status = ExportStatus::Ok;
     result.success = true;
     return result;

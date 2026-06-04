@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "core/application/workspace/WorkspaceSessionState.h"
-#include "core/ports/storage/IStorageManager.h"
+#include "core/ports/infra/storage/IStorageManager.h"
 
 namespace core::tests::application::workspace {
 

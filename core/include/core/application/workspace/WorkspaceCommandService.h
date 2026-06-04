@@ -128,6 +128,21 @@ public:
     /** @brief Deletes annual aggregate by id. */
     void deleteAnnual(const std::string& id);
 
+    /** @brief Validates actor command data without mutating state. */
+    [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::ActorCommand& command) const;
+    /** @brief Validates property command data without mutating state. */
+    [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::PropertyCommand& command) const;
+    /** @brief Validates contract command data without mutating state. */
+    [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::ContractCommand& command) const;
+    /** @brief Validates statement command data without mutating state. */
+    [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::StatementCommand& command) const;
+    /** @brief Validates transaction command data without mutating state. */
+    [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::TransactionCommand& command) const;
+    /** @brief Validates analysis command data without mutating state. */
+    [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::AnalysisCommand& command) const;
+    /** @brief Validates annual command data without mutating state. */
+    [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::AnnualCommand& command) const;
+
 private:
     static std::string commitCreated(WorkspaceCommandService& service, std::string id);
     static void commitIfChanged(WorkspaceCommandService& service, bool changed);
@@ -135,6 +150,7 @@ private:
     core::domain::catalog::WorkspaceCatalog& mutableCatalogState() noexcept;
     const core::domain::catalog::WorkspaceCatalog& catalogState() const noexcept;
     void commit();
+    void notifyCatalogChanged();
 
     WorkspaceSession* session_ = nullptr;
 };

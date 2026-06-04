@@ -7,10 +7,10 @@
 
 #include "ImportPipelineHelpers.h"
 
-#include "core/ports/image-processing/IImageProcessor.h"
-#include "core/ports/pdf-rendering/PdfRenderingRequest.h"
-#include "core/ports/pdf-rendering/PdfRenderingResult.h"
-#include "core/ports/text-recognition/ITextRecognizer.h"
+#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/pdf-rendering/PdfRenderingRequest.h"
+#include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
+#include "core/ports/infra/text-recognition/ITextRecognizer.h"
 #include "core/errors/IErrorReporter.h"
 #include "core/jobs/Scheduler.h"
 

@@ -10,7 +10,7 @@
 #include <memory>
 #include <filesystem>
 #include <atomic>
-#include "core/ports/pdf-rendering/PdfRenderingTypes.h"
+#include "core/ports/infra/pdf-rendering/PdfRenderingTypes.h"
 
 class IDebugger;
 

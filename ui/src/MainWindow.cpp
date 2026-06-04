@@ -17,14 +17,15 @@
 #include <QQuickView>
 #include <QSize>
 #include <QSizePolicy>
+#include <QTimer>
 #include <QWidget>
 #include <qqml.h>
 #include <string>
 
-#include "ui/shared/config/Defaults.h"
-#include "ui/shared/observability/Origins.h"
-#include "ui/shared/text/Text.h"
-#include "ui/shared/util/StringConversions.h"
+#include "ui/shell/Defaults.h"
+#include "ui/observability/Origins.h"
+#include "ui/i18n/Text.h"
+#include "ui/util/StringConversions.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/AppContext.h"
 #include "ui/shell/QmlContracts.h"
@@ -122,6 +123,8 @@ void MainWindow::setupUiContext() {
   workspace_ = services.workspaceFacade;
   settings_ = services.settings;
   status_ = services.status;
+
+  setupAutosaveTimer();
 
   if (appContext_) {
     appContext_->setActions(services.actions);
@@ -232,9 +235,66 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *ev) {
   return QMainWindow::eventFilter(obj, ev);
 }
 
+void MainWindow::setupAutosaveTimer() {
+  if (!autosaveTimer_) {
+    autosaveTimer_ = new QTimer(this);
+    connect(autosaveTimer_, &QTimer::timeout, this, [this]() {
+      if (!workspace_ || workspace_->currentPath().isEmpty()) {
+        return;
+      }
+      ui::window::reportMainWindowFlow(
+          ui::observability::origins::mainWindow::kActionRouting,
+          "Periodic autosave requested");
+      emit saveFileRequested();
+    });
+  }
+
+  if (!settings_) {
+    if (autosaveTimer_) {
+      autosaveTimer_->stop();
+    }
+    return;
+  }
+
+  connect(settings_, &ui::Settings::autosaveIntervalMinutesChanged, this,
+          &MainWindow::applyAutosaveSchedule, Qt::UniqueConnection);
+  connect(settings_, &ui::Settings::stateChanged, this,
+          &MainWindow::applyAutosaveSchedule, Qt::UniqueConnection);
+  applyAutosaveSchedule();
+}
+
+void MainWindow::applyAutosaveSchedule() {
+  if (!autosaveTimer_ || !settings_) {
+    return;
+  }
+
+  const int minutes = settings_->autosaveIntervalMinutes();
+  if (minutes <= 0) {
+    autosaveTimer_->stop();
+    return;
+  }
+
+  const int intervalMs = minutes * 60 * 1000;
+  if (autosaveTimer_->isActive() && autosaveTimer_->interval() == intervalMs) {
+    return;
+  }
+
+  autosaveTimer_->start(intervalMs);
+}
+
 void MainWindow::closeEvent(QCloseEvent *event) {
   if (closeWorkflow_.allowImmediateClose(event)) {
     prepareForQmlShutdown();
+    QMainWindow::closeEvent(event);
+    return;
+  }
+
+  if (!settings_ || !settings_->autosaveOnClose()) {
+    ui::window::reportMainWindowFlow(
+        ui::observability::origins::mainWindow::kClose,
+        "Main window close requested; autosave on close disabled");
+    prepareForQmlShutdown();
+    event->accept();
     QMainWindow::closeEvent(event);
     return;
   }

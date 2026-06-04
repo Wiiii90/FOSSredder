@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/ports/xlsx-writer/IXlsxWriter.h"
+#include "core/ports/infra/xlsx-writer/IXlsxWriter.h"
 
 namespace infra::xlsx_writer {
 

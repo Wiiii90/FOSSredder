@@ -7,8 +7,6 @@
 
 #include <QObject>
 #include <QString>
-#include <QVariant>
-
 #include "ui/workspace/WorkspaceCacheModels.h"
 
 namespace ui {
@@ -34,11 +32,8 @@ class WorkspaceSelection : public QObject {
   Q_PROPERTY(QString selectedAnnualId READ selectedAnnualId WRITE
                  setSelectedAnnualId NOTIFY selectedAnnualIdChanged)
 
-  Q_PROPERTY(QVariant lastAnalysisResult READ lastAnalysisResult WRITE
-                 setLastAnalysisResult NOTIFY lastAnalysisResultChanged)
-
 public:
-  /** @brief Creates the selection state wrapper for the supplied cache models. */
+  /** @brief Creates the selection state for the supplied cache models. */
   explicit WorkspaceSelection(WorkspaceCacheModels &models,
                               QObject *parent = nullptr);
 
@@ -62,11 +57,6 @@ public:
   void setSelectedAnalysisId(const QString &id);
   void setSelectedAnnualId(const QString &id);
 
-  QVariant lastAnalysisResult() const { return lastAnalysisResult_; }
-  /** @brief Stores the latest analysis payload tied to the active analysis
-   * selection. */
-  void setLastAnalysisResult(const QVariant &value);
-
 signals:
   void selectedActorIdChanged();
   void selectedPropertyIdChanged();
@@ -75,13 +65,11 @@ signals:
   void selectedTransactionIdChanged();
   void selectedAnalysisIdChanged();
   void selectedAnnualIdChanged();
-  void lastAnalysisResultChanged();
 
 private:
   void bindModelSignals();
   void refreshSelections();
   void validateSelections();
-  void clearAnalysisResult();
 
   WorkspaceCacheModels &models_;
   QString selectedActorId_;
@@ -91,7 +79,6 @@ private:
   QString selectedTransactionId_;
   QString selectedAnalysisId_;
   QString selectedAnnualId_;
-  QVariant lastAnalysisResult_;
 };
 
 } // namespace ui

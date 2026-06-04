@@ -13,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var transactionViewModel
+    required property var importViewModel
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -43,7 +43,7 @@ Controls.Panel {
             Layout.minimumHeight: 0
             readOnly: true
             placeholderText: qsTr("Extracted metadata")
-            text: root.transactionViewModel.metadataText
+            text: root.importViewModel.metadataText
         }
     }
 }

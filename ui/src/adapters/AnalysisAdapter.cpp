@@ -5,11 +5,9 @@
 
 #include "ui/adapters/AnalysisAdapter.h"
 
-#include "ui/shared/payload/PayloadKeys.h"
-#include "ui/shared/text/Text.h"
-
-#include <QHash>
-#include <QSet>
+#include "ui/presentation/PayloadKeys.h"
+#include "ui/observability/Trace.h"
+#include "ui/i18n/Text.h"
 
 #include <utility>
 
@@ -46,7 +44,7 @@ toArtifactList(const core::ports::analysis::AnalysisResult &result) {
 }
 
 QVariantList
-toTransactionViewModel(const core::ports::analysis::AnalysisResult &result) {
+toTransactionRows(const core::ports::analysis::AnalysisResult &result) {
   QVariantList transactions;
   for (const auto &transaction : result.transactions) {
     QVariantMap item;
@@ -87,6 +85,34 @@ toTransactionViewModel(const core::ports::analysis::AnalysisResult &result) {
   return transactions;
 }
 
+std::vector<std::string> toStdStringList(const QStringList &values) {
+  std::vector<std::string> out;
+  out.reserve(values.size());
+  for (const auto &value : values) {
+    const QString trimmed = value.trimmed();
+    if (!trimmed.isEmpty()) {
+      out.push_back(trimmed.toStdString());
+    }
+  }
+  return out;
+}
+
+std::vector<core::ports::analysis::AnalysisAdjustmentTransactionInput>
+toAdjustmentTransactions(const QVariantList &transactions) {
+  std::vector<core::ports::analysis::AnalysisAdjustmentTransactionInput> out;
+  out.reserve(static_cast<std::size_t>(transactions.size()));
+  for (const auto &value : transactions) {
+    const QVariantMap row = value.toMap();
+    core::ports::analysis::AnalysisAdjustmentTransactionInput item;
+    item.id = row.value(QStringLiteral("id")).toString().trimmed().toStdString();
+    item.amount = row.value(QStringLiteral("amount")).toDouble();
+    if (!item.id.empty()) {
+      out.push_back(std::move(item));
+    }
+  }
+  return out;
+}
+
 } // namespace
 
 AnalysisAdapter::AnalysisAdapter(
@@ -96,17 +122,114 @@ AnalysisAdapter::AnalysisAdapter(
 core::ports::analysis::AnalysisResult AnalysisAdapter::runAnalysis(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
     const core::ports::analysis::AnalysisRequest &request) const {
+  observability::traceAdapter(
+      "AnalysisAdapter::runAnalysis", "Analysis runner invoked",
+      {{"analysisId", request.analysisId}});
   return runner_ ? runner_->runAnalysis(workspace, request)
                  : core::ports::analysis::AnalysisResult{};
 }
 
-std::vector<core::ports::analysis::AnalysisPreviewTransaction>
+core::ports::analysis::AnalysisPreviewResult
 AnalysisAdapter::previewTransactions(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
     const std::string &filterSpec) const {
-  return runner_
-             ? runner_->previewTransactions(workspace, filterSpec)
-             : std::vector<core::ports::analysis::AnalysisPreviewTransaction>{};
+  return runner_ ? runner_->previewTransactions(workspace, filterSpec)
+                 : core::ports::analysis::AnalysisPreviewResult{};
+}
+
+core::ports::analysis::AnalysisFilterSelection
+AnalysisAdapter::filterSelectionFromFields(
+    const std::string &dateField, const std::string &dateMode,
+    const std::string &year, const std::string &dateFrom,
+    const std::string &dateTo, const std::vector<std::string> &propertyIds,
+    const std::vector<std::string> &contractTypes,
+    const std::string &allocatableMode) const {
+  return runner_ ? runner_->filterSelectionFromFields(
+                       dateField, dateMode, year, dateFrom, dateTo,
+                       propertyIds, contractTypes, allocatableMode)
+                 : core::ports::analysis::AnalysisFilterSelection{};
+}
+
+std::string AnalysisAdapter::buildAnalysisConfigJson(
+    const core::ports::analysis::AnalysisConfigInput &input) const {
+  return runner_ ? runner_->buildAnalysisConfigJson(input) : std::string{};
+}
+
+QString AnalysisAdapter::buildFilterSpec(
+    const QString &dateField, const QString &dateMode, const QString &year,
+    const QString &dateFrom, const QString &dateTo,
+    const QStringList &propertyIds, const QStringList &contractTypes,
+    const QString &allocatableMode) const {
+  if (!runner_) {
+    return {};
+  }
+  const auto selection = filterSelectionFromFields(
+      dateField.trimmed().toLower().toStdString(),
+      dateMode.trimmed().toLower().toStdString(), year.trimmed().toStdString(),
+      dateFrom.trimmed().toStdString(), dateTo.trimmed().toStdString(),
+      toStdStringList(propertyIds), toStdStringList(contractTypes),
+      allocatableMode.trimmed().toLower().toStdString());
+  return QString::fromStdString(
+      core::ports::analysis::buildAnalysisFilterSpec(selection));
+}
+
+QString AnalysisAdapter::buildAnalysisConfigJson(
+    const QString &type, const QString &plotType, const QString &plotMeasure,
+    const QStringList &propertyIds, const QStringList &contractTypes,
+    double taxPercent) const {
+  core::ports::analysis::AnalysisConfigInput input;
+  input.type = type.trimmed().toLower().toStdString();
+  input.plotType = plotType.trimmed().toStdString();
+  input.plotMeasure = plotMeasure.trimmed().toStdString();
+  input.propertyIds = toStdStringList(propertyIds);
+  input.contractTypes = toStdStringList(contractTypes);
+  input.taxPercent = taxPercent;
+  return QString::fromStdString(buildAnalysisConfigJson(input));
+}
+
+std::string AnalysisAdapter::buildAnalysisAdjustmentsJson(
+    const std::vector<core::ports::analysis::AnalysisAdjustmentTransactionInput>
+        &transactions,
+    const std::vector<std::string> &selectedTransactionIds,
+    double taxPercent) const {
+  return runner_ ? runner_->buildAnalysisAdjustmentsJson(
+                       transactions, selectedTransactionIds, taxPercent)
+                 : std::string("{}");
+}
+
+std::string AnalysisAdapter::buildAnalysisAdjustmentsJson(
+    const QVariantList &transactions, const QStringList &selectedTransactionIds,
+    double taxPercent) const {
+  return buildAnalysisAdjustmentsJson(
+      toAdjustmentTransactions(transactions),
+      toStdStringList(selectedTransactionIds), taxPercent);
+}
+
+void AnalysisAdapter::applyAnalysisPreviewOverrides(
+    core::ports::workspace::WorkspaceSnapshot &workspace,
+    const std::string &analysisId, bool includeCalculationAdjustments,
+    const std::string &adjustmentsJson) const {
+  if (runner_) {
+    runner_->applyAnalysisPreviewOverrides(workspace, analysisId,
+                                           includeCalculationAdjustments,
+                                           adjustmentsJson);
+  }
+}
+
+core::ports::analysis::AnalysisTableState AnalysisAdapter::projectTableState(
+    const core::ports::analysis::AnalysisResult &result,
+    const std::string &adjustmentsJson, bool includeCalculationAdjustments,
+    const std::string &unassignedLabel) const {
+  return runner_ ? runner_->projectTableState(
+                       result, adjustmentsJson, includeCalculationAdjustments,
+                       unassignedLabel)
+                 : core::ports::analysis::AnalysisTableState{};
+}
+
+std::vector<std::string> AnalysisAdapter::contractTypes(
+    const core::ports::workspace::WorkspaceSnapshot &workspace) const {
+  return runner_ ? runner_->contractTypes(workspace)
+                 : std::vector<std::string>{};
 }
 
 QVariantMap AnalysisAdapter::mapAnalysisResult(
@@ -119,11 +242,38 @@ QVariantMap AnalysisAdapter::mapAnalysisResult(
   payload[ui::payload::keys::analysis::kConfig] =
       QString::fromStdString(result.configJson);
   payload[ui::payload::keys::analysis::kTransactions] =
-      toTransactionViewModel(result);
+      toTransactionRows(result);
   payload[ui::payload::keys::analysis::kArtifacts] = toArtifactList(result);
   payload[ui::payload::keys::analysis::kGeneratedAt] =
       QString::fromStdString(result.generatedAt);
   return payload;
+}
+
+QVariantMap AnalysisAdapter::mapAnalysisTableState(
+    const core::ports::analysis::AnalysisTableState &state) const {
+  QVariantList contractTypes;
+  contractTypes.reserve(static_cast<int>(state.contractTypes.size()));
+  for (const auto &contractType : state.contractTypes) {
+    contractTypes.push_back(QString::fromStdString(contractType));
+  }
+
+  QVariantList propertyRows;
+  propertyRows.reserve(static_cast<int>(state.propertyRows.size()));
+  for (const auto &row : state.propertyRows) {
+    QVariantList amounts;
+    amounts.reserve(static_cast<int>(row.amounts.size()));
+    for (double amount : row.amounts) {
+      amounts.push_back(amount);
+    }
+    propertyRows.push_back(QVariantMap{
+        {QStringLiteral("propertyName"), QString::fromStdString(row.propertyName)},
+        {QStringLiteral("amounts"), amounts},
+        {QStringLiteral("total"), row.total}});
+  }
+
+  return QVariantMap{{QStringLiteral("contractTypes"), contractTypes},
+                     {QStringLiteral("propertyRows"), propertyRows},
+                     {QStringLiteral("grandTotal"), state.grandTotal}};
 }
 
 QVariantMap AnalysisAdapter::mapFilterSelection(
@@ -161,37 +311,18 @@ QVariantMap AnalysisAdapter::mapFilterSelection(
   return out;
 }
 
-QVariantMap AnalysisAdapter::mapPreviewTransactions(
-    const core::ports::workspace::WorkspaceSnapshot &workspace,
-    const std::vector<core::ports::analysis::AnalysisPreviewTransaction>
-        &filtered) const {
+QVariantMap AnalysisAdapter::mapPreviewResult(
+    const core::ports::analysis::AnalysisPreviewResult &preview) const {
   QVariantMap out;
-  QHash<QString, QString> actorNameById;
-  actorNameById.reserve(static_cast<int>(workspace.actors.size()));
-  for (const auto &actor : workspace.actors) {
-    actorNameById.insert(QString::fromStdString(actor.id),
-                         QString::fromStdString(actor.name));
-  }
-
-  QHash<QString, QString> statementNameById;
-  statementNameById.reserve(static_cast<int>(workspace.statements.size()));
-  for (const auto &statement : workspace.statements) {
-    statementNameById.insert(QString::fromStdString(statement.id),
-                             QString::fromStdString(statement.name));
-  }
-
   QVariantList transactions;
-  QVariantMap metrics;
-  QSet<QString> statementIds;
-  double amountSum = 0.0;
-  transactions.reserve(static_cast<int>(filtered.size()));
+  transactions.reserve(
+      static_cast<int>(preview.transactions.size()));
 
-  for (const auto &transaction : filtered) {
+  for (const auto &transaction : preview.transactions) {
     QVariantMap row;
     const QString txId = QString::fromStdString(transaction.id);
     const QString statementId = QString::fromStdString(transaction.statementId);
     const QString contractId = QString::fromStdString(transaction.contractId);
-    const QString actorId = QString::fromStdString(transaction.actorId);
 
     QStringList propertyIds;
     propertyIds.reserve(static_cast<int>(transaction.propertyIds.size()));
@@ -220,8 +351,9 @@ QVariantMap AnalysisAdapter::mapPreviewTransactions(
     row[QStringLiteral("amount")] = transaction.amount;
     row[QStringLiteral("statementId")] = statementId;
     row[QStringLiteral("statementName")] =
-        statementNameById.value(statementId, QString());
-    row[QStringLiteral("actorName")] = actorNameById.value(actorId, QString());
+        QString::fromStdString(transaction.statementName);
+    row[QStringLiteral("actorName")] =
+        QString::fromStdString(transaction.actorName);
     row[QStringLiteral("contractId")] = contractId;
     row[QStringLiteral("contractName")] =
         QString::fromStdString(transaction.contractName);
@@ -234,13 +366,12 @@ QVariantMap AnalysisAdapter::mapPreviewTransactions(
     row[QStringLiteral("allocatable")] = transaction.allocatable;
 
     transactions.push_back(row);
-    statementIds.insert(statementId);
-    amountSum += transaction.amount;
   }
 
-  metrics[QStringLiteral("statementCount")] = statementIds.size();
-  metrics[QStringLiteral("transactionCount")] = transactions.size();
-  metrics[QStringLiteral("amountSum")] = amountSum;
+  QVariantMap metrics;
+  metrics[QStringLiteral("statementCount")] = preview.metrics.statementCount;
+  metrics[QStringLiteral("transactionCount")] = preview.metrics.transactionCount;
+  metrics[QStringLiteral("amountSum")] = preview.metrics.amountSum;
 
   out[QStringLiteral("transactions")] = transactions;
   out[QStringLiteral("metrics")] = metrics;

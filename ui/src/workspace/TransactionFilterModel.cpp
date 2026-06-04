@@ -5,7 +5,7 @@
 
 #include "ui/workspace/TransactionFilterModel.h"
 
-#include "ui/workspace/TransactionViewModel.h"
+#include "ui/workspace/TransactionListModel.h"
 
 namespace ui {
 
@@ -53,14 +53,14 @@ bool TransactionFilter::filterAcceptsRow(
 
   if (!statementId_.isEmpty()) {
     const auto sid =
-        model->data(idx, TransactionViewModel::StatementIdRole).toString();
+        model->data(idx, TransactionListModel::StatementIdRole).toString();
     if (sid != statementId_)
       return false;
   }
 
   if (!propertyId_.isEmpty()) {
     const auto props =
-        model->data(idx, TransactionViewModel::PropertyIdsRole).toList();
+        model->data(idx, TransactionListModel::PropertyIdsRole).toList();
     bool found = false;
     for (const auto &v : props) {
       if (v.toString() == propertyId_) {
@@ -73,7 +73,7 @@ bool TransactionFilter::filterAcceptsRow(
   }
 
   if (!txType_.isEmpty()) {
-    const auto typ = model->data(idx, TransactionViewModel::TypeRole).toString();
+    const auto typ = model->data(idx, TransactionListModel::TypeRole).toString();
     if (typ != txType_)
       return false;
   }

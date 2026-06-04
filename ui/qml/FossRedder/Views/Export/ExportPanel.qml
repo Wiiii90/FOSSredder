@@ -55,8 +55,8 @@ Controls.Panel {
             Layout.preferredWidth: root.theme.formFieldWidth
             model: root.exportViewModel.addRows
             textRole: root.exportViewModel.addTextRole
-            currentIndex: root.exportViewModel.pendingIndex
-            onActivated: function(index) { root.exportViewModel.selectPendingRow(index) }
+            currentIndex: root.exportViewModel.selectedAddIndex
+            onActivated: function(index) { root.exportViewModel.selectAddRow(index) }
         }
 
         Controls.AddButton {
@@ -68,7 +68,7 @@ Controls.Panel {
             Layout.minimumHeight: root.theme.controlHeight
             Layout.maximumHeight: root.theme.controlHeight
             enabled: root.exportViewModel.canAddEntry
-            onClicked: root.exportViewModel.addPendingEntry()
+            onClicked: root.exportViewModel.addSelectedEntry()
         }
     }
 

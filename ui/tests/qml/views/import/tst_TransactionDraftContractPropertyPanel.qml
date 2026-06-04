@@ -30,7 +30,7 @@ TestCase {
         property color warning: "#aa8800"
     }
 
-    property var transactionViewModel: QtObject {
+    property var importViewModel: QtObject {
         property var propertyOptions: [{ id: "property-1", display: "Energy" }, { id: "property-2", display: "Office" }]
         property string propertyName: ""
         property bool canAddProperty: true
@@ -55,7 +55,7 @@ TestCase {
         Import.TransactionDraftContractPropertyPanel {
             width: testCase.width
             theme: testCase.theme
-            transactionViewModel: testCase.transactionViewModel
+            importViewModel: testCase.importViewModel
         }
     }
 
@@ -74,10 +74,10 @@ TestCase {
         input.textEdited()
         findRequired(panel, "transactionDraftPropertyAddButton").clicked()
 
-        compare(transactionViewModel.selectedPropertyCalls, 1)
-        compare(transactionViewModel.lastPropertyId, "property-2")
-        compare(transactionViewModel.lastPropertySelected, true)
-        compare(transactionViewModel.propertyName, "New Property")
-        compare(transactionViewModel.addPropertyCalls, 1)
+        compare(importViewModel.selectedPropertyCalls, 1)
+        compare(importViewModel.lastPropertyId, "property-2")
+        compare(importViewModel.lastPropertySelected, true)
+        compare(importViewModel.propertyName, "New Property")
+        compare(importViewModel.addPropertyCalls, 1)
     }
 }

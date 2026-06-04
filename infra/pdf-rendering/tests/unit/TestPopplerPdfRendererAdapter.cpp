@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include "core/ports/pdf-rendering/IPdfRenderer.h"
+#include "core/ports/infra/pdf-rendering/IPdfRenderer.h"
 #include "pdf-rendering/PopplerCore.h"
 #include "unit/TestPdfSupport.h"
 
