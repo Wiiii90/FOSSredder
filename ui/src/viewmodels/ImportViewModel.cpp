@@ -7,16 +7,20 @@
 
 #include <QFileInfo>
 
+#include "ui/i18n/Text.h"
+#include "ui/observability/Origins.h"
+#include "ui/observability/Trace.h"
+#include "ui/presentation/PayloadMapper.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/NavigationState.h"
 #include "ui/shell/Settings.h"
 #include "ui/shell/StatusState.h"
-#include "ui/observability/Origins.h"
-#include "ui/observability/Trace.h"
-#include "ui/presentation/PayloadMapper.h"
 #include "ui/util/StringConversions.h"
 #include "ui/workflows/ImportWorkflow.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
@@ -37,6 +41,9 @@ void ImportViewModel::setImportWorkflow(ImportWorkflow* value) {
     return;
   }
   bindImportWorkflow(value);
+  if (importWorkflow_) {
+    importWorkflow_->setWorkspaceRoles(commands_, selectors_);
+  }
   syncTransactionDraftFromWorkflow();
   updateManualPathFromWorkflow();
   applyDefaultImportSelection();
@@ -76,13 +83,17 @@ void ImportViewModel::setStatus(StatusState* value) {
   emit changed();
 }
 
-void ImportViewModel::setWorkspace(WorkspaceFacade* value) {
-  if (workspace_ == value) {
+void ImportViewModel::setWorkspaceRoles(WorkspaceStore* store,
+                                        WorkspaceCommands* commands,
+                                        WorkspaceSelection* selection,
+                                        WorkspaceSelectors* selectors) {
+  if (store_ == store && commands_ == commands && selection_ == selection &&
+      selectors_ == selectors) {
     return;
   }
-  bindWorkspace(value);
+  bindWorkspaceRoles(store, commands, selection, selectors);
   if (importWorkflow_) {
-    importWorkflow_->setWorkspace(workspace_);
+    importWorkflow_->setWorkspaceRoles(commands_, selectors_);
   }
   applyDefaultImportSelection();
   emit changed();
@@ -101,10 +112,12 @@ void ImportViewModel::bindImportWorkflow(ImportWorkflow* value) {
     syncTransactionDraftFromWorkflow();
     emit changed();
   });
-  connect(importWorkflow_, &ImportWorkflow::importCanceled, this,
-          [this]() { setStatusText(tr("Import canceled")); });
-  connect(importWorkflow_, &ImportWorkflow::importFinished, this,
-          [this]() { setStatusText(tr("Import finished")); });
+  connect(importWorkflow_, &ImportWorkflow::importCanceled, this, [this]() {
+    setStatusText(tr("Import canceled"));
+  });
+  connect(importWorkflow_, &ImportWorkflow::importFinished, this, [this]() {
+    setStatusText(tr("Import finished"));
+  });
   connect(importWorkflow_, &ImportWorkflow::importFailed, this,
           [this](const QString& error) {
             setStatusText(error.isEmpty() ? tr("Import failed") : error);
@@ -143,18 +156,28 @@ void ImportViewModel::bindActions(Actions* value) {
             setSelectedImportFiles(paths);
           });
   connect(actions_, &Actions::importFileDropped, this,
-          [this](const QString& path) { queueImportFiles(QStringList{path}); });
+          [this](const QString& path) {
+            queueImportFiles(QStringList{path});
+          });
   connect(actions_, &Actions::importFilesDropped, this,
-          [this](const QStringList& paths) { queueImportFiles(paths); });
+          [this](const QStringList& paths) {
+            queueImportFiles(paths);
+          });
 }
 
-void ImportViewModel::bindWorkspace(WorkspaceFacade* value) {
-  if (workspace_) {
-    disconnect(workspace_, nullptr, this, nullptr);
+void ImportViewModel::bindWorkspaceRoles(WorkspaceStore* store,
+                                         WorkspaceCommands* commands,
+                                         WorkspaceSelection* selection,
+                                         WorkspaceSelectors* selectors) {
+  if (store_) {
+    disconnect(store_, nullptr, this, nullptr);
   }
-  workspace_ = value;
-  if (workspace_) {
-    connect(workspace_, &WorkspaceFacade::dataRevisionChanged, this, [this]() {
+  store_ = store;
+  commands_ = commands;
+  selection_ = selection;
+  selectors_ = selectors;
+  if (store_) {
+    connect(store_, &WorkspaceStore::dataRevisionChanged, this, [this]() {
       applyDefaultImportSelection();
       reloadCurrentTransactionView();
       emit changed();
@@ -198,7 +221,9 @@ QString ImportViewModel::importFileSummary() const {
   return tr("Selected: %1").arg(names.join(QStringLiteral(", ")));
 }
 
-void ImportViewModel::initializeImportView() { applyDefaultImportSelection(); }
+void ImportViewModel::initializeImportView() {
+  applyDefaultImportSelection();
+}
 
 void ImportViewModel::applyDefaultImportSelection() {
   if (!importWorkflow_ || !settings_ || importWorkflow_->isRunning()) {
@@ -249,10 +274,8 @@ void ImportViewModel::queueImportFiles(const QStringList& paths) {
   }
   observability::traceViewModel(
       "ImportViewModel::queueImportFiles", "Import files queued",
-      {{observability::context::kQueuedCount,
-        std::to_string(supported.size())},
-       {observability::context::kFirstFile,
-        supported.front().toStdString()}});
+      {{observability::context::kQueuedCount, std::to_string(supported.size())},
+       {observability::context::kFirstFile, supported.front().toStdString()}});
   importWorkflow_->addFiles(supported);
   selectedImportFiles_.clear();
   emit changed();
@@ -273,8 +296,8 @@ void ImportViewModel::setSelectedImportFiles(const QStringList& paths) {
   emit changed();
 }
 
-QStringList ImportViewModel::supportedImportFiles(
-    const QStringList& paths) const {
+QStringList
+ImportViewModel::supportedImportFiles(const QStringList& paths) const {
   QStringList supported;
   for (const QString& path : paths) {
     const QString trimmed = path.trimmed();
@@ -289,7 +312,9 @@ QStringList ImportViewModel::supportedImportFiles(
   return supported;
 }
 
-int ImportViewModel::contentIndex() const noexcept { return hasDraft() ? 1 : 0; }
+int ImportViewModel::contentIndex() const noexcept {
+  return hasDraft() ? 1 : 0;
+}
 
 bool ImportViewModel::hasImportWorkflow() const noexcept {
   return importWorkflow_ != nullptr;
@@ -300,7 +325,7 @@ bool ImportViewModel::hasDraft() const noexcept {
 }
 
 bool ImportViewModel::hasDraftNavigation() const noexcept {
-  return workspace_ && !workspace_->attachedImportDraftIds().isEmpty();
+  return selectors_ && !selectors_->attachedImportDraftIds().isEmpty();
 }
 
 bool ImportViewModel::canClearImport() const noexcept {
@@ -360,14 +385,16 @@ int ImportViewModel::queuedCount() const noexcept {
 }
 
 QVariantList ImportViewModel::importLogs() const {
-  return workspace_ ? workspace_->importLogRows() : QVariantList{};
+  return selectors_ ? selectors_->importLogRows() : QVariantList{};
 }
 
 QString ImportViewModel::selectedDraftId() const {
   return importWorkflow_ ? importWorkflow_->currentDraftId() : QString();
 }
 
-QStringList ImportViewModel::importSourceLabels() const { return {tr("PDF")}; }
+QStringList ImportViewModel::importSourceLabels() const {
+  return {tr("PDF")};
+}
 
 QStringList ImportViewModel::statementStrategyLabels() const {
   return {tr("Commerzbank26")};
@@ -416,10 +443,10 @@ void ImportViewModel::startImport() {
 }
 
 int ImportViewModel::activeDraftStackIndex() const {
-  if (!importWorkflow_ || !workspace_) {
+  if (!importWorkflow_ || !selectors_) {
     return -1;
   }
-  const auto ids = workspace_->attachedImportDraftIds();
+  const auto ids = selectors_->attachedImportDraftIds();
   if (ids.isEmpty() || !importWorkflow_->hasDraft() ||
       importWorkflow_->currentDraftId().isEmpty()) {
     return -1;
@@ -428,23 +455,21 @@ int ImportViewModel::activeDraftStackIndex() const {
 }
 
 bool ImportViewModel::openDraftAtStackIndex(int index) {
-  if (!importWorkflow_ || !workspace_) {
+  if (!importWorkflow_ || !selectors_) {
     return false;
   }
-  const auto ids = workspace_->attachedImportDraftIds();
+  const auto ids = selectors_->attachedImportDraftIds();
   if (index < 0 || index >= ids.size()) {
     return false;
   }
-  importWorkflow_->flushSessionToWorkspace();
-  return importWorkflow_->openPersistedDraft(ids.at(index));
+  return importWorkflow_->openStoredDraft(ids.at(index));
 }
 
 void ImportViewModel::selectPreviousDraft() {
-  if (!importWorkflow_ || !workspace_) {
+  if (!importWorkflow_ || !selectors_) {
     return;
   }
-  importWorkflow_->rememberCurrentDraftTransactionIndex();
-  const auto ids = workspace_->attachedImportDraftIds();
+  const auto ids = selectors_->attachedImportDraftIds();
   if (ids.isEmpty()) {
     return;
   }
@@ -463,11 +488,10 @@ void ImportViewModel::selectPreviousDraft() {
 }
 
 void ImportViewModel::selectNextDraft() {
-  if (!importWorkflow_ || !workspace_) {
+  if (!importWorkflow_ || !selectors_) {
     return;
   }
-  importWorkflow_->rememberCurrentDraftTransactionIndex();
-  const auto ids = workspace_->attachedImportDraftIds();
+  const auto ids = selectors_->attachedImportDraftIds();
   if (ids.isEmpty()) {
     return;
   }
@@ -493,14 +517,13 @@ void ImportViewModel::openImportLog(const QString& logId, bool draftAttached,
   }
   if (draftAttached) {
     const QString targetDraftId = !draftId.isEmpty() ? draftId : logId;
-    observability::traceViewModel(
-        "ImportViewModel::openImportLog", "Import draft log opened",
-        {{"logId", logId.toStdString()},
-         {"draftId", targetDraftId.toStdString()}});
+    observability::traceViewModel("ImportViewModel::openImportLog",
+                                  "Import draft log opened",
+                                  {{"logId", logId.toStdString()},
+                                   {"draftId", targetDraftId.toStdString()}});
     const QString currentDraftId = importWorkflow_->currentDraftId();
     if (targetDraftId != currentDraftId) {
-      importWorkflow_->flushSessionToWorkspace();
-      importWorkflow_->openPersistedDraft(targetDraftId);
+      importWorkflow_->openStoredDraft(targetDraftId);
     }
     if (navigation_) {
       navigation_->setSection(NavigationState::Section::Import);
@@ -508,14 +531,14 @@ void ImportViewModel::openImportLog(const QString& logId, bool draftAttached,
     return;
   }
 
-  if (statementId.isEmpty() || !workspace_) {
+  if (statementId.isEmpty() || !selection_) {
     return;
   }
-  workspace_->selectTransaction(statementId, {});
-  observability::traceViewModel(
-      "ImportViewModel::openImportLog", "Import statement log opened",
-      {{"logId", logId.toStdString()},
-       {"statementId", statementId.toStdString()}});
+  selection_->selectTransaction(statementId, {});
+  observability::traceViewModel("ImportViewModel::openImportLog",
+                                "Import statement log opened",
+                                {{"logId", logId.toStdString()},
+                                 {"statementId", statementId.toStdString()}});
   if (navigation_) {
     navigation_->setSection(NavigationState::Section::Booking);
   }
@@ -525,8 +548,8 @@ void ImportViewModel::deleteImportLog(const QString& logId, bool draftAttached,
                                       const QString& draftId) {
   if (importWorkflow_) {
     importWorkflow_->removeAttachedImportLog(logId, draftAttached, draftId);
-  } else if (workspace_ && !logId.isEmpty()) {
-    workspace_->deleteImportLog(logId);
+  } else if (commands_ && !logId.isEmpty()) {
+    commands_->deleteImportLog(logId);
   }
 }
 
@@ -570,9 +593,8 @@ bool ImportViewModel::canSelectPreviousTransactionDraft() const noexcept {
 }
 
 bool ImportViewModel::canSelectNextTransactionDraft() const noexcept {
-  return importWorkflow_ &&
-         importWorkflow_->currentTransactionIndex() <
-             importWorkflow_->transactionCount() - 1;
+  return importWorkflow_ && importWorkflow_->currentTransactionIndex() <
+                                importWorkflow_->transactionCount() - 1;
 }
 
 void ImportViewModel::returnToImport() {
@@ -698,7 +720,10 @@ void ImportViewModel::setAmountText(const QString& value) {
 
 QVariantList ImportViewModel::statusOptions() const {
   return payload::transaction_status::options(
-      tr("Neutral"), tr("Unverified"), tr("Verified"), tr("Completed"));
+      ui::text::transactionStatus::neutral(),
+      ui::text::transactionStatus::unverified(),
+      ui::text::transactionStatus::verified(),
+      ui::text::transactionStatus::completed());
 }
 
 int ImportViewModel::statusIndex() const {
@@ -726,7 +751,8 @@ void ImportViewModel::commitNameText() {
 }
 
 void ImportViewModel::commitBookingDateText() {
-  if (!importWorkflow_ || bookingDateText_ == currentTransactionView_.bookingDate) {
+  if (!importWorkflow_ ||
+      bookingDateText_ == currentTransactionView_.bookingDate) {
     return;
   }
   importWorkflow_->commitCurrentTransactionBookingDate(bookingDateText_);
@@ -762,12 +788,12 @@ void ImportViewModel::toggleAllocatable() {
 }
 
 QVariantList ImportViewModel::actorOptions() const {
-  return workspace_ ? workspace_->actorDropdownRows() : QVariantList{};
+  return selectors_ ? selectors_->actorDropdownRows() : QVariantList{};
 }
 
 int ImportViewModel::selectedActorOptionIndex() const {
   return payload::mapper::indexById(actorOptions(),
-                                      currentTransactionActorId());
+                                    currentTransactionActorId());
 }
 
 void ImportViewModel::setActorName(const QString& value) {
@@ -779,8 +805,8 @@ void ImportViewModel::setActorName(const QString& value) {
 }
 
 bool ImportViewModel::canAddActor() const {
-  return workspace_ && !strings::normalizedText(actorName_).isEmpty() &&
-         workspace_->actorIdentityByName(actorName_).isEmpty();
+  return selectors_ && !strings::normalizedText(actorName_).isEmpty() &&
+         selectors_->actorIdByName(actorName_).isEmpty();
 }
 
 void ImportViewModel::selectActorAtIndex(int index) {
@@ -804,7 +830,7 @@ void ImportViewModel::addActor() {
 }
 
 QVariantList ImportViewModel::propertyOptions() const {
-  return workspace_ ? workspace_->propertyDropdownRows() : QVariantList{};
+  return selectors_ ? selectors_->propertyDropdownRows() : QVariantList{};
 }
 
 void ImportViewModel::setPropertyName(const QString& value) {
@@ -816,8 +842,8 @@ void ImportViewModel::setPropertyName(const QString& value) {
 }
 
 bool ImportViewModel::canAddProperty() const {
-  return workspace_ && !strings::normalizedText(propertyName_).isEmpty() &&
-         workspace_->propertyIdentityByName(propertyName_).isEmpty();
+  return selectors_ && !strings::normalizedText(propertyName_).isEmpty() &&
+         selectors_->propertyIdByName(propertyName_).isEmpty();
 }
 
 bool ImportViewModel::isPropertySelected(const QString& propertyId) const {
@@ -828,7 +854,7 @@ void ImportViewModel::setPropertySelected(const QString& propertyId,
                                           bool selected) {
   if (importWorkflow_) {
     importWorkflow_->setCurrentTransactionPropertySelected(propertyId,
-                                                             selected);
+                                                           selected);
   }
 }
 
@@ -843,17 +869,17 @@ void ImportViewModel::addProperty() {
 }
 
 QVariantList ImportViewModel::contractOptions() const {
-  return workspace_ ? workspace_->contractDropdownRows() : QVariantList{};
+  return selectors_ ? selectors_->contractDropdownRows() : QVariantList{};
 }
 
 int ImportViewModel::selectedContractOptionIndex() const {
   return payload::mapper::indexById(contractOptions(),
-                                      currentTransactionView_.contractId);
+                                    currentTransactionView_.contractId);
 }
 
 QString ImportViewModel::selectedContractType() const {
-  return payload::mapper::rowType(payload::mapper::mapAt(
-      contractOptions(), selectedContractOptionIndex()));
+  return payload::mapper::rowType(
+      payload::mapper::mapAt(contractOptions(), selectedContractOptionIndex()));
 }
 
 void ImportViewModel::selectContractAtIndex(int index) {
@@ -886,8 +912,8 @@ void ImportViewModel::setContractType(const QString& value) {
 }
 
 QString ImportViewModel::contractNamePlaceholder() const {
-  if (workspace_) {
-    return workspace_->nextContractName();
+  if (selectors_) {
+    return selectors_->nextContractName();
   }
   return tr("Contract 1");
 }
@@ -913,7 +939,7 @@ void ImportViewModel::setContractAllocatableModeIndex(int index) {
 }
 
 bool ImportViewModel::canAddContract() const {
-  if (!workspace_ || strings::normalizedText(contractType_).isEmpty()) {
+  if (!selectors_ || strings::normalizedText(contractType_).isEmpty()) {
     return false;
   }
   const QString actorId = currentTransactionActorId();
@@ -922,11 +948,11 @@ bool ImportViewModel::canAddContract() const {
     actorIds.push_back(actorId.trimmed());
   }
   const QString effectiveName = contractName_.trimmed().isEmpty()
-                                    ? workspace_->nextContractName()
+                                    ? selectors_->nextContractName()
                                     : contractName_.trimmed();
-  return workspace_
-      ->contractIdentityBySignature(effectiveName, contractType_, actorIds,
-                                    currentTransactionPropertyIds())
+  return selectors_
+      ->contractIdBySignature(effectiveName, contractType_, actorIds,
+                              currentTransactionPropertyIds())
       .isEmpty();
 }
 
@@ -940,7 +966,7 @@ void ImportViewModel::addContract() {
   }
 }
 
-QString ImportViewModel::suggestionText(const QString& value) const {
+QString ImportViewModel::displaySuggestionSummary(const QString& value) const {
   return value.isEmpty() ? tr("0% Confidence - No suggestion") : value;
 }
 
@@ -971,7 +997,8 @@ double ImportViewModel::actorSuggestionConfidence() const {
 }
 
 QString ImportViewModel::actorSuggestionSummary() const {
-  return suggestionText(currentTransactionView_.actorSuggestionSummary);
+  return displaySuggestionSummary(
+      currentTransactionView_.actorSuggestionSummary);
 }
 
 double ImportViewModel::propertySuggestionConfidence() const {
@@ -979,7 +1006,8 @@ double ImportViewModel::propertySuggestionConfidence() const {
 }
 
 QString ImportViewModel::propertySuggestionSummary() const {
-  return suggestionText(currentTransactionView_.propertySuggestionSummary);
+  return displaySuggestionSummary(
+      currentTransactionView_.propertySuggestionSummary);
 }
 
 double ImportViewModel::contractSuggestionConfidence() const {
@@ -987,7 +1015,8 @@ double ImportViewModel::contractSuggestionConfidence() const {
 }
 
 QString ImportViewModel::contractSuggestionSummary() const {
-  return suggestionText(currentTransactionView_.contractSuggestionSummary);
+  return displaySuggestionSummary(
+      currentTransactionView_.contractSuggestionSummary);
 }
 
 double ImportViewModel::allocatableSuggestionConfidence() const {
@@ -995,7 +1024,8 @@ double ImportViewModel::allocatableSuggestionConfidence() const {
 }
 
 QString ImportViewModel::allocatableSuggestionText() const {
-  return suggestionText(currentTransactionView_.allocatableSuggestionSummary);
+  return displaySuggestionSummary(
+      currentTransactionView_.allocatableSuggestionSummary);
 }
 
 } // namespace ui

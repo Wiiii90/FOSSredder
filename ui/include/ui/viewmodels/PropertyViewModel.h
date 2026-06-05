@@ -13,7 +13,10 @@
 
 namespace ui {
 
-class WorkspaceFacade;
+class WorkspaceCommands;
+class WorkspaceSelection;
+class WorkspaceSelectors;
+class WorkspaceStore;
 
 /**
  * @brief Owns editable property UI state and delegates property CRUD to workspace.
@@ -36,11 +39,13 @@ class PropertyViewModel : public QObject {
 
 public:
   /**
-   * @brief Creates the property view model bound to the workspace facade.
-   * @param workspace Workspace facade used for selection, rows, and CRUD.
+   * @brief Creates the property view model bound to workspace roles.
    * @param parent Optional QObject parent.
    */
-  explicit PropertyViewModel(WorkspaceFacade *workspace, QObject *parent = nullptr);
+  explicit PropertyViewModel(WorkspaceStore *store, WorkspaceCommands *commands,
+                             WorkspaceSelection *selection,
+                             WorkspaceSelectors *selectors,
+                             QObject *parent = nullptr);
 
   /**
    * @brief Returns the currently selected property id.
@@ -115,13 +120,13 @@ public:
 
   /**
    * @brief Returns property sidebar rows.
-   * @return QML-ready property rows from the workspace facade.
+   * @return QML-ready property rows from workspace selectors.
    */
   QVariantList propertyRows() const;
 
   /**
    * @brief Returns selectable contract rows for the property form.
-   * @return QML-ready contract rows from the workspace facade.
+   * @return QML-ready contract rows from workspace selectors.
    */
   QVariantList contractRows() const;
 
@@ -158,12 +163,12 @@ public:
    */
   Q_INVOKABLE void next();
   /**
-   * @brief Creates or updates the property through the workspace facade.
+   * @brief Creates or updates the property through workspace commands.
    * @return Saved property id, or an empty string when submission fails.
    */
   Q_INVOKABLE QString submit();
   /**
-   * @brief Deletes the selected property through the workspace facade.
+   * @brief Deletes the selected property through workspace commands.
    */
   Q_INVOKABLE void deleteCurrent();
   /**
@@ -179,6 +184,7 @@ public:
                                        bool selected);
 
 signals:
+  /** @brief Emitted when property view model state changed. */
   void changed();
 
 private:
@@ -223,7 +229,10 @@ private:
    */
   void reloadFormState(bool forceReload, const QVariantMap &state);
 
-  WorkspaceFacade *workspace_ = nullptr;
+  WorkspaceStore *store_ = nullptr;
+  WorkspaceCommands *commands_ = nullptr;
+  WorkspaceSelection *selection_ = nullptr;
+  WorkspaceSelectors *selectors_ = nullptr;
   QString currentOwnerId_;
   QString name_;
   QVariantList aliases_;

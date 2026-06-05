@@ -62,15 +62,6 @@ core::application::importing::ImportLog toImportLog(const core::ports::workspace
     return log;
 }
 
-std::vector<core::application::importing::ImportLog> toImportLogs(const core::ports::workspace::ImportLogsCommand& command) {
-    std::vector<core::application::importing::ImportLog> logs;
-    logs.reserve(command.logs.size());
-    for (const auto& item : command.logs) {
-        logs.push_back(toImportLog(item));
-    }
-    return logs;
-}
-
 core::application::exporting::ExportLog toExportLog(const core::ports::workspace::ExportLogSnapshot& item) {
     core::application::exporting::ExportLog log;
     log.id = item.id;
@@ -78,19 +69,9 @@ core::application::exporting::ExportLog toExportLog(const core::ports::workspace
     log.targetPath = item.targetPath;
     log.status = item.status;
     log.message = item.message;
-    log.payload = item.payload;
     log.annualIds = item.annualIds;
     log.analysisIds = item.analysisIds;
     return log;
-}
-
-std::vector<core::application::exporting::ExportLog> toExportLogs(const core::ports::workspace::ExportLogsCommand& command) {
-    std::vector<core::application::exporting::ExportLog> logs;
-    logs.reserve(command.logs.size());
-    for (const auto& item : command.logs) {
-        logs.push_back(toExportLog(item));
-    }
-    return logs;
 }
 
 void saveStatementDraft(core::application::workspace::WorkspaceSessionState& document,
@@ -157,22 +138,6 @@ void clearStatementDraft(core::application::workspace::WorkspaceSessionState& do
         document.workflow.transactionDrafts.end());
 }
 
-void setImportLogs(core::application::workspace::WorkspaceSessionState& document,
-                   const std::vector<core::application::importing::ImportLog>& logs) {
-    document.workflow.importLogs.clear();
-    document.workflow.importLogs.reserve(logs.size());
-    for (const auto& item : logs) {
-        auto log = std::make_shared<core::application::importing::ImportLog>(item);
-        if (!log) {
-            continue;
-        }
-        if (log->id.empty()) {
-            log->id = core::utils::makeStableId();
-        }
-        document.workflow.importLogs.push_back(std::move(log));
-    }
-}
-
 void saveImportLog(core::application::workspace::WorkspaceSessionState& document,
                    core::application::importing::ImportLog log) {
     if (log.id.empty()) {
@@ -198,22 +163,6 @@ void deleteImportLog(core::application::workspace::WorkspaceSessionState& docume
                            return log && log->id == id;
                        }),
         document.workflow.importLogs.end());
-}
-
-void setExportLogs(core::application::workspace::WorkspaceSessionState& document,
-                   const std::vector<core::application::exporting::ExportLog>& logs) {
-    document.workflow.exportLogs.clear();
-    document.workflow.exportLogs.reserve(logs.size());
-    for (const auto& item : logs) {
-        auto log = std::make_shared<core::application::exporting::ExportLog>(item);
-        if (!log) {
-            continue;
-        }
-        if (log->id.empty()) {
-            log->id = core::utils::makeStableId();
-        }
-        document.workflow.exportLogs.push_back(std::move(log));
-    }
 }
 
 void saveExportLog(core::application::workspace::WorkspaceSessionState& document,
@@ -283,11 +232,6 @@ void WorkspaceWorkflowService::clearStatementDraft(const std::string& draftId) {
     session_->notifyState();
 }
 
-void WorkspaceWorkflowService::setImportLogs(const core::ports::workspace::ImportLogsCommand& command) {
-    ::setImportLogs(mutableDocument(), toImportLogs(command));
-    session_->notifyState();
-}
-
 void WorkspaceWorkflowService::saveImportLog(const core::ports::workspace::ImportLogCommand& command) {
     ::saveImportLog(mutableDocument(), toImportLog(command.log));
     session_->notifyState();
@@ -298,16 +242,6 @@ void WorkspaceWorkflowService::deleteImportLog(const std::string& id) {
     session_->notifyState();
 }
 
-void WorkspaceWorkflowService::clearImportLogs() {
-    mutableDocument().workflow.importLogs.clear();
-    session_->notifyState();
-}
-
-void WorkspaceWorkflowService::setExportLogs(const core::ports::workspace::ExportLogsCommand& command) {
-    ::setExportLogs(mutableDocument(), toExportLogs(command));
-    session_->notifyState();
-}
-
 void WorkspaceWorkflowService::saveExportLog(const core::ports::workspace::ExportLogCommand& command) {
     ::saveExportLog(mutableDocument(), toExportLog(command.log));
     session_->notifyState();
@@ -315,11 +249,6 @@ void WorkspaceWorkflowService::saveExportLog(const core::ports::workspace::Expor
 
 void WorkspaceWorkflowService::deleteExportLog(const std::string& id) {
     ::deleteExportLog(mutableDocument(), id);
-    session_->notifyState();
-}
-
-void WorkspaceWorkflowService::clearExportLogs() {
-    mutableDocument().workflow.exportLogs.clear();
     session_->notifyState();
 }
 

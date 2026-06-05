@@ -93,7 +93,6 @@ void writeExportLog(sqlite3* db,
     stmt.bindText(3, log->targetPath);
     stmt.bindText(4, log->status);
     stmt.bindText(5, log->message);
-    stmt.bindText(6, log->payload);
     stmt.step();
 }
 
@@ -129,7 +128,7 @@ void SqliteExportLogRepository::addExportLog(const std::shared_ptr<core::applica
     writeExportLog(
         db,
         log,
-        "INSERT INTO export_logs (id, time, target_path, status, message, payload) VALUES (?, ?, ?, ?, ?, ?);");
+        "INSERT INTO export_logs (id, time, target_path, status, message) VALUES (?, ?, ?, ?, ?);");
     if (log) {
         saveIds(db, log->id, log->annualIds,
                 "DELETE FROM export_log_annuals WHERE export_log_id = ?;",
@@ -146,7 +145,7 @@ std::vector<std::shared_ptr<core::application::exporting::ExportLog>> SqliteExpo
     const auto db = pimpl_->db->handle();
     persistence::StmtGuard stmt(
         db,
-        "SELECT id, time, target_path, status, message, payload FROM export_logs ORDER BY time DESC, id DESC;");
+        "SELECT id, time, target_path, status, message FROM export_logs ORDER BY time DESC, id DESC;");
     if (!stmt) {
         return logs;
     }
@@ -158,7 +157,6 @@ std::vector<std::shared_ptr<core::application::exporting::ExportLog>> SqliteExpo
         log->targetPath = stmt.columnText(2);
         log->status = stmt.columnText(3);
         log->message = stmt.columnText(4);
-        log->payload = stmt.columnText(5);
         log->annualIds = loadIds(db, "SELECT annual_id FROM export_log_annuals WHERE export_log_id = ? ORDER BY position, annual_id;", log->id);
         log->analysisIds = loadIds(db, "SELECT analysis_id FROM export_log_analyses WHERE export_log_id = ? ORDER BY position, analysis_id;", log->id);
         logs.push_back(std::move(log));
@@ -172,7 +170,7 @@ std::optional<std::shared_ptr<core::application::exporting::ExportLog>> SqliteEx
     const auto db = pimpl_->db->handle();
     persistence::StmtGuard stmt(
         db,
-        "SELECT id, time, target_path, status, message, payload FROM export_logs WHERE id = ? LIMIT 1;");
+        "SELECT id, time, target_path, status, message FROM export_logs WHERE id = ? LIMIT 1;");
     if (!stmt) {
         return std::nullopt;
     }
@@ -188,7 +186,6 @@ std::optional<std::shared_ptr<core::application::exporting::ExportLog>> SqliteEx
     log->targetPath = stmt.columnText(2);
     log->status = stmt.columnText(3);
     log->message = stmt.columnText(4);
-    log->payload = stmt.columnText(5);
     log->annualIds = loadIds(db, "SELECT annual_id FROM export_log_annuals WHERE export_log_id = ? ORDER BY position, annual_id;", log->id);
     log->analysisIds = loadIds(db, "SELECT analysis_id FROM export_log_analyses WHERE export_log_id = ? ORDER BY position, analysis_id;", log->id);
     return log;
@@ -210,7 +207,7 @@ void SqliteExportLogRepository::updateExportLog(const std::shared_ptr<core::appl
     writeExportLog(
         db,
         log,
-        "UPDATE export_logs SET time = ?2, target_path = ?3, status = ?4, message = ?5, payload = ?6 WHERE id = ?1;");
+        "UPDATE export_logs SET time = ?2, target_path = ?3, status = ?4, message = ?5 WHERE id = ?1;");
     if (log) {
         saveIds(db, log->id, log->annualIds,
                 "DELETE FROM export_log_annuals WHERE export_log_id = ?;",
@@ -227,7 +224,7 @@ void SqliteExportLogRepository::upsertExportLog(const std::shared_ptr<core::appl
     writeExportLog(
         db,
         log,
-        "INSERT OR REPLACE INTO export_logs (id, time, target_path, status, message, payload) VALUES (?, ?, ?, ?, ?, ?);");
+        "INSERT OR REPLACE INTO export_logs (id, time, target_path, status, message) VALUES (?, ?, ?, ?, ?);");
     if (log) {
         saveIds(db, log->id, log->annualIds,
                 "DELETE FROM export_log_annuals WHERE export_log_id = ?;",

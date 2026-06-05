@@ -14,7 +14,8 @@ namespace ui {
 TEST(ActorViewModelTest,
      VM_ACTOR_001_SubmitCreatesActorAndSelectsPersistedEntity) {
   tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
-  ActorViewModel viewModel(harness.facade.get());
+  ActorViewModel viewModel(harness.store.get(), harness.commands.get(),
+                           harness.selection.get(), harness.selectors.get());
 
   viewModel.enterCreateMode();
   viewModel.setName(QStringLiteral("New Actor"));
@@ -24,7 +25,7 @@ TEST(ActorViewModelTest,
   const QString id = viewModel.submit();
 
   ASSERT_FALSE(id.isEmpty());
-  EXPECT_EQ(harness.facade->selectedActorId(), id);
+  EXPECT_EQ(harness.selection->selectedActorId(), id);
   const auto snapshot = harness.workspace->snapshot();
   ASSERT_EQ(snapshot.actors.size(), 2);
   EXPECT_EQ(snapshot.actors.back().name, "New Actor");
@@ -36,7 +37,8 @@ TEST(ActorViewModelTest,
 
 TEST(ActorViewModelTest, VM_ACTOR_002_SelectEditUpdateAndDeleteCurrentActor) {
   tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
-  ActorViewModel viewModel(harness.facade.get());
+  ActorViewModel viewModel(harness.store.get(), harness.commands.get(),
+                           harness.selection.get(), harness.selectors.get());
 
   viewModel.selectActor(QStringLiteral("actor-1"));
   ASSERT_TRUE(viewModel.isEdit());
@@ -50,7 +52,7 @@ TEST(ActorViewModelTest, VM_ACTOR_002_SelectEditUpdateAndDeleteCurrentActor) {
 
   viewModel.deleteCurrent();
   EXPECT_TRUE(harness.workspace->snapshot().actors.empty());
-  EXPECT_TRUE(harness.facade->selectedActorId().isEmpty());
+  EXPECT_TRUE(harness.selection->selectedActorId().isEmpty());
 }
 
 } // namespace ui

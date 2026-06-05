@@ -20,13 +20,16 @@ TEST(ImportWorkflowTest,
   tests::support::WorkspaceHarness harness(
       tests::support::makeStateWithDraftStack());
   const auto adapter = std::make_shared<adapters::ImportAdapter>(
-      harness.facade.get(),
+      harness.workspace.get(),
       std::make_shared<tests::support::ImportRunnerStub>());
   ImportWorkflow workflow(adapter, tests::support::noopErrorReporter(),
-                          harness.facade.get());
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(),
+                          harness.selectors.get());
   ImportViewModel viewModel;
   viewModel.setImportWorkflow(&workflow);
-  viewModel.setWorkspace(harness.facade.get());
+  viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
 
   EXPECT_TRUE(viewModel.hasDraftNavigation());
   viewModel.selectNextDraft();
@@ -56,10 +59,12 @@ TEST(ImportWorkflowTest,
   tests::support::WorkspaceHarness harness(
       tests::support::makeStateWithDraftStack());
   const auto adapter = std::make_shared<adapters::ImportAdapter>(
-      harness.facade.get(),
+      harness.workspace.get(),
       std::make_shared<tests::support::ImportRunnerStub>());
   ImportWorkflow workflow(adapter, tests::support::noopErrorReporter(),
-                          harness.facade.get());
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(),
+                          harness.selectors.get());
 
   ASSERT_TRUE(workflow.openPersistedDraft(QStringLiteral("draft-1")));
   ASSERT_TRUE(workflow.hasDraft());

@@ -1,60 +1,35 @@
 /**
  * @file ui/tests/unit/workflows/TestExportWorkflow.cpp
- * @brief Tests for export workflow log restoration and refresh behavior.
+ * @brief Tests for export workflow log publication.
  */
 
 #include <gtest/gtest.h>
 
-#include <memory>
+#include <vector>
+
+#include <QVariantMap>
 
 #include "core/ports/workspace/WorkspaceSnapshot.h"
-#include "ui/adapters/ExportAdapter.h"
 #include "ui/workflows/ExportWorkflow.h"
-
-namespace {
-
-core::ports::workspace::WorkspaceSnapshot
-makeStateWithExportLog(const QString &id) {
-  core::ports::workspace::WorkspaceSnapshot state;
-  core::ports::workspace::ExportLogSnapshot log;
-  log.id = id.toStdString();
-  log.time = "2026-05-15 10:00:00";
-  log.targetPath = "/tmp/export.xlsx";
-  log.status = "Success";
-  log.message = "done";
-  log.payload = "{}";
-  state.exportLogs.push_back(std::move(log));
-  return state;
-}
-
-} // namespace
 
 namespace ui {
 
-TEST(ExportWorkflowTest, WF_EXPORT_001_RestoresPersistedExportLogsFromSnapshotProvider) {
-  auto runner = std::make_shared<ui::adapters::ExportAdapter>(nullptr);
-  ExportWorkflow workflow([state = makeStateWithExportLog(
-                               QStringLiteral("log-1"))]() { return state; },
-                          runner, nullptr);
+TEST(ExportWorkflowTest, WF_EXPORT_001_PublishesLogsThroughWorkspaceSink) {
+  std::vector<core::ports::workspace::ExportLogSnapshot> logs;
+  ExportWorkflow workflow([]() { return core::ports::workspace::WorkspaceSnapshot{}; },
+                          nullptr, nullptr);
+  workflow.setExportLogSink(
+      [&logs](const core::ports::workspace::ExportLogSnapshot &log) {
+        logs.push_back(log);
+      });
 
-  ASSERT_EQ(workflow.exportLogs().size(), 1U);
-  EXPECT_EQ(workflow.exportLogs().at(0).logId, QStringLiteral("log-1"));
-  EXPECT_EQ(workflow.exportLogs().at(0).file,
-            QStringLiteral("/tmp/export.xlsx"));
-  EXPECT_EQ(workflow.exportLogs().at(0).status, QStringLiteral("Success"));
-}
+  workflow.exportDataWithPayload(0, QStringLiteral("/tmp/export.xlsx"), true,
+                                 QStringLiteral("de-DE"), QVariantMap{}, 1);
 
-TEST(ExportWorkflowTest, WF_EXPORT_002_RefreshFromStateSnapshotReplacesExportLogs) {
-  auto runner = std::make_shared<ui::adapters::ExportAdapter>(nullptr);
-  ExportWorkflow workflow([state = makeStateWithExportLog(
-                               QStringLiteral("log-1"))]() { return state; },
-                          runner, nullptr);
-
-  EXPECT_EQ(workflow.exportLogs().size(), 1U);
-
-  workflow.refreshFromStateSnapshot();
-  EXPECT_EQ(workflow.exportLogs().size(), 1U);
-  EXPECT_EQ(workflow.exportLogs().at(0).logId, QStringLiteral("log-1"));
+  ASSERT_EQ(logs.size(), 2U);
+  EXPECT_EQ(logs.front().status, "Running");
+  EXPECT_EQ(logs.back().status, "Failed");
+  EXPECT_EQ(logs.back().targetPath, "/tmp/export.xlsx");
 }
 
 } // namespace ui

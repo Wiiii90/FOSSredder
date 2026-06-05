@@ -8,6 +8,7 @@
 #include "core/application/workspace/WorkspaceQueryService.h"
 
 #include "core/application/workspace/WorkspaceSession.h"
+#include "core/domain/entities/Contract.h"
 #include "core/domain/policies/AliasPolicy.h"
 
 #include <algorithm>
@@ -38,6 +39,37 @@ bool sameStringSet(const std::vector<std::string>& lhs,
     return normalizedSorted(lhs) == normalizedSorted(rhs);
 }
 
+std::vector<std::string> normalizedValues(const std::vector<std::string>& values) {
+    std::vector<std::string> out;
+    out.reserve(values.size());
+    for (const auto& value : values) {
+        const auto normalized = core::domain::policies::alias::trimCopy(value);
+        if (!normalized.empty()) {
+            out.push_back(normalized);
+        }
+    }
+    return out;
+}
+
+bool containsValue(const std::vector<std::string>& values,
+                   const std::string& value) {
+    const auto target = core::domain::policies::alias::trimCopy(value);
+    if (target.empty()) {
+        return false;
+    }
+    const auto normalized = normalizedValues(values);
+    return std::find(normalized.begin(), normalized.end(), target) != normalized.end();
+}
+
+bool containsAllValues(const std::vector<std::string>& values,
+                       const std::vector<std::string>& required) {
+    const auto normalizedRequired = normalizedValues(required);
+    return std::all_of(normalizedRequired.begin(), normalizedRequired.end(),
+                       [&](const std::string& value) {
+                           return containsValue(values, value);
+                       });
+}
+
 int trailingContractIndex(const std::string& value) {
     const auto trimmed = core::domain::policies::alias::trimCopy(value);
     const std::string prefix = std::string(kContractBaseName) + " ";
@@ -61,6 +93,21 @@ core::ports::workspace::WorkspaceIdentitySnapshot identity(
     out.id = id;
     out.name = name;
     return out;
+}
+
+const core::domain::Contract* findContractById(
+    const core::application::workspace::WorkspaceSessionState& state,
+    const std::string& id) {
+    const auto target = core::domain::policies::alias::trimCopy(id);
+    if (target.empty()) {
+        return nullptr;
+    }
+    for (const auto& contract : state.catalog.contracts()) {
+        if (contract && contract->id() == target) {
+            return contract.get();
+        }
+    }
+    return nullptr;
 }
 
 } // namespace
@@ -144,6 +191,43 @@ core::ports::workspace::WorkspaceIdentitySnapshot WorkspaceQueryService::contrac
         return out;
     }
     return {};
+}
+
+core::ports::workspace::TransactionCatalogSelection
+WorkspaceQueryService::transactionCatalogSelection(
+    const core::ports::workspace::TransactionCatalogSelectionChange& change) const {
+    core::ports::workspace::TransactionCatalogSelection out = change.current;
+
+    if (change.contractChanged) {
+        out.contractId = core::domain::policies::alias::trimCopy(change.contractId);
+        if (const auto* contract = findContractById(stateRef(), out.contractId)) {
+            const auto actorIds = normalizedValues(contract->actorIds());
+            out.actorId = actorIds.empty() ? std::string{} : actorIds.front();
+            out.propertyIds = normalizedValues(contract->propertyIds());
+        } else {
+            out.actorId.clear();
+            out.propertyIds.clear();
+        }
+    }
+
+    if (change.actorChanged) {
+        out.actorId = core::domain::policies::alias::trimCopy(change.actorId);
+        const auto* contract = findContractById(stateRef(), out.contractId);
+        if (contract && !out.actorId.empty() &&
+            !containsValue(contract->actorIds(), out.actorId)) {
+            out.contractId.clear();
+        }
+    }
+
+    if (change.propertiesChanged) {
+        out.propertyIds = normalizedValues(change.propertyIds);
+        const auto* contract = findContractById(stateRef(), out.contractId);
+        if (contract && !containsAllValues(contract->propertyIds(), out.propertyIds)) {
+            out.contractId.clear();
+        }
+    }
+
+    return out;
 }
 
 std::string WorkspaceQueryService::nextContractName() const {

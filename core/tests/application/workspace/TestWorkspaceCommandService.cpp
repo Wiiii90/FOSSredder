@@ -65,7 +65,7 @@ TEST(WorkspaceCommandServiceTest, InsertsTransactionAfterRequestedStatementTrans
     first.name = "First";
     first.bookingDate = "2026-01-01";
     first.valuta = "2026-01-03";
-    first.amount = 10.0;
+    first.amountText = "10.0";
     first.statementId = statementId;
     const auto firstId = service.addTransaction(first);
     ASSERT_FALSE(firstId.empty());
@@ -136,7 +136,7 @@ TEST(WorkspaceCommandServiceTest, TransactionAllocatableChangeForcesContractMode
     tx.name = "Tx";
     tx.bookingDate = "2026-01-01";
     tx.valuta = "2026-01-02";
-    tx.amount = 10.0;
+    tx.amountText = "10.0";
     tx.statementId = statementId;
     tx.contractId = contractId;
     tx.allocatable = true;

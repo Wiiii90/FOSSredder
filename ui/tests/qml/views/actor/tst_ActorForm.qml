@@ -339,7 +339,7 @@ TestCase {
         }
 
         function previous() {
-            const rows = testCase.workspaceFacade.actorRows || []
+            const rows = testCase.workspaceRoles.actorRows || []
             if (rows.length === 0)
                 return
             const nextId = testCase.session.navigatedSelectionId(rows,
@@ -350,7 +350,7 @@ TestCase {
         }
 
         function next() {
-            const rows = testCase.workspaceFacade.actorRows || []
+            const rows = testCase.workspaceRoles.actorRows || []
             if (rows.length === 0)
                 return
             const nextId = testCase.session.navigatedSelectionId(rows,
@@ -361,7 +361,7 @@ TestCase {
         }
 
         function submit() {
-            const id = testCase.workspaceFacade.saveActor(isEdit ? (testCase.session.selectedActorId || "") : "",
+            const id = testCase.workspaceRoles.saveActor(isEdit ? (testCase.session.selectedActorId || "") : "",
                                                           name,
                                                           aliases || [],
                                                           selectedContractIds || [])
@@ -375,8 +375,8 @@ TestCase {
             const removedId = testCase.session.selectedActorId || ""
             if (removedId.length === 0)
                 return
-            testCase.workspaceFacade.deleteActor(removedId)
-            const nextId = testCase.session.deleteNextSelectionId(testCase.workspaceFacade.actorRows || [],
+            testCase.workspaceRoles.deleteActor(removedId)
+            const nextId = testCase.session.deleteNextSelectionId(testCase.workspaceRoles.actorRows || [],
                                                                   removedId,
                                                                   0,
                                                                   "id")
@@ -384,7 +384,7 @@ TestCase {
         }
     }
 
-    property var workspaceFacade: QtObject {
+    property var workspaceRoles: QtObject {
         property var actorRows: testCase.session.actors || []
         property var contractRows: testCase.session.contracts || []
         property var actorViewModel: testCase.actorViewModel

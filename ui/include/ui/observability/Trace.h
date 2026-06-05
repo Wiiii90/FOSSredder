@@ -50,35 +50,84 @@ inline constexpr auto kWorkspace = "workspace";
 
 } // namespace layer
 
+/**
+ * @brief Reports whether UI trace emission is enabled.
+ * @return True when trace events should be emitted.
+ */
 bool isTraceEnabled();
+/**
+ * @brief Emits a UI trace event.
+ * @param layer UI layer name.
+ * @param origin Trace origin.
+ * @param message Trace message.
+ * @param context Structured trace context.
+ */
 void trace(const char *layer, const char *origin, std::string message,
            core::errors::ErrorContext context = {});
 
+/**
+ * @brief Emits an adapter trace event.
+ * @param origin Trace origin.
+ * @param message Trace message.
+ * @param context Structured trace context.
+ */
 inline void traceAdapter(const char *origin, std::string message,
                          core::errors::ErrorContext context = {}) {
   trace(layer::kAdapter, origin, std::move(message), std::move(context));
 }
 
+/**
+ * @brief Emits a composition trace event.
+ * @param origin Trace origin.
+ * @param message Trace message.
+ * @param context Structured trace context.
+ */
 inline void traceComposition(const char *origin, std::string message,
                              core::errors::ErrorContext context = {}) {
   trace(layer::kComposition, origin, std::move(message), std::move(context));
 }
 
+/**
+ * @brief Emits a view model trace event.
+ * @param origin Trace origin.
+ * @param message Trace message.
+ * @param context Structured trace context.
+ */
 inline void traceViewModel(const char *origin, std::string message,
                            core::errors::ErrorContext context = {}) {
   trace(layer::kViewModel, origin, std::move(message), std::move(context));
 }
 
+/**
+ * @brief Emits a workflow trace event.
+ * @param origin Trace origin.
+ * @param message Trace message.
+ * @param context Structured trace context.
+ */
 inline void traceWorkflow(const char *origin, std::string message,
                           core::errors::ErrorContext context = {}) {
   trace(layer::kWorkflow, origin, std::move(message), std::move(context));
 }
 
+/**
+ * @brief Emits a workspace trace event.
+ * @param origin Trace origin.
+ * @param message Trace message.
+ * @param context Structured trace context.
+ */
 inline void traceWorkspace(const char *origin, std::string message,
                            core::errors::ErrorContext context = {}) {
   trace(layer::kWorkspace, origin, std::move(message), std::move(context));
 }
 
+/**
+ * @brief Reports a UI flow error event.
+ * @param severity Error severity.
+ * @param code Error code.
+ * @param origin Error origin.
+ * @param message Error message.
+ * @param context Structured error context.
+ */
 inline void reportFlow(core::errors::ErrorSeverity severity, const char *code,
                        const char *origin, std::string message,
                        core::errors::ErrorContext context = {}) {
@@ -86,6 +135,13 @@ inline void reportFlow(core::errors::ErrorSeverity severity, const char *code,
                        std::move(context));
 }
 
+/**
+ * @brief Reports a generic UI flow error event.
+ * @param severity Error severity.
+ * @param origin Error origin.
+ * @param message Error message.
+ * @param context Structured error context.
+ */
 inline void reportFlow(core::errors::ErrorSeverity severity, const char *origin,
                        std::string message,
                        core::errors::ErrorContext context = {}) {

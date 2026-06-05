@@ -5,10 +5,6 @@
 
 #include "ui/workspace/WorkspaceSelection.h"
 
-#include <cstddef>
-
-#include <QAbstractItemModel>
-
 namespace ui {
 
 namespace {
@@ -23,57 +19,15 @@ struct SelectionIdsSnapshot {
   QString annualId;
 };
 
-template <typename Item> bool isMissingItem(const Item &item) {
-  if constexpr (requires { !item; }) {
-    return !item;
-  } else {
-    return false;
-  }
-}
-
-template <typename Items, typename FindRow>
-void validateSelectedId(QString &selectedId, const Items &items,
-                        FindRow &&findRow) {
-  if (selectedId.isEmpty()) {
-    return;
-  }
-
-  const int row = findRow(selectedId);
-  if (row < 0) {
-    selectedId.clear();
-    return;
-  }
-
-  if (row >= static_cast<int>(items.size())) {
-    selectedId.clear();
-    return;
-  }
-
-  if (isMissingItem(items[static_cast<std::size_t>(row)])) {
-    selectedId.clear();
-  }
-}
-
-template <typename RefreshFn>
-bool updateSelectedId(QString &targetId, const QString &newId,
-                      RefreshFn &&refresh) {
-  if (targetId == newId) {
-    return false;
-  }
-  targetId = newId;
-  refresh();
-  return true;
-}
-
-SelectionIdsSnapshot captureSelectionIds(const WorkspaceSelection &selection) {
-  return {selection.selectedActorId(),      selection.selectedPropertyId(),
-          selection.selectedContractId(),   selection.selectedStatementId(),
+SelectionIdsSnapshot captureSelectionIds(const WorkspaceSelection& selection) {
+  return {selection.selectedActorId(),       selection.selectedPropertyId(),
+          selection.selectedContractId(),    selection.selectedStatementId(),
           selection.selectedTransactionId(), selection.selectedAnalysisId(),
           selection.selectedAnnualId()};
 }
 
-void emitSelectionChanges(WorkspaceSelection &selection,
-                          const SelectionIdsSnapshot &before) {
+void emitSelectionChanges(WorkspaceSelection& selection,
+                          const SelectionIdsSnapshot& before) {
   if (selection.selectedActorId() != before.actorId)
     emit selection.selectedActorIdChanged();
   if (selection.selectedPropertyId() != before.propertyId)
@@ -90,28 +44,28 @@ void emitSelectionChanges(WorkspaceSelection &selection,
     emit selection.selectedAnnualIdChanged();
 }
 
-template <typename RefreshFn>
-void bindSelectionRefreshesForModel(QObject *owner, RefreshFn &&refresh,
-                                    QAbstractItemModel &model) {
-  QObject::connect(&model, &QAbstractItemModel::modelReset, owner, refresh);
-  QObject::connect(&model, &QAbstractItemModel::rowsInserted, owner, refresh);
-  QObject::connect(&model, &QAbstractItemModel::rowsRemoved, owner, refresh);
-  QObject::connect(&model, &QAbstractItemModel::rowsMoved, owner, refresh);
-  QObject::connect(&model, &QAbstractItemModel::layoutChanged, owner, refresh);
-  QObject::connect(&model, &QAbstractItemModel::dataChanged, owner,
-                   [refresh](const QModelIndex &, const QModelIndex &,
-                             const QVector<int> &) { refresh(); });
+bool updateSelectedId(QString& targetId, const QString& newId) {
+  const QString normalized = newId.trimmed();
+  if (targetId == normalized) {
+    return false;
+  }
+  targetId = normalized;
+  return true;
 }
 
 } // namespace
 
-WorkspaceSelection::WorkspaceSelection(WorkspaceCacheModels &models,
-                                       QObject *parent)
-    : QObject(parent), models_(models) {
-  bindModelSignals();
+WorkspaceSelection::WorkspaceSelection(WorkspaceStore& store,
+                                       WorkspaceSelectors& selectors,
+                                       QObject* parent)
+    : QObject(parent), store_(store), selectors_(selectors) {
+  connect(&store_, &WorkspaceStore::dataRevisionChanged, this,
+          &WorkspaceSelection::refreshSelections);
 }
 
-QString WorkspaceSelection::selectedActorId() const { return selectedActorId_; }
+QString WorkspaceSelection::selectedActorId() const {
+  return selectedActorId_;
+}
 QString WorkspaceSelection::selectedPropertyId() const {
   return selectedPropertyId_;
 }
@@ -131,128 +85,119 @@ QString WorkspaceSelection::selectedAnnualId() const {
   return selectedAnnualId_;
 }
 
-void WorkspaceSelection::setSelectedActorId(const QString &id) {
-  if (updateSelectedId(selectedActorId_, id, [this]() {
-        validateSelectedId(selectedActorId_, models_.actorSnapshots(),
-                           [this](const QString &value) {
-                             return models_.findActorRowById(value);
-                           });
-      }))
+void WorkspaceSelection::setSelectedActorId(const QString& id) {
+  if (updateSelectedId(selectedActorId_, id)) {
+    validateSelections();
     emit selectedActorIdChanged();
+  }
 }
 
-void WorkspaceSelection::setSelectedPropertyId(const QString &id) {
-  if (updateSelectedId(selectedPropertyId_, id, [this]() {
-        validateSelectedId(selectedPropertyId_, models_.propertySnapshots(),
-                           [this](const QString &value) {
-                             return models_.findPropertyRowById(value);
-                           });
-      }))
+void WorkspaceSelection::setSelectedPropertyId(const QString& id) {
+  if (updateSelectedId(selectedPropertyId_, id)) {
+    validateSelections();
     emit selectedPropertyIdChanged();
+  }
 }
 
-void WorkspaceSelection::setSelectedContractId(const QString &id) {
-  if (updateSelectedId(selectedContractId_, id, [this]() {
-        validateSelectedId(selectedContractId_, models_.contractSnapshots(),
-                           [this](const QString &value) {
-                             return models_.findContractRowById(value);
-                           });
-      }))
+void WorkspaceSelection::setSelectedContractId(const QString& id) {
+  if (updateSelectedId(selectedContractId_, id)) {
+    validateSelections();
     emit selectedContractIdChanged();
+  }
 }
 
-void WorkspaceSelection::setSelectedStatementId(const QString &id) {
-  if (updateSelectedId(selectedStatementId_, id, [this]() {
-        validateSelectedId(selectedStatementId_, models_.statements().statements(),
-                           [this](const QString &value) {
-                             return models_.statements().findRowById(value);
-                           });
-      }))
+void WorkspaceSelection::setSelectedStatementId(const QString& id) {
+  if (updateSelectedId(selectedStatementId_, id)) {
+    validateSelections();
     emit selectedStatementIdChanged();
+  }
 }
 
-void WorkspaceSelection::setSelectedTransactionId(const QString &id) {
-  if (updateSelectedId(selectedTransactionId_, id, [this]() {
-        validateSelectedId(selectedTransactionId_,
-                           models_.transactions().transactions(),
-                           [this](const QString &value) {
-                             return models_.transactions().findRowById(value);
-                           });
-      }))
-    emit selectedTransactionIdChanged();
+void WorkspaceSelection::setSelectedAnalysisId(const QString& id) {
+  if (updateSelectedId(selectedAnalysisId_, id)) {
+    validateSelections();
+    emit selectedAnalysisIdChanged();
+  }
 }
 
-void WorkspaceSelection::setSelectedAnalysisId(const QString &id) {
-  if (!updateSelectedId(selectedAnalysisId_, id, [this]() {
-        validateSelectedId(selectedAnalysisId_, models_.analyses().analyses(),
-                           [this](const QString &value) {
-                             return models_.analyses().findRowById(value);
-                           });
-      }))
-    return;
-  emit selectedAnalysisIdChanged();
-}
-
-void WorkspaceSelection::setSelectedAnnualId(const QString &id) {
-  if (updateSelectedId(selectedAnnualId_, id, [this]() {
-        validateSelectedId(selectedAnnualId_, models_.annuals().annuals(),
-                           [this](const QString &value) {
-                             return models_.annuals().findRowById(value);
-                           });
-      }))
+void WorkspaceSelection::setSelectedAnnualId(const QString& id) {
+  if (updateSelectedId(selectedAnnualId_, id)) {
+    validateSelections();
     emit selectedAnnualIdChanged();
+  }
+}
+
+void WorkspaceSelection::selectActor(const QString& id) {
+  setSelectedActorId(id);
+}
+
+void WorkspaceSelection::selectProperty(const QString& id) {
+  setSelectedPropertyId(id);
+}
+
+void WorkspaceSelection::selectContract(const QString& id) {
+  setSelectedContractId(id);
+}
+
+void WorkspaceSelection::selectStatement(const QString& id) {
+  setSelectedStatementId(id);
+}
+
+void WorkspaceSelection::selectTransaction(const QString& statementId,
+                                           const QString& id) {
+  const auto before = captureSelectionIds(*this);
+  selectedStatementId_ = statementId.trimmed();
+  selectedTransactionId_ = id.trimmed();
+  validateSelections();
+  emitSelectionChanges(*this, before);
+}
+
+void WorkspaceSelection::selectAnalysis(const QString& id) {
+  setSelectedAnalysisId(id);
+}
+
+void WorkspaceSelection::selectAnnual(const QString& id) {
+  setSelectedAnnualId(id);
 }
 
 void WorkspaceSelection::validateSelections() {
-  validateSelectedId(selectedActorId_, models_.actorSnapshots(),
-                     [this](const QString &value) {
-                       return models_.findActorRowById(value);
-                     });
-  validateSelectedId(selectedPropertyId_, models_.propertySnapshots(),
-                     [this](const QString &value) {
-                       return models_.findPropertyRowById(value);
-                     });
-  validateSelectedId(selectedContractId_, models_.contractSnapshots(),
-                     [this](const QString &value) {
-                       return models_.findContractRowById(value);
-                     });
-  validateSelectedId(selectedStatementId_, models_.statements().statements(),
-                     [this](const QString &value) {
-                       return models_.statements().findRowById(value);
-                     });
-  validateSelectedId(selectedTransactionId_, models_.transactions().transactions(),
-                     [this](const QString &value) {
-                       return models_.transactions().findRowById(value);
-                     });
-  validateSelectedId(selectedAnalysisId_, models_.analyses().analyses(),
-                     [this](const QString &value) {
-                       return models_.analyses().findRowById(value);
-                     });
-  validateSelectedId(selectedAnnualId_, models_.annuals().annuals(),
-                     [this](const QString &value) {
-                       return models_.annuals().findRowById(value);
-                     });
+  if (!selectedActorId_.isEmpty() && !selectors_.hasActorId(selectedActorId_)) {
+    selectedActorId_.clear();
+  }
+  if (!selectedPropertyId_.isEmpty() &&
+      !selectors_.hasPropertyId(selectedPropertyId_)) {
+    selectedPropertyId_.clear();
+  }
+  if (!selectedContractId_.isEmpty() &&
+      !selectors_.hasContractId(selectedContractId_)) {
+    selectedContractId_.clear();
+  }
+  if (!selectedStatementId_.isEmpty() &&
+      !selectors_.hasStatementId(selectedStatementId_)) {
+    selectedStatementId_.clear();
+    selectedTransactionId_.clear();
+  }
+  if (!selectedTransactionId_.isEmpty() &&
+      !selectors_.hasTransactionId(selectedTransactionId_)) {
+    selectedTransactionId_.clear();
+  }
+  if (!selectedAnalysisId_.isEmpty() &&
+      !selectors_.hasAnalysisId(selectedAnalysisId_)) {
+    selectedAnalysisId_.clear();
+  }
+  if (!selectedAnnualId_.isEmpty() &&
+      !selectors_.hasAnnualId(selectedAnnualId_)) {
+    selectedAnnualId_.clear();
+  }
 }
 
 void WorkspaceSelection::loadFromState() {
   refreshSelections();
 }
 
-void WorkspaceSelection::bindModelSignals() {
-  auto refresh = [this]() { refreshSelections(); };
-  bindSelectionRefreshesForModel(this, refresh, models_.actorModel());
-  bindSelectionRefreshesForModel(this, refresh, models_.propertyModel());
-  bindSelectionRefreshesForModel(this, refresh, models_.contractModel());
-  bindSelectionRefreshesForModel(this, refresh, models_.statements());
-  bindSelectionRefreshesForModel(this, refresh, models_.transactions());
-  bindSelectionRefreshesForModel(this, refresh, models_.analyses());
-  bindSelectionRefreshesForModel(this, refresh, models_.annuals());
-}
-
 void WorkspaceSelection::refreshSelections() {
   const auto before = captureSelectionIds(*this);
   validateSelections();
-
   emitSelectionChanges(*this, before);
 }
 

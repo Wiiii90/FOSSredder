@@ -17,9 +17,13 @@
 #include "ui/shell/Settings.h"
 #include "ui/shell/StatusState.h"
 #include "ui/workflows/ImportWorkflow.h"
-#include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui {
+
+class WorkspaceCommands;
+class WorkspaceSelection;
+class WorkspaceSelectors;
+class WorkspaceStore;
 
 /**
  * @brief Exposes import overview, statement draft, and transaction draft state to QML.
@@ -163,10 +167,15 @@ public:
   void setStatus(StatusState* value);
 
   /**
-   * @brief Sets the workspace API used for import logs and catalog mutations.
-   * @param value Workspace facade or nullptr.
+   * @brief Sets workspace roles used for import logs, catalog and selection.
+   * @param store Workspace store or nullptr.
+   * @param commands Workspace command API or nullptr.
+   * @param selection Workspace selection API or nullptr.
+   * @param selectors Workspace selector API or nullptr.
    */
-  void setWorkspace(WorkspaceFacade* value);
+  void setWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
+                         WorkspaceSelection *selection,
+                         WorkspaceSelectors *selectors);
 
   /**
    * @brief Returns the active import content index.
@@ -790,6 +799,9 @@ public:
   QString allocatableSuggestionText() const;
 
 signals:
+  /**
+   * @brief Emitted when import view model state changed.
+   */
   void changed();
 
 private:
@@ -809,10 +821,11 @@ private:
    */
   void bindActions(Actions* value);
   /**
-   * @brief Connects workspace signals.
-   * @param value Workspace facade or nullptr.
+   * @brief Connects workspace role signals.
    */
-  void bindWorkspace(WorkspaceFacade* value);
+  void bindWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
+                          WorkspaceSelection *selection,
+                          WorkspaceSelectors *selectors);
   /**
    * @brief Applies the default import path when the import view is opened.
    */
@@ -867,11 +880,11 @@ private:
    */
   void resetTransactionDraftFields();
   /**
-   * @brief Returns a fallback suggestion text.
-   * @param value Suggested value.
-   * @return Suggestion text.
+   * @brief Formats a suggestion summary for display.
+   * @param value Suggestion summary text.
+   * @return Display-ready suggestion summary.
    */
-  QString suggestionText(const QString& value) const;
+  QString displaySuggestionSummary(const QString& value) const;
   /**
    * @brief Returns the current transaction draft id.
    * @return Transaction draft id.
@@ -893,7 +906,10 @@ private:
   Actions* actions_ = nullptr;
   NavigationState* navigation_ = nullptr;
   StatusState* status_ = nullptr;
-  WorkspaceFacade* workspace_ = nullptr;
+  WorkspaceStore *store_ = nullptr;
+  WorkspaceCommands *commands_ = nullptr;
+  WorkspaceSelection *selection_ = nullptr;
+  WorkspaceSelectors *selectors_ = nullptr;
   QString manualPathText_;
   QStringList selectedImportFiles_;
   QString appliedDefaultImportPath_;

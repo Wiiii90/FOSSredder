@@ -5,7 +5,15 @@
 
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
-import FossRedder.Views 1.0 as Views
+import FossRedder.Views.Actor 1.0 as Actor
+import FossRedder.Views.Analysis 1.0 as Analysis
+import FossRedder.Views.Annual 1.0 as Annual
+import FossRedder.Views.Booking 1.0 as Booking
+import FossRedder.Views.Contract 1.0 as Contract
+import FossRedder.Views.Export 1.0 as Export
+import FossRedder.Views.Import 1.0 as Import
+import FossRedder.Views.Property 1.0 as Property
+import FossRedder.Views.Settings 1.0 as Settings
 pragma ComponentBehavior: Bound
 
 Item {
@@ -33,15 +41,15 @@ Item {
     Layout.fillWidth: true
     Layout.fillHeight: true
 
-    Component { id: actorViewComp; Views.ActorView { actorViewModel: contentRouter.actorViewModel; theme: contentRouter.theme } }
-    Component { id: propertyViewComp; Views.PropertyView { propertyViewModel: contentRouter.propertyViewModel; theme: contentRouter.theme } }
-    Component { id: contractViewComp; Views.ContractView { contractViewModel: contentRouter.contractViewModel; theme: contentRouter.theme } }
-    Component { id: bookingViewComp; Views.BookingView { bookingViewModel: contentRouter.bookingViewModel; theme: contentRouter.theme } }
-    Component { id: importViewComp; Views.ImportView { importViewModel: contentRouter.importViewModel; theme: contentRouter.theme } }
-    Component { id: exportViewComp; Views.ExportView { exportViewModel: contentRouter.exportViewModel; theme: contentRouter.theme } }
-    Component { id: settingsViewComp; Views.SettingsView { settingsViewModel: contentRouter.settingsViewModel; theme: contentRouter.theme } }
-    Component { id: analysisViewComp; Views.AnalysisView { analysisViewModel: contentRouter.analysisViewModel; theme: contentRouter.theme } }
-    Component { id: annualViewComp; Views.AnnualView { annualViewModel: contentRouter.annualViewModel; theme: contentRouter.theme } }
+    Component { id: actorViewComp; Actor.ActorView { actorViewModel: contentRouter.actorViewModel; theme: contentRouter.theme } }
+    Component { id: propertyViewComp; Property.PropertyView { propertyViewModel: contentRouter.propertyViewModel; theme: contentRouter.theme } }
+    Component { id: contractViewComp; Contract.ContractView { contractViewModel: contentRouter.contractViewModel; theme: contentRouter.theme } }
+    Component { id: bookingViewComp; Booking.BookingView { bookingViewModel: contentRouter.bookingViewModel; theme: contentRouter.theme } }
+    Component { id: importViewComp; Import.ImportView { importViewModel: contentRouter.importViewModel; theme: contentRouter.theme } }
+    Component { id: exportViewComp; Export.ExportView { exportViewModel: contentRouter.exportViewModel; theme: contentRouter.theme } }
+    Component { id: settingsViewComp; Settings.SettingsView { settingsViewModel: contentRouter.settingsViewModel; theme: contentRouter.theme } }
+    Component { id: analysisViewComp; Analysis.AnalysisView { analysisViewModel: contentRouter.analysisViewModel; theme: contentRouter.theme } }
+    Component { id: annualViewComp; Annual.AnnualView { annualViewModel: contentRouter.annualViewModel; theme: contentRouter.theme } }
     Content {
         anchors.fill: parent
         theme: contentRouter.theme

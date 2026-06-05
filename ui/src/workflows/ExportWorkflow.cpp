@@ -1,21 +1,21 @@
 /**
  * @file ui/src/workflows/ExportWorkflow.cpp
- * @brief Implements export workflow orchestration, logging, and async execution.
+ * @brief Implements export workflow orchestration, logging, and async
+ * execution.
  */
 
 #include "ui/workflows/ExportWorkflow.h"
 
-#include "ui/adapters/ExportAdapter.h"
 #include "core/errors/ErrorCodes.h"
 #include "core/errors/ErrorReporterRegistry.h"
 #include "core/ports/usecases/export/ExportRequest.h"
+#include "ui/adapters/ExportAdapter.h"
+#include "ui/i18n/Text.h"
 #include "ui/observability/Origins.h"
 #include "ui/observability/Trace.h"
-#include "ui/i18n/Text.h"
 #include "ui/util/StringConversions.h"
 
 #include <QDateTime>
-#include <QJsonDocument>
 #include <QMetaObject>
 #include <QPointer>
 #include <QUuid>
@@ -58,7 +58,9 @@ struct ExportWorkflow::ExportControlState {
 
   void waitIfPaused() {
     std::unique_lock lock(mutex);
-    changed.wait(lock, [this]() { return !paused || canceled; });
+    changed.wait(lock, [this]() {
+      return !paused || canceled;
+    });
   }
 
   void setPaused(bool value) {
@@ -81,19 +83,14 @@ struct ExportWorkflow::ExportControlState {
 
 ExportWorkflow::ExportWorkflow(
     StateSnapshotProvider stateSnapshotProvider,
-    std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter, QObject *parent)
-    : QObject(parent),
-      stateSnapshotProvider_(std::move(stateSnapshotProvider)),
+    std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter, QObject* parent)
+    : QObject(parent), stateSnapshotProvider_(std::move(stateSnapshotProvider)),
       exportAdapter_(std::move(exportAdapter)) {
   connect(&exportWatcher_,
           &QFutureWatcher<core::ports::exporting::ExportResult>::finished, this,
           &ExportWorkflow::onExportFinished);
 
   exportControl_ = std::make_shared<ExportControlState>();
-}
-
-void ExportWorkflow::refreshFromStateSnapshot() {
-  emit stateChanged();
 }
 
 void ExportWorkflow::setExportLogSink(ExportLogSink sink) {
@@ -106,31 +103,31 @@ int ExportWorkflow::currentMode() const noexcept {
   return CreateMode;
 }
 
-core::ports::workspace::WorkspaceSnapshot ExportWorkflow::stateSnapshot() const {
+core::ports::workspace::WorkspaceSnapshot
+ExportWorkflow::stateSnapshot() const {
   return stateSnapshotProvider_ ? stateSnapshotProvider_()
                                 : core::ports::workspace::WorkspaceSnapshot{};
 }
 
 core::ports::exporting::ExportRequest
-ExportWorkflow::buildRequest(int format, const QString &path,
-                             bool includeFormulas,
-                             const QString &locale) const {
+ExportWorkflow::buildRequest(int format, const QString& path,
+                             bool includeFormulas, const QString& locale,
+                             const QVariantMap& payload) const {
   if (!exportAdapter_) {
     return {};
   }
   return exportAdapter_->buildExportRequest(format, path, includeFormulas,
-                                            locale, pendingPayloadMap_);
+                                            locale, payload);
 }
 
 core::ports::workspace::ExportLogSnapshot
-ExportWorkflow::upsertExportLogById(const QString &logId, const QString &path,
-                                    const QString &status,
-                                    const QString &message,
-                                    const QString &payload) {
+ExportWorkflow::publishExportLogById(const QString& logId, const QString& path,
+                                     const QString& status,
+                                     const QString& message) {
   core::ports::workspace::ExportLogSnapshot row;
   const QString resolvedLogId = logId.isEmpty() ? generateLogId() : logId;
   const auto snapshot = stateSnapshot();
-  for (const auto &candidate : snapshot.exportLogs) {
+  for (const auto& candidate : snapshot.exportLogs) {
     if (QString::fromStdString(candidate.id) == resolvedLogId) {
       row = candidate;
       break;
@@ -142,13 +139,12 @@ ExportWorkflow::upsertExportLogById(const QString &logId, const QString &path,
   row.targetPath = path.toStdString();
   row.status = status.toStdString();
   row.message = message.toStdString();
-  row.payload = payload.toStdString();
   publishExportLog(row);
   return row;
 }
 
 void ExportWorkflow::publishExportLog(
-    const core::ports::workspace::ExportLogSnapshot &row) {
+    const core::ports::workspace::ExportLogSnapshot& row) {
   if (!exportLogSink_) {
     return;
   }
@@ -167,20 +163,20 @@ void ExportWorkflow::clearActiveExportLog() {
   emit stateChanged();
 }
 
-void ExportWorkflow::finishExport(bool success, const QString &outputPath) {
+void ExportWorkflow::finishExport(bool success, const QString& outputPath) {
   completedSteps_ = totalSteps_;
   progress_ = 1.0;
-  phase_ = success ? QStringLiteral("Finished") : QStringLiteral("Failed");
+  phase_ = success ? ui::text::exporting::phaseFinished()
+                   : ui::text::exporting::phaseFailed();
 
-  const QString status =
-      success ? QStringLiteral("Success") : QStringLiteral("Failed");
+  const QString status = success ? ui::text::exporting::statusSuccess()
+                                 : ui::text::exporting::statusFailed();
   const QString path = outputPath.isEmpty() ? activeExportPath_ : outputPath;
   QString message = lastError_;
   if (success && message.isEmpty()) {
     message = buildExportSuccessStatusMessage();
   }
-  upsertExportLogById(activeExportLogId_, path, status, message,
-                      pendingPayload_);
+  publishExportLogById(activeExportLogId_, path, status, message);
 
   isRunning_ = false;
   isPaused_ = false;
@@ -195,11 +191,11 @@ void ExportWorkflow::finishExport(bool success, const QString &outputPath) {
 void ExportWorkflow::finishCanceled() {
   completedSteps_ = totalSteps_;
   progress_ = 0.0;
-  phase_ = QStringLiteral("Canceled");
+  phase_ = ui::text::exporting::phaseCanceled();
   lastError_.clear();
-  upsertExportLogById(activeExportLogId_, activeExportPath_,
-                      QStringLiteral("Canceled"), QStringLiteral("Canceled"),
-                      pendingPayload_);
+  publishExportLogById(activeExportLogId_, activeExportPath_,
+                       ui::text::exporting::statusCanceled(),
+                       ui::text::exporting::phaseCanceled());
 
   isRunning_ = false;
   isPaused_ = false;
@@ -211,15 +207,10 @@ void ExportWorkflow::finishCanceled() {
   emit exportFinished(false);
 }
 
-void ExportWorkflow::exportData(int format, const QString &path,
-                                bool includeFormulas, const QString &locale) {
-  exportDataWithPayload(format, path, includeFormulas, locale, {}, 1);
-}
-
-void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
+void ExportWorkflow::exportDataWithPayload(int format, const QString& path,
                                            bool includeFormulas,
-                                           const QString &locale,
-                                           const QVariantMap &payload,
+                                           const QString& locale,
+                                           const QVariantMap& payload,
                                            int totalSteps) {
   if (isRunning_) {
     observability::reportFlow(
@@ -237,18 +228,14 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
     completedSteps_ = 0;
     progress_ = 0.0;
     phase_ = ui::text::exporting::phaseStarting();
-    pendingPayloadMap_ = payload;
-    pendingPayload_ = QString::fromUtf8(QJsonDocument::fromVariant(payload)
-                                            .toJson(QJsonDocument::Compact));
     activeExportPath_ = path;
     activeExportLogId_ = generateLogId();
-    upsertExportLogById(activeExportLogId_, activeExportPath_,
-                        QStringLiteral("Running"),
-                        ui::text::exporting::startingDetail(),
-                        pendingPayload_);
+    publishExportLogById(activeExportLogId_, activeExportPath_,
+                         ui::text::exporting::statusRunning(),
+                         ui::text::exporting::startingDetail());
     emit stateChanged();
 
-    auto request = buildRequest(format, path, includeFormulas, locale);
+    auto request = buildRequest(format, path, includeFormulas, locale, payload);
     auto control = exportControl_;
     request.shouldCancel = [control]() {
       return control && control->shouldCancel();
@@ -260,7 +247,7 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
     };
     QPointer<ExportWorkflow> self(this);
     request.progressCallback = [self](double progressValue,
-                                      const std::string &phaseText) {
+                                      const std::string& phaseText) {
       if (!self)
         return;
       QMetaObject::invokeMethod(
@@ -268,8 +255,7 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
           [self, progressValue, phaseText]() {
             if (!self || !self->isRunning_)
               return;
-            const double clamped =
-                std::max(0.0, std::min(1.0, progressValue));
+            const double clamped = std::max(0.0, std::min(1.0, progressValue));
             self->progress_ = clamped;
             if (!phaseText.empty()) {
               self->phase_ = QString::fromStdString(phaseText);
@@ -287,9 +273,8 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
           observability::origins::workflow::exportFlow::kStart,
           "Export rejected: state snapshot unavailable",
           {{observability::context::kPath, strings::toStdString(path)}});
-      upsertExportLogById(activeExportLogId_, activeExportPath_,
-                          QStringLiteral("Failed"), lastError_,
-                          pendingPayload_);
+      publishExportLogById(activeExportLogId_, activeExportPath_,
+                           ui::text::exporting::statusFailed(), lastError_);
       emit exportFailed(lastError_);
       emit exportFinished(false);
       emit stateChanged();
@@ -304,9 +289,8 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
           observability::origins::workflow::exportFlow::kStart,
           "Export rejected: export runner unavailable",
           {{observability::context::kPath, strings::toStdString(path)}});
-      upsertExportLogById(activeExportLogId_, activeExportPath_,
-                          QStringLiteral("Failed"), lastError_,
-                          pendingPayload_);
+      publishExportLogById(activeExportLogId_, activeExportPath_,
+                           ui::text::exporting::statusFailed(), lastError_);
       emit exportFailed(lastError_);
       emit exportFinished(false);
       emit stateChanged();
@@ -318,7 +302,8 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
     emit stateChanged();
 
     observability::traceWorkflow(
-        observability::origins::workflow::exportFlow::kStart, "Export submitted",
+        observability::origins::workflow::exportFlow::kStart,
+        "Export submitted",
         {{observability::context::kPath, strings::toStdString(path)},
          {observability::context::kFormat, std::to_string(format)},
          {observability::context::kIncludeFormulas,
@@ -335,13 +320,12 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString &path,
          {observability::context::kLocale, strings::toStdString(locale)}});
 
     const auto snapshot = stateSnapshot();
-    exportFuture_ = QtConcurrent::run(
-        [exportAdapter = exportAdapter_, snapshot,
-         request = std::move(request)]() mutable {
-          return exportAdapter->runExport(snapshot, std::move(request));
-        });
+    exportFuture_ = QtConcurrent::run([exportAdapter = exportAdapter_, snapshot,
+                                       request = std::move(request)]() mutable {
+      return exportAdapter->runExport(snapshot, std::move(request));
+    });
     exportWatcher_.setFuture(exportFuture_);
-  } catch (const std::exception &ex) {
+  } catch (const std::exception& ex) {
     core::errors::report(
         core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionStd,
         observability::origins::workflow::exportFlow::kStart, ex.what());
@@ -445,7 +429,7 @@ void ExportWorkflow::onExportFinished() {
           observability::origins::workflow::exportFlow::kFinish,
           "Export finished successfully");
     }
-  } catch (const std::exception &ex) {
+  } catch (const std::exception& ex) {
     core::errors::report(
         core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionStd,
         observability::origins::workflow::exportFlow::kFinish, ex.what());

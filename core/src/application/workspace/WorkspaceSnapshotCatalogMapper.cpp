@@ -5,6 +5,7 @@
 
 #include "core/application/workspace/WorkspaceSnapshotCatalogMapper.h"
 
+#include "core/application/analysis/AnalysisWorkflowSupport.h"
 #include "core/domain/entities/Actor.h"
 #include "core/domain/entities/Analysis.h"
 #include "core/domain/entities/Annual.h"
@@ -13,6 +14,8 @@
 #include "core/domain/entities/Statement.h"
 #include "core/domain/entities/Transaction.h"
 #include "core/domain/values/Alias.h"
+
+#include <nlohmann/json.hpp>
 
 #include <memory>
 #include <utility>
@@ -34,6 +37,35 @@ std::vector<core::domain::Alias> toAliases(
                              alias.lastUsedAt);
     }
     return aliases;
+}
+
+std::string serializeSnapshotTransactionsForDomain(
+    const std::vector<core::ports::workspace::TransactionSnapshot>& source) {
+    if (source.empty()) {
+        return {};
+    }
+    nlohmann::json rows = nlohmann::json::array();
+    for (const auto& tx : source) {
+        rows.push_back(nlohmann::json{
+            {"id", tx.id},
+            {"transactionId", tx.id},
+            {"name", tx.name},
+            {"transactionName", tx.name},
+            {"bookingDate", tx.bookingDate},
+            {"date", tx.bookingDate},
+            {"valuta", tx.valuta},
+            {"amount", tx.amount},
+            {"status", tx.status},
+            {"contractId", tx.contractId},
+            {"contractType", tx.contractType},
+            {"actorId", tx.actorId},
+            {"statementId", tx.statementId},
+            {"allocatable", tx.allocatable},
+            {"propertyIds", tx.propertyIds},
+            {"propertyNames", tx.propertyNames},
+        });
+    }
+    return rows.dump();
 }
 
 } // namespace
@@ -130,12 +162,14 @@ toWorkspaceCatalog(const core::ports::workspace::WorkspaceSnapshot& snapshot) {
         entity->setId(src.id);
         entity->rename(src.name);
         entity->setType(src.type);
-        entity->setConfigJson(src.configJson);
-        entity->setFilterSpec(src.filterSpec);
+        entity->setConfigJson(core::application::analysis::buildAnalysisConfigJson(src.config));
+        entity->setFilterSpec(core::domain::FilterSpec(
+            core::ports::analysis::buildAnalysisFilterSpec(src.filter)));
         entity->setExportFormat(src.exportFormat);
         entity->setIncludeCalculationAdjustments(src.includeCalculationAdjustments);
-        entity->setExportStateJson(src.exportStateJson);
-        entity->setSnapshotTransactionsJson(src.snapshotTransactionsJson);
+        entity->setExportStateJson({});
+        entity->setSnapshotTransactionsJson(
+            serializeSnapshotTransactionsForDomain(src.snapshotTransactions));
         for (const auto& [key, value] : src.adjustments) {
             entity->setAdjustment(key, value);
         }

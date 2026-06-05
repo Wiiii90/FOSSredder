@@ -8,9 +8,6 @@
 #include <memory>
 
 #include <QDate>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QVariantList>
 #include <QVariantMap>
 
@@ -18,7 +15,8 @@
 #include "support/WorkspaceTestData.h"
 #include "ui/adapters/AnalysisAdapter.h"
 #include "ui/workflows/AnalysisWorkflow.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
@@ -105,67 +103,7 @@ TEST(AnalysisWorkflowTest,
 }
 
 TEST(AnalysisWorkflowTest,
-     WF_ANALYSIS_005_ParseFilterSpecMapsCoreFilterStateBackToUiState) {
-  auto state = tests::support::makeWorkspaceSnapshot();
-  auto analysisAdapter = std::make_shared<ui::adapters::AnalysisAdapter>(
-      std::make_shared<tests::support::FakeAnalysisRunner>());
-  AnalysisWorkflow workflow([state]() { return state; }, analysisAdapter);
-
-  const QVariantMap parsed = workflow.parseAnalysisFilterSpec(
-      QStringLiteral("dateField=valuta;date>=2025-01-01;date<=2025-12-31;"
-                     "propertyId=property-1,unassigned;contract.type=lease,"
-                     "unassigned;allocatable=non-allocatable"));
-
-  EXPECT_EQ(parsed.value(QStringLiteral("dateField")).toString(),
-            QStringLiteral("valuta"));
-  EXPECT_EQ(parsed.value(QStringLiteral("dateMode")).toString(),
-            QStringLiteral("year"));
-  EXPECT_EQ(parsed.value(QStringLiteral("year")).toString(),
-            QStringLiteral("2025"));
-  EXPECT_EQ(parsed.value(QStringLiteral("allocatableMode")).toString(),
-            QStringLiteral("non-allocatable"));
-
-  const QVariantList propertyIds =
-      parsed.value(QStringLiteral("propertyIds")).toList();
-  ASSERT_EQ(propertyIds.size(), 1);
-  EXPECT_EQ(propertyIds.front().toString(), QStringLiteral("property-1"));
-  EXPECT_EQ(parsed.value(QStringLiteral("propertyIdsNone")).toBool(), true);
-
-  const QVariantList contractTypes =
-      parsed.value(QStringLiteral("contractTypes")).toList();
-  ASSERT_EQ(contractTypes.size(), 1);
-  EXPECT_EQ(contractTypes.front().toString(), QStringLiteral("lease"));
-  EXPECT_EQ(parsed.value(QStringLiteral("contractTypesNone")).toBool(), true);
-}
-
-TEST(AnalysisWorkflowTest, WF_ANALYSIS_006_AnalysisConfigJsonUsesCoreAnalysisKeys) {
-  auto state = tests::support::makeWorkspaceSnapshot();
-  auto analysisAdapter = std::make_shared<ui::adapters::AnalysisAdapter>(
-      std::make_shared<tests::support::FakeAnalysisRunner>());
-  AnalysisWorkflow workflow([state]() { return state; }, analysisAdapter);
-
-  const QString json = workflow.analysisConfigJson(
-      QStringLiteral("plot"), QStringLiteral("histogram"),
-      QStringLiteral("totalAmount"), QStringList{QStringLiteral("property-1")},
-      QStringList{QStringLiteral("lease")}, 0.0);
-
-  const QJsonObject parsed = QJsonDocument::fromJson(json.toUtf8()).object();
-  EXPECT_EQ(parsed.value(QStringLiteral("plotType")).toString(),
-            QStringLiteral("histogram"));
-  EXPECT_EQ(parsed.value(QStringLiteral("plotMeasure")).toString(),
-            QStringLiteral("totalAmount"));
-  ASSERT_TRUE(parsed.value(QStringLiteral("properties")).isArray());
-  EXPECT_EQ(
-      parsed.value(QStringLiteral("properties")).toArray().at(0).toString(),
-      QStringLiteral("property-1"));
-  ASSERT_TRUE(parsed.value(QStringLiteral("contractTypes")).isArray());
-  EXPECT_EQ(
-      parsed.value(QStringLiteral("contractTypes")).toArray().at(0).toString(),
-      QStringLiteral("lease"));
-}
-
-TEST(AnalysisWorkflowTest,
-     WF_ANALYSIS_007_AdjustmentsJsonStoresAdjustedAmountsByTransactionId) {
+     WF_ANALYSIS_007_AdjustmentsStoreAdjustedAmountsByTransactionId) {
   auto state = tests::support::makeWorkspaceSnapshot();
   auto analysisAdapter = std::make_shared<ui::adapters::AnalysisAdapter>(
       std::make_shared<tests::support::FakeAnalysisRunner>());
@@ -178,33 +116,39 @@ TEST(AnalysisWorkflowTest,
   ignored.insert(QStringLiteral("id"), QStringLiteral("tx-2"));
   ignored.insert(QStringLiteral("amount"), 50.0);
 
-  const QString json = workflow.analysisAdjustmentsJson(
+  const QVariantMap adjustments =
+      workflow.analysisAdjustmentAmountsFromPercentText(
       QVariantList{selected, ignored}, QStringList{QStringLiteral("tx-1")},
-      19.0);
+      QStringLiteral("19"));
 
-  const QJsonObject parsed = QJsonDocument::fromJson(json.toUtf8()).object();
-  EXPECT_DOUBLE_EQ(parsed.value(QStringLiteral("tx-1")).toDouble(), 119.0);
-  EXPECT_FALSE(parsed.contains(QStringLiteral("tx-2")));
+  EXPECT_DOUBLE_EQ(adjustments.value(QStringLiteral("tx-1")).toDouble(),
+                   119.0);
+  EXPECT_FALSE(adjustments.contains(QStringLiteral("tx-2")));
 }
 
 TEST(AnalysisWorkflowTest,
-     WF_ANALYSIS_008_WorkspaceFacadePersistsSerializedAnalysisInputs) {
+     WF_ANALYSIS_008_WorkspaceCommandsPersistAnalysisSnapshotAndAdjustments) {
   tests::support::InMemoryWorkspace workspace(
       tests::support::makeWorkspaceSnapshot());
-  WorkspaceFacade facade(&workspace, &workspace);
+  WorkspaceStore store;
+  store.setWorkspacePorts(&workspace, &workspace);
+  WorkspaceCommands commands(store);
 
-  facade.updateAnalysis(
+  commands.updateAnalysis(
       QStringLiteral("analysis-1"), QStringLiteral("Monthly Analysis Updated"),
-      QStringLiteral("tabular"), QStringLiteral("{\"groupBy\":\"month\"}"),
-      QStringLiteral("amount>=1000"), QStringLiteral("xlsx"), false,
-      QStringLiteral("{\"columns\":[\"name\"]}"), QStringLiteral("[\"tx-1\"]"),
-      QStringLiteral("{\"tx-1\":1500.0}"));
+      QStringLiteral("tabular"),
+      QVariantMap{{QStringLiteral("type"), QStringLiteral("tabular")}},
+      QVariantMap{{QStringLiteral("dateMode"), QStringLiteral("year")},
+                  {QStringLiteral("year"), QStringLiteral("2026")}},
+      QStringLiteral("xlsx"), false,
+      QVariantList{QVariantMap{{QStringLiteral("id"), QStringLiteral("tx-1")}}},
+      QVariantMap{{QStringLiteral("tx-1"), 1500.0}});
 
   const auto snapshot = workspace.workspaceSnapshot();
   ASSERT_EQ(snapshot.analyses.size(), 1U);
   const auto &analysis = snapshot.analyses.front();
   EXPECT_EQ(analysis.name, std::string("Monthly Analysis Updated"));
-  EXPECT_EQ(analysis.filterSpec, std::string("amount>=1000"));
+  EXPECT_EQ(analysis.filter.year, std::string("2026"));
   EXPECT_EQ(analysis.exportFormat, std::string("xlsx"));
   EXPECT_FALSE(analysis.includeCalculationAdjustments);
   ASSERT_EQ(analysis.adjustments.size(), 1U);
@@ -219,9 +163,9 @@ TEST(AnalysisWorkflowTest,
   analysis.id = "analysis-plot";
   analysis.name = "Plot With Adjustments";
   analysis.type = "plot";
-  analysis.configJson =
-      "{\"plotType\":\"pie\",\"plotMeasure\":\"totalAmount\"}";
-  analysis.filterSpec = "";
+  analysis.config.type = "plot";
+  analysis.config.plotType = "pie";
+  analysis.config.plotMeasure = "totalAmount";
   analysis.exportFormat = "png";
   analysis.includeCalculationAdjustments = true;
   analysis.adjustments.emplace_back("tx-1", 1500.0);
@@ -233,7 +177,7 @@ TEST(AnalysisWorkflowTest,
 
   const QVariantMap withAdjustments = workflow.computeAnalysisPreview(
       QStringLiteral("analysis-plot"), QStringLiteral(""), true,
-      QStringLiteral("{}"));
+      QVariantMap{});
   const QVariantList adjustedTransactions =
       withAdjustments.value(QStringLiteral("transactions")).toList();
   ASSERT_FALSE(adjustedTransactions.isEmpty());
@@ -250,7 +194,7 @@ TEST(AnalysisWorkflowTest,
 
   const QVariantMap withoutAdjustments = workflow.computeAnalysisPreview(
       QStringLiteral("analysis-plot"), QStringLiteral(""), false,
-      QStringLiteral("{}"));
+      QVariantMap{});
   const QVariantList plainTransactions =
       withoutAdjustments.value(QStringLiteral("transactions")).toList();
   ASSERT_FALSE(plainTransactions.isEmpty());
@@ -268,62 +212,31 @@ TEST(AnalysisWorkflowTest,
   EXPECT_NE(adjustedVisibleAmount, plainVisibleAmount);
 }
 
-TEST(AnalysisWorkflowTest, WF_ANALYSIS_010_PlotTypeFromSubtypeIndexMapsPieAndHistogram) {
-  EXPECT_EQ(AnalysisWorkflow::plotTypeFromSubtypeIndex(0),
-            QStringLiteral("pie"));
-  EXPECT_EQ(AnalysisWorkflow::plotTypeFromSubtypeIndex(1),
-            QStringLiteral("histogram"));
-}
-
 TEST(AnalysisWorkflowTest,
-     WF_ANALYSIS_011_TransactionSnapshotJsonSerializesPreviewTransactions) {
+     WF_ANALYSIS_012_ComputePreviewIncludesProjectedTableState) {
   auto state = tests::support::makeWorkspaceSnapshot();
   auto analysisAdapter = std::make_shared<ui::adapters::AnalysisAdapter>(
       std::make_shared<tests::support::FakeAnalysisRunner>());
   AnalysisWorkflow workflow([state]() { return state; }, analysisAdapter);
 
-  QVariantMap tx;
-  tx.insert(QStringLiteral("id"), QStringLiteral("tx-1"));
-  tx.insert(QStringLiteral("amount"), 1250.0);
-  const QString json =
-      workflow.transactionSnapshotJson(QVariantList{QVariant::fromValue(tx)});
+  const QVariantMap preview = workflow.computeAnalysisPreview(
+      QStringLiteral("analysis-1"), QStringLiteral(""), true,
+      QVariantMap{});
+  const QVariantMap table = preview.value(QStringLiteral("tableState")).toMap();
+  const QVariantList contractTypes =
+      table.value(QStringLiteral("contractTypes")).toList();
+  const QVariantList propertyRows =
+      table.value(QStringLiteral("propertyRows")).toList();
 
-  const QJsonArray parsed = QJsonDocument::fromJson(json.toUtf8()).array();
-  ASSERT_EQ(parsed.size(), 1);
-  EXPECT_EQ(parsed.at(0).toObject().value(QStringLiteral("id")).toString(),
-            QStringLiteral("tx-1"));
-}
-
-TEST(AnalysisWorkflowTest,
-     WF_ANALYSIS_012_ProjectTableStateAggregatesPropertyAndContractTotals) {
-  auto state = tests::support::makeWorkspaceSnapshot();
-  auto analysisAdapter = std::make_shared<ui::adapters::AnalysisAdapter>(
-      std::make_shared<tests::support::FakeAnalysisRunner>());
-  AnalysisWorkflow workflow([state]() { return state; }, analysisAdapter);
-
-  QVariantMap tx;
-  tx.insert(QStringLiteral("id"), QStringLiteral("tx-1"));
-  tx.insert(QStringLiteral("amount"), 100.0);
-  tx.insert(QStringLiteral("contractType"), QStringLiteral("lease"));
-  tx.insert(QStringLiteral("propertyIds"),
-            QVariantList{QStringLiteral("property-1")});
-  tx.insert(QStringLiteral("propertyNames"),
-            QVariantList{QStringLiteral("Property One")});
-
-  const QVariantMap result{{QStringLiteral("transactions"),
-                            QVariantList{QVariant::fromValue(tx)}}};
-  const AnalysisTableState table = workflow.projectTableState(
-      result, {}, true, QStringLiteral("Unassigned"));
-
-  ASSERT_EQ(table.contractTypes.size(), 1);
-  EXPECT_EQ(table.contractTypes.front().toString(), QStringLiteral("lease"));
-  ASSERT_EQ(table.propertyRows.size(), 1);
-  EXPECT_EQ(table.propertyRows.front()
+  ASSERT_EQ(contractTypes.size(), 1);
+  EXPECT_EQ(contractTypes.front().toString(), QStringLiteral("Unassigned"));
+  ASSERT_EQ(propertyRows.size(), 1);
+  EXPECT_EQ(propertyRows.front()
                 .toMap()
                 .value(QStringLiteral("propertyName"))
                 .toString(),
             QStringLiteral("Property One"));
-  EXPECT_DOUBLE_EQ(table.grandTotal, 100.0);
+  EXPECT_DOUBLE_EQ(table.value(QStringLiteral("grandTotal")).toDouble(), 100.0);
 }
 
 } // namespace ui

@@ -15,6 +15,10 @@ struct AnnualRequest {
     std::vector<std::string> previewAnalysisIds;
     int previewYear = 0;
 
+    /**
+     * @brief Reports whether the request has no target or preview overrides.
+     * @return True when all request fields are empty.
+     */
     [[nodiscard]] bool empty() const noexcept {
         return annualId.empty() && previewAnalysisIds.empty() &&
                previewYear == 0;

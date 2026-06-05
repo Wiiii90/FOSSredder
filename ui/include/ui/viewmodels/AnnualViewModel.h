@@ -15,7 +15,10 @@
 namespace ui {
 
 class AnnualWorkflow;
-class WorkspaceFacade;
+class WorkspaceCommands;
+class WorkspaceSelection;
+class WorkspaceSelectors;
+class WorkspaceStore;
 
 /**
  * @brief Owns Annual view form state and delegates annual CRUD and computation
@@ -53,10 +56,11 @@ public:
   explicit AnnualViewModel(QObject *parent = nullptr);
 
   /**
-   * @brief Sets the workspace API used for annual rows and mutations.
-   * @param value Workspace facade or nullptr.
+   * @brief Sets workspace roles used for annual rows, selection and mutations.
    */
-  void setWorkspace(WorkspaceFacade *value);
+  void setWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
+                         WorkspaceSelection *selection,
+                         WorkspaceSelectors *selectors);
 
   /**
    * @brief Sets the workflow used for annual computation.
@@ -65,7 +69,7 @@ public:
   void setAnnualWorkflow(AnnualWorkflow *value);
 
   /**
-   * @brief Returns whether a persisted annual is selected.
+   * @brief Returns whether an existing annual is selected.
    * @return True in edit mode, false in create mode.
    */
   bool isEdit() const;
@@ -375,11 +379,6 @@ private:
    */
   QVariantList rowsFromResultBucket(const QVariantList &rows) const;
   /**
-   * @brief Returns rows missing from live workspace state.
-   * @return Missing live transaction rows.
-   */
-  QVariantList missingLiveRows() const;
-  /**
    * @brief Adapts one annual transaction result row for QML.
    * @param source Source row.
    * @return Transaction row.
@@ -401,26 +400,25 @@ private:
    */
   bool isTransactionSectionExpanded(const QString &key) const;
   /**
-   * @brief Returns the grouped annual transaction count.
-   * @return Grouped transaction count.
-   */
-  int groupedCount() const;
-  /**
    * @brief Returns the current workspace revision.
    * @return Workspace revision or -1.
    */
   int workspaceRevision() const;
   /**
-   * @brief Connects workspace signals.
-   * @param value Workspace facade or nullptr.
+   * @brief Connects workspace role signals.
    */
-  void bindWorkspace(WorkspaceFacade *value);
+  void bindWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
+                          WorkspaceSelection *selection,
+                          WorkspaceSelectors *selectors);
   /**
    * @brief Emits the shared changed signal.
    */
   void emitChanged();
 
-  WorkspaceFacade *workspace_ = nullptr;
+  WorkspaceStore *store_ = nullptr;
+  WorkspaceCommands *commands_ = nullptr;
+  WorkspaceSelection *selection_ = nullptr;
+  WorkspaceSelectors *selectors_ = nullptr;
   AnnualWorkflow *annualWorkflow_ = nullptr;
   QString name_;
   int year_ = 0;
@@ -436,10 +434,10 @@ private:
   QString savedName_;
   int savedYear_ = 0;
   QStringList savedAnalysisIds_;
-  QString cachedPreviewAnnualId_;
-  int cachedPreviewYear_ = 0;
-  QStringList cachedPreviewAnalysisIds_;
-  int cachedPreviewRevision_ = -1;
+  QString lastPreviewAnnualId_;
+  int lastPreviewYear_ = 0;
+  QStringList lastPreviewAnalysisIds_;
+  int lastPreviewRevision_ = -1;
   bool analysisMetadataDirty_ = false;
 };
 

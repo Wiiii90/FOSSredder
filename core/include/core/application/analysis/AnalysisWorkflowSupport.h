@@ -8,27 +8,20 @@
 #include "core/ports/usecases/analysis/AnalysisRequest.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace core::application::analysis {
 
-struct AnalysisConfigInput {
-    std::string type;
-    std::string plotType;
-    std::string plotMeasure;
-    std::vector<std::string> propertyIds;
-    std::vector<std::string> contractTypes;
-    double taxPercent = 0.0;
-};
-
 struct AnalysisAdjustmentTransactionInput {
     std::string id;
     double amount = 0.0;
 };
 
-[[nodiscard]] std::string buildAnalysisConfigJson(const AnalysisConfigInput& input);
+[[nodiscard]] std::string buildAnalysisConfigJson(
+    const core::ports::analysis::AnalysisConfigInput& input);
 
 [[nodiscard]] core::ports::analysis::AnalysisFilterSelection
 filterSelectionFromFields(const std::string& dateField,
@@ -42,6 +35,14 @@ filterSelectionFromFields(const std::string& dateField,
 
 [[nodiscard]] std::vector<std::pair<std::string, double>>
 parseAnalysisAdjustmentsJson(const std::string& adjustmentsJson);
+
+/**
+ * @brief Parses a user-entered analysis percentage.
+ * @param text Percentage text, optionally with percent sign or comma decimal.
+ * @return Parsed percentage value, or empty when the text is invalid.
+ */
+[[nodiscard]] std::optional<double> parseAnalysisPercentText(
+    const std::string& text);
 
 [[nodiscard]] std::string
 buildAnalysisAdjustmentsJson(

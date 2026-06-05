@@ -25,11 +25,11 @@ QSettings openSettings() {
 
 } // namespace
 
-Settings::Settings(QObject *parent) : QObject(parent) {
+Settings::Settings(QObject* parent) : QObject(parent) {
   load();
 }
 
-QString Settings::normalizeText(const QString &value) {
+QString Settings::normalizeText(const QString& value) {
   return value.trimmed();
 }
 
@@ -39,24 +39,24 @@ int Settings::normalizeArchiveFormat(int value) noexcept {
 
 int Settings::normalizeAutosaveIntervalMinutes(int value) noexcept {
   switch (value) {
-  case config::autosave::kInterval1Minute:
-  case config::autosave::kInterval5Minutes:
-  case config::autosave::kInterval10Minutes:
-  case config::autosave::kInterval15Minutes:
-  case config::autosave::kInterval30Minutes:
-    return value;
-  default:
-    return config::autosave::kIntervalOff;
+    case config::autosave::kInterval1Minute:
+    case config::autosave::kInterval5Minutes:
+    case config::autosave::kInterval10Minutes:
+    case config::autosave::kInterval15Minutes:
+    case config::autosave::kInterval30Minutes:
+      return value;
+    default:
+      return config::autosave::kIntervalOff;
   }
 }
 
-QString Settings::normalizeThemeMode(const QString &value) {
+QString Settings::normalizeThemeMode(const QString& value) {
   const QString normalized = value.trimmed().toLower();
   return normalized == QStringLiteral("dark") ? QStringLiteral("dark")
                                               : QStringLiteral("light");
 }
 
-QString normalizeAnalysisDateMode(const QString &value) {
+QString normalizeAnalysisDateMode(const QString& value) {
   const QString normalized = value.trimmed().toLower();
   return normalized == QStringLiteral("range") ? QStringLiteral("range")
                                                : QStringLiteral("year");
@@ -66,7 +66,9 @@ int normalizeAnalysisYear(int value) noexcept {
   return value > 0 ? value : (QDate::currentDate().year() - 1);
 }
 
-void Settings::emitStateChanged() { emit stateChanged(); }
+void Settings::emitStateChanged() {
+  emit stateChanged();
+}
 
 Settings::Values Settings::defaultValues() {
   Values out;
@@ -80,12 +82,15 @@ Settings::Values Settings::defaultValues() {
   return out;
 }
 
-void Settings::applyDefaults() { values_ = defaultValues(); }
+void Settings::applyDefaults() {
+  values_ = defaultValues();
+}
 
 void Settings::loadFromPersistentStore() {
   auto settings = openSettings();
   values_.language = normalizeText(
-      settings.value(preferenceKeys::kLanguage, languages::kEnglish).toString());
+      settings.value(preferenceKeys::kLanguage, languages::kEnglish)
+          .toString());
   if (values_.language.isEmpty())
     values_.language = languages::kEnglish;
   values_.themeMode = normalizeThemeMode(
@@ -117,13 +122,15 @@ void Settings::loadFromPersistentStore() {
   values_.exportIncludeFormulas =
       settings.value(preferenceKeys::kExportIncludeFormulas, true).toBool();
   values_.analysisDefaultDateMode = normalizeAnalysisDateMode(
-      settings.value(preferenceKeys::kAnalysisDefaultDateMode,
-                     QStringLiteral("year"))
+      settings
+          .value(preferenceKeys::kAnalysisDefaultDateMode,
+                 QStringLiteral("year"))
           .toString());
-  values_.analysisDefaultYear = normalizeAnalysisYear(
-      settings.value(preferenceKeys::kAnalysisDefaultYear,
-                     QDate::currentDate().year() - 1)
-          .toInt());
+  values_.analysisDefaultYear =
+      normalizeAnalysisYear(settings
+                                .value(preferenceKeys::kAnalysisDefaultYear,
+                                       QDate::currentDate().year() - 1)
+                                .toInt());
   values_.toolbarShowBooking =
       settings.value(preferenceKeys::kToolbarShowBooking, true).toBool();
   values_.toolbarShowActors =
@@ -155,8 +162,7 @@ void Settings::persistToStore() const {
                     values_.importDefaultPath);
   settings.setValue(preferenceKeys::kImportPoppler, values_.importPoppler);
   settings.setValue(preferenceKeys::kImportOpenCv, values_.importOpenCv);
-  settings.setValue(preferenceKeys::kImportTesseract,
-                    values_.importTesseract);
+  settings.setValue(preferenceKeys::kImportTesseract, values_.importTesseract);
   settings.setValue(preferenceKeys::kImportParser, values_.importParser);
   settings.setValue(preferenceKeys::kImportMatcher, values_.importMatcher);
   settings.setValue(preferenceKeys::kExportDefaultDirectory,
@@ -190,7 +196,9 @@ void Settings::persistToStore() const {
   settings.sync();
 }
 
-void Settings::captureSavedState() { savedValues_ = values_; }
+void Settings::captureSavedState() {
+  savedValues_ = values_;
+}
 
 void Settings::emitAllValueChanged() {
   emit languageChanged();
@@ -219,14 +227,14 @@ void Settings::emitAllValueChanged() {
   emit toolbarShowSettingsChanged();
 }
 
-void Settings::setLanguage(const QString &value) {
+void Settings::setLanguage(const QString& value) {
   const QString normalized = normalizeText(value).toLower();
   const QString nextValue =
       normalized.isEmpty() ? languages::kEnglish : normalized;
   updateSetting(values_.language, nextValue, &Settings::languageChanged);
 }
 
-void Settings::setThemeMode(const QString &value) {
+void Settings::setThemeMode(const QString& value) {
   updateSetting(values_.themeMode, normalizeThemeMode(value),
                 &Settings::themeModeChanged);
 }
@@ -242,37 +250,33 @@ void Settings::setAutosaveIntervalMinutes(int value) {
                 &Settings::autosaveIntervalMinutesChanged);
 }
 
-void Settings::setImportDefaultPath(const QString &value) {
+void Settings::setImportDefaultPath(const QString& value) {
   updateSetting(values_.importDefaultPath, normalizeText(value),
                 &Settings::importDefaultPathChanged);
 }
 
-void Settings::setImportPoppler(const QString &value) {
-  updateSetting(values_.importPoppler, value,
-                &Settings::importPopplerChanged);
+void Settings::setImportPoppler(const QString& value) {
+  updateSetting(values_.importPoppler, value, &Settings::importPopplerChanged);
 }
 
-void Settings::setImportOpenCv(const QString &value) {
-  updateSetting(values_.importOpenCv, value,
-                &Settings::importOpenCvChanged);
+void Settings::setImportOpenCv(const QString& value) {
+  updateSetting(values_.importOpenCv, value, &Settings::importOpenCvChanged);
 }
 
-void Settings::setImportTesseract(const QString &value) {
+void Settings::setImportTesseract(const QString& value) {
   updateSetting(values_.importTesseract, value,
                 &Settings::importTesseractChanged);
 }
 
-void Settings::setImportParser(const QString &value) {
-  updateSetting(values_.importParser, value,
-                &Settings::importParserChanged);
+void Settings::setImportParser(const QString& value) {
+  updateSetting(values_.importParser, value, &Settings::importParserChanged);
 }
 
-void Settings::setImportMatcher(const QString &value) {
-  updateSetting(values_.importMatcher, value,
-                &Settings::importMatcherChanged);
+void Settings::setImportMatcher(const QString& value) {
+  updateSetting(values_.importMatcher, value, &Settings::importMatcherChanged);
 }
 
-void Settings::setExportDefaultDirectory(const QString &value) {
+void Settings::setExportDefaultDirectory(const QString& value) {
   updateSetting(values_.exportDefaultDirectory, normalizeText(value),
                 &Settings::exportDefaultDirectoryChanged);
 }
@@ -287,8 +291,9 @@ void Settings::setExportIncludeFormulas(bool value) {
                 &Settings::exportIncludeFormulasChanged);
 }
 
-void Settings::setAnalysisDefaultDateMode(const QString &value) {
-  updateSetting(values_.analysisDefaultDateMode, normalizeAnalysisDateMode(value),
+void Settings::setAnalysisDefaultDateMode(const QString& value) {
+  updateSetting(values_.analysisDefaultDateMode,
+                normalizeAnalysisDateMode(value),
                 &Settings::analysisDefaultDateModeChanged);
 }
 

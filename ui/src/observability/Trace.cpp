@@ -5,10 +5,10 @@
 
 #include "ui/observability/Trace.h"
 
-#include <QString>
-#include <QStringList>
 #include <QDebug>
 #include <QProcessEnvironment>
+#include <QString>
+#include <QStringList>
 
 namespace ui::observability {
 namespace {
@@ -24,27 +24,40 @@ bool debugBuild() {
 bool envAllowsTrace() {
   const auto env = QProcessEnvironment::systemEnvironment();
   const QString value = env.value(QStringLiteral("FOSSREDDER_UI_TRACE"));
-  return value.compare(QStringLiteral("0"), Qt::CaseInsensitive) != 0 &&
-         value.compare(QStringLiteral("false"), Qt::CaseInsensitive) != 0 &&
-         value.compare(QStringLiteral("off"), Qt::CaseInsensitive) != 0;
+  if (value.isEmpty()) {
+    return true;
+  }
+
+  const bool explicitlyDisabled =
+      value.compare(QStringLiteral("0"), Qt::CaseInsensitive) == 0 ||
+      value.compare(QStringLiteral("false"), Qt::CaseInsensitive) == 0 ||
+      value.compare(QStringLiteral("off"), Qt::CaseInsensitive) == 0;
+  if (explicitlyDisabled) {
+    return false;
+  }
+
+  return value.compare(QStringLiteral("1"), Qt::CaseInsensitive) == 0 ||
+         value.compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0 ||
+         value.compare(QStringLiteral("on"), Qt::CaseInsensitive) == 0;
 }
 
-QString contextText(const core::errors::ErrorContext &context) {
+QString contextText(const core::errors::ErrorContext& context) {
   QStringList parts;
   parts.reserve(static_cast<int>(context.size()));
-  for (const auto &[key, value] : context) {
-    parts.push_back(QStringLiteral("%1=%2")
-                        .arg(QString::fromStdString(key),
-                             QString::fromStdString(value)));
+  for (const auto& [key, value] : context) {
+    parts.push_back(QStringLiteral("%1=%2").arg(QString::fromStdString(key),
+                                                QString::fromStdString(value)));
   }
   return parts.join(QStringLiteral(" "));
 }
 
 } // namespace
 
-bool isTraceEnabled() { return debugBuild() && envAllowsTrace(); }
+bool isTraceEnabled() {
+  return debugBuild() && envAllowsTrace();
+}
 
-void trace(const char *layer, const char *origin, std::string message,
+void trace(const char* layer, const char* origin, std::string message,
            core::errors::ErrorContext context) {
   if (!isTraceEnabled()) {
     return;

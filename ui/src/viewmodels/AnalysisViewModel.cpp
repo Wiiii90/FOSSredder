@@ -5,18 +5,22 @@
 
 #include "ui/viewmodels/AnalysisViewModel.h"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
 #include <QDate>
 #include <QSet>
 #include <QStringList>
+#include <QUrl>
 
-#include "ui/presentation/PayloadKeys.h"
 #include "ui/observability/Trace.h"
+#include "ui/presentation/PayloadKeys.h"
 #include "ui/shell/Settings.h"
 #include "ui/workflows/AnalysisWorkflow.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
@@ -38,18 +42,20 @@ constexpr auto kAllocatable = "allocatable";
 constexpr auto kNonAllocatable = "non-allocatable";
 constexpr auto kUnassigned = "unassigned";
 
-QString qstr(const char *value) { return QString::fromLatin1(value); }
+QString qstr(const char* value) {
+  return QString::fromLatin1(value);
+}
 
-QString rowIdAt(const QVariantList &rows, int index,
-                const QString &idKey = QStringLiteral("id")) {
+QString rowIdAt(const QVariantList& rows, int index,
+                const QString& idKey = QStringLiteral("id")) {
   if (index < 0 || index >= rows.size()) {
     return {};
   }
   return rows.at(index).toMap().value(idKey).toString();
 }
 
-int indexOfId(const QVariantList &rows, const QString &id,
-              const QString &idKey = QStringLiteral("id")) {
+int indexOfId(const QVariantList& rows, const QString& id,
+              const QString& idKey = QStringLiteral("id")) {
   if (id.isEmpty()) {
     return -1;
   }
@@ -61,15 +67,15 @@ int indexOfId(const QVariantList &rows, const QString &id,
   return -1;
 }
 
-QVariantMap rowById(const QVariantList &rows, const QString &id,
-                    const QString &idKey = QStringLiteral("id")) {
+QVariantMap rowById(const QVariantList& rows, const QString& id,
+                    const QString& idKey = QStringLiteral("id")) {
   const int index = indexOfId(rows, id.trimmed(), idKey);
   return index >= 0 ? rows.at(index).toMap() : QVariantMap{};
 }
 
-QString navigatedSelectionId(const QVariantList &rows, const QString &currentId,
+QString navigatedSelectionId(const QVariantList& rows, const QString& currentId,
                              int delta, int defaultIndex = 0,
-                             const QString &idKey = QStringLiteral("id")) {
+                             const QString& idKey = QStringLiteral("id")) {
   const int currentIndex = indexOfId(rows, currentId, idKey);
   if (currentIndex < 0) {
     if (rows.isEmpty()) {
@@ -84,8 +90,9 @@ QString navigatedSelectionId(const QVariantList &rows, const QString &currentId,
     return rowIdAt(rows, defaultIndex, idKey);
   }
   if (delta > 0) {
-    return currentIndex >= rows.size() - 1 ? QString()
-                                           : rowIdAt(rows, currentIndex + 1, idKey);
+    return currentIndex >= rows.size() - 1
+               ? QString()
+               : rowIdAt(rows, currentIndex + 1, idKey);
   }
   if (delta < 0) {
     return currentIndex <= 0 ? QString()
@@ -94,9 +101,9 @@ QString navigatedSelectionId(const QVariantList &rows, const QString &currentId,
   return rowIdAt(rows, currentIndex, idKey);
 }
 
-QString deleteNextSelectionId(const QVariantList &rows, const QString &removedId,
-                              int defaultIndex = 0,
-                              const QString &idKey = QStringLiteral("id")) {
+QString deleteNextSelectionId(const QVariantList& rows,
+                              const QString& removedId, int defaultIndex = 0,
+                              const QString& idKey = QStringLiteral("id")) {
   if (rows.isEmpty()) {
     return {};
   }
@@ -106,7 +113,7 @@ QString deleteNextSelectionId(const QVariantList &rows, const QString &removedId
   return rowIdAt(rows, wrapped < 0 ? wrapped + rows.size() : wrapped, idKey);
 }
 
-double numberFromVariant(const QVariant &value) {
+double numberFromVariant(const QVariant& value) {
   bool ok = false;
   const double out = value.toDouble(&ok);
   return ok && std::isfinite(out) ? out : 0.0;
@@ -116,23 +123,38 @@ QString amountText(double value) {
   return QString::number(value, 'f', 2);
 }
 
-QString amountText(const QVariant &value) {
+QString amountText(const QVariant& value) {
   return amountText(numberFromVariant(value));
 }
 
-QString nonEmptyString(const QVariantMap &map, const QString &key,
-                       const QString &fallback = {}) {
+QString nonEmptyString(const QVariantMap& map, const QString& key,
+                       const QString& defaultValue = {}) {
   const QString value = map.value(key).toString();
-  return value.isEmpty() ? fallback : value;
+  return value.isEmpty() ? defaultValue : value;
 }
 
-QString normalizedType(const QString &value) {
+QVariantList mapKeys(const QVariantMap& value) {
+  QVariantList keys;
+  keys.reserve(value.size());
+  for (auto it = value.cbegin(); it != value.cend(); ++it) {
+    if (!it.key().trimmed().isEmpty()) {
+      keys.push_back(it.key());
+    }
+  }
+  return keys;
+}
+
+QString normalizedType(const QString& value) {
   const QString trimmed = value.trimmed().toLower();
   return trimmed == qstr(kTabular) ? qstr(kTab) : trimmed;
 }
 
-bool containsPropertyId(const QVariantList &rows, const QString &id) {
-  for (const QVariant &value : rows) {
+QString plotTypeFromSubtypeIndex(int plotSubtypeIndex) {
+  return plotSubtypeIndex == 1 ? qstr(kHistogram) : qstr(kPie);
+}
+
+bool containsPropertyId(const QVariantList& rows, const QString& id) {
+  for (const QVariant& value : rows) {
     if (value.toMap().value(QStringLiteral("id")).toString() == id) {
       return true;
     }
@@ -140,7 +162,7 @@ bool containsPropertyId(const QVariantList &rows, const QString &id) {
   return false;
 }
 
-QString rowKey(const QVariant &value, const QString &idField) {
+QString rowKey(const QVariant& value, const QString& idField) {
   if (!idField.isEmpty()) {
     return value.toMap().value(idField).toString();
   }
@@ -151,8 +173,8 @@ QString rowKey(const QVariant &value, const QString &idField) {
   return value.toString();
 }
 
-bool containsRowValue(const QVariantList &rows, const QString &value) {
-  for (const QVariant &row : rows) {
+bool containsRowValue(const QVariantList& rows, const QString& value) {
+  for (const QVariant& row : rows) {
     if (rowKey(row, {}) == value) {
       return true;
     }
@@ -160,8 +182,8 @@ bool containsRowValue(const QVariantList &rows, const QString &value) {
   return false;
 }
 
-void appendContractTypeRow(QVariantList &rows, const QString &value,
-                           const QString &label) {
+void appendContractTypeRow(QVariantList& rows, const QString& value,
+                           const QString& label) {
   if (value.isEmpty() || containsRowValue(rows, value)) {
     return;
   }
@@ -171,23 +193,27 @@ void appendContractTypeRow(QVariantList &rows, const QString &value,
 
 } // namespace
 
-AnalysisViewModel::AnalysisViewModel(QObject *parent) : QObject(parent) {
+AnalysisViewModel::AnalysisViewModel(QObject* parent) : QObject(parent) {
   previewDebounce_.setInterval(kPreviewDebounceMs);
   previewDebounce_.setSingleShot(true);
   connect(&previewDebounce_, &QTimer::timeout, this,
           &AnalysisViewModel::refreshPreview);
 }
 
-void AnalysisViewModel::setWorkspace(WorkspaceFacade *value) {
-  if (workspace_ == value) {
+void AnalysisViewModel::setWorkspaceRoles(WorkspaceStore* store,
+                                          WorkspaceCommands* commands,
+                                          WorkspaceSelection* selection,
+                                          WorkspaceSelectors* selectors) {
+  if (store_ == store && commands_ == commands && selection_ == selection &&
+      selectors_ == selectors) {
     return;
   }
-  bindWorkspace(value);
+  bindWorkspaceRoles(store, commands, selection, selectors);
   refreshFromSelection();
   emitChanged();
 }
 
-void AnalysisViewModel::setAnalysisWorkflow(AnalysisWorkflow *value) {
+void AnalysisViewModel::setAnalysisWorkflow(AnalysisWorkflow* value) {
   if (analysisWorkflow_ == value) {
     return;
   }
@@ -196,7 +222,7 @@ void AnalysisViewModel::setAnalysisWorkflow(AnalysisWorkflow *value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setSettings(Settings *value) {
+void AnalysisViewModel::setSettings(Settings* value) {
   if (settings_ == value) {
     return;
   }
@@ -205,9 +231,13 @@ void AnalysisViewModel::setSettings(Settings *value) {
   emitChanged();
 }
 
-bool AnalysisViewModel::isEdit() const { return !selectedAnalysisId().isEmpty(); }
+bool AnalysisViewModel::isEdit() const {
+  return !selectedAnalysisId().isEmpty();
+}
 
-bool AnalysisViewModel::hasRows() const { return !analysisRows().isEmpty(); }
+bool AnalysisViewModel::hasRows() const {
+  return !analysisRows().isEmpty();
+}
 
 void AnalysisViewModel::refreshFromSelection() {
   refreshFilterRows();
@@ -216,24 +246,35 @@ void AnalysisViewModel::refreshFromSelection() {
   emitChanged();
 }
 
-void AnalysisViewModel::emitChanged() { emit changed(); }
+void AnalysisViewModel::emitChanged() {
+  emit changed();
+}
 
-void AnalysisViewModel::bindWorkspace(WorkspaceFacade *value) {
-  if (workspace_) {
-    disconnect(workspace_, nullptr, this, nullptr);
+void AnalysisViewModel::bindWorkspaceRoles(WorkspaceStore* store,
+                                           WorkspaceCommands* commands,
+                                           WorkspaceSelection* selection,
+                                           WorkspaceSelectors* selectors) {
+  if (store_) {
+    disconnect(store_, nullptr, this, nullptr);
   }
-  workspace_ = value;
-  if (!workspace_) {
+  if (selection_) {
+    disconnect(selection_, nullptr, this, nullptr);
+  }
+  store_ = store;
+  commands_ = commands;
+  selection_ = selection;
+  selectors_ = selectors;
+  if (!store_ || !selection_) {
     return;
   }
-  connect(workspace_, &WorkspaceFacade::selectedAnalysisIdChanged, this,
+  connect(selection_, &WorkspaceSelection::selectedAnalysisIdChanged, this,
           &AnalysisViewModel::refreshFromSelection);
-  connect(workspace_, &WorkspaceFacade::dataRevisionChanged, this,
+  connect(store_, &WorkspaceStore::dataRevisionChanged, this,
           &AnalysisViewModel::refreshFromSelection);
 }
 
 void AnalysisViewModel::submitCreate() {
-  if (!analysisWorkflow_ || !workspace_ || !canSubmit()) {
+  if (!analysisWorkflow_ || !commands_ || !selection_ || !canSubmit()) {
     return;
   }
   observability::traceViewModel(
@@ -241,39 +282,27 @@ void AnalysisViewModel::submitCreate() {
       {{observability::context::kName, name_.toStdString()}});
   refreshPreview();
   refreshAdjustmentAmountsFromSelection();
-  const QString adjustmentsJson =
-      analysisWorkflow_->analysisAdjustmentsJson(adjustmentAmountsById_);
-
   const QString type = strategyType();
   activeResultType_ = type;
-  const QString plotType =
-      AnalysisWorkflow::plotTypeFromSubtypeIndex(plotSubtypeIndex_);
-  const QString configJson = analysisWorkflow_->analysisConfigJson(
-      type, plotType, QStringLiteral("totalAmount"),
-      effectiveSelectedPropertyIds(), effectiveSelectedContractTypes(), 0.0);
-  const QString filterSpec = currentFilterSpec();
   const QString selectedExportFormat =
       normalizedExportFormat(exportFormat_, uiType());
   snapshotTransactions_ = previewTransactions_;
-  const QString newId = workspace_->addAnalysis(
-      name_, type, configJson, filterSpec, selectedExportFormat,
-      includeAdjustments_,
-      analysisWorkflow_->normalizedExportStateJson(exportState_),
-      analysisWorkflow_->transactionSnapshotJson(snapshotTransactions_),
-      adjustmentsJson);
+  const QString newId = commands_->addAnalysis(
+      name_, type, currentAnalysisConfig(), currentAnalysisFilter(),
+      selectedExportFormat, includeAdjustments_, snapshotTransactions_,
+      adjustmentAmountsById_);
   if (newId.isEmpty()) {
     return;
   }
-  workspace_->selectAnalysis(newId);
-  selectedAdjustmentTxIds_ =
-      analysisWorkflow_->adjustmentIds(adjustmentAmountsById_);
+  selection_->selectAnalysis(newId);
+  selectedAdjustmentTxIds_ = mapKeys(adjustmentAmountsById_);
   refreshAnalysisResult();
   filterEditMode_ = false;
   emitChanged();
 }
 
 void AnalysisViewModel::submitUpdate() {
-  if (!analysisWorkflow_ || !workspace_ || selectedAnalysisId().isEmpty() ||
+  if (!analysisWorkflow_ || !commands_ || selectedAnalysisId().isEmpty() ||
       !canSubmit()) {
     return;
   }
@@ -281,25 +310,13 @@ void AnalysisViewModel::submitUpdate() {
       "AnalysisViewModel::submitUpdate", "Analysis update submitted",
       {{observability::context::kId, selectedAnalysisId().toStdString()},
        {observability::context::kName, name_.toStdString()}});
-  const QString adjustmentsJson =
-      analysisWorkflow_->analysisAdjustmentsJson(adjustmentAmountsById_);
-
   const QString type = strategyType();
   activeResultType_ = type;
-  const QString plotType =
-      AnalysisWorkflow::plotTypeFromSubtypeIndex(plotSubtypeIndex_);
-  const QString configJson = analysisWorkflow_->analysisConfigJson(
-      type, plotType, QStringLiteral("totalAmount"),
-      effectiveSelectedPropertyIds(), effectiveSelectedContractTypes(), 0.0);
-  const QString filterSpec = currentFilterSpec();
-  workspace_->updateAnalysis(
-      selectedAnalysisId(), name_, type, configJson, filterSpec,
-      normalizedExportFormat(exportFormat_, uiType()), includeAdjustments_,
-      analysisWorkflow_->normalizedExportStateJson(exportState_),
-      analysisWorkflow_->transactionSnapshotJson(snapshotTransactions_),
-      adjustmentsJson);
-  selectedAdjustmentTxIds_ =
-      analysisWorkflow_->adjustmentIds(adjustmentAmountsById_);
+  commands_->updateAnalysis(
+      selectedAnalysisId(), name_, type, currentAnalysisConfig(),
+      currentAnalysisFilter(), normalizedExportFormat(exportFormat_, uiType()),
+      includeAdjustments_, snapshotTransactions_, adjustmentAmountsById_);
+  selectedAdjustmentTxIds_ = mapKeys(adjustmentAmountsById_);
   refreshAnalysisResult();
   filterEditMode_ = false;
   emitChanged();
@@ -307,51 +324,51 @@ void AnalysisViewModel::submitUpdate() {
 
 void AnalysisViewModel::deleteCurrent() {
   const QString removedId = selectedAnalysisId();
-  if (removedId.isEmpty() || !workspace_) {
+  if (removedId.isEmpty() || !commands_ || !selection_) {
     return;
   }
   observability::traceViewModel(
       "AnalysisViewModel::deleteCurrent", "Analysis delete submitted",
       {{observability::context::kId, removedId.toStdString()}});
   const int currentIndex = indexOfId(analysisRows(), removedId);
-  workspace_->deleteAnalysis(removedId);
-  workspace_->selectAnalysis(
+  commands_->deleteAnalysis(removedId);
+  selection_->selectAnalysis(
       deleteNextSelectionId(analysisRows(), removedId, currentIndex));
   emitChanged();
 }
 
 void AnalysisViewModel::navigate(int delta) {
-  if (!workspace_ || analysisRows().isEmpty()) {
+  if (!selection_ || analysisRows().isEmpty()) {
     return;
   }
 
   const QVariantList rows = analysisRows();
-  workspace_->selectAnalysis(
+  selection_->selectAnalysis(
       navigatedSelectionId(rows, selectedAnalysisId(), delta));
 }
 
-void AnalysisViewModel::selectAnalysis(const QString &id) {
-  if (workspace_) {
-    workspace_->selectAnalysis(id);
+void AnalysisViewModel::selectAnalysis(const QString& id) {
+  if (selection_) {
+    selection_->selectAnalysis(id);
   }
 }
 
 QString AnalysisViewModel::selectedAnalysisId() const {
-  return workspace_ ? workspace_->selectedAnalysisId() : QString();
+  return selection_ ? selection_->selectedAnalysisId() : QString();
 }
 
 QVariantList AnalysisViewModel::analysisRows() const {
-  return workspace_ ? workspace_->analysisRows() : QVariantList();
+  return selectors_ ? selectors_->analysisRows() : QVariantList();
 }
 
-QVariantMap AnalysisViewModel::analysisRowById(const QString &id) const {
+QVariantMap AnalysisViewModel::analysisRowById(const QString& id) const {
   return rowById(analysisRows(), id);
 }
 
-QStringList AnalysisViewModel::stringList(const QVariantList &values) const {
+QStringList AnalysisViewModel::stringList(const QVariantList& values) const {
   QStringList out;
   out.reserve(values.size());
-  for (const QVariant &value : values) {
+  for (const QVariant& value : values) {
     const QString string = value.toString();
     if (!string.isEmpty()) {
       out.push_back(string);
@@ -362,7 +379,7 @@ QStringList AnalysisViewModel::stringList(const QVariantList &values) const {
 
 QVariantList AnalysisViewModel::allPropertyIds() const {
   QVariantList out;
-  for (const QVariant &value : propertyFilterRows_) {
+  for (const QVariant& value : propertyFilterRows_) {
     const QString id = value.toMap().value(QStringLiteral("id")).toString();
     if (!id.isEmpty()) {
       out.push_back(id);
@@ -373,7 +390,7 @@ QVariantList AnalysisViewModel::allPropertyIds() const {
 
 QVariantList AnalysisViewModel::allContractTypes() const {
   QVariantList out;
-  for (const QVariant &value : contractTypeRows_) {
+  for (const QVariant& value : contractTypeRows_) {
     const QString type = rowKey(value, {});
     if (!type.isEmpty()) {
       out.push_back(type);
@@ -382,11 +399,12 @@ QVariantList AnalysisViewModel::allContractTypes() const {
   return out;
 }
 
-QVariantList AnalysisViewModel::pruneSelection(const QVariantList &values,
-                                           const QVariantList &availableRows,
-                                           const QString &idField) const {
+QVariantList
+AnalysisViewModel::pruneSelection(const QVariantList& values,
+                                  const QVariantList& availableRows,
+                                  const QString& idField) const {
   QSet<QString> available;
-  for (const QVariant &value : availableRows) {
+  for (const QVariant& value : availableRows) {
     const QString key = rowKey(value, idField);
     if (!key.isEmpty()) {
       available.insert(key);
@@ -394,7 +412,7 @@ QVariantList AnalysisViewModel::pruneSelection(const QVariantList &values,
   }
 
   QVariantList out;
-  for (const QVariant &value : values) {
+  for (const QVariant& value : values) {
     const QString key = value.toString();
     if (!key.isEmpty() && available.contains(key)) {
       out.push_back(key);
@@ -403,14 +421,14 @@ QVariantList AnalysisViewModel::pruneSelection(const QVariantList &values,
   return out;
 }
 
-bool AnalysisViewModel::isAllSelected(const QVariantList &selectedIds,
-                                  const QVariantList &availableRows,
-                                  const QString &idField) const {
+bool AnalysisViewModel::isAllSelected(const QVariantList& selectedIds,
+                                      const QVariantList& availableRows,
+                                      const QString& idField) const {
   if (availableRows.isEmpty()) {
     return true;
   }
   QSet<QString> selected;
-  for (const QVariant &value : selectedIds) {
+  for (const QVariant& value : selectedIds) {
     const QString key = value.toString();
     if (!key.isEmpty()) {
       selected.insert(key);
@@ -419,7 +437,7 @@ bool AnalysisViewModel::isAllSelected(const QVariantList &selectedIds,
   if (selected.size() != availableRows.size()) {
     return false;
   }
-  for (const QVariant &value : availableRows) {
+  for (const QVariant& value : availableRows) {
     const QString key = rowKey(value, idField);
     if (key.isEmpty() || !selected.contains(key)) {
       return false;
@@ -434,7 +452,8 @@ void AnalysisViewModel::refreshFilterRows() {
   const bool contractTypesWereAll =
       isAllSelected(selectedContractTypes_, contractTypeRows_);
 
-  propertyFilterRows_ = workspace_ ? workspace_->propertyRows() : QVariantList();
+  propertyFilterRows_ =
+      selectors_ ? selectors_->propertyRows() : QVariantList();
   if (!containsPropertyId(propertyFilterRows_, qstr(kUnassigned))) {
     propertyFilterRows_.push_back(QVariantMap{
         {QStringLiteral("id"), qstr(kUnassigned)},
@@ -448,7 +467,7 @@ void AnalysisViewModel::refreshFilterRows() {
 
   QVariantList types;
   if (analysisWorkflow_) {
-    for (const QString &type : analysisWorkflow_->contractTypes()) {
+    for (const QString& type : analysisWorkflow_->contractTypes()) {
       appendContractTypeRow(types, type, type);
     }
   }
@@ -471,8 +490,7 @@ QString AnalysisViewModel::currentDateMode() const {
 
 QString AnalysisViewModel::defaultAnalysisDateMode() const {
   if (settings_) {
-    const QString mode =
-        settings_->analysisDefaultDateMode().toLower();
+    const QString mode = settings_->analysisDefaultDateMode().toLower();
     return mode == QStringLiteral("range") ? QStringLiteral("range")
                                            : QStringLiteral("year");
   }
@@ -518,6 +536,37 @@ QString AnalysisViewModel::currentFilterSpec() const {
                                                                   : QString());
 }
 
+QVariantMap AnalysisViewModel::currentAnalysisConfig() const {
+  return QVariantMap{
+      {QStringLiteral("type"), strategyType()},
+      {QStringLiteral("plotType"), plotTypeFromSubtypeIndex(plotSubtypeIndex_)},
+      {QStringLiteral("plotMeasure"), QStringLiteral("totalAmount")},
+      {QStringLiteral("propertyIds"), effectiveSelectedPropertyIds()},
+      {QStringLiteral("contractTypes"), effectiveSelectedContractTypes()},
+      {QStringLiteral("taxPercent"), 0.0},
+  };
+}
+
+QVariantMap AnalysisViewModel::currentAnalysisFilter() const {
+  const QString mode = allocatableMode_.toLower();
+  return QVariantMap{
+      {QStringLiteral("dateField"), currentDateField()},
+      {QStringLiteral("dateMode"), currentDateMode()},
+      {QStringLiteral("year"), yearValue_},
+      {QStringLiteral("dateFrom"), dateFromValue_},
+      {QStringLiteral("dateTo"), dateToValue_},
+      {QStringLiteral("propertyIds"), effectiveSelectedPropertyIds()},
+      {QStringLiteral("propertyIdsNone"),
+       selectedPropertyIds_.contains(qstr(kUnassigned))},
+      {QStringLiteral("contractTypes"), effectiveSelectedContractTypes()},
+      {QStringLiteral("contractTypesNone"),
+       selectedContractTypes_.contains(qstr(kUnassigned))},
+      {QStringLiteral("allocatableMode"),
+       mode == qstr(kAllocatable) || mode == qstr(kNonAllocatable) ? mode
+                                                                   : QString()},
+  };
+}
+
 void AnalysisViewModel::resetAdjustments() {
   selectedAdjustmentTxIds_.clear();
   adjustmentAmountsById_.clear();
@@ -553,7 +602,7 @@ void AnalysisViewModel::setDateModeIndex(int value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setYearValue(const QString &value) {
+void AnalysisViewModel::setYearValue(const QString& value) {
   if (yearValue_ == value) {
     return;
   }
@@ -562,7 +611,7 @@ void AnalysisViewModel::setYearValue(const QString &value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setDateFromValue(const QString &value) {
+void AnalysisViewModel::setDateFromValue(const QString& value) {
   if (dateFromValue_ == value) {
     return;
   }
@@ -571,7 +620,7 @@ void AnalysisViewModel::setDateFromValue(const QString &value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setDateToValue(const QString &value) {
+void AnalysisViewModel::setDateToValue(const QString& value) {
   if (dateToValue_ == value) {
     return;
   }
@@ -580,7 +629,7 @@ void AnalysisViewModel::setDateToValue(const QString &value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setSelectedPropertyIds(const QVariantList &value) {
+void AnalysisViewModel::setSelectedPropertyIds(const QVariantList& value) {
   if (selectedPropertyIds_ == value) {
     return;
   }
@@ -589,7 +638,7 @@ void AnalysisViewModel::setSelectedPropertyIds(const QVariantList &value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setSelectedContractTypes(const QVariantList &value) {
+void AnalysisViewModel::setSelectedContractTypes(const QVariantList& value) {
   if (selectedContractTypes_ == value) {
     return;
   }
@@ -598,7 +647,7 @@ void AnalysisViewModel::setSelectedContractTypes(const QVariantList &value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setAllocatableMode(const QString &value) {
+void AnalysisViewModel::setAllocatableMode(const QString& value) {
   const QString lower = value.trimmed().toLower();
   const QString next =
       lower == qstr(kAllocatable) || lower == qstr(kNonAllocatable)
@@ -612,7 +661,7 @@ void AnalysisViewModel::setAllocatableMode(const QString &value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setPropertySelected(const QString &id, bool selected) {
+void AnalysisViewModel::setPropertySelected(const QString& id, bool selected) {
   const QString trimmed = id.trimmed();
   if (trimmed.isEmpty()) {
     return;
@@ -631,10 +680,12 @@ void AnalysisViewModel::selectAllProperties() {
   setSelectedPropertyIds(allPropertyIds());
 }
 
-void AnalysisViewModel::selectNoProperties() { setSelectedPropertyIds({}); }
+void AnalysisViewModel::selectNoProperties() {
+  setSelectedPropertyIds({});
+}
 
-void AnalysisViewModel::setContractTypeSelected(const QString &type,
-                                            bool selected) {
+void AnalysisViewModel::setContractTypeSelected(const QString& type,
+                                                bool selected) {
   const QString trimmed = type.trimmed();
   if (trimmed.isEmpty()) {
     return;
@@ -653,10 +704,12 @@ void AnalysisViewModel::selectAllContractTypes() {
   setSelectedContractTypes(allContractTypes());
 }
 
-void AnalysisViewModel::selectNoContractTypes() { setSelectedContractTypes({}); }
+void AnalysisViewModel::selectNoContractTypes() {
+  setSelectedContractTypes({});
+}
 
-void AnalysisViewModel::setAdjustmentTransactionSelected(const QString &id,
-                                                     bool selected) {
+void AnalysisViewModel::setAdjustmentTransactionSelected(const QString& id,
+                                                         bool selected) {
   const QString trimmed = id.trimmed();
   if (trimmed.isEmpty()) {
     return;
@@ -702,7 +755,7 @@ void AnalysisViewModel::clearFilters() {
   emitChanged();
 }
 
-void AnalysisViewModel::setName(const QString &value) {
+void AnalysisViewModel::setName(const QString& value) {
   if (name_ == value) {
     return;
   }
@@ -750,7 +803,7 @@ QVariantList AnalysisViewModel::exportFormatOptions() const {
                       {QStringLiteral("label"), tr("JPG")}}};
 }
 
-void AnalysisViewModel::setExportFormat(const QString &value) {
+void AnalysisViewModel::setExportFormat(const QString& value) {
   const QString next = normalizedExportFormat(value, uiType());
   if (exportFormat_ == next) {
     return;
@@ -791,7 +844,7 @@ void AnalysisViewModel::setIncludeAdjustments(bool value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setSelectedAdjustmentTxIds(const QVariantList &value) {
+void AnalysisViewModel::setSelectedAdjustmentTxIds(const QVariantList& value) {
   if (selectedAdjustmentTxIds_ == value) {
     return;
   }
@@ -799,7 +852,7 @@ void AnalysisViewModel::setSelectedAdjustmentTxIds(const QVariantList &value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setAdjustmentName(const QString &value) {
+void AnalysisViewModel::setAdjustmentName(const QString& value) {
   if (adjustmentName_ == value) {
     return;
   }
@@ -807,7 +860,7 @@ void AnalysisViewModel::setAdjustmentName(const QString &value) {
   emitChanged();
 }
 
-void AnalysisViewModel::setAdjustmentPercentText(const QString &value) {
+void AnalysisViewModel::setAdjustmentPercentText(const QString& value) {
   if (adjustmentPercentText_ == value) {
     return;
   }
@@ -829,8 +882,8 @@ QString AnalysisViewModel::strategyType() const {
 }
 
 QString
-AnalysisViewModel::normalizedExportFormat(const QString &value,
-                                      const QString &targetUiType) const {
+AnalysisViewModel::normalizedExportFormat(const QString& value,
+                                          const QString& targetUiType) const {
   const QString normalized = value.trimmed().toLower();
   const QStringList allowed = targetUiType == qstr(kTable)
                                   ? QStringList{qstr(kXlsx), qstr(kCsv)}
@@ -839,7 +892,7 @@ AnalysisViewModel::normalizedExportFormat(const QString &value,
 }
 
 void AnalysisViewModel::loadSelectedAnalysis() {
-  if (!workspace_ || selectedAnalysisId().isEmpty()) {
+  if (!selectors_ || selectedAnalysisId().isEmpty()) {
     loadCreateState();
     return;
   }
@@ -857,20 +910,14 @@ void AnalysisViewModel::loadSelectedAnalysis() {
   activeResultType_ = type.isEmpty() ? qstr(kPlot) : type;
 
   const QVariantMap config =
-      analysisWorkflow_
-          ? analysisWorkflow_->analysisConfig(
-                row.value(payload::keys::analysis::kConfig).toString())
-          : QVariantMap{};
+      row.value(payload::keys::analysis::kConfig).toMap();
   plotSubtypeIndex_ =
       config.value(QStringLiteral("plotType")).toString() == qstr(kHistogram)
           ? 1
           : 0;
 
   const QVariantMap parsed =
-      analysisWorkflow_
-          ? analysisWorkflow_->parseAnalysisFilterSpec(
-                row.value(payload::keys::analysis::kFilter).toString())
-          : QVariantMap();
+      row.value(payload::keys::analysis::kFilter).toMap();
   dateFieldIndex_ = parsed.value(QStringLiteral("dateField")).toString() ==
                             QStringLiteral("valuta")
                         ? 1
@@ -897,34 +944,16 @@ void AnalysisViewModel::loadSelectedAnalysis() {
   allocatableMode_ =
       nonEmptyString(parsed, QStringLiteral("allocatableMode"), qstr(kAll));
 
-  const QString adjustmentsJson = nonEmptyString(
-      row, payload::keys::analysis::kAdjustments, QStringLiteral("{}"));
   adjustmentAmountsById_ =
-      analysisWorkflow_ ? analysisWorkflow_->analysisAdjustments(adjustmentsJson)
-                        : QVariantMap{};
-  selectedAdjustmentTxIds_ =
-      analysisWorkflow_
-          ? analysisWorkflow_->adjustmentIds(adjustmentAmountsById_)
-          : QVariantList{};
+      row.value(payload::keys::analysis::kAdjustments).toMap();
+  selectedAdjustmentTxIds_ = mapKeys(adjustmentAmountsById_);
   exportFormat_ = normalizedExportFormat(
       row.value(payload::keys::analysis::kExportFormat).toString(), uiType());
   includeAdjustments_ =
       row.value(payload::keys::analysis::kIncludeCalcAdjustments, true)
           .toBool();
-  exportState_ =
-      analysisWorkflow_
-          ? analysisWorkflow_->exportState(
-                row.value(payload::keys::analysis::kExportState,
-                          QStringLiteral("{}"))
-                    .toString())
-          : QVariantMap{};
   snapshotTransactions_ =
-      analysisWorkflow_
-          ? analysisWorkflow_->transactionSnapshot(
-                nonEmptyString(row,
-                               payload::keys::analysis::kSnapshotTransactions,
-                               QStringLiteral("[]")))
-          : QVariantList{};
+      row.value(payload::keys::analysis::kSnapshotTransactions).toList();
   filterEditMode_ = false;
   refreshAnalysisResult();
   refreshPreview();
@@ -947,7 +976,6 @@ void AnalysisViewModel::loadCreateState() {
   filterContentIndex_ = 0;
   exportFormat_.clear();
   includeAdjustments_ = true;
-  exportState_.clear();
   snapshotTransactions_.clear();
   currentAnalysisResult_.clear();
   resetAdjustments();
@@ -957,11 +985,11 @@ void AnalysisViewModel::loadCreateState() {
 QVariantList AnalysisViewModel::previewTransactionRows() const {
   QVariantList rows;
   rows.reserve(previewTransactions_.size());
-  const QString calculationLabel =
-      adjustmentName_.trimmed().isEmpty() ? tr("adjustment")
-                                          : adjustmentName_.trimmed();
+  const QString calculationLabel = adjustmentName_.trimmed().isEmpty()
+                                       ? tr("adjustment")
+                                       : adjustmentName_.trimmed();
 
-  for (const QVariant &value : previewTransactions_) {
+  for (const QVariant& value : previewTransactions_) {
     const QVariantMap source = value.toMap();
     const QString txId = source.value(QStringLiteral("id")).toString();
     const double baseAmount =
@@ -1032,7 +1060,9 @@ void AnalysisViewModel::refreshPreview() {
   emitChanged();
 }
 
-void AnalysisViewModel::requestPreviewRefresh() { previewDebounce_.start(); }
+void AnalysisViewModel::requestPreviewRefresh() {
+  previewDebounce_.start();
+}
 
 QString AnalysisViewModel::currentResultType() const {
   const QVariantMap row = analysisRowById(selectedAnalysisId());
@@ -1043,6 +1073,36 @@ QString AnalysisViewModel::currentResultType() const {
 
 bool AnalysisViewModel::currentResultIsTable() const {
   return currentResultType() == qstr(kTab);
+}
+
+QString AnalysisViewModel::renderedPreviewSourceFromResult(
+    const QVariantMap& analysisResult) const {
+  const QVariantList artifacts =
+      analysisResult.value(QStringLiteral("artifacts")).toList();
+  if (artifacts.isEmpty()) {
+    return {};
+  }
+
+  QString renderedSource;
+  const QString rawPath = artifacts.first().toString().trimmed();
+  if (rawPath.startsWith(QStringLiteral("file:")) ||
+      rawPath.startsWith(QStringLiteral("qrc:")) ||
+      rawPath.startsWith(QStringLiteral("http:")) ||
+      rawPath.startsWith(QStringLiteral("https:")) ||
+      rawPath.startsWith(QStringLiteral("data:"))) {
+    renderedSource = rawPath;
+  } else if (!rawPath.isEmpty()) {
+    renderedSource = QUrl::fromLocalFile(rawPath).toString();
+  }
+  if (renderedSource.isEmpty() ||
+      renderedSource.startsWith(QStringLiteral("data:")) ||
+      renderedSource.startsWith(QStringLiteral("qrc:"))) {
+    return renderedSource;
+  }
+
+  QUrl previewUrl(renderedSource);
+  previewUrl.setQuery(QStringLiteral("v=%1").arg(renderedPreviewRevision_));
+  return previewUrl.toString();
 }
 
 void AnalysisViewModel::applySelectedAdjustment() {
@@ -1056,21 +1116,19 @@ void AnalysisViewModel::refreshAdjustmentAmountsFromSelection() {
   if (!analysisWorkflow_ || selectedAdjustmentTxIds_.isEmpty()) {
     return;
   }
-  const QString adjustmentsJson =
-      analysisWorkflow_->analysisAdjustmentsJsonFromPercentText(
-          previewTransactions_, selectedAdjustmentTxIds_,
-          adjustmentPercentText_);
   adjustmentAmountsById_ =
-      analysisWorkflow_->analysisAdjustments(adjustmentsJson);
+      analysisWorkflow_->analysisAdjustmentAmountsFromPercentText(
+          previewTransactions_, stringList(selectedAdjustmentTxIds_),
+          adjustmentPercentText_);
 }
 
 void AnalysisViewModel::refreshAnalysisResult() {
-  if (!workspace_ || !analysisWorkflow_ || selectedAnalysisId().isEmpty()) {
+  if (!selectors_ || !analysisWorkflow_ || selectedAnalysisId().isEmpty()) {
     return;
   }
   const QVariantMap result = analysisWorkflow_->computeAnalysisPreview(
       selectedAnalysisId(), currentFilterSpec(), includeAdjustments_,
-      analysisWorkflow_->analysisAdjustmentsJson(adjustmentAmountsById_));
+      adjustmentAmountsById_);
   currentAnalysisResult_ = result;
 }
 
@@ -1086,8 +1144,7 @@ void AnalysisViewModel::updateResultState() {
   }
 
   ++renderedPreviewRevision_;
-  renderedPreviewSource_ = analysisWorkflow_->renderedPreviewSource(
-      result, renderedPreviewRevision_);
+  renderedPreviewSource_ = renderedPreviewSourceFromResult(result);
   const QVariantMap table = result.value(QStringLiteral("tableState")).toMap();
   tableContractTypes_ = table.value(QStringLiteral("contractTypes")).toList();
   tablePropertyRows_ = table.value(QStringLiteral("propertyRows")).toList();

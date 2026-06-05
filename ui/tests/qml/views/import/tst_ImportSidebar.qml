@@ -108,7 +108,7 @@ TestCase {
 
     function init() {
         importWorkflow.logs = [
-            { logId: "import-1", time: "2026-05-16 10:00:00", status: "Success", file: "/tmp/import.pdf", message: "done", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "done", draftAttached: false, draftId: "", statementId: "statement-1" }
+            { logId: "import-1", time: "2026-05-16 10:00:00", status: "Success", file: "/tmp/import.pdf", message: "done", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "done", draftAttached: false, draftId: "", statementId: "statement-1" }
         ]
         importViewModel.openCalls = 0
         importViewModel.deleteCalls = 0
@@ -124,7 +124,7 @@ TestCase {
 
     function test_IMP_S_002_draftImportLogClickDelegatesRowPayload() {
         importWorkflow.logs = [
-            { logId: "import-2", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-2", statementId: "" }
+            { logId: "import-2", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-2", statementId: "" }
         ]
         const sidebar = createSidebar()
         const row = findRequired(sidebar, "runLogRow_import-2")
@@ -139,7 +139,7 @@ TestCase {
 
     function test_IMP_S_003_finalizedImportLogClickDelegatesStatementPayload() {
         importWorkflow.logs = [
-            { logId: "import-3", time: "2026-05-16 10:00:00", status: "Finalized", file: "/tmp/import.pdf", message: "done", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "done", draftAttached: false, draftId: "", statementId: "statement-3" }
+            { logId: "import-3", time: "2026-05-16 10:00:00", status: "Finalized", file: "/tmp/import.pdf", message: "done", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "done", draftAttached: false, draftId: "", statementId: "statement-3" }
         ]
         const sidebar = createSidebar()
         const row = findRequired(sidebar, "runLogRow_import-3")
@@ -152,7 +152,7 @@ TestCase {
 
     function test_IMP_S_005_deleteDelegatesRowPayload() {
         importWorkflow.logs = [
-            { logId: "import-4", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-4", statementId: "" }
+            { logId: "import-4", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-4", statementId: "" }
         ]
         const sidebar = createSidebar()
 
@@ -165,7 +165,7 @@ TestCase {
 
     function test_IMP_S_006_selectedDraftImportLogIsHighlighted() {
         importWorkflow.logs = [
-            { logId: "import-5", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", payload: "", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-5", statementId: "" }
+            { logId: "import-5", time: "2026-05-16 10:00:00", status: "Draft", file: "/tmp/import.pdf", message: "draft", displayTime: "2026-05-16 10:00:00", displayTitle: "import.pdf", displayStatusDetail: "draft", draftAttached: true, draftId: "draft-5", statementId: "" }
         ]
         importViewModel.selectedDraftId = "draft-5"
 

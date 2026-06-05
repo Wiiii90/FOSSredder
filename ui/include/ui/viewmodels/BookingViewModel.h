@@ -12,7 +12,10 @@
 
 namespace ui {
 
-class WorkspaceFacade;
+class WorkspaceCommands;
+class WorkspaceSelection;
+class WorkspaceSelectors;
+class WorkspaceStore;
 
 /**
  * @brief Owns Booking view form state and delegates statement and transaction
@@ -63,15 +66,17 @@ class BookingViewModel : public QObject {
 
 public:
   /**
-   * @brief Creates the booking view model backed by the workspace facade.
-   * @param workspace Workspace API used for booking rows and mutations.
+   * @brief Creates the booking view model backed by workspace roles.
    * @param parent Optional Qt parent object.
    */
-  explicit BookingViewModel(WorkspaceFacade *workspace, QObject *parent = nullptr);
+  explicit BookingViewModel(WorkspaceStore *store, WorkspaceCommands *commands,
+                            WorkspaceSelection *selection,
+                            WorkspaceSelectors *selectors,
+                            QObject *parent = nullptr);
 
   /**
    * @brief Returns whether the form currently creates a new statement.
-   * @return True when no persisted statement is selected.
+   * @return True when no existing statement is selected.
    */
   bool isCreateMode() const;
 
@@ -226,7 +231,7 @@ public:
   QString transactionInfoText() const;
 
   /**
-   * @brief Returns whether persisted statements are available.
+   * @brief Returns whether statement rows are available.
    * @return True when the sidebar has statement rows.
    */
   bool hasStatements() const;
@@ -431,19 +436,6 @@ private:
   QVariantMap normalizedTransactionState(const QVariantMap &data) const;
 
   /**
-   * @brief Performs quick UI checks for a transaction create form state.
-   * @param state Transaction form state map.
-   * @return True when the form state can be submitted or is empty.
-   */
-  bool transactionFormStateCanSubmit(const QVariantMap &state) const;
-
-  /**
-   * @brief Returns non-empty create form states that pass quick UI checks.
-   * @return Submittable transaction form state list.
-   */
-  QVariantList submittableTransactionFormStates() const;
-
-  /**
    * @brief Captures the current edit state for dirty-state comparison.
    */
   void captureEditState();
@@ -481,7 +473,10 @@ private:
    */
   void bindSignals();
 
-  WorkspaceFacade *workspace_ = nullptr;
+  WorkspaceStore *store_ = nullptr;
+  WorkspaceCommands *commands_ = nullptr;
+  WorkspaceSelection *selection_ = nullptr;
+  WorkspaceSelectors *selectors_ = nullptr;
   QString createStatementName_;
   QVariantList createTransactionStates_;
   int createTransactionIndex_ = 0;

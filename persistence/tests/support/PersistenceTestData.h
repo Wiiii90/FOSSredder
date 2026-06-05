@@ -243,7 +243,6 @@ inline core::application::exporting::ExportLog makeExportLog(const std::string& 
     log.targetPath = "export.csv";
     log.status = "done";
     log.message = "Export completed";
-    log.payload = "{}";
     log.annualIds = { "annual-1" };
     log.analysisIds = { "analysis-1" };
     return log;

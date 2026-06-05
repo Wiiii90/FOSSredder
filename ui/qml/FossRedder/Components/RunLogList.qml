@@ -61,7 +61,6 @@ Item {
             required property var status
             required property var file
             required property var message
-            property var payload: ""
             required property string displayTime
             required property string displayTitle
             required property string displayStatusDetail

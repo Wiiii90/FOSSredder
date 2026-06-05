@@ -8,9 +8,13 @@
 namespace ui::observability::origins {
 
 namespace app {
-inline constexpr auto kQmlWarnings = "app::qml::warnings";
 inline constexpr auto kToCoreExportFormat = "app::toCoreExportFormat";
 } // namespace app
+
+namespace qml {
+inline constexpr auto kLoad = "ui::QmlDiagnostics::load";
+inline constexpr auto kWarnings = "ui::QmlDiagnostics::warnings";
+} // namespace qml
 
 namespace mainWindow {
 inline constexpr auto kActionRouting = "ui::MainWindow::setupActionRouting";
@@ -40,35 +44,35 @@ inline constexpr auto kFinish = "ui::ExportWorkflow::onExportFinished";
 
 namespace workspace {
 namespace actor {
-inline constexpr auto kAdd = "ui::WorkspaceFacade::addActor";
-inline constexpr auto kUpdate = "ui::WorkspaceFacade::updateActor";
-inline constexpr auto kDelete = "ui::WorkspaceFacade::deleteActor";
+inline constexpr auto kAdd = "ui::WorkspaceCommands::addActor";
+inline constexpr auto kUpdate = "ui::WorkspaceCommands::updateActor";
+inline constexpr auto kDelete = "ui::WorkspaceCommands::deleteActor";
 } // namespace actor
 namespace contract {
-inline constexpr auto kAdd = "ui::WorkspaceFacade::addContract";
-inline constexpr auto kUpdate = "ui::WorkspaceFacade::updateContract";
-inline constexpr auto kDelete = "ui::WorkspaceFacade::deleteContract";
+inline constexpr auto kAdd = "ui::WorkspaceCommands::addContract";
+inline constexpr auto kUpdate = "ui::WorkspaceCommands::updateContract";
+inline constexpr auto kDelete = "ui::WorkspaceCommands::deleteContract";
 } // namespace contract
 namespace property {
-inline constexpr auto kAdd = "ui::WorkspaceFacade::addProperty";
-inline constexpr auto kUpdate = "ui::WorkspaceFacade::updateProperty";
-inline constexpr auto kDelete = "ui::WorkspaceFacade::deleteProperty";
+inline constexpr auto kAdd = "ui::WorkspaceCommands::addProperty";
+inline constexpr auto kUpdate = "ui::WorkspaceCommands::updateProperty";
+inline constexpr auto kDelete = "ui::WorkspaceCommands::deleteProperty";
 } // namespace property
 namespace storage {
-inline constexpr auto kNewFile = "ui::WorkspaceFacade::newFile";
-inline constexpr auto kOpenFile = "ui::WorkspaceFacade::openFile";
-inline constexpr auto kSaveFile = "ui::WorkspaceFacade::saveFile";
-inline constexpr auto kSaveFileAs = "ui::WorkspaceFacade::saveFileAs";
+inline constexpr auto kNewFile = "ui::WorkspaceCommands::newFile";
+inline constexpr auto kOpenFile = "ui::WorkspaceCommands::openFile";
+inline constexpr auto kSaveFile = "ui::WorkspaceCommands::saveFile";
+inline constexpr auto kSaveFileAs = "ui::WorkspaceCommands::saveFileAs";
 } // namespace storage
 namespace statement {
-inline constexpr auto kAdd = "ui::WorkspaceFacade::addStatement";
-inline constexpr auto kUpdate = "ui::WorkspaceFacade::updateStatement";
-inline constexpr auto kDelete = "ui::WorkspaceFacade::deleteStatement";
+inline constexpr auto kAdd = "ui::WorkspaceCommands::addStatement";
+inline constexpr auto kUpdate = "ui::WorkspaceCommands::updateStatement";
+inline constexpr auto kDelete = "ui::WorkspaceCommands::deleteStatement";
 } // namespace statement
 namespace transaction {
-inline constexpr auto kAdd = "ui::WorkspaceFacade::addTransaction";
-inline constexpr auto kUpdate = "ui::WorkspaceFacade::updateTransaction";
-inline constexpr auto kDelete = "ui::WorkspaceFacade::deleteTransaction";
+inline constexpr auto kAdd = "ui::WorkspaceCommands::addTransaction";
+inline constexpr auto kUpdate = "ui::WorkspaceCommands::updateTransaction";
+inline constexpr auto kDelete = "ui::WorkspaceCommands::deleteTransaction";
 } // namespace transaction
 } // namespace workspace
 

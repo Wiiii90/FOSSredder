@@ -19,7 +19,10 @@
 #include "ui/shell/NavigationState.h"
 #include "ui/shell/Settings.h"
 #include "ui/shell/StatusState.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 #include "ui/i18n/Text.h"
 #include "ui/shell/window/MainWindowTrace.h"
 
@@ -30,7 +33,12 @@ MainWindowServices installMainWindowContext(QQmlEngine *qmlEngine,
   MainWindowServices services;
   services.actions = new ui::Actions(parent);
   services.navigation = new ui::NavigationState(parent);
-  services.workspaceFacade = new ui::WorkspaceFacade(parent);
+  services.workspaceStore = new ui::WorkspaceStore(parent);
+  services.workspaceSelectors = new ui::WorkspaceSelectors(*services.workspaceStore, parent);
+  services.workspaceSelection =
+      new ui::WorkspaceSelection(*services.workspaceStore, *services.workspaceSelectors,
+                                 parent);
+  services.workspaceCommands = new ui::WorkspaceCommands(*services.workspaceStore, parent);
   services.fileSystemBrowser = new ui::FileSystemBrowser(parent);
   auto *application = qobject_cast<QApplication *>(QCoreApplication::instance());
   services.languageService = new ui::LanguageService(application, qmlEngine, parent);

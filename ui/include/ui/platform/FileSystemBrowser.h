@@ -30,6 +30,13 @@ public:
    *  @return Application directory path
    */
   Q_INVOKABLE QString appDir() const;
+
+  /**
+   * @brief Opens the containing folder for a file or directory path.
+   * @param path File or directory path.
+   * @return True when an existing location was opened.
+   */
+  Q_INVOKABLE bool openLocation(const QString &path) const;
 };
 
 } // namespace ui

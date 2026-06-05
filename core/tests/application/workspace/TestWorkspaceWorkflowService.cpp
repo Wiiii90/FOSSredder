@@ -112,13 +112,15 @@ TEST(WorkspaceWorkflowServiceTest, ReplacesImportAndExportLogsAtomically) {
 
     WorkspaceWorkflowService service(session);
 
-    core::ports::workspace::ImportLogsCommand importLogs;
-    importLogs.logs.push_back({"import-1", "2024-01-01T00:00:00Z", "csv", "file.csv", "done", "ok", false, {}, {}, {}});
-    service.setImportLogs(importLogs);
+    core::ports::workspace::ImportLogCommand importLog;
+    importLog.log = {"import-1", "2024-01-01T00:00:00Z", "csv", "file.csv",
+                     "done", "ok", false, {}, {}, {}};
+    service.saveImportLog(importLog);
 
-    core::ports::workspace::ExportLogsCommand exportLogs;
-    exportLogs.logs.push_back({"export-1", "2024-01-02T00:00:00Z", "target", "done", "ok", "payload", {}, {}});
-    service.setExportLogs(exportLogs);
+    core::ports::workspace::ExportLogCommand exportLog;
+    exportLog.log = {"export-1", "2024-01-02T00:00:00Z", "target", "done",
+                     "ok", {}, {}};
+    service.saveExportLog(exportLog);
 
     EXPECT_EQ(session.state().workflow.importLogs.size(), 1u);
     EXPECT_EQ(session.state().workflow.exportLogs.size(), 1u);

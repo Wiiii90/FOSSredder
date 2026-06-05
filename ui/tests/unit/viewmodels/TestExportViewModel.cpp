@@ -11,7 +11,9 @@
 #include "support/WorkspaceTestData.h"
 #include "ui/viewmodels/ExportViewModel.h"
 #include "ui/shell/Settings.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
@@ -19,7 +21,9 @@ namespace {
 
 struct ExportStateHarness {
   std::unique_ptr<tests::support::InMemoryWorkspace> workspace;
-  std::unique_ptr<WorkspaceFacade> facade;
+  std::unique_ptr<WorkspaceStore> store;
+  std::unique_ptr<WorkspaceCommands> commands;
+  std::unique_ptr<WorkspaceSelectors> selectors;
   std::unique_ptr<ExportViewModel> state;
 };
 
@@ -51,13 +55,18 @@ ExportStateHarness makeHarness() {
   auto workspace =
       std::make_unique<tests::support::InMemoryWorkspace>(makeExportSnapshot());
   auto *workspacePtr = workspace.get();
-  auto facade = std::make_unique<WorkspaceFacade>(workspacePtr, workspacePtr);
+  auto store = std::make_unique<WorkspaceStore>();
+  store->setWorkspacePorts(workspacePtr, workspacePtr);
+  store->loadFromState(workspacePtr->workspaceSnapshot());
+  auto commands = std::make_unique<WorkspaceCommands>(*store);
+  auto selectors = std::make_unique<WorkspaceSelectors>(*store);
 
   auto state = std::make_unique<ExportViewModel>();
-  state->setWorkspace(facade.get());
+  state->setWorkspaceRoles(store.get(), commands.get(), selectors.get());
   state->setTargetDirectory(QStringLiteral("test:///export"));
 
-  return {std::move(workspace), std::move(facade), std::move(state)};
+  return {std::move(workspace), std::move(store), std::move(commands),
+          std::move(selectors), std::move(state)};
 }
 
 QVariantMap firstMap(const QVariantList &values) {

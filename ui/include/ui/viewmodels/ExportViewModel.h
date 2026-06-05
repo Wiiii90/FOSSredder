@@ -17,7 +17,9 @@ class Actions;
 class ExportWorkflow;
 class FileSystemBrowser;
 class Settings;
-class WorkspaceFacade;
+class WorkspaceCommands;
+class WorkspaceSelectors;
+class WorkspaceStore;
 
 /**
  * @brief Owns Export view state and delegates export execution to
@@ -58,10 +60,10 @@ public:
   explicit ExportViewModel(QObject *parent = nullptr);
 
   /**
-   * @brief Binds the workspace facade used for catalog rows and export logs.
-   * @param value Workspace facade or nullptr.
+   * @brief Binds workspace roles used for catalog rows and export logs.
    */
-  void setWorkspace(WorkspaceFacade *value);
+  void setWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
+                         WorkspaceSelectors *selectors);
   /**
    * @brief Binds the workflow used to execute exports.
    * @param value Export workflow or nullptr.
@@ -214,20 +216,16 @@ public:
   Q_INVOKABLE void pauseExport();
   /** @brief Resumes the active export workflow. */
   Q_INVOKABLE void resumeExport();
-  /** @brief Refreshes export logs from workspace state. */
-  Q_INVOKABLE void refreshExportLogs();
   /**
    * @brief Opens the target folder for an export log.
-   * @param index Fallback row index when no log id is provided.
    * @param logId Stable export log id.
    */
-  Q_INVOKABLE void openExportLogLocation(int index, const QString &logId = {});
+  Q_INVOKABLE void openExportLogLocation(const QString &logId);
   /**
    * @brief Deletes an export log from the workspace.
-   * @param index Fallback row index when no log id is provided.
    * @param logId Stable export log id.
    */
-  Q_INVOKABLE void deleteExportLog(int index, const QString &logId = {});
+  Q_INVOKABLE void deleteExportLog(const QString &logId);
   /**
    * @brief Selects a row in the current add combobox.
    * @param index Index into addRows().
@@ -276,6 +274,7 @@ public:
                                                   int analysisIndex,
                                                   const QString &exportType);
 signals:
+  /** @brief Emitted when export view model state changed. */
   void changed();
 
 private:
@@ -390,9 +389,10 @@ private:
   int workflowMode() const;
   /**
    * @brief Connects workspace signals.
-   * @param value Workspace facade or nullptr.
+   * @param value Export workflow or nullptr.
    */
-  void bindWorkspace(WorkspaceFacade *value);
+  void bindWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
+                          WorkspaceSelectors *selectors);
   /**
    * @brief Connects shell action signals.
    * @param value Actions object or nullptr.
@@ -417,7 +417,9 @@ private:
    */
   void emitChanged();
 
-  WorkspaceFacade *workspace_ = nullptr;
+  WorkspaceStore *store_ = nullptr;
+  WorkspaceCommands *commands_ = nullptr;
+  WorkspaceSelectors *selectors_ = nullptr;
   ExportWorkflow *exportWorkflow_ = nullptr;
   Actions *actions_ = nullptr;
   FileSystemBrowser *fileSystemBrowser_ = nullptr;

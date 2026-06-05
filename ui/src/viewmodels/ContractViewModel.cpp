@@ -7,16 +7,19 @@
 
 #include <QStringList>
 
+#include "ui/observability/Trace.h"
 #include "ui/presentation/PayloadKeys.h"
 #include "ui/presentation/PayloadMapper.h"
-#include "ui/observability/Trace.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
 namespace {
 
-QString stringValue(const QVariant &value) {
+QString stringValue(const QVariant& value) {
   const QVariantMap map = value.toMap();
   if (!map.isEmpty()) {
     const QString aliasValue = map.value(QStringLiteral("value")).toString();
@@ -35,25 +38,25 @@ QString stringValue(const QVariant &value) {
   return value.toString();
 }
 
-QVariantList normalizeStringValues(const QVariantList &values) {
+QVariantList normalizeStringValues(const QVariantList& values) {
   QVariantList out;
   out.reserve(values.size());
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     out.push_back(stringValue(value));
   }
   return out;
 }
 
-QString rowIdAt(const QVariantList &rows, int index,
-                const QString &idKey = payload::keys::common::kId) {
+QString rowIdAt(const QVariantList& rows, int index,
+                const QString& idKey = payload::keys::common::kId) {
   if (index < 0 || index >= rows.size()) {
     return {};
   }
   return rows.at(index).toMap().value(idKey).toString();
 }
 
-int indexOfId(const QVariantList &rows, const QString &id,
-              const QString &idKey = payload::keys::common::kId) {
+int indexOfId(const QVariantList& rows, const QString& id,
+              const QString& idKey = payload::keys::common::kId) {
   if (id.isEmpty()) {
     return -1;
   }
@@ -65,15 +68,16 @@ int indexOfId(const QVariantList &rows, const QString &id,
   return -1;
 }
 
-QVariantMap rowById(const QVariantList &rows, const QString &id,
-                    const QString &idKey = payload::keys::common::kId) {
+QVariantMap rowById(const QVariantList& rows, const QString& id,
+                    const QString& idKey = payload::keys::common::kId) {
   const int index = indexOfId(rows, id.trimmed(), idKey);
   return index >= 0 ? rows.at(index).toMap() : QVariantMap{};
 }
 
-QString navigatedSelectionId(const QVariantList &rows, const QString &currentId,
-                             int delta, int defaultIndex = 0,
-                             const QString &idKey = payload::keys::common::kId) {
+QString
+navigatedSelectionId(const QVariantList& rows, const QString& currentId,
+                     int delta, int defaultIndex = 0,
+                     const QString& idKey = payload::keys::common::kId) {
   const int currentIndex = indexOfId(rows, currentId, idKey);
   if (currentIndex < 0) {
     if (rows.isEmpty()) {
@@ -88,8 +92,9 @@ QString navigatedSelectionId(const QVariantList &rows, const QString &currentId,
     return rowIdAt(rows, defaultIndex, idKey);
   }
   if (delta > 0) {
-    return currentIndex >= rows.size() - 1 ? QString()
-                                           : rowIdAt(rows, currentIndex + 1, idKey);
+    return currentIndex >= rows.size() - 1
+               ? QString()
+               : rowIdAt(rows, currentIndex + 1, idKey);
   }
   if (delta < 0) {
     return currentIndex <= 0 ? QString()
@@ -98,9 +103,10 @@ QString navigatedSelectionId(const QVariantList &rows, const QString &currentId,
   return rowIdAt(rows, currentIndex, idKey);
 }
 
-QString deleteNextSelectionId(const QVariantList &rows, const QString &removedId,
-                              int defaultIndex = 0,
-                              const QString &idKey = payload::keys::common::kId) {
+QString
+deleteNextSelectionId(const QVariantList& rows, const QString& removedId,
+                      int defaultIndex = 0,
+                      const QString& idKey = payload::keys::common::kId) {
   if (rows.isEmpty()) {
     return {};
   }
@@ -110,16 +116,16 @@ QString deleteNextSelectionId(const QVariantList &rows, const QString &removedId
   return rowIdAt(rows, wrapped < 0 ? wrapped + rows.size() : wrapped, idKey);
 }
 
-QVariantList displayRowsWithEmpty(const QVariantList &rows,
-                                  const QString &emptyDisplay,
-                                  const QString &displayKey) {
+QVariantList displayRowsWithEmpty(const QVariantList& rows,
+                                  const QString& emptyDisplay,
+                                  const QString& displayKey) {
   QVariantList out;
   QVariantMap emptyRow;
   emptyRow.insert(payload::keys::common::kId, QString());
   emptyRow.insert(payload::keys::common::kDisplay, emptyDisplay);
   out.push_back(emptyRow);
 
-  for (const auto &rowValue : rows) {
+  for (const auto& rowValue : rows) {
     const QVariantMap row = rowValue.toMap();
     QString display = row.value(displayKey).toString();
     if (display.isEmpty()) {
@@ -137,18 +143,20 @@ QVariantList displayRowsWithEmpty(const QVariantList &rows,
   return out;
 }
 
-bool canAddText(const QString &value) { return !value.trimmed().isEmpty(); }
+bool canAddText(const QString& value) {
+  return !value.trimmed().isEmpty();
+}
 
-bool canRemoveAt(const QVariantList &values, int index) {
+bool canRemoveAt(const QVariantList& values, int index) {
   return index >= 0 && index < values.size();
 }
 
-bool containsTrimmed(const QVariantList &values, const QString &id) {
+bool containsTrimmed(const QVariantList& values, const QString& id) {
   const QString nextId = id.trimmed();
   if (nextId.isEmpty()) {
     return false;
   }
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     if (stringValue(value).trimmed() == nextId) {
       return true;
     }
@@ -156,8 +164,8 @@ bool containsTrimmed(const QVariantList &values, const QString &id) {
   return false;
 }
 
-QVariantList addUniqueTrimmed(const QVariantList &values,
-                              const QString &value) {
+QVariantList addUniqueTrimmed(const QVariantList& values,
+                              const QString& value) {
   const QString next = value.trimmed();
   QVariantList out = normalizeStringValues(values);
   if (next.isEmpty() || containsTrimmed(out, next)) {
@@ -167,14 +175,14 @@ QVariantList addUniqueTrimmed(const QVariantList &values,
   return out;
 }
 
-QVariantList removeTrimmed(const QVariantList &values, const QString &value) {
+QVariantList removeTrimmed(const QVariantList& values, const QString& value) {
   const QString target = value.trimmed();
   if (target.isEmpty()) {
     return values;
   }
   QVariantList out;
   out.reserve(values.size());
-  for (const auto &entry : values) {
+  for (const auto& entry : values) {
     const QString current = stringValue(entry).trimmed();
     if (current != target) {
       out.push_back(current);
@@ -183,7 +191,7 @@ QVariantList removeTrimmed(const QVariantList &values, const QString &value) {
   return out;
 }
 
-QVariantList removeAt(const QVariantList &values, int index) {
+QVariantList removeAt(const QVariantList& values, int index) {
   QVariantList out = normalizeStringValues(values);
   if (!canRemoveAt(out, index)) {
     return out;
@@ -192,15 +200,15 @@ QVariantList removeAt(const QVariantList &values, int index) {
   return out;
 }
 
-int aliasIndexAfterRemoval(const QVariantList &aliases, int removedIndex) {
+int aliasIndexAfterRemoval(const QVariantList& aliases, int removedIndex) {
   if (aliases.isEmpty()) {
     return -1;
   }
   return removedIndex < aliases.size() ? removedIndex : aliases.size() - 1;
 }
 
-bool appendAliasValue(QVariantList &aliases, QString &aliasInputText,
-                      int &aliasIndex, const QString &value) {
+bool appendAliasValue(QVariantList& aliases, QString& aliasInputText,
+                      int& aliasIndex, const QString& value) {
   const QVariantList next = addUniqueTrimmed(aliases, value);
   if (next == aliases) {
     return false;
@@ -211,7 +219,7 @@ bool appendAliasValue(QVariantList &aliases, QString &aliasInputText,
   return true;
 }
 
-bool removeAliasValue(QVariantList &aliases, int &aliasIndex, int index) {
+bool removeAliasValue(QVariantList& aliases, int& aliasIndex, int index) {
   const QVariantList next = removeAt(aliases, index);
   if (next == aliases) {
     return false;
@@ -221,14 +229,15 @@ bool removeAliasValue(QVariantList &aliases, int &aliasIndex, int index) {
   return true;
 }
 
-bool setSelectedId(QVariantList &selectedIds, const QString &id,
+bool setSelectedId(QVariantList& selectedIds, const QString& id,
                    bool selected) {
   const QString normalizedId = id.trimmed();
   if (normalizedId.isEmpty()) {
     return false;
   }
-  const QVariantList next = selected ? addUniqueTrimmed(selectedIds, normalizedId)
-                                     : removeTrimmed(selectedIds, normalizedId);
+  const QVariantList next = selected
+                                ? addUniqueTrimmed(selectedIds, normalizedId)
+                                : removeTrimmed(selectedIds, normalizedId);
   if (next == selectedIds) {
     return false;
   }
@@ -236,24 +245,24 @@ bool setSelectedId(QVariantList &selectedIds, const QString &id,
   return true;
 }
 
-QStringList normalizedStringList(const QVariantList &values) {
+QStringList normalizedStringList(const QVariantList& values) {
   const QVariantList normalized = normalizeStringValues(values);
   QStringList out;
   out.reserve(normalized.size());
-  for (const auto &value : normalized) {
+  for (const auto& value : normalized) {
     out.push_back(value.toString());
   }
   out.sort();
   return out;
 }
 
-QString normalizedAllocatableMode(const QString &value) {
+QString normalizedAllocatableMode(const QString& value) {
   const QString next = value.trimmed();
   return next.isEmpty() ? QStringLiteral("mixed") : next;
 }
 
-QVariantMap contractBaseFormStateFromRow(const QString &name,
-                                         const QVariantList &aliases) {
+QVariantMap contractBaseFormStateFromRow(const QString& name,
+                                         const QVariantList& aliases) {
   QVariantMap out;
   const QVariantList normalizedAliases = normalizeStringValues(aliases);
   out.insert(payload::keys::common::kName, name);
@@ -264,11 +273,11 @@ QVariantMap contractBaseFormStateFromRow(const QString &name,
   return out;
 }
 
-QVariantMap contractFormState(const QString &name, const QString &type,
-                              const QString &allocatableMode,
-                              const QVariantList &actorIds,
-                              const QVariantList &propertyIds,
-                              const QVariantList &aliases) {
+QVariantMap contractFormState(const QString& name, const QString& type,
+                              const QString& allocatableMode,
+                              const QVariantList& actorIds,
+                              const QVariantList& propertyIds,
+                              const QVariantList& aliases) {
   QVariantMap out = contractBaseFormStateFromRow(name, aliases);
   const QVariantList normalizedActorIds = normalizeStringValues(actorIds);
   QVariantList singleActorId;
@@ -287,13 +296,18 @@ QVariantMap contractFormState(const QString &name, const QString &type,
 
 } // namespace
 
-ContractViewModel::ContractViewModel(WorkspaceFacade *workspace, QObject *parent)
-    : QObject(parent), workspace_(workspace) {
+ContractViewModel::ContractViewModel(WorkspaceStore* store,
+                                     WorkspaceCommands* commands,
+                                     WorkspaceSelection* selection,
+                                     WorkspaceSelectors* selectors,
+                                     QObject* parent)
+    : QObject(parent), store_(store), commands_(commands),
+      selection_(selection), selectors_(selectors) {
   bindSignals();
   reloadFromSelection(true);
 }
 
-void ContractViewModel::setName(const QString &value) {
+void ContractViewModel::setName(const QString& value) {
   if (name_ == value) {
     return;
   }
@@ -301,7 +315,7 @@ void ContractViewModel::setName(const QString &value) {
   emit changed();
 }
 
-void ContractViewModel::setAliases(const QVariantList &value) {
+void ContractViewModel::setAliases(const QVariantList& value) {
   if (aliases_ == value) {
     return;
   }
@@ -312,7 +326,7 @@ void ContractViewModel::setAliases(const QVariantList &value) {
   emit changed();
 }
 
-void ContractViewModel::setAliasInputText(const QString &value) {
+void ContractViewModel::setAliasInputText(const QString& value) {
   if (aliasInputText_ == value) {
     return;
   }
@@ -328,7 +342,7 @@ void ContractViewModel::setAliasIndex(int value) {
   emit changed();
 }
 
-bool ContractViewModel::canAddAlias(const QString &value) const {
+bool ContractViewModel::canAddAlias(const QString& value) const {
   return canAddText(value);
 }
 
@@ -336,7 +350,7 @@ bool ContractViewModel::hasValidAliasSelection() const {
   return canRemoveAt(aliases_, aliasIndex_);
 }
 
-void ContractViewModel::addAlias(const QString &value) {
+void ContractViewModel::addAlias(const QString& value) {
   if (!appendAliasValue(aliases_, aliasInputText_, aliasIndex_, value)) {
     return;
   }
@@ -352,12 +366,14 @@ void ContractViewModel::requestRemoveSelectedAlias() {
 }
 
 QString ContractViewModel::currentId() const {
-  return workspace_ ? workspace_->selectedContractId() : QString();
+  return selection_ ? selection_->selectedContractId() : QString();
 }
 
-QString ContractViewModel::type() const { return type_; }
+QString ContractViewModel::type() const {
+  return type_;
+}
 
-void ContractViewModel::setType(const QString &value) {
+void ContractViewModel::setType(const QString& value) {
   if (type_ == value) {
     return;
   }
@@ -365,9 +381,11 @@ void ContractViewModel::setType(const QString &value) {
   emit changed();
 }
 
-QString ContractViewModel::allocatableMode() const { return allocatableMode_; }
+QString ContractViewModel::allocatableMode() const {
+  return allocatableMode_;
+}
 
-void ContractViewModel::setAllocatableMode(const QString &value) {
+void ContractViewModel::setAllocatableMode(const QString& value) {
   const QString next = normalizedAllocatableMode(value);
   if (allocatableMode_ == next) {
     return;
@@ -380,7 +398,7 @@ QVariantList ContractViewModel::selectedActorIds() const {
   return selectedActorIds_;
 }
 
-void ContractViewModel::setSelectedActorIds(const QVariantList &value) {
+void ContractViewModel::setSelectedActorIds(const QVariantList& value) {
   if (selectedActorIds_ == value) {
     return;
   }
@@ -392,7 +410,7 @@ QVariantList ContractViewModel::selectedPropertyIds() const {
   return selectedPropertyIds_;
 }
 
-void ContractViewModel::setSelectedPropertyIds(const QVariantList &value) {
+void ContractViewModel::setSelectedPropertyIds(const QVariantList& value) {
   if (selectedPropertyIds_ == value) {
     return;
   }
@@ -401,25 +419,25 @@ void ContractViewModel::setSelectedPropertyIds(const QVariantList &value) {
 }
 
 QVariantList ContractViewModel::actorRows() const {
-  return workspace_ ? workspace_->actorRows() : QVariantList{};
+  return selectors_ ? selectors_->actorRows() : QVariantList{};
 }
 
 QVariantList ContractViewModel::actorDisplayRows() const {
-  return workspace_ ? displayRowsWithEmpty(actorRows(), tr("No actor"),
+  return selectors_ ? displayRowsWithEmpty(actorRows(), tr("No actor"),
                                            QStringLiteral("name"))
                     : QVariantList{};
 }
 
 QVariantList ContractViewModel::contractRows() const {
-  return workspace_ ? workspace_->contractRows() : QVariantList{};
+  return selectors_ ? selectors_->contractRows() : QVariantList{};
 }
 
 QVariantList ContractViewModel::propertyRows() const {
-  return workspace_ ? workspace_->propertyRows() : QVariantList{};
+  return selectors_ ? selectors_->propertyRows() : QVariantList{};
 }
 
 int ContractViewModel::selectedActorIndex() const {
-  if (!workspace_) {
+  if (!selectors_) {
     return 0;
   }
   const QString selectedActorId = selectedActorIds_.isEmpty()
@@ -429,7 +447,9 @@ int ContractViewModel::selectedActorIndex() const {
   return index >= 0 ? index : 0;
 }
 
-bool ContractViewModel::isEdit() const { return !currentId().isEmpty(); }
+bool ContractViewModel::isEdit() const {
+  return !currentId().isEmpty();
+}
 
 bool ContractViewModel::canSubmit() const {
   return !name_.trimmed().isEmpty() && !type_.trimmed().isEmpty() &&
@@ -443,21 +463,21 @@ void ContractViewModel::clear() {
 }
 
 void ContractViewModel::enterCreateMode() {
-  if (workspace_) {
-    workspace_->selectContract(QString());
+  if (selection_) {
+    selection_->selectContract(QString());
   }
   currentOwnerId_.clear();
   clearFormState();
   captureSavedState();
 }
 
-void ContractViewModel::selectContract(const QString &id) {
-  if (workspace_) {
-    workspace_->selectContract(id);
+void ContractViewModel::selectContract(const QString& id) {
+  if (selection_) {
+    selection_->selectContract(id);
   }
 }
 
-void ContractViewModel::selectPrimaryActor(const QString &actorId) {
+void ContractViewModel::selectPrimaryActor(const QString& actorId) {
   const QString nextId = actorId.trimmed();
   QVariantList next;
   if (!nextId.isEmpty()) {
@@ -466,9 +486,9 @@ void ContractViewModel::selectPrimaryActor(const QString &actorId) {
   setSelectedActorIds(next);
 }
 
-void ContractViewModel::setPropertySelected(const QString &propertyId,
+void ContractViewModel::setPropertySelected(const QString& propertyId,
                                             bool selected) {
-  if (!workspace_) {
+  if (!selection_) {
     return;
   }
   if (!setSelectedId(selectedPropertyIds_, propertyId, selected)) {
@@ -478,7 +498,7 @@ void ContractViewModel::setPropertySelected(const QString &propertyId,
 }
 
 void ContractViewModel::previous() {
-  if (!workspace_) {
+  if (!selection_) {
     return;
   }
   const QVariantList rows = contractRows();
@@ -487,11 +507,11 @@ void ContractViewModel::previous() {
   }
   const QString nextId = navigatedSelectionId(
       rows, isEdit() ? currentId() : QString(), -1, rows.size() - 1);
-  workspace_->selectContract(nextId);
+  selection_->selectContract(nextId);
 }
 
 void ContractViewModel::next() {
-  if (!workspace_) {
+  if (!selection_) {
     return;
   }
   const QVariantList rows = contractRows();
@@ -500,11 +520,11 @@ void ContractViewModel::next() {
   }
   const QString nextId =
       navigatedSelectionId(rows, isEdit() ? currentId() : QString(), 1, 0);
-  workspace_->selectContract(nextId);
+  selection_->selectContract(nextId);
 }
 
 QString ContractViewModel::submit() {
-  if (!workspace_) {
+  if (!commands_ || !selection_) {
     return {};
   }
   observability::traceViewModel(
@@ -518,43 +538,42 @@ QString ContractViewModel::submit() {
       payload::mapper::toQStringList(selectedActorIds_);
   const QStringList propertyIds =
       payload::mapper::toQStringList(selectedPropertyIds_);
-  const QString id = workspace_->saveContract(
+  const QString id = commands_->saveContract(
       isEdit() ? currentId() : QString(), name_, type_, actorIds, propertyIds,
       aliasValues, allocatableMode_);
   if (!id.isEmpty()) {
-    workspace_->selectContract(id);
+    selection_->selectContract(id);
   }
   captureSavedState();
   return id;
 }
 
 void ContractViewModel::deleteCurrent() {
-  if (!workspace_ || currentId().isEmpty()) {
+  if (!commands_ || currentId().isEmpty()) {
     return;
   }
   observability::traceViewModel(
       "ContractViewModel::deleteCurrent", "Contract delete submitted",
       {{observability::context::kId, currentId().toStdString()}});
   const QString removedId = currentId();
-  workspace_->deleteContract(removedId);
-  if (!workspace_) {
-    return;
-  }
+  commands_->deleteContract(removedId);
   const QString nextId =
       deleteNextSelectionId(contractRows(), removedId, 0, QStringLiteral("id"));
-  workspace_->selectContract(nextId);
+  if (selection_)
+    selection_->selectContract(nextId);
 }
 
 bool ContractViewModel::hasChanges() const {
   if (!isEdit()) {
     return canSubmit();
   }
-  if (!workspace_) {
+  if (!selectors_) {
     return false;
   }
   return savedName_ != name_ || savedType_ != type_ ||
          savedAllocatableMode_ != allocatableMode_ ||
-         normalizedStringList(savedAliases_) != normalizedStringList(aliases_) ||
+         normalizedStringList(savedAliases_) !=
+             normalizedStringList(aliases_) ||
          normalizedStringList(savedSelectedActorIds_) !=
              normalizedStringList(selectedActorIds_) ||
          normalizedStringList(savedSelectedPropertyIds_) !=
@@ -574,17 +593,21 @@ void ContractViewModel::clearFormState() {
 }
 
 void ContractViewModel::bindSignals() {
-  if (!workspace_) {
+  if (!store_ || !selection_) {
     return;
   }
 
-  QObject::connect(workspace_, &WorkspaceFacade::dataRevisionChanged, this,
-                   [this]() { reloadFromSelection(true); });
-  QObject::connect(workspace_, &WorkspaceFacade::selectedContractIdChanged, this,
-                   [this]() { reloadFromSelection(false); });
+  QObject::connect(store_, &WorkspaceStore::dataRevisionChanged, this,
+                   [this]() {
+                     reloadFromSelection(true);
+                   });
+  QObject::connect(selection_, &WorkspaceSelection::selectedContractIdChanged,
+                   this, [this]() {
+                     reloadFromSelection(false);
+                   });
 }
 
-void ContractViewModel::applyFormState(const QVariantMap &state) {
+void ContractViewModel::applyFormState(const QVariantMap& state) {
   const QVariantMap next = state;
   name_ = next.value(QStringLiteral("name")).toString();
   aliases_ = next.value(QStringLiteral("aliases")).toList();
@@ -614,7 +637,7 @@ void ContractViewModel::captureSavedState() {
 }
 
 void ContractViewModel::reloadFromSelection(bool forceReload) {
-  if (!workspace_) {
+  if (!selection_ || !selectors_) {
     return;
   }
 
@@ -637,16 +660,15 @@ void ContractViewModel::reloadFromSelection(bool forceReload) {
     return;
   }
 
-  QVariantMap state =
-      contractFormState(row.value(payload::keys::common::kName).toString(),
-                        row.value(payload::keys::common::kType).toString(),
-                        row.value(payload::keys::contract::kAllocatableMode,
-                                  QStringLiteral("mixed"))
-                            .toString(),
-                        row.value(payload::keys::contract::kActorIds).toList(),
-                        row.value(payload::keys::contract::kPropertyIds)
-                            .toList(),
-                        row.value(payload::keys::contract::kAliases).toList());
+  QVariantMap state = contractFormState(
+      row.value(payload::keys::common::kName).toString(),
+      row.value(payload::keys::common::kType).toString(),
+      row.value(payload::keys::contract::kAllocatableMode,
+                QStringLiteral("mixed"))
+          .toString(),
+      row.value(payload::keys::contract::kActorIds).toList(),
+      row.value(payload::keys::contract::kPropertyIds).toList(),
+      row.value(payload::keys::contract::kAliases).toList());
   applyFormState(state);
   captureSavedState();
 }

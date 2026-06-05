@@ -76,6 +76,7 @@ TEST(AnnualServiceTest, CategorizesRowsAndBuildsStatsDeterministically)
 
     EXPECT_EQ(result.stats.duplicateCount, 1);
     EXPECT_EQ(result.stats.missingLive, 2);
+    EXPECT_EQ(result.missingLive.size(), 2u);
     EXPECT_EQ(result.stats.mixedYear, 1);
     EXPECT_EQ(result.stats.missingFromYear, 1);
     EXPECT_EQ(result.stats.verified, 1);

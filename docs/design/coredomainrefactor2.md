@@ -135,8 +135,8 @@ whether a file is open.
 - `AnnualCommand`
 - `StatementDraftCommand`
 - `FinalizeStatementDraftCommand`
-- `ImportLogsCommand`
-- `ExportLogsCommand`
+- `ImportLogCommand`
+- `ExportLogCommand`
 
 `IWorkspaceWriter` takes these commands instead of long primitive parameter
 lists.

@@ -410,13 +410,6 @@ core::application::importing::draft::TransactionDraftPatch toCorePatch(
   return out;
 }
 
-core::ports::importing::draft::DraftImportSuggestions toPortSuggestions(
-    const core::application::importing::draft::DraftImportSuggestions
-        &suggestions) {
-  return {toPortBucket(suggestions.actor), toPortBucket(suggestions.property),
-          toPortBucket(suggestions.contract)};
-}
-
 core::ports::workspace::WorkspaceSnapshot
 mergeSnapshots(core::ports::workspace::WorkspaceSnapshot primary,
                const core::ports::workspace::WorkspaceSnapshot &secondary) {
@@ -632,16 +625,6 @@ StatementImportRunner::importResult(
   result.artifacts =
       impl_->jobSystem->takeStatementArtifacts(handle.importId);
   return result;
-}
-
-core::ports::importing::draft::DraftImportSuggestions
-StatementImportRunner::buildImportSuggestions(
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const core::ports::importing::draft::TransactionDraft &transaction) const {
-  return toPortSuggestions(
-      draft::buildImportSuggestions(
-          core::application::workspace::toWorkspaceCatalog(state),
-          toCoreDraft(transaction)));
 }
 
 core::ports::importing::draft::DraftDerivedState

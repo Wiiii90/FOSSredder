@@ -12,7 +12,10 @@
 
 namespace ui {
 
-class WorkspaceFacade;
+class WorkspaceCommands;
+class WorkspaceSelection;
+class WorkspaceSelectors;
+class WorkspaceStore;
 
 /**
  * @brief Owns editable contract UI state and delegates contract CRUD to workspace.
@@ -42,11 +45,13 @@ class ContractViewModel : public QObject {
 
 public:
   /**
-   * @brief Creates the contract view model bound to the workspace facade.
-   * @param workspace Workspace facade used for selection, rows, and CRUD.
+   * @brief Creates the contract view model bound to workspace roles.
    * @param parent Optional QObject parent.
    */
-  explicit ContractViewModel(WorkspaceFacade *workspace, QObject *parent = nullptr);
+  explicit ContractViewModel(WorkspaceStore *store, WorkspaceCommands *commands,
+                             WorkspaceSelection *selection,
+                             WorkspaceSelectors *selectors,
+                             QObject *parent = nullptr);
 
   /**
    * @brief Returns the currently selected contract id.
@@ -150,13 +155,13 @@ public:
 
   /**
    * @brief Returns contract sidebar rows.
-   * @return QML-ready contract rows from the workspace facade.
+   * @return QML-ready contract rows from workspace selectors.
    */
   QVariantList contractRows() const;
 
   /**
    * @brief Returns property rows for the contract property selector.
-   * @return QML-ready property rows from the workspace facade.
+   * @return QML-ready property rows from workspace selectors.
    */
   QVariantList propertyRows() const;
 
@@ -240,13 +245,13 @@ public:
   Q_INVOKABLE void next();
 
   /**
-   * @brief Creates or updates the current contract through the workspace facade.
+   * @brief Creates or updates the current contract through workspace commands.
    * @return Saved contract id.
    */
   Q_INVOKABLE QString submit();
 
   /**
-   * @brief Deletes the selected contract through the workspace facade.
+   * @brief Deletes the selected contract through workspace commands.
    */
   Q_INVOKABLE void deleteCurrent();
 
@@ -259,7 +264,7 @@ private:
 
   /**
    * @brief Returns actor rows used to build the primary actor display list.
-   * @return QML-ready actor rows from the workspace facade.
+   * @return QML-ready actor rows from workspace selectors.
    */
   QVariantList actorRows() const;
 
@@ -285,7 +290,10 @@ private:
    * @return `true` when the selected alias index points to an existing alias.
    */
   bool hasValidAliasSelection() const;
-  WorkspaceFacade *workspace_ = nullptr;
+  WorkspaceStore *store_ = nullptr;
+  WorkspaceCommands *commands_ = nullptr;
+  WorkspaceSelection *selection_ = nullptr;
+  WorkspaceSelectors *selectors_ = nullptr;
   QString currentOwnerId_;
   QString name_;
   QVariantList aliases_;

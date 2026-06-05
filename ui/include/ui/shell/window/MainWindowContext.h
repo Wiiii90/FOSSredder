@@ -16,9 +16,12 @@ class Actions;
 class FileSystemBrowser;
 class LanguageService;
 class NavigationState;
-class WorkspaceFacade;
 class Settings;
 class StatusState;
+class WorkspaceCommands;
+class WorkspaceSelection;
+class WorkspaceSelectors;
+class WorkspaceStore;
 } // namespace ui
 
 namespace ui::window {
@@ -26,7 +29,10 @@ namespace ui::window {
 struct MainWindowServices {
   ui::Actions *actions = nullptr;
   ui::NavigationState *navigation = nullptr;
-  ui::WorkspaceFacade *workspaceFacade = nullptr;
+  ui::WorkspaceStore *workspaceStore = nullptr;
+  ui::WorkspaceCommands *workspaceCommands = nullptr;
+  ui::WorkspaceSelection *workspaceSelection = nullptr;
+  ui::WorkspaceSelectors *workspaceSelectors = nullptr;
   ui::FileSystemBrowser *fileSystemBrowser = nullptr;
   ui::LanguageService *languageService = nullptr;
   ui::Settings *settings = nullptr;

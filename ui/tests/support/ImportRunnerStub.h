@@ -39,12 +39,6 @@ public:
     return {};
   }
 
-  core::ports::importing::draft::DraftImportSuggestions buildImportSuggestions(
-      const core::ports::workspace::WorkspaceSnapshot &,
-      const core::ports::importing::draft::TransactionDraft &) const override {
-    return {};
-  }
-
   core::ports::importing::draft::DraftDerivedState buildDraftDerivedState(
       const core::ports::workspace::WorkspaceSnapshot &,
       const core::ports::importing::draft::DraftLinkSelection &) const override {

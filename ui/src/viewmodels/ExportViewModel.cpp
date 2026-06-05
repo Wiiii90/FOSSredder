@@ -8,18 +8,16 @@
 #include <algorithm>
 #include <cstddef>
 
-#include <QDesktopServices>
-#include <QDir>
-#include <QFileInfo>
 #include <QLocale>
-#include <QUrl>
 
+#include "ui/observability/Trace.h"
 #include "ui/platform/FileSystemBrowser.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/Settings.h"
-#include "ui/observability/Trace.h"
 #include "ui/workflows/ExportWorkflow.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
@@ -38,10 +36,12 @@ inline constexpr auto kJpg = "JPG";
 inline constexpr int kCreateMode = 0;
 inline constexpr int kProgressMode = 1;
 
-QString qstr(const char *value) { return QString::fromLatin1(value); }
+QString qstr(const char* value) {
+  return QString::fromLatin1(value);
+}
 
-int indexOfId(const QVariantList &rows, const QString &id,
-              const QString &idKey = QStringLiteral("id")) {
+int indexOfId(const QVariantList& rows, const QString& id,
+              const QString& idKey = QStringLiteral("id")) {
   if (id.isEmpty()) {
     return -1;
   }
@@ -53,41 +53,42 @@ int indexOfId(const QVariantList &rows, const QString &id,
   return -1;
 }
 
-QVariantMap rowById(const QVariantList &rows, const QString &id,
-                    const QString &idKey = QStringLiteral("id")) {
+QVariantMap rowById(const QVariantList& rows, const QString& id,
+                    const QString& idKey = QStringLiteral("id")) {
   const int index = indexOfId(rows, id.trimmed(), idKey);
   return index >= 0 ? rows.at(index).toMap() : QVariantMap{};
 }
 
-QString nonEmptyString(const QVariantMap &map, const QString &key,
-                       const QString &fallback = {}) {
+QString nonEmptyString(const QVariantMap& map, const QString& key,
+                       const QString& defaultValue = {}) {
   const QString value = map.value(key).toString();
-  return value.isEmpty() ? fallback : value;
+  return value.isEmpty() ? defaultValue : value;
 }
 } // namespace
 
-ExportViewModel::ExportViewModel(QObject *parent) : QObject(parent) {}
+ExportViewModel::ExportViewModel(QObject* parent) : QObject(parent) {}
 
-void ExportViewModel::setWorkspace(WorkspaceFacade *value) {
-  if (workspace_ == value) {
+void ExportViewModel::setWorkspaceRoles(WorkspaceStore* store,
+                                        WorkspaceCommands* commands,
+                                        WorkspaceSelectors* selectors) {
+  if (store_ == store && commands_ == commands && selectors_ == selectors) {
     return;
   }
-  bindWorkspace(value);
+  bindWorkspaceRoles(store, commands, selectors);
   configureExportLogSink();
   refreshFromWorkspace();
 }
 
-void ExportViewModel::setExportWorkflow(ExportWorkflow *value) {
+void ExportViewModel::setExportWorkflow(ExportWorkflow* value) {
   if (exportWorkflow_ == value) {
     return;
   }
   bindWorkflow(value);
   configureExportLogSink();
-  refreshExportLogs();
   emitChanged();
 }
 
-void ExportViewModel::setActions(Actions *value) {
+void ExportViewModel::setActions(Actions* value) {
   if (actions_ == value) {
     return;
   }
@@ -95,7 +96,7 @@ void ExportViewModel::setActions(Actions *value) {
   emitChanged();
 }
 
-void ExportViewModel::setFileSystemBrowser(FileSystemBrowser *value) {
+void ExportViewModel::setFileSystemBrowser(FileSystemBrowser* value) {
   if (fileSystemBrowser_ == value) {
     return;
   }
@@ -107,7 +108,7 @@ void ExportViewModel::setFileSystemBrowser(FileSystemBrowser *value) {
   emitChanged();
 }
 
-void ExportViewModel::setSettings(Settings *value) {
+void ExportViewModel::setSettings(Settings* value) {
   if (settings_ == value) {
     return;
   }
@@ -121,18 +122,22 @@ void ExportViewModel::setSettings(Settings *value) {
   emitChanged();
 }
 
-void ExportViewModel::bindWorkspace(WorkspaceFacade *value) {
-  if (workspace_) {
-    disconnect(workspace_, nullptr, this, nullptr);
+void ExportViewModel::bindWorkspaceRoles(WorkspaceStore* store,
+                                         WorkspaceCommands* commands,
+                                         WorkspaceSelectors* selectors) {
+  if (store_) {
+    disconnect(store_, nullptr, this, nullptr);
   }
-  workspace_ = value;
-  if (workspace_) {
-    connect(workspace_, &WorkspaceFacade::dataRevisionChanged, this,
+  store_ = store;
+  commands_ = commands;
+  selectors_ = selectors;
+  if (store_) {
+    connect(store_, &WorkspaceStore::dataRevisionChanged, this,
             &ExportViewModel::refreshFromWorkspace);
   }
 }
 
-void ExportViewModel::bindActions(Actions *value) {
+void ExportViewModel::bindActions(Actions* value) {
   if (actions_) {
     disconnect(actions_, nullptr, this, nullptr);
   }
@@ -143,7 +148,7 @@ void ExportViewModel::bindActions(Actions *value) {
   }
 }
 
-void ExportViewModel::bindSettings(Settings *value) {
+void ExportViewModel::bindSettings(Settings* value) {
   if (settings_) {
     disconnect(settings_, nullptr, this, nullptr);
   }
@@ -151,26 +156,23 @@ void ExportViewModel::bindSettings(Settings *value) {
   if (!settings_) {
     return;
   }
-  connect(settings_, &Settings::exportDefaultDirectoryChanged, this,
-          [this]() {
-            if (targetDirectory_.isEmpty() ||
-                targetDirectory_ == appliedDefaultTargetDirectory_) {
-              targetDirectory_ = defaultTargetDirectory();
-              appliedDefaultTargetDirectory_ = targetDirectory_;
-              emitChanged();
-            }
-          });
-  connect(settings_, &Settings::exportArchiveFormatChanged, this,
-          [this]() {
-            packageFormatIndex_ =
-                settings_ ? settings_->exportArchiveFormat() : 0;
-            emitChanged();
-          });
+  connect(settings_, &Settings::exportDefaultDirectoryChanged, this, [this]() {
+    if (targetDirectory_.isEmpty() ||
+        targetDirectory_ == appliedDefaultTargetDirectory_) {
+      targetDirectory_ = defaultTargetDirectory();
+      appliedDefaultTargetDirectory_ = targetDirectory_;
+      emitChanged();
+    }
+  });
+  connect(settings_, &Settings::exportArchiveFormatChanged, this, [this]() {
+    packageFormatIndex_ = settings_ ? settings_->exportArchiveFormat() : 0;
+    emitChanged();
+  });
   connect(settings_, &Settings::exportIncludeFormulasChanged, this,
           &ExportViewModel::emitChanged);
 }
 
-void ExportViewModel::bindWorkflow(ExportWorkflow *value) {
+void ExportViewModel::bindWorkflow(ExportWorkflow* value) {
   if (exportWorkflow_) {
     disconnect(exportWorkflow_, nullptr, this, nullptr);
   }
@@ -185,32 +187,34 @@ void ExportViewModel::configureExportLogSink() {
   if (!exportWorkflow_) {
     return;
   }
-  if (!workspace_) {
+  if (!commands_) {
     exportWorkflow_->setExportLogSink({});
     return;
   }
-  exportWorkflow_->setExportLogSink([this](const auto &log) {
-    if (workspace_) {
-      workspace_->saveExportLog(log);
+  exportWorkflow_->setExportLogSink([this](const auto& log) {
+    if (commands_) {
+      commands_->saveExportLog(log);
     }
   });
 }
 
-bool ExportViewModel::isAnnualMode() const { return addMode_ == qstr(kAnnual); }
+bool ExportViewModel::isAnnualMode() const {
+  return addMode_ == qstr(kAnnual);
+}
 
 QVariantList ExportViewModel::annualRows() const {
-  return workspace_ ? workspace_->annualRows() : QVariantList();
+  return selectors_ ? selectors_->annualRows() : QVariantList();
 }
 
 QVariantList ExportViewModel::analysisRows() const {
-  return workspace_ ? workspace_->analysisRows() : QVariantList();
+  return selectors_ ? selectors_->analysisRows() : QVariantList();
 }
 
-QVariantMap ExportViewModel::annualRowById(const QString &id) const {
+QVariantMap ExportViewModel::annualRowById(const QString& id) const {
   return rowById(annualRows(), id);
 }
 
-QVariantMap ExportViewModel::analysisRowById(const QString &id) const {
+QVariantMap ExportViewModel::analysisRowById(const QString& id) const {
   return rowById(analysisRows(), id);
 }
 
@@ -240,7 +244,7 @@ void ExportViewModel::ensureAddSelection() {
   }
 }
 
-void ExportViewModel::setTargetDirectory(const QString &value) {
+void ExportViewModel::setTargetDirectory(const QString& value) {
   if (targetDirectory_ == value) {
     return;
   }
@@ -257,10 +261,10 @@ void ExportViewModel::setPackageFormatIndex(int value) {
   emitChanged();
 }
 
-void ExportViewModel::setAddMode(const QString &value) {
-  const QString normalized =
-      value.trimmed().toLower() == qstr(kAnalysis) ? qstr(kAnalysis)
-                                                   : qstr(kAnnual);
+void ExportViewModel::setAddMode(const QString& value) {
+  const QString normalized = value.trimmed().toLower() == qstr(kAnalysis)
+                                 ? qstr(kAnalysis)
+                                 : qstr(kAnnual);
   if (addMode_ == normalized) {
     return;
   }
@@ -323,15 +327,15 @@ QString ExportViewModel::defaultTargetDirectory() const {
 void ExportViewModel::refreshEntriesFromWorkspace() {
   QVariantList refreshed;
   refreshed.reserve(exportEntries_.size());
-  for (const QVariant &value : exportEntries_) {
+  for (const QVariant& value : exportEntries_) {
     QVariantMap entry = value.toMap();
     if (entry.value(QStringLiteral("kind")).toString() == qstr(kAnnual)) {
       const QString id = entry.value(QStringLiteral("objectId")).toString();
       const QVariantMap annual = annualRowById(id);
-      entry.insert(QStringLiteral("objectName"),
-                   nonEmptyString(annual, QStringLiteral("name"),
-                                  entry.value(QStringLiteral("objectName"))
-                                      .toString()));
+      entry.insert(
+          QStringLiteral("objectName"),
+          nonEmptyString(annual, QStringLiteral("name"),
+                         entry.value(QStringLiteral("objectName")).toString()));
       entry.insert(QStringLiteral("analyses"),
                    analysesForAnnual(
                        id, entry.value(QStringLiteral("analyses")).toList()));
@@ -351,8 +355,9 @@ void ExportViewModel::refreshEntriesFromWorkspace() {
   exportEntries_ = refreshed;
 }
 
-QVariantMap ExportViewModel::createAnnualEntry(
-    const QString &id, const QString &name, const QVariantList &analyses) const {
+QVariantMap
+ExportViewModel::createAnnualEntry(const QString& id, const QString& name,
+                                   const QVariantList& analyses) const {
   return {{QStringLiteral("kind"), qstr(kAnnual)},
           {QStringLiteral("isAnnual"), true},
           {QStringLiteral("objectId"), id},
@@ -362,35 +367,38 @@ QVariantMap ExportViewModel::createAnnualEntry(
           {QStringLiteral("analyses"), analyses}};
 }
 
-QVariantMap ExportViewModel::createAnalysisEntry(
-    const QString &id, const QString &name, const QString &type,
-    const QString &exportType) const {
-  const QString normalizedType =
-      type.trimmed().isEmpty() ? analysisTypeById(id) : type.trimmed().toLower();
+QVariantMap
+ExportViewModel::createAnalysisEntry(const QString& id, const QString& name,
+                                     const QString& type,
+                                     const QString& exportType) const {
+  const QString normalizedType = type.trimmed().isEmpty()
+                                     ? analysisTypeById(id)
+                                     : type.trimmed().toLower();
   const QVariantList options = exportOptionsForAnalysisType(normalizedType);
   const QString selectedExportType =
       normalizedExportType(exportType, normalizedType);
-  return {{QStringLiteral("kind"), qstr(kAnalysis)},
-          {QStringLiteral("isAnnual"), false},
-          {QStringLiteral("objectId"), id},
-          {QStringLiteral("objectName"), name},
-          {QStringLiteral("analysisIndex"), indexOfId(analysisRows(), id)},
-          {QStringLiteral("analysisType"), normalizedType},
-          {QStringLiteral("exportType"), selectedExportType},
-          {QStringLiteral("exportTypeOptions"), options},
-          {QStringLiteral("exportTypeIndex"),
-           options.indexOf(selectedExportType)}};
+  return {
+      {QStringLiteral("kind"), qstr(kAnalysis)},
+      {QStringLiteral("isAnnual"), false},
+      {QStringLiteral("objectId"), id},
+      {QStringLiteral("objectName"), name},
+      {QStringLiteral("analysisIndex"), indexOfId(analysisRows(), id)},
+      {QStringLiteral("analysisType"), normalizedType},
+      {QStringLiteral("exportType"), selectedExportType},
+      {QStringLiteral("exportTypeOptions"), options},
+      {QStringLiteral("exportTypeIndex"), options.indexOf(selectedExportType)}};
 }
 
-QVariantList ExportViewModel::analysesForAnnual(
-    const QString &annualId, const QVariantList &currentAnalyses) const {
+QVariantList
+ExportViewModel::analysesForAnnual(const QString& annualId,
+                                   const QVariantList& currentAnalyses) const {
   const QVariantMap annual = annualRowById(annualId);
   const QVariantList ids =
       annual.value(QStringLiteral("analysisIds")).toList().isEmpty()
           ? annual.value(QStringLiteral("assignedAnalysisIds")).toList()
           : annual.value(QStringLiteral("analysisIds")).toList();
   QVariantMap currentTypeById;
-  for (const QVariant &value : currentAnalyses) {
+  for (const QVariant& value : currentAnalyses) {
     const QVariantMap row = value.toMap();
     const QString id = row.value(QStringLiteral("objectId")).toString();
     if (!id.isEmpty()) {
@@ -398,29 +406,30 @@ QVariantList ExportViewModel::analysesForAnnual(
     }
   }
   QVariantList out;
-  for (const QVariant &idValue : ids) {
+  for (const QVariant& idValue : ids) {
     const QString analysisId = idValue.toString();
     const QVariantMap row = analysisRowById(analysisId);
     out.push_back(createAnalysisEntry(
         analysisId, nonEmptyString(row, QStringLiteral("name")),
-        nonEmptyString(row, QStringLiteral("type"), analysisTypeById(analysisId)),
+        nonEmptyString(row, QStringLiteral("type"),
+                       analysisTypeById(analysisId)),
         currentTypeById.value(analysisId).toString()));
   }
   return out;
 }
 
-QVariantList ExportViewModel::exportOptionsForAnalysisType(
-    const QString &type) const {
+QVariantList
+ExportViewModel::exportOptionsForAnalysisType(const QString& type) const {
   return type.trimmed().toLower() == qstr(kPlot)
              ? QVariantList{qstr(kPng), qstr(kJpg)}
              : QVariantList{qstr(kCsv), qstr(kXlsx)};
 }
 
-QString ExportViewModel::normalizedExportType(const QString &exportType,
-                                              const QString &type) const {
+QString ExportViewModel::normalizedExportType(const QString& exportType,
+                                              const QString& type) const {
   const QString upper = exportType.trimmed().toUpper();
   const QVariantList options = exportOptionsForAnalysisType(type);
-  for (const QVariant &option : options) {
+  for (const QVariant& option : options) {
     if (option.toString() == upper) {
       return upper;
     }
@@ -428,19 +437,20 @@ QString ExportViewModel::normalizedExportType(const QString &exportType,
   return defaultExportType(type);
 }
 
-QString ExportViewModel::defaultExportType(const QString &type) const {
+QString ExportViewModel::defaultExportType(const QString& type) const {
   return exportOptionsForAnalysisType(type).value(0).toString();
 }
 
-QString ExportViewModel::analysisTypeById(const QString &id) const {
+QString ExportViewModel::analysisTypeById(const QString& id) const {
   const QVariantMap row = analysisRowById(id);
   return nonEmptyString(row, QStringLiteral("type"), qstr(kTab)).toLower();
 }
 
 void ExportViewModel::selectAddRow(int index) {
   const QVariantList rows = addRows();
-  const QVariantMap row =
-      index >= 0 && index < rows.size() ? rows.at(index).toMap() : QVariantMap();
+  const QVariantMap row = index >= 0 && index < rows.size()
+                              ? rows.at(index).toMap()
+                              : QVariantMap();
   const QString id = row.value(QStringLiteral("id")).toString();
   if (isAnnualMode()) {
     selectedAddAnnualId_ = id;
@@ -462,8 +472,8 @@ void ExportViewModel::addSelectedEntry() {
         analysesForAnnual(objectId, {})));
   } else {
     const QVariantMap analysis = analysisRowById(objectId);
-    const QString type =
-        nonEmptyString(analysis, QStringLiteral("type"), analysisTypeById(objectId));
+    const QString type = nonEmptyString(analysis, QStringLiteral("type"),
+                                        analysisTypeById(objectId));
     exportEntries_.push_back(createAnalysisEntry(
         objectId, nonEmptyString(analysis, QStringLiteral("name")), type,
         nonEmptyString(analysis, QStringLiteral("exportFormat"))));
@@ -479,7 +489,8 @@ void ExportViewModel::removeEntry(int index) {
   emitChanged();
 }
 
-void ExportViewModel::updateAnnualEntryAtIndex(int entryIndex, int annualIndex) {
+void ExportViewModel::updateAnnualEntryAtIndex(int entryIndex,
+                                               int annualIndex) {
   if (entryIndex < 0 || entryIndex >= exportEntries_.size()) {
     return;
   }
@@ -531,7 +542,7 @@ void ExportViewModel::updateStandaloneAnalysisAtIndex(int entryIndex,
 }
 
 void ExportViewModel::updateStandaloneAnalysisExportType(
-    int entryIndex, const QString &exportType) {
+    int entryIndex, const QString& exportType) {
   if (entryIndex < 0 || entryIndex >= exportEntries_.size()) {
     return;
   }
@@ -543,9 +554,8 @@ void ExportViewModel::updateStandaloneAnalysisExportType(
   emitChanged();
 }
 
-void ExportViewModel::updateAnnualAnalysisExportType(int entryIndex,
-                                                     int analysisIndex,
-                                                     const QString &exportType) {
+void ExportViewModel::updateAnnualAnalysisExportType(
+    int entryIndex, int analysisIndex, const QString& exportType) {
   if (entryIndex < 0 || entryIndex >= exportEntries_.size()) {
     return;
   }
@@ -566,19 +576,19 @@ void ExportViewModel::updateAnnualAnalysisExportType(int entryIndex,
 
 QVariantList ExportViewModel::exportItems() const {
   QVariantList out;
-  for (const QVariant &value : exportEntries_) {
+  for (const QVariant& value : exportEntries_) {
     const QVariantMap entry = value.toMap();
     const QString kind = entry.value(QStringLiteral("kind")).toString();
     if (kind == qstr(kAnnual)) {
-      const QString annualId = entry.value(QStringLiteral("objectId")).toString();
-      out.push_back(QVariantMap{{QStringLiteral("objectType"),
-                                 qstr(kAnnualObject)},
-                                {QStringLiteral("objectId"), annualId},
-                                {QStringLiteral("objectName"),
-                                 entry.value(QStringLiteral("objectName"))
-                                     .toString()},
-                                {QStringLiteral("exportType"), QString()}});
-      for (const QVariant &analysisValue :
+      const QString annualId =
+          entry.value(QStringLiteral("objectId")).toString();
+      out.push_back(
+          QVariantMap{{QStringLiteral("objectType"), qstr(kAnnualObject)},
+                      {QStringLiteral("objectId"), annualId},
+                      {QStringLiteral("objectName"),
+                       entry.value(QStringLiteral("objectName")).toString()},
+                      {QStringLiteral("exportType"), QString()}});
+      for (const QVariant& analysisValue :
            entry.value(QStringLiteral("analyses")).toList()) {
         const QVariantMap analysis = analysisValue.toMap();
         out.push_back(QVariantMap{
@@ -593,15 +603,15 @@ QVariantList ExportViewModel::exportItems() const {
       }
       continue;
     }
-    out.push_back(QVariantMap{
-        {QStringLiteral("objectType"), qstr(kAnalysisObject)},
-        {QStringLiteral("annualId"), QString()},
-        {QStringLiteral("objectId"),
-         entry.value(QStringLiteral("objectId")).toString()},
-        {QStringLiteral("objectName"),
-         entry.value(QStringLiteral("objectName")).toString()},
-        {QStringLiteral("exportType"),
-         entry.value(QStringLiteral("exportType")).toString()}});
+    out.push_back(
+        QVariantMap{{QStringLiteral("objectType"), qstr(kAnalysisObject)},
+                    {QStringLiteral("annualId"), QString()},
+                    {QStringLiteral("objectId"),
+                     entry.value(QStringLiteral("objectId")).toString()},
+                    {QStringLiteral("objectName"),
+                     entry.value(QStringLiteral("objectName")).toString()},
+                    {QStringLiteral("exportType"),
+                     entry.value(QStringLiteral("exportType")).toString()}});
   }
   return out;
 }
@@ -619,7 +629,9 @@ bool ExportViewModel::showCancel() const {
   return exportWorkflow_ && workflowMode() == kProgressMode;
 }
 
-bool ExportViewModel::showPause() const { return showCancel(); }
+bool ExportViewModel::showPause() const {
+  return showCancel();
+}
 
 bool ExportViewModel::isPaused() const {
   return exportWorkflow_ && exportWorkflow_->isPaused();
@@ -653,7 +665,7 @@ bool ExportViewModel::hasError() const {
 }
 
 QVariantList ExportViewModel::exportLogs() const {
-  return workspace_ ? workspace_->exportLogRows() : QVariantList{};
+  return selectors_ ? selectors_->exportLogRows() : QVariantList{};
 }
 
 void ExportViewModel::browseDirectory() {
@@ -699,51 +711,25 @@ void ExportViewModel::resumeExport() {
   }
 }
 
-void ExportViewModel::refreshExportLogs() {
-  if (exportWorkflow_) {
-    exportWorkflow_->refreshFromStateSnapshot();
-  }
-}
-
-void ExportViewModel::openExportLogLocation(int index, const QString &logId) {
-  if (!workspace_) {
+void ExportViewModel::openExportLogLocation(const QString& logId) {
+  if (!selectors_ || !fileSystemBrowser_) {
     return;
   }
 
-  const QString targetPath = workspace_->exportLogTargetPath(logId, index);
-  if (targetPath.isEmpty()) {
-    return;
-  }
-
-  const QFileInfo info(targetPath);
-  QString folderPath;
-  if (info.exists()) {
-    folderPath = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
-  } else {
-    const QDir dir(targetPath);
-    if (dir.exists()) {
-      folderPath = dir.absolutePath();
-    }
-  }
-  if (!folderPath.isEmpty()) {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath));
-  }
+  const QString targetPath = selectors_->exportLogTargetPath(logId);
+  fileSystemBrowser_->openLocation(targetPath);
 }
 
-void ExportViewModel::deleteExportLog(int index, const QString &logId) {
-  if (!workspace_) {
+void ExportViewModel::deleteExportLog(const QString& logId) {
+  if (!commands_) {
     return;
   }
   observability::traceViewModel(
       "ExportViewModel::deleteExportLog", "Export log delete submitted",
       {{observability::context::kId, logId.toStdString()}});
-  if (!logId.isEmpty()) {
-    workspace_->deleteExportLog(logId);
-    return;
-  }
-
-  if (index >= 0) {
-    workspace_->deleteExportLogAt(index);
+  const QString trimmed = logId.trimmed();
+  if (!trimmed.isEmpty()) {
+    commands_->deleteExportLog(trimmed);
   }
 }
 
@@ -761,6 +747,8 @@ int ExportViewModel::workflowMode() const {
   return exportWorkflow_ ? exportWorkflow_->currentMode() : kCreateMode;
 }
 
-void ExportViewModel::emitChanged() { emit changed(); }
+void ExportViewModel::emitChanged() {
+  emit changed();
+}
 
 } // namespace ui

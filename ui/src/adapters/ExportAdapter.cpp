@@ -5,7 +5,6 @@
 
 #include "ui/adapters/ExportAdapter.h"
 
-#include "core/constants/export.h"
 #include "ui/observability/Trace.h"
 #include "ui/shell/QmlContracts.h"
 
@@ -16,8 +15,11 @@
 namespace ui::adapters {
 namespace {
 
+inline constexpr auto kRunnerUnavailableCode = "runnerUnavailable";
+inline constexpr auto kRunnerUnavailableMessage = "Export runner unavailable.";
+
 core::ports::exporting::AnalysisExportFormat
-analysisExportFormatFromString(const QString &value) {
+analysisExportFormatFromString(const QString& value) {
   const QString normalized = value.trimmed().toLower();
   if (normalized == QStringLiteral("xlsx"))
     return core::ports::exporting::AnalysisExportFormat::Xlsx;
@@ -36,7 +38,7 @@ ExportAdapter::ExportAdapter(
     : runner_(std::move(runner)) {}
 
 core::ports::exporting::ExportResult ExportAdapter::runExport(
-    const core::ports::workspace::WorkspaceSnapshot &workspace,
+    const core::ports::workspace::WorkspaceSnapshot& workspace,
     core::ports::exporting::ExportRequest request) const {
   observability::traceAdapter(
       "ExportAdapter::runExport", "Export runner invoked",
@@ -47,9 +49,8 @@ core::ports::exporting::ExportResult ExportAdapter::runExport(
             core::ports::exporting::ExportStatus::InternalError,
             request.format,
             request.outputPath,
-            std::string(core::constants::exportFlow::errors::kRunnerUnavailable),
-            std::string(
-                core::constants::exportFlow::messages::kRunnerUnavailable)};
+            std::string(kRunnerUnavailableCode),
+            std::string(kRunnerUnavailableMessage)};
   }
 
   return runner_->runExport(workspace, std::move(request));
@@ -58,17 +59,17 @@ core::ports::exporting::ExportResult ExportAdapter::runExport(
 core::ports::exporting::ExportFormat
 ExportAdapter::exportFormatFromQmlIndex(int formatIndex) const {
   switch (static_cast<ui::qml::contracts::ExportFormat>(formatIndex)) {
-  case ui::qml::contracts::ExportFormat::Csv:
-    return core::ports::exporting::ExportFormat::Csv;
-  case ui::qml::contracts::ExportFormat::Xlsx:
-    return core::ports::exporting::ExportFormat::Xlsx;
+    case ui::qml::contracts::ExportFormat::Csv:
+      return core::ports::exporting::ExportFormat::Csv;
+    case ui::qml::contracts::ExportFormat::Xlsx:
+      return core::ports::exporting::ExportFormat::Xlsx;
   }
   return core::ports::exporting::ExportFormat::Csv;
 }
 
 void ExportAdapter::applySelectionPayload(
-    core::ports::exporting::ExportRequest &request,
-    const QVariantMap &selectionPayload) const {
+    core::ports::exporting::ExportRequest& request,
+    const QVariantMap& selectionPayload) const {
   if (selectionPayload.isEmpty()) {
     return;
   }
@@ -83,13 +84,12 @@ void ExportAdapter::applySelectionPayload(
       selectionPayload.value(QStringLiteral("items")).toList();
   request.objectRequests.clear();
   request.objectRequests.reserve(static_cast<std::size_t>(items.size()));
-  for (const QVariant &value : items) {
+  for (const QVariant& value : items) {
     const QVariantMap item = value.toMap();
     if (item.isEmpty()) {
       continue;
     }
-    const QString objectId =
-        item.value(QStringLiteral("objectId")).toString();
+    const QString objectId = item.value(QStringLiteral("objectId")).toString();
     if (objectId.isEmpty()) {
       continue;
     }
@@ -113,9 +113,10 @@ void ExportAdapter::applySelectionPayload(
   }
 }
 
-core::ports::exporting::ExportRequest ExportAdapter::buildExportRequest(
-    int formatIndex, const QString &path, bool includeFormulas,
-    const QString &locale, const QVariantMap &selectionPayload) const {
+core::ports::exporting::ExportRequest
+ExportAdapter::buildExportRequest(int formatIndex, const QString& path,
+                                  bool includeFormulas, const QString& locale,
+                                  const QVariantMap& selectionPayload) const {
   core::ports::exporting::ExportRequest request;
   request.format = exportFormatFromQmlIndex(formatIndex);
   request.outputPath = path.toStdString();

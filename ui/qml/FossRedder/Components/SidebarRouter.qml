@@ -4,7 +4,15 @@
  */
 
 import QtQuick 2.15
-import FossRedder.Views 1.0 as Views
+import FossRedder.Views.Actor 1.0 as Actor
+import FossRedder.Views.Analysis 1.0 as Analysis
+import FossRedder.Views.Annual 1.0 as Annual
+import FossRedder.Views.Booking 1.0 as Booking
+import FossRedder.Views.Contract 1.0 as Contract
+import FossRedder.Views.Export 1.0 as Export
+import FossRedder.Views.Import 1.0 as Import
+import FossRedder.Views.Property 1.0 as Property
+import FossRedder.Views.Settings 1.0 as Settings
 pragma ComponentBehavior: Bound
 
 Item {
@@ -30,15 +38,15 @@ Item {
     readonly property int sectionAnnual: sidebarLeft.navigation.annualSection
     readonly property int sectionSettings: sidebarLeft.navigation.settingsSection
 
-    Component { id: actorSidebarComp; Views.ActorSidebar { actorViewModel: sidebarLeft.actorViewModel; theme: sidebarLeft.theme } }
-    Component { id: propertySidebarComp; Views.PropertySidebar { propertyViewModel: sidebarLeft.propertyViewModel; theme: sidebarLeft.theme } }
-    Component { id: contractSidebarComp; Views.ContractSidebar { contractViewModel: sidebarLeft.contractViewModel; theme: sidebarLeft.theme } }
-    Component { id: bookingSidebarComp; Views.BookingSidebar { theme: sidebarLeft.theme; bookingViewModel: sidebarLeft.bookingViewModel } }
-    Component { id: importSidebarComp; Views.ImportSidebar { importViewModel: sidebarLeft.importViewModel; theme: sidebarLeft.theme } }
-    Component { id: exportSidebarComp; Views.ExportSidebar { exportViewModel: sidebarLeft.exportViewModel; theme: sidebarLeft.theme } }
-    Component { id: analysisSidebarComp; Views.AnalysisSidebar { analysisViewModel: sidebarLeft.analysisViewModel; theme: sidebarLeft.theme } }
-    Component { id: annualSidebarComp; Views.AnnualSidebar { annualViewModel: sidebarLeft.annualViewModel; theme: sidebarLeft.theme } }
-    Component { id: settingsSidebarComp; Views.SettingsSidebar { settingsViewModel: sidebarLeft.settingsViewModel; theme: sidebarLeft.theme } }
+    Component { id: actorSidebarComp; Actor.ActorSidebar { actorViewModel: sidebarLeft.actorViewModel; theme: sidebarLeft.theme } }
+    Component { id: propertySidebarComp; Property.PropertySidebar { propertyViewModel: sidebarLeft.propertyViewModel; theme: sidebarLeft.theme } }
+    Component { id: contractSidebarComp; Contract.ContractSidebar { contractViewModel: sidebarLeft.contractViewModel; theme: sidebarLeft.theme } }
+    Component { id: bookingSidebarComp; Booking.BookingSidebar { theme: sidebarLeft.theme; bookingViewModel: sidebarLeft.bookingViewModel } }
+    Component { id: importSidebarComp; Import.ImportSidebar { importViewModel: sidebarLeft.importViewModel; theme: sidebarLeft.theme } }
+    Component { id: exportSidebarComp; Export.ExportSidebar { exportViewModel: sidebarLeft.exportViewModel; theme: sidebarLeft.theme } }
+    Component { id: analysisSidebarComp; Analysis.AnalysisSidebar { analysisViewModel: sidebarLeft.analysisViewModel; theme: sidebarLeft.theme } }
+    Component { id: annualSidebarComp; Annual.AnnualSidebar { annualViewModel: sidebarLeft.annualViewModel; theme: sidebarLeft.theme } }
+    Component { id: settingsSidebarComp; Settings.SettingsSidebar { settingsViewModel: sidebarLeft.settingsViewModel; theme: sidebarLeft.theme } }
     Sidebar {
         anchors.fill: parent
         visible: sidebarLeft.navigation.activeSection === sidebarLeft.sectionActors

@@ -33,6 +33,8 @@ sortAnnualResult(const core::ports::annual::AnnualResult& result) {
     std::sort(projected.divergent.begin(), projected.divergent.end(), rowLess);
     std::sort(projected.workspaceOnly.begin(), projected.workspaceOnly.end(),
               rowLess);
+    std::sort(projected.missingLive.begin(), projected.missingLive.end(),
+              rowLess);
     return projected;
 }
 

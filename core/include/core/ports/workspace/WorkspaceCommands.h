@@ -29,6 +29,10 @@ struct ValidationIssue {
 struct ValidationResult {
     std::vector<ValidationIssue> issues;
 
+    /**
+     * @brief Reports whether the validation result has no errors.
+     * @return True when no issue has error severity.
+     */
     [[nodiscard]] bool valid() const noexcept {
         for (const auto& issue : issues) {
             if (issue.severity == ValidationSeverity::Error) {
@@ -38,6 +42,12 @@ struct ValidationResult {
         return true;
     }
 
+    /**
+     * @brief Adds an error issue.
+     * @param field Field name.
+     * @param code Error code.
+     * @param message Error message.
+     */
     void addError(std::string field, std::string code, std::string message) {
         issues.push_back({std::move(field), std::move(code), std::move(message), ValidationSeverity::Error});
     }
@@ -77,7 +87,8 @@ struct TransactionCommand {
     std::string name;
     std::string bookingDate;
     std::string valuta;
-    double amount = 0.0;
+    /** Raw user-entered amount text; parsed and validated by the core workspace command service. */
+    std::string amountText;
     std::string statementId;
     std::string insertAfterTransactionId;
     int status = 0;
@@ -87,17 +98,25 @@ struct TransactionCommand {
     std::vector<std::string> propertyIds;
 };
 
+/**
+ * @brief Creates a statement together with its initial transactions.
+ */
+struct StatementWithTransactionsCommand {
+    /** @brief Statement creation data. */
+    StatementCommand statement;
+    /** @brief Transaction creation data; statement ids are assigned by core. */
+    std::vector<TransactionCommand> transactions;
+};
+
 struct AnalysisCommand {
     std::string id;
     std::string name;
     std::string type;
-    std::string configJson;
-    std::string filterSpec;
+    core::ports::analysis::AnalysisConfigInput config;
+    core::ports::analysis::AnalysisFilterSelection filter;
     std::string exportFormat;
     bool includeCalculationAdjustments = true;
-    std::string exportStateJson;
-    std::string snapshotTransactionsJson;
-    std::string adjustmentsJson;
+    std::vector<TransactionSnapshot> snapshotTransactions;
     std::vector<std::pair<std::string, double>> adjustments;
 };
 
@@ -116,16 +135,8 @@ struct FinalizeStatementDraftCommand {
     StatementDraftSnapshot draft;
 };
 
-struct ImportLogsCommand {
-    std::vector<ImportLogSnapshot> logs;
-};
-
 struct ImportLogCommand {
     ImportLogSnapshot log;
-};
-
-struct ExportLogsCommand {
-    std::vector<ExportLogSnapshot> logs;
 };
 
 struct ExportLogCommand {

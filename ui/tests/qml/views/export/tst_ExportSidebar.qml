@@ -21,12 +21,10 @@ TestCase {
 
     property var exportViewModel: QtObject {
         property var exportLogs: []
-        property int refreshCalls: 0
         property int openCalls: 0
         property int removeCalls: 0
-        function refreshExportLogs() { refreshCalls += 1 }
-        function openExportLogLocation(index) { openCalls += 1 }
-        function deleteExportLog(index) { removeCalls += 1 }
+        function openExportLogLocation(logId) { openCalls += 1 }
+        function deleteExportLog(logId) { removeCalls += 1 }
     }
 
     property var theme: QtObject {
@@ -71,13 +69,11 @@ TestCase {
                 status: "Success",
                 file: "/tmp/export.xlsx",
                 message: "done",
-                payload: "{\"items\":[]}",
                 draftAttached: false,
                 draftId: "",
                 statementId: ""
             }
         ]
-        exportViewModel.refreshCalls = 0
         exportViewModel.openCalls = 0
         exportViewModel.removeCalls = 0
     }
@@ -86,7 +82,6 @@ TestCase {
         const view = createView()
         const runList = TestSupport.findRequired(Lookup, view, "runLogList")
 
-        compare(exportViewModel.refreshCalls, 1)
         compare(runList.count, 1)
     }
 }

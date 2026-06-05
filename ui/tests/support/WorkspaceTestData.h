@@ -95,12 +95,14 @@ inline core::ports::workspace::AnalysisSnapshot makeAnalysis() {
   analysis.id = "analysis-1";
   analysis.name = "Monthly Analysis";
   analysis.type = "tabular";
-  analysis.configJson = "{\"groupBy\":\"month\"}";
-  analysis.filterSpec = "{}";
+  analysis.config.type = "tabular";
+  analysis.filter.dateMode = "year";
+  analysis.filter.year = "2026";
   analysis.exportFormat = "csv";
   analysis.includeCalculationAdjustments = true;
-  analysis.exportStateJson = "{}";
-    analysis.snapshotTransactionsJson = "[{\"transactionId\":\"tx-1\"}]";
+  analysis.snapshotTransactions = {makeTransaction(
+      "tx-1", "Income", "2026-01-15", 1250.0, "actor-1", "contract-1",
+      "statement-1", true, {"property-1"})};
   analysis.adjustments.emplace_back("actor-1", 19.25);
   analysis.createdAt = "2026-01-01T08:00:00Z";
   analysis.updatedAt = "2026-01-02T08:00:00Z";

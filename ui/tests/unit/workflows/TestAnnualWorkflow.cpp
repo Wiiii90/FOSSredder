@@ -11,7 +11,8 @@
 #include "support/WorkspaceTestData.h"
 #include "ui/adapters/AnnualAdapter.h"
 #include "ui/workflows/AnnualWorkflow.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
@@ -22,15 +23,17 @@ core::ports::workspace::WorkspaceSnapshot makeAnnualSnapshot() {
   tabular.id = "analysis-table";
   tabular.name = "Table";
   tabular.type = "tabular";
-  tabular.snapshotTransactionsJson =
-      R"([{"id":"tx-1","name":"Rent","bookingDate":"2026-01-05","amount":1250.0,"allocatable":true,"contractId":"contract-1","statementId":"statement-1","propertyIds":["property-1"]}])";
+  tabular.snapshotTransactions = {tests::support::makeTransaction(
+      "tx-1", "Rent", "2026-01-05", 1250.0, {}, "contract-1",
+      "statement-1", true, {"property-1"})};
 
   auto plot = tests::support::makeAnalysis();
   plot.id = "analysis-plot";
   plot.name = "Plot";
   plot.type = "plot";
-  plot.snapshotTransactionsJson =
-      R"([{"id":"tx-2","name":"Fees","bookingDate":"2026-01-06","amount":-35.5,"allocatable":false,"contractId":"","statementId":"statement-1","propertyIds":["property-1"]}])";
+  plot.snapshotTransactions = {tests::support::makeTransaction(
+      "tx-2", "Fees", "2026-01-06", -35.5, {}, {}, "statement-1",
+      false, {"property-1"})};
 
   auto annual = tests::support::makeAnnual();
   annual.analysisIds = {"analysis-table"};
@@ -77,11 +80,13 @@ TEST(AnnualWorkflowTest,
   EXPECT_EQ(result.value(QStringLiteral("workspaceOnly")).toList().size(), 0);
 }
 
-TEST(AnnualWorkflowTest, WF_ANNUAL_003_WorkspaceFacadeSavesAndDeletesAnnual) {
+TEST(AnnualWorkflowTest, WF_ANNUAL_003_WorkspaceCommandsSaveAndDeleteAnnual) {
   tests::support::InMemoryWorkspace workspace(makeAnnualSnapshot());
-  WorkspaceFacade facade(&workspace, &workspace);
+  WorkspaceStore store;
+  store.setWorkspacePorts(&workspace, &workspace);
+  WorkspaceCommands commands(store);
 
-  const QString createdId = facade.addAnnual(
+  const QString createdId = commands.addAnnual(
       QStringLiteral("Created Annual"), 2026,
       {QStringLiteral("analysis-table"), QStringLiteral("analysis-plot")});
   ASSERT_FALSE(createdId.isEmpty());
@@ -90,27 +95,29 @@ TEST(AnnualWorkflowTest, WF_ANNUAL_003_WorkspaceFacadeSavesAndDeletesAnnual) {
   EXPECT_EQ(snapshot.annuals.back().name, std::string("Created Annual"));
   ASSERT_EQ(snapshot.annuals.back().analysisIds.size(), 2U);
 
-  facade.updateAnnual(createdId, QStringLiteral("Updated Annual"), 2027,
-                      {QStringLiteral("analysis-table")});
+  commands.updateAnnual(createdId, QStringLiteral("Updated Annual"), 2027,
+                        {QStringLiteral("analysis-table")});
   snapshot = workspace.workspaceSnapshot();
   ASSERT_EQ(snapshot.annuals.size(), 2U);
   EXPECT_EQ(snapshot.annuals.back().name, std::string("Updated Annual"));
   EXPECT_EQ(snapshot.annuals.back().year, 2027);
   ASSERT_EQ(snapshot.annuals.back().analysisIds.size(), 1U);
 
-  facade.deleteAnnual(createdId);
+  commands.deleteAnnual(createdId);
   snapshot = workspace.workspaceSnapshot();
   ASSERT_EQ(snapshot.annuals.size(), 1U);
   EXPECT_EQ(snapshot.annuals.front().id, std::string("annual-1"));
 }
 
 TEST(AnnualWorkflowTest,
-     WF_ANNUAL_004_WorkspaceFacadePreservesAnalysisPayloadWhenExportFormatChanges) {
+     WF_ANNUAL_004_WorkspaceCommandsPreserveAnalysisPayloadWhenExportFormatChanges) {
   tests::support::InMemoryWorkspace workspace(makeAnnualSnapshot());
-  WorkspaceFacade facade(&workspace, &workspace);
+  WorkspaceStore store;
+  store.setWorkspacePorts(&workspace, &workspace);
+  WorkspaceCommands commands(store);
 
-  facade.updateAnalysisExportFormat(QStringLiteral("analysis-plot"),
-                                    QStringLiteral("jpg"));
+  commands.updateAnalysisExportFormat(QStringLiteral("analysis-plot"),
+                                      QStringLiteral("jpg"));
 
   const auto snapshot = workspace.workspaceSnapshot();
   ASSERT_EQ(snapshot.analyses.size(), 2U);

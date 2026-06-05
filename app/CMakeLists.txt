@@ -6,6 +6,11 @@ set(APP_COMMON_SRCS
     src/main.cpp
 )
 
+set(APP_HEADERS
+    include/app/Environment.h
+    include/app/pch.h
+)
+
 set(APP_QML_SRCS
     src/main_qml.cpp
 )
@@ -36,7 +41,7 @@ else()
     endif()
 endif()
 
-set(APP_SRCS ${APP_COMMON_SRCS} ${APP_RESOURCE_SRCS})
+set(APP_SRCS ${APP_COMMON_SRCS} ${APP_HEADERS} ${APP_RESOURCE_SRCS})
 if(USE_QML)
     list(APPEND APP_SRCS ${APP_QML_SRCS})
 endif()
@@ -49,9 +54,13 @@ set_target_properties(fossredder PROPERTIES
     AUTOMOC ON
     AUTOUIC ON
     AUTORCC ON
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
 
 target_compile_features(fossredder PUBLIC cxx_std_20)
+target_compile_definitions(fossredder PRIVATE
+    FOSSREDDER_VERSION="${PROJECT_VERSION}"
+)
 
 # Application dependencies.
 target_link_libraries(fossredder PRIVATE
@@ -150,7 +159,7 @@ if(TARGET Qt6::Widgets)
     target_link_libraries(fossredder PRIVATE Qt6::Widgets)
 endif()
 
-fossredder_enable_target_pch(fossredder "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
+fossredder_enable_target_pch(fossredder "${CMAKE_CURRENT_SOURCE_DIR}/include/app/pch.h")
 
 fossredder_configure_qt_runtime(fossredder
     QML_SOURCE_DIR "${CMAKE_SOURCE_DIR}/ui/qml/FossRedder"

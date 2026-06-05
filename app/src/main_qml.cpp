@@ -13,79 +13,23 @@
 #include "core/ports/workspace/IWorkspaceReader.h"
 #include "core/ports/workspace/IWorkspaceWriter.h"
 
-#include "ui/observability/ErrorCodes.h"
-#include "ui/observability/Origins.h"
 #include "ui/shell/Composition.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/shell/QmlDiagnostics.h"
 #include <QApplication>
-#include <QList>
-#include <QQmlEngine>
-#include <QQmlError>
-#include <ui/observability/Trace.h>
 
 #include <memory>
 #include <utility>
 
-namespace {
-
-void wireFileSignals(MainWindow& w, ui::WorkspaceFacade* workspace) {
-  if (!workspace)
-    return;
-
-  QObject::connect(&w, &MainWindow::newFileRequested, workspace,
-                   [workspace](const QString& path) {
-                     workspace->newFile(path);
-                   });
-  QObject::connect(&w, &MainWindow::openFileRequested, workspace,
-                   [workspace](const QString& path) {
-                     workspace->openFile(path);
-                   });
-  QObject::connect(&w, &MainWindow::saveFileRequested, workspace,
-                   [workspace]() {
-                     workspace->saveFile();
-                   });
-  QObject::connect(&w, &MainWindow::saveFileAsRequested, workspace,
-                   [workspace](const QString& path) {
-                     workspace->saveFileAs(path);
-                   });
-  QObject::connect(workspace, &ui::WorkspaceFacade::operationSucceeded, &w,
-                   &MainWindow::handleStorageOperationSucceeded);
-  QObject::connect(workspace, &ui::WorkspaceFacade::operationFailed, &w,
-                   &MainWindow::handleStorageOperationFailed);
-}
-
-void wireQmlWarnings(
-    MainWindow& w,
-    const std::shared_ptr<core::errors::IErrorReporter>& errorReporter) {
-  auto* engine = w.qmlEngine();
-  if (!engine || !errorReporter)
-    return;
-
-  QObject::connect(
-      engine, &QQmlEngine::warnings, &w,
-      [errorReporter](const QList<QQmlError>& warnings) {
-        for (const auto& warning : warnings) {
-          core::errors::ErrorEvent event;
-          event.severity = core::errors::ErrorSeverity::Warning;
-          event.code = ui::observability::codes::QmlWarning;
-          event.origin = ui::observability::origins::app::kQmlWarnings;
-          event.message = warning.description().toStdString();
-          event.context.emplace_back(ui::observability::context::kUrl,
-                                     warning.url().toString().toStdString());
-          event.context.emplace_back(ui::observability::context::kLine,
-                                     std::to_string(warning.line()));
-          event.context.emplace_back(ui::observability::context::kColumn,
-                                     std::to_string(warning.column()));
-          errorReporter->report(event);
-        }
-      });
-}
-
-} // namespace
-
 /**
  * @brief Initialize and run the QML-based UI.
  * @param app Reference to the already-created QApplication instance.
+ * @param workspaceReader Workspace read port exposed to the UI composition.
+ * @param workspaceWriter Workspace write port exposed to the UI composition.
+ * @param errorReporter Reporter used by UI and workspace boundaries.
+ * @param analysisRunner Analysis use-case runner.
+ * @param annualRunner Annual use-case runner.
+ * @param exportRunner Export use-case runner.
+ * @param importRunner Import use-case runner.
  * @return Return value from `QApplication::exec()`.
  */
 int startQmlApp(
@@ -99,24 +43,15 @@ int startQmlApp(
     std::shared_ptr<core::ports::importing::IImportRunner> importRunner) {
   MainWindow w;
 
-  workspaceWriter.setErrorReporter(errorReporter);
+  ui::shell::createComposition(app, w, workspaceReader, workspaceWriter,
+                               errorReporter, std::move(analysisRunner),
+                               std::move(annualRunner), std::move(exportRunner),
+                               std::move(importRunner));
 
-  const ui::shell::Composition composition = ui::shell::createComposition(
-      app, w, workspaceReader, workspaceWriter, errorReporter,
-      std::move(analysisRunner), std::move(annualRunner),
-      std::move(exportRunner), std::move(importRunner));
-
-  ui::shell::wireAppStateToSession(w, composition, workspaceWriter,
-                                   errorReporter);
-  ui::shell::refreshComposition(composition);
-
-  wireFileSignals(w, w.workspace());
-
-  wireQmlWarnings(w, errorReporter);
+  ui::shell::wireWorkspaceCallbacks(w, workspaceWriter, errorReporter);
+  ui::bootstrap::wireQmlWarnings(w.qmlEngine(), &w);
 
   w.loadQml();
-
-  ui::shell::refreshComposition(composition);
 
   w.show();
   return app.exec();

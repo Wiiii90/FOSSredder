@@ -5,6 +5,7 @@
 
 #include "ui/adapters/AnnualAdapter.h"
 
+#include "ui/i18n/Text.h"
 #include "ui/observability/Trace.h"
 #include "ui/presentation/PayloadMapper.h"
 
@@ -13,7 +14,7 @@
 namespace ui::adapters {
 namespace {
 
-QVariantMap toAnnualRow(const core::ports::annual::AnnualRowResult &row) {
+QVariantMap toAnnualRow(const core::ports::annual::AnnualRowResult& row) {
   QVariantMap out;
   out.insert(QStringLiteral("key"), QString::fromStdString(row.key));
   out.insert(QStringLiteral("id"), QString::fromStdString(row.transactionId));
@@ -24,10 +25,10 @@ QVariantMap toAnnualRow(const core::ports::annual::AnnualRowResult &row) {
   out.insert(QStringLiteral("amount"), row.amount);
   out.insert(QStringLiteral("status"), row.status);
   out.insert(QStringLiteral("statusText"),
-             row.status == 1   ? QStringLiteral("Unverified")
-             : row.status == 2 ? QStringLiteral("Verified")
-             : row.status == 3 ? QStringLiteral("Completed")
-                               : QStringLiteral("Neutral"));
+             row.status == 1   ? ui::text::transactionStatus::unverified()
+             : row.status == 2 ? ui::text::transactionStatus::verified()
+             : row.status == 3 ? ui::text::transactionStatus::completed()
+                               : ui::text::transactionStatus::neutral());
   out.insert(QStringLiteral("allocatable"), row.allocatable);
   out.insert(QStringLiteral("contractId"),
              QString::fromStdString(row.contractId));
@@ -48,10 +49,10 @@ QVariantMap toAnnualRow(const core::ports::annual::AnnualRowResult &row) {
 }
 
 QVariantList
-toAnnualRows(const std::vector<core::ports::annual::AnnualRowResult> &rows) {
+toAnnualRows(const std::vector<core::ports::annual::AnnualRowResult>& rows) {
   QVariantList out;
   out.reserve(static_cast<int>(rows.size()));
-  for (const auto &row : rows) {
+  for (const auto& row : rows) {
     out.push_back(toAnnualRow(row));
   }
   return out;
@@ -64,17 +65,17 @@ AnnualAdapter::AnnualAdapter(
     : runner_(std::move(runner)) {}
 
 core::ports::annual::AnnualResult AnnualAdapter::runAnnual(
-    const core::ports::workspace::WorkspaceSnapshot &workspace,
-    const core::ports::annual::AnnualRequest &request) const {
-  observability::traceAdapter(
-      "AnnualAdapter::runAnnual", "Annual runner invoked",
-      {{"annualId", request.annualId}});
+    const core::ports::workspace::WorkspaceSnapshot& workspace,
+    const core::ports::annual::AnnualRequest& request) const {
+  observability::traceAdapter("AnnualAdapter::runAnnual",
+                              "Annual runner invoked",
+                              {{"annualId", request.annualId}});
   return runner_ ? runner_->runAnnual(workspace, request)
                  : core::ports::annual::AnnualResult{};
 }
 
 QVariantMap AnnualAdapter::mapAnnualResult(
-    const core::ports::annual::AnnualResult &result) const {
+    const core::ports::annual::AnnualResult& result) const {
   QVariantMap out;
   out.insert(QStringLiteral("annualId"),
              QString::fromStdString(result.annualId));
@@ -87,11 +88,9 @@ QVariantMap AnnualAdapter::mapAnnualResult(
                result.stats.assignedAnalysisCount);
   stats.insert(QStringLiteral("snapshotTransactionCount"),
                result.stats.snapshotTransactionCount);
-  stats.insert(QStringLiteral("missingFromYear"),
-               result.stats.missingFromYear);
+  stats.insert(QStringLiteral("missingFromYear"), result.stats.missingFromYear);
   stats.insert(QStringLiteral("mixedYear"), result.stats.mixedYear);
-  stats.insert(QStringLiteral("duplicateCount"),
-               result.stats.duplicateCount);
+  stats.insert(QStringLiteral("duplicateCount"), result.stats.duplicateCount);
   stats.insert(QStringLiteral("missingLive"), result.stats.missingLive);
   stats.insert(QStringLiteral("neutral"), result.stats.neutral);
   stats.insert(QStringLiteral("unverified"), result.stats.unverified);
@@ -103,25 +102,27 @@ QVariantMap AnnualAdapter::mapAnnualResult(
   const QVariantList similar = toAnnualRows(result.similar);
   const QVariantList divergent = toAnnualRows(result.divergent);
   const QVariantList workspaceOnly = toAnnualRows(result.workspaceOnly);
+  const QVariantList missingLive = toAnnualRows(result.missingLive);
 
   out.insert(QStringLiteral("deduplicated"), deduplicated);
   out.insert(QStringLiteral("similar"), similar);
   out.insert(QStringLiteral("divergent"), divergent);
   out.insert(QStringLiteral("workspaceOnly"), workspaceOnly);
+  out.insert(QStringLiteral("missingLive"), missingLive);
 
   QVariantList all;
   all.reserve(deduplicated.size() + similar.size() + divergent.size() +
               workspaceOnly.size());
-  for (const auto &value : deduplicated) {
+  for (const auto& value : deduplicated) {
     all.push_back(value);
   }
-  for (const auto &value : similar) {
+  for (const auto& value : similar) {
     all.push_back(value);
   }
-  for (const auto &value : divergent) {
+  for (const auto& value : divergent) {
     all.push_back(value);
   }
-  for (const auto &value : workspaceOnly) {
+  for (const auto& value : workspaceOnly) {
     all.push_back(value);
   }
   out.insert(QStringLiteral("transactions"), all);

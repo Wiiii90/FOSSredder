@@ -32,14 +32,12 @@ Item {
             headerTopInset: root.theme.spacingSmall
             model: root.exportViewModel.exportLogs
             fileRowsClickable: true
-            onRunClicked: function (index, logId, draftAttached, statementId) {
-                root.exportViewModel.openExportLogLocation(index, logId);
+            onRunClicked: function (_index, logId, _draftAttached, _statementId) {
+                root.exportViewModel.openExportLogLocation(logId);
             }
-            onDeleteClicked: function (index, logId, draftAttached, draftId) {
-                root.exportViewModel.deleteExportLog(index, logId);
+            onDeleteClicked: function (_index, logId, _draftAttached, _draftId) {
+                root.exportViewModel.deleteExportLog(logId);
             }
         }
     }
-
-    Component.onCompleted: root.exportViewModel.refreshExportLogs()
 }

@@ -259,7 +259,9 @@ TEST(AnalysisServiceTest, PortRunRendersAnalysisArtifactsBehindRunnerBoundary) {
     analysis.id = "analysis-1";
     analysis.name = "Analysis";
     analysis.type = "plot";
-    analysis.configJson = R"({"plotType":"pie","plotMeasure":"totalAmount"})";
+    analysis.config.type = "plot";
+    analysis.config.plotType = "pie";
+    analysis.config.plotMeasure = "totalAmount";
     workspace.analyses.push_back(analysis);
 
     auto renderer = std::make_shared<RecordingAnalysisImageRenderer>();

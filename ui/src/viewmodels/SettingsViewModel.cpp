@@ -5,12 +5,12 @@
 
 #include "ui/viewmodels/SettingsViewModel.h"
 
-#include "ui/shell/Defaults.h"
+#include "ui/observability/Trace.h"
 #include "ui/platform/LanguageService.h"
 #include "ui/shell/AppActions.h"
+#include "ui/shell/Defaults.h"
 #include "ui/shell/NavigationState.h"
 #include "ui/shell/Settings.h"
-#include "ui/observability/Trace.h"
 
 namespace ui {
 
@@ -21,44 +21,44 @@ constexpr int kImportCategory = 1;
 constexpr int kExportCategory = 2;
 constexpr int kMiscellaneousCategory = 3;
 
-QVariantMap categoryRow(int value, const QString &text, bool selected) {
+QVariantMap categoryRow(int value, const QString& text, bool selected) {
   return {{QStringLiteral("category"), value},
           {QStringLiteral("text"), text},
           {QStringLiteral("selected"), selected}};
 }
 
-QString languageCode(const QVariant &value) {
+QString languageCode(const QVariant& value) {
   return value.toMap().value(QStringLiteral("code")).toString();
 }
 
-bool languageAvailable(const QVariant &value) {
+bool languageAvailable(const QVariant& value) {
   const QVariantMap map = value.toMap();
   return !map.contains(QStringLiteral("available")) ||
          map.value(QStringLiteral("available")).toBool();
 }
 
-QVariantMap themeModeOption(const QString &code, const QString &label) {
+QVariantMap themeModeOption(const QString& code, const QString& label) {
   return {{QStringLiteral("code"), code}, {QStringLiteral("label"), label}};
 }
 
-QString themeModeCode(const QVariant &value) {
+QString themeModeCode(const QVariant& value) {
   return value.toMap().value(QStringLiteral("code")).toString();
 }
 
-int autosaveIntervalMinutes(const QVariant &value) {
+int autosaveIntervalMinutes(const QVariant& value) {
   return value.toMap().value(QStringLiteral("minutes")).toInt();
 }
 
-QVariantMap autosaveIntervalOption(int minutes, const QString &label) {
+QVariantMap autosaveIntervalOption(int minutes, const QString& label) {
   return {{QStringLiteral("minutes"), minutes},
           {QStringLiteral("label"), label}};
 }
 
 } // namespace
 
-SettingsViewModel::SettingsViewModel(QObject *parent) : QObject(parent) {}
+SettingsViewModel::SettingsViewModel(QObject* parent) : QObject(parent) {}
 
-void SettingsViewModel::setNavigation(NavigationState *value) {
+void SettingsViewModel::setNavigation(NavigationState* value) {
   if (navigation_ == value) {
     return;
   }
@@ -66,7 +66,7 @@ void SettingsViewModel::setNavigation(NavigationState *value) {
   emitChanged();
 }
 
-void SettingsViewModel::setSettings(Settings *value) {
+void SettingsViewModel::setSettings(Settings* value) {
   if (settings_ == value) {
     return;
   }
@@ -74,7 +74,7 @@ void SettingsViewModel::setSettings(Settings *value) {
   emitChanged();
 }
 
-void SettingsViewModel::setActions(Actions *value) {
+void SettingsViewModel::setActions(Actions* value) {
   if (actions_ == value) {
     return;
   }
@@ -82,7 +82,7 @@ void SettingsViewModel::setActions(Actions *value) {
   emitChanged();
 }
 
-void SettingsViewModel::setLanguageService(LanguageService *value) {
+void SettingsViewModel::setLanguageService(LanguageService* value) {
   if (languageService_ == value) {
     return;
   }
@@ -99,7 +99,7 @@ void SettingsViewModel::setLanguageService(LanguageService *value) {
   emitChanged();
 }
 
-void SettingsViewModel::bindNavigation(NavigationState *value) {
+void SettingsViewModel::bindNavigation(NavigationState* value) {
   if (navigation_) {
     disconnect(navigation_, nullptr, this, nullptr);
   }
@@ -110,7 +110,7 @@ void SettingsViewModel::bindNavigation(NavigationState *value) {
   }
 }
 
-void SettingsViewModel::bindSettings(Settings *value) {
+void SettingsViewModel::bindSettings(Settings* value) {
   if (settings_) {
     disconnect(settings_, nullptr, this, nullptr);
   }
@@ -125,7 +125,7 @@ void SettingsViewModel::bindSettings(Settings *value) {
   }
 }
 
-void SettingsViewModel::bindActions(Actions *value) {
+void SettingsViewModel::bindActions(Actions* value) {
   if (actions_) {
     disconnect(actions_, nullptr, this, nullptr);
   }
@@ -134,26 +134,28 @@ void SettingsViewModel::bindActions(Actions *value) {
     return;
   }
   connect(actions_, &Actions::importFileSelected, this,
-          [this](const QString &path) {
+          [this](const QString& path) {
             if (!path.isEmpty()) {
               setImportDefaultPath(path);
             }
           });
   connect(actions_, &Actions::importFilesSelected, this,
-          [this](const QStringList &paths) {
+          [this](const QStringList& paths) {
             if (!paths.isEmpty() && !paths.first().isEmpty()) {
               setImportDefaultPath(paths.first());
             }
           });
   connect(actions_, &Actions::exportDirectorySelected, this,
-          [this](const QString &path) {
+          [this](const QString& path) {
             if (!path.isEmpty()) {
               setExportDefaultDirectory(path);
             }
           });
 }
 
-void SettingsViewModel::emitChanged() { emit changed(); }
+void SettingsViewModel::emitChanged() {
+  emit changed();
+}
 
 int SettingsViewModel::currentCategory() const {
   return navigation_ ? navigation_->settingsCategoryValue() : firstCategory();
@@ -161,14 +163,13 @@ int SettingsViewModel::currentCategory() const {
 
 QVariantList SettingsViewModel::categoryRows() const {
   const int selected = currentCategory();
-  return {categoryRow(kGeneralCategory, tr("General"),
-                      selected == kGeneralCategory),
-          categoryRow(kImportCategory, tr("Import"),
-                      selected == kImportCategory),
-          categoryRow(kExportCategory, tr("Export"),
-                      selected == kExportCategory),
-          categoryRow(kMiscellaneousCategory, tr("Miscellaneous"),
-                      selected == kMiscellaneousCategory)};
+  return {
+      categoryRow(kGeneralCategory, tr("General"),
+                  selected == kGeneralCategory),
+      categoryRow(kImportCategory, tr("Import"), selected == kImportCategory),
+      categoryRow(kExportCategory, tr("Export"), selected == kExportCategory),
+      categoryRow(kMiscellaneousCategory, tr("Miscellaneous"),
+                  selected == kMiscellaneousCategory)};
 }
 
 bool SettingsViewModel::canNavigateCategories() const noexcept {
@@ -258,7 +259,7 @@ QString SettingsViewModel::language() const {
   return languageService_ ? languageService_->currentLanguage() : QString();
 }
 
-void SettingsViewModel::setLanguage(const QString &value) {
+void SettingsViewModel::setLanguage(const QString& value) {
   if (settings_) {
     settings_->setLanguage(value);
   }
@@ -271,7 +272,7 @@ QString SettingsViewModel::themeMode() const {
   return settings_ ? settings_->themeMode() : QStringLiteral("light");
 }
 
-void SettingsViewModel::setThemeMode(const QString &value) {
+void SettingsViewModel::setThemeMode(const QString& value) {
   if (settings_) {
     settings_->setThemeMode(value);
   }
@@ -307,24 +308,22 @@ void SettingsViewModel::setAutosaveOnClose(bool value) {
 }
 
 QVariantList SettingsViewModel::autosaveIntervalOptions() const {
-  return {autosaveIntervalOption(
-              config::autosave::kIntervalOff, tr("Off")),
-          autosaveIntervalOption(
-              config::autosave::kInterval1Minute, tr("Every 1 minute")),
-          autosaveIntervalOption(
-              config::autosave::kInterval5Minutes, tr("Every 5 minutes")),
-          autosaveIntervalOption(
-              config::autosave::kInterval10Minutes, tr("Every 10 minutes")),
-          autosaveIntervalOption(
-              config::autosave::kInterval15Minutes, tr("Every 15 minutes")),
-          autosaveIntervalOption(
-              config::autosave::kInterval30Minutes, tr("Every 30 minutes"))};
+  return {autosaveIntervalOption(config::autosave::kIntervalOff, tr("Off")),
+          autosaveIntervalOption(config::autosave::kInterval1Minute,
+                                 tr("Every 1 minute")),
+          autosaveIntervalOption(config::autosave::kInterval5Minutes,
+                                 tr("Every 5 minutes")),
+          autosaveIntervalOption(config::autosave::kInterval10Minutes,
+                                 tr("Every 10 minutes")),
+          autosaveIntervalOption(config::autosave::kInterval15Minutes,
+                                 tr("Every 15 minutes")),
+          autosaveIntervalOption(config::autosave::kInterval30Minutes,
+                                 tr("Every 30 minutes"))};
 }
 
 int SettingsViewModel::autosaveIntervalIndex() const {
-  const int selectedMinutes =
-      settings_ ? settings_->autosaveIntervalMinutes()
-                  : config::autosave::kIntervalOff;
+  const int selectedMinutes = settings_ ? settings_->autosaveIntervalMinutes()
+                                        : config::autosave::kIntervalOff;
   const QVariantList options = autosaveIntervalOptions();
   for (int i = 0; i < options.size(); ++i) {
     if (autosaveIntervalMinutes(options.at(i)) == selectedMinutes) {
@@ -348,7 +347,7 @@ QString SettingsViewModel::importDefaultPath() const {
   return settings_ ? settings_->importDefaultPath() : QString();
 }
 
-void SettingsViewModel::setImportDefaultPath(const QString &value) {
+void SettingsViewModel::setImportDefaultPath(const QString& value) {
   if (settings_) {
     settings_->setImportDefaultPath(value);
   }
@@ -358,7 +357,7 @@ QString SettingsViewModel::importPoppler() const {
   return settings_ ? settings_->importPoppler() : QString();
 }
 
-void SettingsViewModel::setImportPoppler(const QString &value) {
+void SettingsViewModel::setImportPoppler(const QString& value) {
   if (settings_) {
     settings_->setImportPoppler(value);
   }
@@ -368,7 +367,7 @@ QString SettingsViewModel::importOpenCv() const {
   return settings_ ? settings_->importOpenCv() : QString();
 }
 
-void SettingsViewModel::setImportOpenCv(const QString &value) {
+void SettingsViewModel::setImportOpenCv(const QString& value) {
   if (settings_) {
     settings_->setImportOpenCv(value);
   }
@@ -378,7 +377,7 @@ QString SettingsViewModel::importTesseract() const {
   return settings_ ? settings_->importTesseract() : QString();
 }
 
-void SettingsViewModel::setImportTesseract(const QString &value) {
+void SettingsViewModel::setImportTesseract(const QString& value) {
   if (settings_) {
     settings_->setImportTesseract(value);
   }
@@ -388,7 +387,7 @@ QString SettingsViewModel::importParser() const {
   return settings_ ? settings_->importParser() : QString();
 }
 
-void SettingsViewModel::setImportParser(const QString &value) {
+void SettingsViewModel::setImportParser(const QString& value) {
   if (settings_) {
     settings_->setImportParser(value);
   }
@@ -398,7 +397,7 @@ QString SettingsViewModel::importMatcher() const {
   return settings_ ? settings_->importMatcher() : QString();
 }
 
-void SettingsViewModel::setImportMatcher(const QString &value) {
+void SettingsViewModel::setImportMatcher(const QString& value) {
   if (settings_) {
     settings_->setImportMatcher(value);
   }
@@ -408,7 +407,7 @@ QString SettingsViewModel::exportDefaultDirectory() const {
   return settings_ ? settings_->exportDefaultDirectory() : QString();
 }
 
-void SettingsViewModel::setExportDefaultDirectory(const QString &value) {
+void SettingsViewModel::setExportDefaultDirectory(const QString& value) {
   if (settings_) {
     settings_->setExportDefaultDirectory(value);
   }

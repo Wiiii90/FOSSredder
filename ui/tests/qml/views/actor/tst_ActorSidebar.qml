@@ -74,7 +74,7 @@ TestCase {
         session.actorRows = []
     }
 
-    function test_ACT_S_001_rowsRenderFromWorkspaceFacade() {
+    function test_ACT_S_001_rowsRenderFromWorkspaceRoles() {
         session.actorRows = [
             { id: "actor-1", name: "Alice" },
             { id: "actor-2", name: "Bob" }

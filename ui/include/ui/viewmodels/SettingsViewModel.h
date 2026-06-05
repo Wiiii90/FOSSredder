@@ -471,6 +471,9 @@ public:
   Q_INVOKABLE void browseExportDirectory();
 
 signals:
+  /**
+   * @brief Emitted when settings view model state changed.
+   */
   void changed();
 
 private:

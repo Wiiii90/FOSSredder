@@ -183,6 +183,37 @@ bool jsonBool(const nlohmann::json &object, const char *key) {
 }
 
 std::vector<std::string> jsonStringList(const nlohmann::json &object,
+                                        const char *key);
+
+core::ports::analysis::AnalysisConfigInput
+analysisConfigFromJson(const std::string &raw, const std::string &type) {
+  core::ports::analysis::AnalysisConfigInput out;
+  out.type = type;
+  if (raw.empty()) {
+    return out;
+  }
+  nlohmann::json config;
+  try {
+    config = nlohmann::json::parse(raw);
+  } catch (...) {
+    return out;
+  }
+  if (!config.is_object()) {
+    return out;
+  }
+  out.plotType = jsonString(config, core::constants::analysis::kPlotTypeKey.data());
+  out.plotMeasure =
+      jsonString(config, core::constants::analysis::kPlotMeasureKey.data());
+  out.propertyIds =
+      jsonStringList(config, core::constants::analysis::kPropertiesKey.data());
+  out.contractTypes = jsonStringList(
+      config, core::constants::analysis::kContractTypesKey.data());
+  out.taxPercent =
+      jsonDouble(config, core::constants::analysis::calculation::kPercentKey.data());
+  return out;
+}
+
+std::vector<std::string> jsonStringList(const nlohmann::json &object,
                                         const char *key) {
   std::vector<std::string> out;
   const auto it = object.find(key);
@@ -295,8 +326,10 @@ std::filesystem::path analysisPreviewPath(
     const core::ports::analysis::AnalysisRequest &request,
     const core::ports::analysis::AnalysisResult &result) {
   std::ostringstream fingerprint;
-  fingerprint << request.analysisId << '\0' << request.filterSpecification
-              << '\0' << result.type << '\0' << result.configJson << '\0';
+  fingerprint << request.analysisId << '\0'
+              << core::ports::analysis::buildAnalysisFilterSpec(request.filter)
+              << '\0' << result.type << '\0' << result.config.plotType << '\0'
+              << result.config.plotMeasure << '\0';
   for (const auto &row : result.table) {
     for (const auto &column : row) {
       fingerprint << column << '\0';
@@ -328,7 +361,9 @@ core::ports::analysis::AnalysisResult AnalysisService::runAnalysis(
     const core::ports::analysis::AnalysisRequest &request) const {
   return withRenderedArtifacts(
       request,
-      runAnalysisById(state, request.analysisId, request.filterSpecification));
+      runAnalysisById(
+          state, request.analysisId,
+          core::ports::analysis::buildAnalysisFilterSpec(request.filter)));
 }
 
 core::ports::analysis::AnalysisResult AnalysisService::runAnalysis(
@@ -391,7 +426,7 @@ core::ports::analysis::AnalysisResult AnalysisService::computeAnalysis(
   }
 
   out.type = analysis.outputType();
-  out.configJson = analysis.configJson();
+  out.config = analysisConfigFromJson(analysis.configJson(), analysis.type());
   out.transactions = core::application::analysis::projectAnalysisTransactions(
       sourceState, core::application::analysis::collectAnalysisTransactions(
                        sourceState, filter));
@@ -429,9 +464,11 @@ AnalysisService::filterTransactions(
 core::ports::analysis::AnalysisPreviewResult
 AnalysisService::previewTransactions(
     const core::ports::workspace::WorkspaceSnapshot &workspace,
-    const std::string &filterSpec) const {
+    const core::ports::analysis::AnalysisFilterSelection &filter) const {
   const auto state =
       core::application::workspace::toWorkspaceCatalog(workspace);
+  const std::string filterSpec =
+      core::ports::analysis::buildAnalysisFilterSpec(filter);
 
   std::unordered_map<std::string, std::shared_ptr<core::domain::Contract>>
       contractById;
@@ -547,19 +584,23 @@ AnalysisService::filterSelectionFromFields(
       allocatableMode);
 }
 
-std::string AnalysisService::buildAnalysisConfigJson(
-    const core::ports::analysis::AnalysisConfigInput &input) const {
-  AnalysisConfigInput coreInput;
-  coreInput.type = input.type;
-  coreInput.plotType = input.plotType;
-  coreInput.plotMeasure = input.plotMeasure;
-  coreInput.propertyIds = input.propertyIds;
-  coreInput.contractTypes = input.contractTypes;
-  coreInput.taxPercent = input.taxPercent;
-  return analysis::buildAnalysisConfigJson(coreInput);
+core::ports::analysis::AnalysisFilterSelection
+AnalysisService::parseFilterSpec(const std::string &filterSpec) const {
+  return core::ports::analysis::parseAnalysisFilterSelection(filterSpec);
 }
 
-std::string AnalysisService::buildAnalysisAdjustmentsJson(
+std::string AnalysisService::buildFilterSpec(
+    const core::ports::analysis::AnalysisFilterSelection &selection) const {
+  return core::ports::analysis::buildAnalysisFilterSpec(selection);
+}
+
+std::string AnalysisService::buildAnalysisConfigJson(
+    const core::ports::analysis::AnalysisConfigInput &input) const {
+  return analysis::buildAnalysisConfigJson(input);
+}
+
+core::ports::analysis::AnalysisAdjustmentAmounts
+AnalysisService::buildAnalysisAdjustments(
     const std::vector<core::ports::analysis::AnalysisAdjustmentTransactionInput>
         &transactions,
     const std::vector<std::string> &selectedTransactionIds,
@@ -569,26 +610,31 @@ std::string AnalysisService::buildAnalysisAdjustmentsJson(
   for (const auto &transaction : transactions) {
     coreTransactions.push_back({transaction.id, transaction.amount});
   }
-  return analysis::buildAnalysisAdjustmentsJson(coreTransactions,
-                                                selectedTransactionIds,
-                                                taxPercent);
+  return analysis::parseAnalysisAdjustmentsJson(
+      analysis::buildAnalysisAdjustmentsJson(coreTransactions,
+                                             selectedTransactionIds,
+                                             taxPercent));
+}
+
+std::optional<double>
+AnalysisService::parseAnalysisPercentText(const std::string &text) const {
+  return analysis::parseAnalysisPercentText(text);
 }
 
 void AnalysisService::applyAnalysisPreviewOverrides(
     core::ports::workspace::WorkspaceSnapshot &workspace,
     const std::string &analysisId, bool includeCalculationAdjustments,
-    const std::string &adjustmentsJson) const {
+    const core::ports::analysis::AnalysisAdjustmentAmounts &adjustments) const {
   analysis::applyAnalysisPreviewOverrides(
-      workspace, analysisId, includeCalculationAdjustments,
-      analysis::parseAnalysisAdjustmentsJson(adjustmentsJson));
+      workspace, analysisId, includeCalculationAdjustments, adjustments);
 }
 
 core::ports::analysis::AnalysisTableState AnalysisService::projectTableState(
     const core::ports::analysis::AnalysisResult &result,
-    const std::string &adjustmentsJson, bool includeCalculationAdjustments,
+    const core::ports::analysis::AnalysisAdjustmentAmounts &adjustments,
+    bool includeCalculationAdjustments,
     const std::string &unassignedLabel) const {
   core::ports::analysis::AnalysisTableState state;
-  const auto adjustments = analysis::parseAnalysisAdjustmentsJson(adjustmentsJson);
 
   std::map<std::string, std::map<std::string, double>> amountsByProperty;
   std::map<std::string, double> totalsByProperty;

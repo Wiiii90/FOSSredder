@@ -12,7 +12,10 @@
 #include "ui/viewmodels/AnnualViewModel.h"
 #include "ui/adapters/AnnualAdapter.h"
 #include "ui/workflows/AnnualWorkflow.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
@@ -20,7 +23,10 @@ namespace {
 
 struct AnnualStateHarness {
   std::unique_ptr<tests::support::InMemoryWorkspace> workspace;
-  std::unique_ptr<WorkspaceFacade> facade;
+  std::unique_ptr<WorkspaceStore> store;
+  std::unique_ptr<WorkspaceCommands> commands;
+  std::unique_ptr<WorkspaceSelectors> selectors;
+  std::unique_ptr<WorkspaceSelection> selection;
   std::unique_ptr<AnnualWorkflow> workflow;
   std::unique_ptr<AnnualViewModel> state;
 };
@@ -32,16 +38,18 @@ auto makeAnnualSnapshot() {
   tabular.name = "Table";
   tabular.type = "tabular";
   tabular.exportFormat = "csv";
-  tabular.snapshotTransactionsJson =
-      R"([{"id":"tx-1","name":"Rent","bookingDate":"2026-01-05","amount":1250.0,"allocatable":true,"contractId":"contract-1","statementId":"statement-1","propertyIds":["property-1"]}])";
+  tabular.snapshotTransactions = {tests::support::makeTransaction(
+      "tx-1", "Rent", "2026-01-05", 1250.0, {}, "contract-1",
+      "statement-1", true, {"property-1"})};
 
   auto plot = tests::support::makeAnalysis();
   plot.id = "analysis-plot";
   plot.name = "Plot";
   plot.type = "plot";
   plot.exportFormat = "png";
-  plot.snapshotTransactionsJson =
-      R"([{"id":"tx-2","name":"Fees","bookingDate":"2026-01-06","amount":-35.5,"allocatable":false,"contractId":"","statementId":"statement-1","propertyIds":["property-1"]}])";
+  plot.snapshotTransactions = {tests::support::makeTransaction(
+      "tx-2", "Fees", "2026-01-06", -35.5, {}, {}, "statement-1",
+      false, {"property-1"})};
 
   auto annual = tests::support::makeAnnual();
   annual.name = "Annual 2026";
@@ -60,13 +68,18 @@ AnnualStateHarness makeHarness(bool selectAnnual) {
   auto workspace =
       std::make_unique<tests::support::InMemoryWorkspace>(std::move(snapshot));
   auto *workspacePtr = workspace.get();
-  auto facade = std::make_unique<WorkspaceFacade>(workspacePtr, workspacePtr);
+  auto store = std::make_unique<WorkspaceStore>();
+  store->setWorkspacePorts(workspacePtr, workspacePtr);
+  store->loadFromState(workspacePtr->workspaceSnapshot());
+  auto commands = std::make_unique<WorkspaceCommands>(*store);
+  auto selectors = std::make_unique<WorkspaceSelectors>(*store);
+  auto selection = std::make_unique<WorkspaceSelection>(*store, *selectors);
   workspace->setSnapshotChangedCallback(
-      [facadePtr = facade.get()](
+      [storePtr = store.get()](
           const core::ports::workspace::WorkspaceSnapshot &nextSnapshot) {
-        facadePtr->loadFromState(nextSnapshot);
+        storePtr->loadFromState(nextSnapshot);
       });
-  facade->selection()->setSelectedAnnualId(
+  selection->setSelectedAnnualId(
       selectAnnual ? QStringLiteral("annual-1") : QString());
 
   auto annualAdapter = std::make_shared<ui::adapters::AnnualAdapter>(
@@ -76,10 +89,12 @@ AnnualStateHarness makeHarness(bool selectAnnual) {
       annualAdapter);
 
   auto state = std::make_unique<AnnualViewModel>();
-  state->setWorkspace(facade.get());
+  state->setWorkspaceRoles(store.get(), commands.get(), selection.get(),
+                           selectors.get());
   state->setAnnualWorkflow(workflow.get());
 
-  return {std::move(workspace), std::move(facade), std::move(workflow),
+  return {std::move(workspace), std::move(store), std::move(commands),
+          std::move(selectors), std::move(selection), std::move(workflow),
           std::move(state)};
 }
 
@@ -145,7 +160,7 @@ TEST(AnnualViewModelTest, VM_ANNUAL_003_CreateStatePersistsNewAnnualThroughWorks
   ASSERT_EQ(snapshot.annuals.front().analysisIds.size(), 1U);
   EXPECT_EQ(snapshot.annuals.front().analysisIds.front(),
             std::string("analysis-table"));
-  EXPECT_FALSE(harness.facade->selection()->selectedAnnualId().isEmpty());
+  EXPECT_FALSE(harness.selection->selectedAnnualId().isEmpty());
 }
 
 TEST(AnnualViewModelTest, VM_ANNUAL_004_ExportFormatChangesRouteThroughWorkspace) {

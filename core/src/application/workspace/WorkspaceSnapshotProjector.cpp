@@ -5,7 +5,13 @@
 
 #include "core/application/workspace/WorkspaceSnapshotProjector.h"
 
+#include "core/constants/analysis.h"
+#include "core/ports/usecases/analysis/AnalysisRequest.h"
+
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
+#include <string_view>
 
 namespace {
 
@@ -30,6 +36,112 @@ core::ports::workspace::TransactionDraftSnapshot projectTransactionDraft(const c
     snapshot.metadata = draft.metadata;
     snapshot.proofImageData = draft.proofImageData;
     return snapshot;
+}
+
+std::string jsonString(const nlohmann::json& object, std::string_view key) {
+    const auto it = object.find(std::string(key));
+    return it != object.end() && it->is_string() ? it->get<std::string>() : std::string{};
+}
+
+double jsonDouble(const nlohmann::json& object, std::string_view key) {
+    const auto it = object.find(std::string(key));
+    return it != object.end() && it->is_number() ? it->get<double>() : 0.0;
+}
+
+bool jsonBool(const nlohmann::json& object, std::string_view key) {
+    const auto it = object.find(std::string(key));
+    return it != object.end() && it->is_boolean() ? it->get<bool>() : false;
+}
+
+std::vector<std::string> jsonStringList(const nlohmann::json& object,
+                                        std::string_view key) {
+    std::vector<std::string> out;
+    const auto it = object.find(std::string(key));
+    if (it == object.end() || !it->is_array()) {
+        return out;
+    }
+    for (const auto& item : *it) {
+        if (item.is_string()) {
+            out.push_back(item.get<std::string>());
+        }
+    }
+    return out;
+}
+
+core::ports::analysis::AnalysisConfigInput
+analysisConfigFromJson(const std::string& raw, const std::string& type) {
+    core::ports::analysis::AnalysisConfigInput out;
+    out.type = type;
+    if (raw.empty()) {
+        return out;
+    }
+    nlohmann::json config;
+    try {
+        config = nlohmann::json::parse(raw);
+    } catch (...) {
+        return out;
+    }
+    if (!config.is_object()) {
+        return out;
+    }
+    out.plotType = jsonString(config, core::constants::analysis::kPlotTypeKey);
+    out.plotMeasure = jsonString(config, core::constants::analysis::kPlotMeasureKey);
+    out.propertyIds = jsonStringList(config, core::constants::analysis::kPropertiesKey);
+    out.contractTypes = jsonStringList(config, core::constants::analysis::kContractTypesKey);
+    out.taxPercent = jsonDouble(config, core::constants::analysis::calculation::kPercentKey);
+    return out;
+}
+
+std::vector<core::ports::workspace::TransactionSnapshot>
+snapshotTransactionsFromJson(const std::string& raw) {
+    std::vector<core::ports::workspace::TransactionSnapshot> out;
+    if (raw.empty()) {
+        return out;
+    }
+    nlohmann::json rows;
+    try {
+        rows = nlohmann::json::parse(raw);
+    } catch (...) {
+        return out;
+    }
+    if (rows.is_object()) {
+        const auto transactions = rows.find("transactions");
+        rows = transactions != rows.end() ? *transactions : nlohmann::json{};
+    }
+    if (!rows.is_array()) {
+        return out;
+    }
+    out.reserve(rows.size());
+    for (const auto& row : rows) {
+        if (!row.is_object()) {
+            continue;
+        }
+        core::ports::workspace::TransactionSnapshot tx;
+        tx.id = jsonString(row, "id");
+        if (tx.id.empty()) {
+            tx.id = jsonString(row, "transactionId");
+        }
+        tx.name = jsonString(row, "name");
+        if (tx.name.empty()) {
+            tx.name = jsonString(row, "transactionName");
+        }
+        tx.bookingDate = jsonString(row, "bookingDate");
+        if (tx.bookingDate.empty()) {
+            tx.bookingDate = jsonString(row, "date");
+        }
+        tx.valuta = jsonString(row, "valuta");
+        tx.amount = jsonDouble(row, "amount");
+        tx.status = static_cast<int>(jsonDouble(row, "status"));
+        tx.contractId = jsonString(row, "contractId");
+        tx.contractType = jsonString(row, "contractType");
+        tx.actorId = jsonString(row, "actorId");
+        tx.statementId = jsonString(row, "statementId");
+        tx.allocatable = jsonBool(row, "allocatable");
+        tx.propertyIds = jsonStringList(row, "propertyIds");
+        tx.propertyNames = jsonStringList(row, "propertyNames");
+        out.push_back(std::move(tx));
+    }
+    return out;
 }
 
 } // namespace
@@ -151,12 +263,11 @@ core::ports::workspace::WorkspaceSnapshot WorkspaceSnapshotProjector::project(
         row.id = item->id();
         row.name = item->name();
         row.type = item->type();
-        row.configJson = item->configJson();
-        row.filterSpec = item->filterSpec();
+        row.config = analysisConfigFromJson(item->configJson(), item->type());
+        row.filter = core::ports::analysis::parseAnalysisFilterSelection(item->filterSpec());
         row.exportFormat = item->exportFormat();
         row.includeCalculationAdjustments = item->includeCalculationAdjustments();
-        row.exportStateJson = item->exportStateJson();
-        row.snapshotTransactionsJson = item->snapshotTransactionsJson();
+        row.snapshotTransactions = snapshotTransactionsFromJson(item->snapshotTransactionsJson());
         row.createdAt = item->createdAt();
         row.updatedAt = item->updatedAt();
         row.adjustments.reserve(item->adjustments().size());
@@ -247,7 +358,6 @@ core::ports::workspace::WorkspaceSnapshot WorkspaceSnapshotProjector::project(
             item->targetPath,
             item->status,
             item->message,
-            item->payload,
             item->annualIds,
             item->analysisIds
         });

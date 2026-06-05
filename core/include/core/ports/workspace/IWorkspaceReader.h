@@ -43,6 +43,14 @@ public:
         const std::vector<std::string>& actorIds,
         const std::vector<std::string>& propertyIds) const = 0;
 
+    /**
+     * @brief Applies catalog consistency rules to a transaction form selection.
+     * @param change Current selection plus the user-selected field change.
+     * @return Updated selection with invalid dependent choices cleared or filled.
+     */
+    [[nodiscard]] virtual TransactionCatalogSelection transactionCatalogSelection(
+        const TransactionCatalogSelectionChange& change) const = 0;
+
     /** @brief Returns the next generated contract name. */
     [[nodiscard]] virtual std::string nextContractName() const = 0;
 };

@@ -18,6 +18,7 @@ set(UI_SOURCES
     src/shell/AppActions.cpp
     src/shell/AppContext.cpp
     src/shell/Composition.cpp
+    src/shell/QmlDiagnostics.cpp
     src/shell/QmlRuntime.cpp
     src/observability/Trace.cpp
     src/workflows/AnalysisWorkflow.cpp
@@ -32,13 +33,11 @@ set(UI_SOURCES
     src/adapters/ImportAdapter.cpp
     src/shell/Settings.cpp
     src/platform/FileDialogs.cpp
-    src/workspace/AnalysisListModel.cpp
-    src/workspace/AnnualListModel.cpp
-    src/workspace/StatementListModel.cpp
-    src/workspace/TransactionFilterModel.cpp
-    src/workspace/TransactionListModel.cpp
-    src/workspace/WorkspaceFilterState.cpp
-    "src/viewmodels/ActorViewModel.cpp"
+    src/workspace/WorkspaceCommands.cpp
+    src/workspace/WorkspacePayloads.cpp
+    src/workspace/WorkspaceSelectors.cpp
+    src/workspace/WorkspaceStore.cpp
+    src/viewmodels/ActorViewModel.cpp
     src/viewmodels/ContractViewModel.cpp
     src/viewmodels/PropertyViewModel.cpp
     src/viewmodels/ExportViewModel.cpp
@@ -49,13 +48,6 @@ set(UI_SOURCES
     src/viewmodels/AnnualViewModel.cpp
     src/viewmodels/BookingViewModel.cpp
     src/workspace/WorkspaceSelection.cpp
-    src/workspace/WorkspaceRowProjector.cpp
-    src/workspace/WorkspaceCacheModels.cpp
-    src/workspace/WorkspaceCache.cpp
-    src/workspace/WorkspaceFacade.cpp
-    src/workspace/WorkspaceFacadeCatalog.cpp
-    src/workspace/WorkspaceFacadeReporting.cpp
-    src/workspace/WorkspaceFacadeStorage.cpp
     src/shell/window/CloseWorkflow.cpp
     src/shell/window/DropHandler.cpp
     src/shell/window/MainWindowContext.cpp
@@ -68,6 +60,7 @@ set(UI_HEADERS
     include/ui/shell/AppContext.h
     include/ui/shell/Composition.h
     include/ui/shell/QmlContracts.h
+    include/ui/shell/QmlDiagnostics.h
     include/ui/shell/QmlRuntime.h
     include/ui/shell/Defaults.h
     include/ui/workflows/AnalysisWorkflow.h
@@ -77,19 +70,11 @@ set(UI_HEADERS
     include/ui/workflows/ImportWorkflow.h
     include/ui/platform/LanguageService.h
     include/ui/shell/Settings.h
-    "include/ui/platform/FileDialogs.h"
+    include/ui/platform/FileDialogs.h
     include/ui/adapters/AnalysisAdapter.h
     include/ui/adapters/AnnualAdapter.h
     include/ui/adapters/ExportAdapter.h
     include/ui/adapters/ImportAdapter.h
-    include/ui/workspace/AnalysisListModel.h
-    include/ui/workspace/AnnualListModel.h
-    include/ui/workspace/IndexedListModel.h
-    include/ui/workspace/RowListModel.h
-    include/ui/workspace/WorkflowRunListModel.h
-    include/ui/workspace/StatementListModel.h
-    include/ui/workspace/TransactionFilterModel.h
-    include/ui/workspace/TransactionListModel.h
     include/ui/observability/Origins.h
     include/ui/observability/Trace.h
     include/ui/presentation/PayloadKeys.h
@@ -97,7 +82,10 @@ set(UI_HEADERS
     include/ui/observability/ErrorCodes.h
     include/ui/i18n/Text.h
     include/ui/util/StringConversions.h
-    include/ui/workspace/WorkspaceFilterState.h
+    include/ui/workspace/WorkspaceCommands.h
+    include/ui/workspace/WorkspacePayloads.h
+    include/ui/workspace/WorkspaceSelectors.h
+    include/ui/workspace/WorkspaceStore.h
     include/ui/viewmodels/ActorViewModel.h
     include/ui/viewmodels/ContractViewModel.h
     include/ui/viewmodels/PropertyViewModel.h
@@ -109,10 +97,6 @@ set(UI_HEADERS
     include/ui/viewmodels/AnnualViewModel.h
     include/ui/viewmodels/BookingViewModel.h
     include/ui/workspace/WorkspaceSelection.h
-    include/ui/workspace/WorkspaceCacheModels.h
-    include/ui/workspace/WorkspaceCache.h
-    include/ui/workspace/WorkspaceRowProjector.h
-    include/ui/workspace/WorkspaceFacade.h
     include/ui/shell/StatusState.h
     include/ui/shell/window/CloseWorkflow.h
     include/ui/shell/window/DropHandler.h
@@ -174,7 +158,7 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
     set(UI_QML_TOOLING_QUICK_LIBRARIES Qt6::Quick Qt6::Qml Qt6::QuickControls2)
 
     function(fossredder_add_ui_qml_tooling_submodule target_name module_uri output_directory)
-        cmake_parse_arguments(ARG "" "" "DEPENDENCIES;LINK_LIBRARIES;QML_FILES" ${ARGN})
+        cmake_parse_arguments(ARG "" "" "DEPENDENCIES;IMPORTS;LINK_LIBRARIES;QML_FILES" ${ARGN})
 
         set(_qml_tooling_anchor "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_qml_tooling_anchor.cpp")
         file(WRITE "${_qml_tooling_anchor}" "namespace { [[maybe_unused]] constexpr int qml_tooling_anchor = 0; }\n")
@@ -196,7 +180,7 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
             IMPORT_PATH
                 "${UI_QML_TOOLING_OUTPUT_ROOT}"
                 "${UI_QML_IMPORT_ROOT}"
-            IMPORTS ${UI_QML_ROOT_URI}
+            IMPORTS ${UI_QML_ROOT_URI} ${ARG_IMPORTS}
             DEPENDENCIES ${ARG_DEPENDENCIES}
             NO_PLUGIN
             QML_FILES ${ARG_QML_FILES}
@@ -206,7 +190,6 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
     file(GLOB UI_QML_ROOT_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
         "${UI_QML_MODULE_ROOT}/Main.qml"
         "${UI_QML_MODULE_ROOT}/Theme/*.qml"
-        "${UI_QML_MODULE_ROOT}/Constants/*.js"
     )
     file(GLOB UI_QML_ROOT_RESOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
         "${UI_QML_MODULE_ROOT}/assets/*"
@@ -216,12 +199,28 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
     )
     file(GLOB UI_QML_COMPONENTS_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
         "${UI_QML_MODULE_ROOT}/Components/*.qml"
-        "${UI_QML_MODULE_ROOT}/Components/**/*.qml"
     )
     file(GLOB UI_QML_VIEWS_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
         "${UI_QML_MODULE_ROOT}/Views/*.qml"
-        "${UI_QML_MODULE_ROOT}/Views/**/*.qml"
     )
+    set(UI_QML_VIEW_MODULES
+        Actor
+        Analysis
+        Annual
+        Booking
+        Contract
+        Export
+        Import
+        Property
+        Settings
+    )
+    set(UI_QML_VIEW_IMPORTS)
+    foreach(_view_module IN LISTS UI_QML_VIEW_MODULES)
+        list(APPEND UI_QML_VIEW_IMPORTS "${UI_QML_ROOT_URI}.Views.${_view_module}")
+        file(GLOB UI_QML_VIEW_${_view_module}_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS
+            "${UI_QML_MODULE_ROOT}/Views/${_view_module}/*.qml"
+        )
+    endforeach()
 
     set(UI_QML_TOOLING_OUTPUT_ROOT "${CMAKE_CURRENT_BINARY_DIR}/qmltooling")
 
@@ -254,6 +253,10 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
         "${UI_QML_ROOT_URI}.Components"
         "${UI_QML_TOOLING_OUTPUT_ROOT}/FossRedder/Components"
         DEPENDENCIES QtQuick QtQuick.Controls
+        IMPORTS
+            "${UI_QML_ROOT_URI}.Controls"
+            "${UI_QML_ROOT_URI}.Views"
+            ${UI_QML_VIEW_IMPORTS}
         LINK_LIBRARIES ${UI_QML_TOOLING_QUICK_LIBRARIES}
         QML_FILES ${UI_QML_COMPONENTS_FILES}
     )
@@ -263,14 +266,37 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
         "${UI_QML_ROOT_URI}.Views"
         "${UI_QML_TOOLING_OUTPUT_ROOT}/FossRedder/Views"
         DEPENDENCIES QtQuick QtQuick.Controls QtQuick.Layouts
+        IMPORTS
+            "${UI_QML_ROOT_URI}.Components"
+            "${UI_QML_ROOT_URI}.Controls"
         LINK_LIBRARIES ${UI_QML_TOOLING_QUICK_LIBRARIES}
         QML_FILES ${UI_QML_VIEWS_FILES}
     )
+
+    set(UI_QML_VIEW_TARGETS)
+    foreach(_view_module IN LISTS UI_QML_VIEW_MODULES)
+        string(TOLOWER "${_view_module}" _view_module_lower)
+        set(_view_target "fossredder_ui_qml_views_${_view_module_lower}")
+        fossredder_add_ui_qml_tooling_submodule(
+            ${_view_target}
+            "${UI_QML_ROOT_URI}.Views.${_view_module}"
+            "${UI_QML_TOOLING_OUTPUT_ROOT}/FossRedder/Views/${_view_module}"
+            DEPENDENCIES QtQuick QtQuick.Controls QtQuick.Layouts
+            IMPORTS
+                "${UI_QML_ROOT_URI}.Components"
+                "${UI_QML_ROOT_URI}.Controls"
+                "${UI_QML_ROOT_URI}.Views"
+            LINK_LIBRARIES ${UI_QML_TOOLING_QUICK_LIBRARIES}
+            QML_FILES ${UI_QML_VIEW_${_view_module}_FILES}
+        )
+        list(APPEND UI_QML_VIEW_TARGETS ${_view_target})
+    endforeach()
 
     target_link_libraries(fossredder_ui PRIVATE
         fossredder_ui_qml_controls
         fossredder_ui_qml_components
         fossredder_ui_qml_views
+        ${UI_QML_VIEW_TARGETS}
     )
 
     set(UI_QML_TOOLING_DEPS)
@@ -281,6 +307,11 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
             fossredder_ui_qml_views_generate_qmlls_ini_file)
         if(TARGET ${_qml_tooling_target})
             list(APPEND UI_QML_TOOLING_DEPS ${_qml_tooling_target})
+        endif()
+    endforeach()
+    foreach(_view_target IN LISTS UI_QML_VIEW_TARGETS)
+        if(TARGET ${_view_target}_generate_qmlls_ini_file)
+            list(APPEND UI_QML_TOOLING_DEPS ${_view_target}_generate_qmlls_ini_file)
         endif()
     endforeach()
 
@@ -351,12 +382,7 @@ if(BUILD_UI_TESTS)
         tests/unit/workflows/TestAnnualWorkflow.cpp
         tests/unit/workflows/TestExportWorkflow.cpp
         tests/unit/workflows/TestImportWorkflow.cpp
-        tests/unit/workspace/TestWorkspaceCache.cpp
-        tests/unit/workspace/TestWorkspaceCacheModels.cpp
-        tests/unit/workspace/TestWorkspaceFacade.cpp
-        tests/unit/workspace/TestWorkspaceRowProjector.cpp
         tests/unit/workspace/TestWorkspaceSelection.cpp
-        tests/unit/workspace/TestWorkspaceStartupRehydration.cpp
     )
 
     add_executable(ui_unit_tests ${UI_UNIT_TEST_SRCS})
@@ -435,10 +461,14 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
         fossredder_ui_qml_controls
         fossredder_ui_qml_components
         fossredder_ui_qml_views
-        fossredder_ui_qml_utils
     )
         if(TARGET ${_qml_target})
             fossredder_install_library_target(${_qml_target})
+        endif()
+    endforeach()
+    foreach(_view_target IN LISTS UI_QML_VIEW_TARGETS)
+        if(TARGET ${_view_target})
+            fossredder_install_library_target(${_view_target})
         endif()
     endforeach()
 
@@ -447,11 +477,17 @@ if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
         fossredder_ui_qml_controls
         fossredder_ui_qml_components
         fossredder_ui_qml_views
-        fossredder_ui_qml_utils
     )
         foreach(_resource_index RANGE 1 8)
             if(TARGET ${_qml_resource_base}_resources_${_resource_index})
                 fossredder_install_library_target(${_qml_resource_base}_resources_${_resource_index})
+            endif()
+        endforeach()
+    endforeach()
+    foreach(_view_target IN LISTS UI_QML_VIEW_TARGETS)
+        foreach(_resource_index RANGE 1 8)
+            if(TARGET ${_view_target}_resources_${_resource_index})
+                fossredder_install_library_target(${_view_target}_resources_${_resource_index})
             endif()
         endforeach()
     endforeach()

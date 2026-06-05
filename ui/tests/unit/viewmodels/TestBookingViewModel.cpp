@@ -14,7 +14,8 @@ namespace ui {
 TEST(BookingViewModelTest,
      VM_BOOKING_001_SubmitCreatesStatementAndTransaction) {
   tests::support::WorkspaceHarness harness;
-  BookingViewModel viewModel(harness.facade.get());
+  BookingViewModel viewModel(harness.store.get(), harness.commands.get(),
+                             harness.selection.get(), harness.selectors.get());
 
   viewModel.setStatementName(QStringLiteral("February Statement"));
   viewModel.setTransactionName(QStringLiteral("Rent"));
@@ -38,7 +39,8 @@ TEST(BookingViewModelTest,
 TEST(BookingViewModelTest,
      VM_BOOKING_002_UpdateCurrentRoutesStatementAndTransactionChanges) {
   tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
-  BookingViewModel viewModel(harness.facade.get());
+  BookingViewModel viewModel(harness.store.get(), harness.commands.get(),
+                             harness.selection.get(), harness.selectors.get());
 
   viewModel.selectTransaction(QStringLiteral("statement-1"),
                               QStringLiteral("tx-1"));

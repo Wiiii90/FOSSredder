@@ -46,6 +46,13 @@ public:
         const std::string& type,
         const std::vector<std::string>& actorIds,
         const std::vector<std::string>& propertyIds) const;
+    /**
+     * @brief Applies catalog consistency rules to a transaction form selection.
+     * @param change Current selection plus the user-selected field change.
+     * @return Updated transaction catalog selection.
+     */
+    [[nodiscard]] core::ports::workspace::TransactionCatalogSelection transactionCatalogSelection(
+        const core::ports::workspace::TransactionCatalogSelectionChange& change) const;
     /** @brief Returns the next generated contract name. */
     [[nodiscard]] std::string nextContractName() const;
     /** @brief Returns current workspace file path. */

@@ -11,12 +11,12 @@
 #include <QQmlEngine>
 #include <qqml.h>
 
-#include "ui/shell/Defaults.h"
 #include "ui/platform/FileSystemBrowser.h"
 #include "ui/platform/LanguageService.h"
 #include "ui/shell/AppActions.h"
-#include "ui/shell/QmlContracts.h"
+#include "ui/shell/Defaults.h"
 #include "ui/shell/NavigationState.h"
+#include "ui/shell/QmlContracts.h"
 #include "ui/shell/StatusState.h"
 #include "ui/viewmodels/ActorViewModel.h"
 #include "ui/viewmodels/AnalysisViewModel.h"
@@ -27,19 +27,17 @@
 #include "ui/viewmodels/ImportViewModel.h"
 #include "ui/viewmodels/PropertyViewModel.h"
 #include "ui/viewmodels/SettingsViewModel.h"
-#include "ui/workspace/WorkspaceFacade.h"
 
 namespace ui::bootstrap {
 
 namespace {
 
-template <typename T>
-void registerContextObjectType(const char *name) {
-  qmlRegisterUncreatableType<T>(
-      ui::qml::contracts::module::kName,
-      ui::qml::contracts::module::kMajorVersion,
-      ui::qml::contracts::module::kMinorVersion, name,
-      "This type is provided by AppContext");
+template<typename T>
+void registerContextObjectType(const char* name) {
+  qmlRegisterUncreatableType<T>(ui::qml::contracts::module::kName,
+                                ui::qml::contracts::module::kMajorVersion,
+                                ui::qml::contracts::module::kMinorVersion, name,
+                                "This type is provided by AppContext");
 }
 
 } // namespace
@@ -60,7 +58,6 @@ void registerTypes() {
   registerContextObjectType<ui::FileSystemBrowser>("FileSystemBrowser");
   registerContextObjectType<ui::LanguageService>("LanguageService");
   registerContextObjectType<ui::StatusState>("StatusState");
-  registerContextObjectType<ui::WorkspaceFacade>("WorkspaceFacade");
   registerContextObjectType<ui::ActorViewModel>("ActorViewModel");
   registerContextObjectType<ui::BookingViewModel>("BookingViewModel");
   registerContextObjectType<ui::ContractViewModel>("ContractViewModel");
@@ -79,7 +76,7 @@ void registerTypes() {
   registered = true;
 }
 
-void configureRuntime(QQmlEngine *engine) {
+void configureRuntime(QQmlEngine* engine) {
   if (!engine)
     return;
 

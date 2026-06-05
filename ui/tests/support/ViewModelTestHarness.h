@@ -11,7 +11,10 @@
 #include "core/errors/IErrorReporter.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 #include "support/WorkspacePortFakes.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui::tests::support {
 
@@ -24,16 +27,23 @@ struct WorkspaceHarness {
   explicit WorkspaceHarness(
       core::ports::workspace::WorkspaceSnapshot snapshot = {})
       : workspace(std::make_unique<InMemoryWorkspace>(std::move(snapshot))),
-        facade(std::make_unique<WorkspaceFacade>(workspace.get(),
-                                                workspace.get())) {
+        store(std::make_unique<WorkspaceStore>()),
+        selectors(std::make_unique<WorkspaceSelectors>(*store)),
+        selection(std::make_unique<WorkspaceSelection>(*store, *selectors)),
+        commands(std::make_unique<WorkspaceCommands>(*store)) {
+    store->setWorkspacePorts(workspace.get(), workspace.get());
+    store->loadFromState(workspace->workspaceSnapshot());
     workspace->setSnapshotChangedCallback([this](
         const core::ports::workspace::WorkspaceSnapshot &nextSnapshot) {
-      facade->loadFromState(nextSnapshot);
+      store->loadFromState(nextSnapshot);
     });
   }
 
   std::unique_ptr<InMemoryWorkspace> workspace;
-  std::unique_ptr<WorkspaceFacade> facade;
+  std::unique_ptr<WorkspaceStore> store;
+  std::unique_ptr<WorkspaceSelectors> selectors;
+  std::unique_ptr<WorkspaceSelection> selection;
+  std::unique_ptr<WorkspaceCommands> commands;
 };
 
 inline std::shared_ptr<NoopErrorReporter> noopErrorReporter() {

@@ -51,10 +51,15 @@ struct AnnualResult {
     std::vector<AnnualRowResult> similar;
     std::vector<AnnualRowResult> divergent;
     std::vector<AnnualRowResult> workspaceOnly;
+    std::vector<AnnualRowResult> missingLive;
 
+    /**
+     * @brief Reports whether the result contains no transaction rows.
+     * @return True when all row buckets are empty.
+     */
     [[nodiscard]] bool empty() const noexcept {
         return deduplicated.empty() && similar.empty() && divergent.empty() &&
-               workspaceOnly.empty();
+               workspaceOnly.empty() && missingLive.empty();
     }
 };
 

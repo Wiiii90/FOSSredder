@@ -8,24 +8,121 @@
 #include "ui/adapters/ImportAdapter.h"
 
 #include <algorithm>
+#include <map>
 #include <stdexcept>
 #include <utility>
-
-#include <QMetaObject>
-#include <QUuid>
-#include <QVariantMap>
+#include <vector>
 
 #include "core/errors/ErrorCodes.h"
 #include "core/errors/ErrorReporterRegistry.h"
-#include "ui/shell/Defaults.h"
+#include "ui/i18n/Text.h"
 #include "ui/observability/Origins.h"
 #include "ui/observability/Trace.h"
-#include "ui/presentation/PayloadKeys.h"
-#include "ui/i18n/Text.h"
+#include "ui/shell/Defaults.h"
 #include "ui/util/StringConversions.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include <QMetaObject>
+#include <QUuid>
 
 namespace ui::importing {
+
+class ImportWorkflowState {
+public:
+  ImportWorkflowState() = default;
+
+  bool isRunning() const noexcept {
+    return isRunning_;
+  }
+  bool isPaused() const noexcept {
+    return paused_;
+  }
+  double progress() const noexcept {
+    return progress_;
+  }
+  const QString& phase() const noexcept {
+    return phase_;
+  }
+  const QString& error() const noexcept {
+    return error_;
+  }
+  const QString& selectedFile() const noexcept {
+    return selectedFile_;
+  }
+  const QStringList& queuedFiles() const noexcept {
+    return queuedFiles_;
+  }
+  bool hasDraft() const noexcept {
+    return hasDraft_;
+  }
+  core::ports::importing::draft::StatementDraft* draft() noexcept {
+    return hasDraft_ ? &draft_ : nullptr;
+  }
+  const core::ports::importing::draft::StatementDraft* draft() const noexcept {
+    return hasDraft_ ? &draft_ : nullptr;
+  }
+  const core::ports::workspace::WorkspaceSnapshot&
+  catalogSnapshot() const noexcept {
+    return catalogSnapshot_;
+  }
+  int currentTransactionIndex() const noexcept {
+    return currentTransactionIndex_;
+  }
+  void setCurrentTransactionIndex(int index);
+  int artifactCount() const noexcept {
+    return artifactCount_;
+  }
+  bool cancelRequested() const noexcept {
+    return canceled_;
+  }
+
+  bool setSelectedFile(const QString& path);
+  bool addFiles(const QStringList& paths);
+  bool resetStatus();
+  bool clearDraft();
+
+  QString currentImportFile() const;
+  QString takeSelectedFileForStart();
+  bool takeNextQueuedFile(QString& nextFile);
+
+  void beginImport(const QString& path);
+  void rejectStart(const QString& errorMessage);
+  void beginCancel(bool clearQueue);
+  bool setPaused(bool paused);
+  void recordCanceled();
+  void recordFailed(const QString& errorMessage);
+  void recordFinished();
+  bool
+  populateDraft(const core::ports::importing::draft::StatementDraft& draft,
+                const core::ports::workspace::WorkspaceSnapshot& state,
+                const std::map<std::string, std::vector<uint8_t>>& artifacts,
+                int currentTransactionIndex);
+  bool restoreDraft(const core::ports::importing::draft::StatementDraft& draft,
+                    const core::ports::workspace::WorkspaceSnapshot& state,
+                    const QString& draftId, int currentTransactionIndex);
+  void updateProgress(double progress, const QString& phase);
+
+private:
+  void clearDraftState();
+  void clearTransientImportState();
+  void resetCancellationState();
+
+  bool isRunning_ = false;
+  double progress_ = 0.0;
+  QString phase_;
+  QString error_;
+  QString selectedFile_;
+  QStringList queuedFiles_;
+  core::ports::importing::draft::StatementDraft draft_;
+  bool hasDraft_ = false;
+  int currentTransactionIndex_ = 0;
+  core::ports::workspace::WorkspaceSnapshot catalogSnapshot_;
+  int artifactCount_ = 0;
+  bool canceled_ = false;
+  bool paused_ = false;
+  bool cancelClearsQueue_ = false;
+  QString currentImportFile_;
+};
 
 void ImportWorkflowState::clearDraftState() {
   draft_ = {};
@@ -34,7 +131,7 @@ void ImportWorkflowState::clearDraftState() {
   currentTransactionIndex_ = 0;
 }
 
-bool ImportWorkflowState::setSelectedFile(const QString &path) {
+bool ImportWorkflowState::setSelectedFile(const QString& path) {
   if (selectedFile_ == path) {
     return false;
   }
@@ -42,10 +139,10 @@ bool ImportWorkflowState::setSelectedFile(const QString &path) {
   return true;
 }
 
-bool ImportWorkflowState::addFiles(const QStringList &paths) {
+bool ImportWorkflowState::addFiles(const QStringList& paths) {
   QStringList cleaned;
   cleaned.reserve(paths.size());
-  for (const auto &path : paths) {
+  for (const auto& path : paths) {
     const auto trimmed = path.trimmed();
     if (trimmed.isEmpty()) {
       continue;
@@ -135,7 +232,7 @@ QString ImportWorkflowState::takeSelectedFileForStart() {
   return trimmed;
 }
 
-bool ImportWorkflowState::takeNextQueuedFile(QString &nextFile) {
+bool ImportWorkflowState::takeNextQueuedFile(QString& nextFile) {
   if (isRunning_ || queuedFiles_.isEmpty()) {
     return false;
   }
@@ -154,7 +251,7 @@ void ImportWorkflowState::resetCancellationState() {
   paused_ = false;
 }
 
-void ImportWorkflowState::beginImport(const QString &path) {
+void ImportWorkflowState::beginImport(const QString& path) {
   selectedFile_ = path;
   currentImportFile_ = path;
 
@@ -166,7 +263,7 @@ void ImportWorkflowState::beginImport(const QString &path) {
   resetCancellationState();
 }
 
-void ImportWorkflowState::rejectStart(const QString &errorMessage) {
+void ImportWorkflowState::rejectStart(const QString& errorMessage) {
   error_ = errorMessage;
   queuedFiles_.clear();
   currentImportFile_.clear();
@@ -213,7 +310,7 @@ void ImportWorkflowState::recordCanceled() {
   currentImportFile_.clear();
 }
 
-void ImportWorkflowState::recordFailed(const QString &errorMessage) {
+void ImportWorkflowState::recordFailed(const QString& errorMessage) {
   error_ = errorMessage;
   queuedFiles_.clear();
   phase_ = ui::text::importing::phaseFailed();
@@ -223,9 +320,9 @@ void ImportWorkflowState::recordFailed(const QString &errorMessage) {
 }
 
 bool ImportWorkflowState::populateDraft(
-    const core::ports::importing::draft::StatementDraft &draft,
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const std::map<std::string, std::vector<uint8_t>> &artifacts,
+    const core::ports::importing::draft::StatementDraft& draft,
+    const core::ports::workspace::WorkspaceSnapshot& state,
+    const std::map<std::string, std::vector<uint8_t>>& artifacts,
     int currentTransactionIndex) {
   if (draft.id.empty() && draft.name.empty()) {
     return false;
@@ -243,9 +340,9 @@ bool ImportWorkflowState::populateDraft(
 }
 
 bool ImportWorkflowState::restoreDraft(
-    const core::ports::importing::draft::StatementDraft &draft,
-    const core::ports::workspace::WorkspaceSnapshot &state,
-    const QString &draftId, int currentTransactionIndex) {
+    const core::ports::importing::draft::StatementDraft& draft,
+    const core::ports::workspace::WorkspaceSnapshot& state,
+    const QString& draftId, int currentTransactionIndex) {
   if (draft.id.empty() && draft.name.empty()) {
     return false;
   }
@@ -261,7 +358,8 @@ bool ImportWorkflowState::restoreDraft(
   return hasDraft_;
 }
 
-void ImportWorkflowState::updateProgress(double progress, const QString &phase) {
+void ImportWorkflowState::updateProgress(double progress,
+                                         const QString& phase) {
   if (!isRunning_ || canceled_ || paused_) {
     return;
   }
@@ -298,24 +396,67 @@ double clampedProgress(double progress) {
 ImportWorkflow::ImportWorkflow(
     std::shared_ptr<ui::adapters::ImportAdapter> importAdapter,
     std::shared_ptr<core::errors::IErrorReporter> errorReporter,
-    WorkspaceFacade *workspace, QObject *parent)
+    StateSnapshotProvider stateSnapshotProvider, WorkspaceCommands* commands,
+    WorkspaceSelectors* selectors, QObject* parent)
     : QObject(parent),
+      state_(std::make_unique<importing::ImportWorkflowState>()),
       importAdapter_(std::move(importAdapter)),
-      workspace_(workspace),
+      stateSnapshotProvider_(std::move(stateSnapshotProvider)),
+      commands_(commands), selectors_(selectors),
       errorReporter_(std::move(errorReporter)) {
   if (!errorReporter_) {
     throw std::invalid_argument("ImportWorkflow requires an error reporter");
   }
 }
 
-void ImportWorkflow::setWorkspace(WorkspaceFacade *workspace) {
-  workspace_ = workspace;
+ImportWorkflow::~ImportWorkflow() = default;
+
+void ImportWorkflow::setWorkspaceRoles(WorkspaceCommands* commands,
+                                       WorkspaceSelectors* selectors) {
+  commands_ = commands;
+  selectors_ = selectors;
   emit stateChanged();
 }
 
-QString ImportWorkflow::selectedFile() const { return state_.selectedFile(); }
+bool ImportWorkflow::isRunning() const noexcept {
+  return state_->isRunning();
+}
 
-QStringList ImportWorkflow::queuedFiles() const { return state_.queuedFiles(); }
+bool ImportWorkflow::isPaused() const noexcept {
+  return state_->isPaused();
+}
+
+double ImportWorkflow::progress() const noexcept {
+  return state_->progress();
+}
+
+QString ImportWorkflow::phase() const {
+  return state_->phase();
+}
+
+QString ImportWorkflow::error() const {
+  return state_->error();
+}
+
+QString ImportWorkflow::selectedFile() const {
+  return state_->selectedFile();
+}
+
+int ImportWorkflow::queuedCount() const noexcept {
+  return static_cast<int>(state_->queuedFiles().size());
+}
+
+QStringList ImportWorkflow::queuedFiles() const {
+  return state_->queuedFiles();
+}
+
+bool ImportWorkflow::hasDraft() const noexcept {
+  return state_->hasDraft();
+}
+
+int ImportWorkflow::currentTransactionIndex() const noexcept {
+  return state_->currentTransactionIndex();
+}
 
 bool ImportWorkflow::hasActiveImportHandle() const noexcept {
   return hasActiveImportHandle_ && !activeImportHandle_.importId.empty();
@@ -329,26 +470,26 @@ void ImportWorkflow::clearActiveImportSubscription() {
   hasActiveImportHandle_ = false;
 }
 
-void ImportWorkflow::persistImportLog(const QString &logId, const QString &status,
-                                const QString &message, bool draftAttached,
-                                const QString &draftId,
-                                const QString &statementId,
-                                const QString &importFile) {
-  if (!workspace_) {
+void ImportWorkflow::saveImportLog(const QString& logId, const QString& status,
+                                   const QString& message, bool draftAttached,
+                                   const QString& draftId,
+                                   const QString& statementId,
+                                   const QString& importFile) {
+  if (!commands_) {
     return;
   }
-  const QString sourceFile = importFile.isEmpty() ? state_.currentImportFile()
-                                                    : importFile;
-  workspace_->upsertImportLog(logId, status, message, draftAttached, draftId,
-                              statementId, sourceFile);
+  const QString sourceFile =
+      importFile.isEmpty() ? state_->currentImportFile() : importFile;
+  commands_->upsertImportLog(logId, status, message, draftAttached, draftId,
+                             statementId, sourceFile);
 }
 
-void ImportWorkflow::clearPersistedDraft(const QString &draftId) {
-  if (!workspace_) {
+void ImportWorkflow::clearStoredDraft(const QString& draftId) {
+  if (!commands_) {
     return;
   }
   try {
-    workspace_->clearStatementDraft(draftId);
+    commands_->clearStatementDraft(draftId);
   } catch (...) {
     reportException(observability::origins::workflow::import::kFinalize,
                     std::current_exception());
@@ -356,31 +497,31 @@ void ImportWorkflow::clearPersistedDraft(const QString &draftId) {
 }
 
 void ImportWorkflow::pauseActiveDraft() {
-  if (!workspace_ || !state_.hasDraft()) {
+  if (!commands_ || !state_->hasDraft()) {
     return;
   }
   const QString draftId = currentDraftId();
-  flushSessionToWorkspace();
-  persistImportLog(draftId, text::importing::statusDraft(),
-                   text::importing::messageDraftPaused(), true, draftId);
+  flushActiveDraftToWorkspace();
+  saveImportLog(draftId, text::importing::statusDraft(),
+                text::importing::messageDraftPaused(), true, draftId);
   clearDraft();
 }
 
 void ImportWorkflow::discardActiveDraft() {
-  if (!workspace_ || !state_.hasDraft()) {
+  if (!commands_ || !state_->hasDraft()) {
     return;
   }
   const QString draftId = currentDraftId();
-  flushSessionToWorkspace();
-  clearPersistedDraft(draftId);
-  persistImportLog(draftId, text::importing::statusDraftDiscarded(),
-                   text::importing::messageDraftDiscarded(), false, {}, {},
-                   state_.selectedFile());
+  flushActiveDraftToWorkspace();
+  clearStoredDraft(draftId);
+  saveImportLog(draftId, text::importing::statusDraftDiscarded(),
+                text::importing::messageDraftDiscarded(), false, {}, {},
+                state_->selectedFile());
   clearDraft();
 }
 
 void ImportWorkflow::finalizeActiveDraft() {
-  if (!workspace_ || !state_.hasDraft()) {
+  if (!commands_ || !state_->hasDraft()) {
     return;
   }
   const QString draftId = currentDraftId();
@@ -398,50 +539,50 @@ void ImportWorkflow::finalizeActiveDraft() {
   }
 
   if (statementId.isEmpty()) {
-    persistImportLog(draftId, text::importing::statusFinalizeFailed(),
-                     text::importing::messageFinalizeFailed(), true, draftId);
+    saveImportLog(draftId, text::importing::statusFinalizeFailed(),
+                  text::importing::messageFinalizeFailed(), true, draftId);
     return;
   }
 
-  clearPersistedDraft(draftId);
-  persistImportLog(draftId, text::importing::statusFinalized(),
-                   text::importing::messageFinalized(), false, {}, statementId);
+  clearStoredDraft(draftId);
+  saveImportLog(draftId, text::importing::statusFinalized(),
+                text::importing::messageFinalized(), false, {}, statementId);
   clearDraft();
 }
 
-void ImportWorkflow::removeAttachedImportLog(const QString &logId,
+void ImportWorkflow::removeAttachedImportLog(const QString& logId,
                                              bool draftAttached,
-                                             const QString &draftId) {
+                                             const QString& draftId) {
   if (draftAttached) {
-    clearPersistedDraft(draftId);
+    clearStoredDraft(draftId);
     clearDraft();
   }
-  if (workspace_ && !logId.isEmpty()) {
-    workspace_->deleteImportLog(logId);
+  if (commands_ && !logId.isEmpty()) {
+    commands_->deleteImportLog(logId);
   }
 }
 
-void ImportWorkflow::addFiles(const QStringList &paths) {
-  if (state_.addFiles(paths)) {
+void ImportWorkflow::addFiles(const QStringList& paths) {
+  if (state_->addFiles(paths)) {
     emit stateChanged();
   }
 }
 
-void ImportWorkflow::setSelectedFile(const QString &path) {
-  if (state_.setSelectedFile(path)) {
+void ImportWorkflow::setSelectedFile(const QString& path) {
+  if (state_->setSelectedFile(path)) {
     emit stateChanged();
   }
 }
 
 void ImportWorkflow::resetStatus() {
-  if (state_.resetStatus()) {
+  if (state_->resetStatus()) {
     emit stateChanged();
   }
 }
 
 void ImportWorkflow::clearDraft() {
   rememberCurrentDraftTransactionIndex();
-  const bool shouldStartNext = state_.clearDraft();
+  const bool shouldStartNext = state_->clearDraft();
   activeDraftId_.clear();
   emit stateChanged();
   if (shouldStartNext) {
@@ -449,20 +590,20 @@ void ImportWorkflow::clearDraft() {
   }
 }
 
-void ImportWorkflow::rejectImportStart(const QString &errorMessage,
-                                       const char *traceMessage) {
-  state_.rejectStart(errorMessage);
+void ImportWorkflow::rejectImportStart(const QString& errorMessage,
+                                       const char* traceMessage) {
+  state_->rejectStart(errorMessage);
   observability::reportFlow(core::errors::ErrorSeverity::Warning,
                             observability::codes::FlowImportRejected,
                             observability::origins::workflow::import::kStart,
                             traceMessage);
   emit stateChanged();
-  emit importFailed(state_.error());
+  emit importFailed(state_->error());
 }
 
 void ImportWorkflow::startNextQueuedImport() {
   QString next;
-  if (!state_.takeNextQueuedFile(next)) {
+  if (!state_->takeNextQueuedFile(next)) {
     return;
   }
   emit stateChanged();
@@ -470,11 +611,11 @@ void ImportWorkflow::startNextQueuedImport() {
 }
 
 void ImportWorkflow::startStatementImport() {
-  if (state_.isRunning() || state_.hasDraft()) {
+  if (state_->isRunning() || state_->hasDraft()) {
     return;
   }
 
-  const auto selected = state_.takeSelectedFileForStart();
+  const auto selected = state_->takeSelectedFileForStart();
   if (!selected.isEmpty()) {
     emit stateChanged();
     startImportForFile(selected);
@@ -484,8 +625,8 @@ void ImportWorkflow::startStatementImport() {
   startNextQueuedImport();
 }
 
-void ImportWorkflow::startImportForFile(const QString &path) {
-  if (state_.isRunning()) {
+void ImportWorkflow::startImportForFile(const QString& path) {
+  if (state_->isRunning()) {
     return;
   }
   if (!importAdapter_) {
@@ -499,36 +640,36 @@ void ImportWorkflow::startImportForFile(const QString &path) {
     return;
   }
 
-  state_.beginImport(path);
+  state_->beginImport(path);
   activeImportLogId_ = newLogId();
   activeImportTerminalHandled_ = false;
   hasPendingTerminalEvent_ = false;
   activeImportHandle_ = {};
   hasActiveImportHandle_ = false;
-  pendingTerminalState_ =
-      core::ports::importing::StatementImportState::Pending;
+  pendingTerminalState_ = core::ports::importing::StatementImportState::Pending;
   pendingTerminalMessage_.clear();
-  persistImportLog(activeImportLogId_, text::importing::statusRunning(),
-             text::importing::phaseStarting());
+  saveImportLog(activeImportLogId_, text::importing::statusRunning(),
+                text::importing::phaseStarting());
   emit stateChanged();
 
   observability::traceWorkflow(
       observability::origins::workflow::import::kStart, "Import submitted",
       {{observability::context::kFile, strings::toStdString(path)},
        {observability::context::kQueuedCount,
-        std::to_string(state_.queuedFiles().size())}});
+        std::to_string(state_->queuedFiles().size())}});
   observability::reportFlow(
       core::errors::ErrorSeverity::Info,
       observability::codes::FlowImportStarted,
       observability::origins::workflow::import::kStart, "Import started",
       {{observability::context::kFile, strings::toStdString(path)},
        {observability::context::kQueuedCount,
-        std::to_string(state_.queuedFiles().size())}});
+        std::to_string(state_->queuedFiles().size())}});
 
   core::ports::importing::ImportRequest request;
   request.sourcePath = strings::toEncodedPath(path);
   activeImportHandle_ = importAdapter_->startStatementImport(
-      request, [this](const core::ports::importing::StatementImportEvent &event) {
+      request,
+      [this](const core::ports::importing::StatementImportEvent& event) {
         handleImportEvent(event);
       });
   hasActiveImportHandle_ = !activeImportHandle_.importId.empty();
@@ -539,12 +680,12 @@ void ImportWorkflow::startImportForFile(const QString &path) {
   }
 }
 
-void ImportWorkflow::updateProgress(double progress, const QString &phase) {
-  state_.updateProgress(progress, phase);
+void ImportWorkflow::updateProgress(double progress, const QString& phase) {
+  state_->updateProgress(progress, phase);
   emit stateChanged();
 }
 
-void ImportWorkflow::reportException(const char *origin,
+void ImportWorkflow::reportException(const char* origin,
                                      std::exception_ptr exception) const {
   if (!errorReporter_) {
     return;
@@ -554,22 +695,21 @@ void ImportWorkflow::reportException(const char *origin,
 }
 
 void ImportWorkflow::requestImportCancellation(bool clearQueue,
-                                               const char *origin,
-                                               const char *traceMessage) {
-  if (!state_.isRunning()) {
+                                               const char* origin,
+                                               const char* traceMessage) {
+  if (!state_->isRunning()) {
     return;
   }
 
   const auto queuedBeforeCancel =
-      clearQueue ? state_.queuedFiles() : QStringList{};
-  state_.beginCancel(clearQueue);
+      clearQueue ? state_->queuedFiles() : QStringList{};
+  state_->beginCancel(clearQueue);
 
-  if (clearQueue && workspace_) {
-    for (const auto &queuedPath : queuedBeforeCancel) {
-      workspace_->upsertImportLog(
-          newLogId(), text::importing::statusCanceled(),
-          text::importing::messageCanceledBeforeStart(), false, {}, {},
-          queuedPath);
+  if (clearQueue && commands_) {
+    for (const auto& queuedPath : queuedBeforeCancel) {
+      commands_->upsertImportLog(newLogId(), text::importing::statusCanceled(),
+                                 text::importing::messageCanceledBeforeStart(),
+                                 false, {}, {}, queuedPath);
     }
   }
 
@@ -580,9 +720,9 @@ void ImportWorkflow::requestImportCancellation(bool clearQueue,
       core::errors::ErrorSeverity::Info,
       observability::codes::FlowImportCanceled, origin, traceMessage,
       {{observability::context::kFile,
-        strings::toStdString(state_.currentImportFile())},
+        strings::toStdString(state_->currentImportFile())},
        {observability::context::kQueuedCount,
-        std::to_string(state_.queuedFiles().size())}});
+        std::to_string(state_->queuedFiles().size())}});
   emit stateChanged();
 }
 
@@ -599,29 +739,29 @@ void ImportWorkflow::cancelQueuedImports() {
 }
 
 void ImportWorkflow::setImportPaused(bool paused) {
-  if (state_.isPaused() == paused) {
+  if (state_->isPaused() == paused) {
     return;
   }
-  if (!state_.setPaused(paused)) {
+  if (!state_->setPaused(paused)) {
     return;
   }
   if (importAdapter_ && hasActiveImportHandle()) {
-    if (state_.isPaused()) {
+    if (state_->isPaused()) {
       importAdapter_->pause(activeImportHandle_);
     } else {
       importAdapter_->resume(activeImportHandle_);
     }
   }
   if (!activeImportLogId_.isEmpty()) {
-    persistImportLog(activeImportLogId_,
-               state_.isPaused() ? text::importing::statusPaused()
-                                 : text::importing::statusRunning(),
-               state_.isPaused() ? QStringLiteral("Import paused.")
-                                 : QStringLiteral("Import resumed."));
+    saveImportLog(activeImportLogId_,
+                  state_->isPaused() ? text::importing::statusPaused()
+                                     : text::importing::statusRunning(),
+                  state_->isPaused() ? text::importing::messageImportPaused()
+                                     : text::importing::messageImportResumed());
   }
   emit stateChanged();
 
-  if (!state_.isPaused() && hasPendingTerminalEvent_) {
+  if (!state_->isPaused() && hasPendingTerminalEvent_) {
     const auto terminalState = pendingTerminalState_;
     const auto message = pendingTerminalMessage_;
     hasPendingTerminalEvent_ = false;
@@ -632,12 +772,16 @@ void ImportWorkflow::setImportPaused(bool paused) {
   }
 }
 
-void ImportWorkflow::pauseImport() { setImportPaused(true); }
+void ImportWorkflow::pauseImport() {
+  setImportPaused(true);
+}
 
-void ImportWorkflow::resumeImport() { setImportPaused(false); }
+void ImportWorkflow::resumeImport() {
+  setImportPaused(false);
+}
 
 void ImportWorkflow::handleImportEvent(
-    const core::ports::importing::StatementImportEvent &event) {
+    const core::ports::importing::StatementImportEvent& event) {
   const double progress = clampedProgress(event.progress);
   const QString phase = QString::fromStdString(event.message);
   const auto eventState = event.state;
@@ -661,10 +805,10 @@ void ImportWorkflow::handleImportEvent(
 }
 
 void ImportWorkflow::handleImportCanceled() {
-  state_.recordCanceled();
+  state_->recordCanceled();
   if (!activeImportTerminalHandled_) {
-    persistImportLog(activeImportLogId_, text::importing::statusCanceled(),
-               text::importing::phaseCanceled());
+    saveImportLog(activeImportLogId_, text::importing::statusCanceled(),
+                  text::importing::phaseCanceled());
     activeImportTerminalHandled_ = true;
   }
   observability::reportFlow(
@@ -677,8 +821,8 @@ void ImportWorkflow::handleImportCanceled() {
   emit importCanceled();
 }
 
-void ImportWorkflow::handleImportFailed(const QString &errorMessage,
-                                        const char *traceMessage) {
+void ImportWorkflow::handleImportFailed(const QString& errorMessage,
+                                        const char* traceMessage) {
   const QString traceDetail =
       traceMessage ? QString::fromUtf8(traceMessage) : QString();
   const QString visibleError =
@@ -686,19 +830,20 @@ void ImportWorkflow::handleImportFailed(const QString &errorMessage,
               traceDetail.startsWith(QStringLiteral("Import failed:"))
           ? traceDetail
           : errorMessage;
-  state_.recordFailed(visibleError);
+  state_->recordFailed(visibleError);
   if (!activeImportTerminalHandled_) {
-    persistImportLog(activeImportLogId_, text::importing::statusFailed(),
-               errorMessage);
+    saveImportLog(activeImportLogId_, text::importing::statusFailed(),
+                  errorMessage);
     activeImportTerminalHandled_ = true;
   }
-  observability::reportFlow(
-      core::errors::ErrorSeverity::Warning,
-      observability::codes::FlowImportFailed,
-      observability::origins::workflow::import::kTerminal, traceMessage,
-      {{observability::context::kError, strings::toStdString(state_.error())}});
+  observability::reportFlow(core::errors::ErrorSeverity::Warning,
+                            observability::codes::FlowImportFailed,
+                            observability::origins::workflow::import::kTerminal,
+                            traceMessage,
+                            {{observability::context::kError,
+                              strings::toStdString(state_->error())}});
   emit stateChanged();
-  emit importFailed(state_.error());
+  emit importFailed(state_->error());
 }
 
 bool ImportWorkflow::populateDraftFromResult() {
@@ -715,14 +860,12 @@ bool ImportWorkflow::populateDraftFromResult() {
     return false;
   }
 
-  const auto snapshot =
-      workspace_ ? workspace_->workspaceSnapshot()
-                 : core::ports::workspace::WorkspaceSnapshot{};
+  const auto snapshot = stateSnapshot();
   const QString draftId = activeImportLogId_;
-  const bool hadVisibleDraft = state_.hasDraft();
+  const bool hadVisibleDraft = state_->hasDraft();
 
   const auto preparedDraft = importAdapter_->buildStatementDraft(
-      strings::toStdString(state_.currentImportFile()), imported.statement,
+      strings::toStdString(state_->currentImportFile()), imported.statement,
       snapshot, imported.transactions, strings::toStdString(draftId));
   if (preparedDraft.id.empty() && preparedDraft.transactions.empty()) {
     handleImportFailed(text::workflowErrors::importFailed(),
@@ -732,25 +875,26 @@ bool ImportWorkflow::populateDraftFromResult() {
 
   const auto draftSnapshot =
       importAdapter_->buildStatementDraftSnapshot(preparedDraft, snapshot);
-  if (!workspace_ || draftSnapshot.id.empty()) {
+  if (!commands_ || draftSnapshot.id.empty()) {
     handleImportFailed(text::workflowErrors::importFailed(),
-                       "Import failed: unable to persist draft state");
+                       "Import failed: unable to save draft state");
     return false;
   }
-  workspace_->saveStatementDraft(draftSnapshot);
+  commands_->saveStatementDraft(draftSnapshot);
 
   if (hadVisibleDraft) {
-    state_.recordFinished();
+    state_->recordFinished();
   } else {
-    if (!state_.populateDraft(preparedDraft, snapshot, imported.artifacts, 0)) {
+    if (!state_->populateDraft(preparedDraft, snapshot, imported.artifacts,
+                               0)) {
       handleImportFailed(text::workflowErrors::importFailed(),
                          "Import failed: unable to create statement draft");
       return false;
     }
   }
 
-  persistImportLog(activeImportLogId_, text::importing::statusDraft(),
-             QStringLiteral("Draft ready for manual review."), true, draftId);
+  saveImportLog(activeImportLogId_, text::importing::statusDraft(),
+                text::importing::messageDraftReady(), true, draftId);
   if (!hadVisibleDraft) {
     activeDraftId_ = draftId;
   }
@@ -763,7 +907,7 @@ bool ImportWorkflow::populateDraftFromResult() {
       {{observability::context::kStatus,
         strings::toStdString(text::importing::statusSuccess())},
        {observability::context::kArtifactCount,
-        std::to_string(state_.artifactCount())}});
+        std::to_string(state_->artifactCount())}});
   emit stateChanged();
   emit importFinished();
   return true;
@@ -771,13 +915,13 @@ bool ImportWorkflow::populateDraftFromResult() {
 
 void ImportWorkflow::onJobTerminal(
     core::ports::importing::StatementImportState state,
-    const QString &message) {
-  if ((!state_.isRunning() && !state_.cancelRequested()) ||
+    const QString& message) {
+  if ((!state_->isRunning() && !state_->cancelRequested()) ||
       activeImportTerminalHandled_) {
     return;
   }
 
-  if (state_.isPaused() &&
+  if (state_->isPaused() &&
       state != core::ports::importing::StatementImportState::Canceled) {
     hasPendingTerminalEvent_ = true;
     pendingTerminalState_ = state;
@@ -786,7 +930,7 @@ void ImportWorkflow::onJobTerminal(
   }
 
   if (state == core::ports::importing::StatementImportState::Canceled ||
-      state_.cancelRequested()) {
+      state_->cancelRequested()) {
     clearActiveImportSubscription();
     handleImportCanceled();
     return;
@@ -794,9 +938,9 @@ void ImportWorkflow::onJobTerminal(
 
   if (state == core::ports::importing::StatementImportState::Failed) {
     clearActiveImportSubscription();
-    handleImportFailed(
-        message.isEmpty() ? text::workflowErrors::importFailed() : message,
-        "Import failed");
+    handleImportFailed(message.isEmpty() ? text::workflowErrors::importFailed()
+                                         : message,
+                       "Import failed");
     return;
   }
 
@@ -822,33 +966,36 @@ void ImportWorkflow::rememberCurrentDraftTransactionIndex() {
     return;
   }
   draftTransactionIndexByDraftId_.insert(draftId,
-                                         state_.currentTransactionIndex());
+                                         state_->currentTransactionIndex());
 }
 
 int ImportWorkflow::rememberedDraftTransactionIndex(
-    const QString &draftId) const {
+    const QString& draftId) const {
   return draftTransactionIndexByDraftId_.value(draftId, 0);
 }
 
-bool ImportWorkflow::openPersistedDraft(const QString &draftId) {
-  if (!workspace_) {
+bool ImportWorkflow::openStoredDraft(const QString& draftId) {
+  if (!stateSnapshotProvider_ || !selectors_) {
     return false;
   }
   rememberCurrentDraftTransactionIndex();
+  const QString currentDraftId = this->currentDraftId();
 
   QString requestedDraftId = !draftId.isEmpty() ? draftId : activeDraftId_;
   if (requestedDraftId.isEmpty()) {
-    for (const auto &id : workspace_->attachedImportDraftIds()) {
+    for (const auto& id : selectors_->attachedImportDraftIds()) {
       requestedDraftId = id;
       break;
     }
   }
   if (!requestedDraftId.isEmpty()) {
+    if (!currentDraftId.isEmpty() && requestedDraftId != currentDraftId) {
+      flushActiveDraftToWorkspace();
+    }
     activeDraftId_ = requestedDraftId;
   }
 
-  const bool restored =
-      restoreDraftFromState(workspace_->workspaceSnapshot());
+  const bool restored = restoreDraftFromState(stateSnapshot());
   if (restored) {
     emit stateChanged();
   }
@@ -856,45 +1003,45 @@ bool ImportWorkflow::openPersistedDraft(const QString &draftId) {
 }
 
 bool ImportWorkflow::restoreDraftFromState(
-    const core::ports::workspace::WorkspaceSnapshot &snapshot) {
+    const core::ports::workspace::WorkspaceSnapshot& snapshot) {
   if (snapshot.statementDrafts.empty() || !importAdapter_) {
     return false;
   }
 
-  const core::ports::workspace::StatementDraftSnapshot *persisted = nullptr;
+  const core::ports::workspace::StatementDraftSnapshot* storedDraft = nullptr;
   const QString requestedDraftId = resolveDraftContextId();
   if (!requestedDraftId.isEmpty()) {
-    for (const auto &draft : snapshot.statementDrafts) {
+    for (const auto& draft : snapshot.statementDrafts) {
       if (QString::fromStdString(draft.id) == requestedDraftId) {
-        persisted = &draft;
+        storedDraft = &draft;
         break;
       }
     }
   }
-  if (!persisted) {
-    persisted = &snapshot.statementDrafts.front();
+  if (!storedDraft) {
+    storedDraft = &snapshot.statementDrafts.front();
   }
-  if (!persisted) {
+  if (!storedDraft) {
     return false;
   }
 
-  const QString restoredDraftId = QString::fromStdString(persisted->id);
+  const QString restoredDraftId = QString::fromStdString(storedDraft->id);
   if (!restoredDraftId.isEmpty()) {
     activeDraftId_ = restoredDraftId;
   }
 
-  auto draft = importAdapter_->restoreStatementDraft(*persisted);
-  return state_.restoreDraft(draft, snapshot, restoredDraftId,
-                             rememberedDraftTransactionIndex(restoredDraftId));
+  auto draft = importAdapter_->restoreStatementDraft(*storedDraft);
+  return state_->restoreDraft(draft, snapshot, restoredDraftId,
+                              rememberedDraftTransactionIndex(restoredDraftId));
 }
 
-core::ports::importing::draft::TransactionDraft *
+core::ports::importing::draft::TransactionDraft*
 ImportWorkflow::currentTransactionDraft() {
-  auto *draft = state_.draft();
+  auto* draft = state_->draft();
   if (!draft) {
     return nullptr;
   }
-  const int index = state_.currentTransactionIndex();
+  const int index = state_->currentTransactionIndex();
   if (index < 0 ||
       static_cast<std::size_t>(index) >= draft->transactions.size()) {
     return nullptr;
@@ -902,51 +1049,59 @@ ImportWorkflow::currentTransactionDraft() {
   return &draft->transactions[static_cast<std::size_t>(index)];
 }
 
-const core::ports::importing::draft::TransactionDraft *
+const core::ports::importing::draft::TransactionDraft*
 ImportWorkflow::currentTransactionDraft() const {
-  return const_cast<ImportWorkflow *>(this)->currentTransactionDraft();
+  return const_cast<ImportWorkflow*>(this)->currentTransactionDraft();
 }
 
 int ImportWorkflow::transactionCount() const noexcept {
-  const auto *draft = state_.draft();
+  const auto* draft = state_->draft();
   return draft ? static_cast<int>(draft->transactions.size()) : 0;
 }
 
+core::ports::workspace::WorkspaceSnapshot
+ImportWorkflow::stateSnapshot() const {
+  return stateSnapshotProvider_ ? stateSnapshotProvider_()
+                                : core::ports::workspace::WorkspaceSnapshot{};
+}
+
 QString ImportWorkflow::currentDraftId() const {
-  const auto *draft = state_.draft();
+  const auto* draft = state_->draft();
   return draft ? QString::fromStdString(draft->id) : QString();
 }
 
 QString ImportWorkflow::currentStatementName() const {
-  const auto *draft = state_.draft();
+  const auto* draft = state_->draft();
   return draft ? QString::fromStdString(draft->name) : QString();
 }
 
-core::ports::importing::draft::StatementDraft *
+core::ports::importing::draft::StatementDraft*
 ImportWorkflow::statementDraft() noexcept {
-  return state_.draft();
+  return state_->draft();
 }
 
-const core::ports::importing::draft::StatementDraft *
+const core::ports::importing::draft::StatementDraft*
 ImportWorkflow::statementDraft() const noexcept {
-  return state_.draft();
+  return state_->draft();
 }
 
 void ImportWorkflow::setCurrentTransactionIndex(int index) {
-  if (!state_.hasDraft()) {
+  if (!state_->hasDraft()) {
     return;
   }
-  const int previous = state_.currentTransactionIndex();
-  state_.setCurrentTransactionIndex(index);
-  if (state_.currentTransactionIndex() != previous) {
+  const int previous = state_->currentTransactionIndex();
+  state_->setCurrentTransactionIndex(index);
+  if (state_->currentTransactionIndex() != previous) {
     emit stateChanged();
   }
 }
 
-void ImportWorkflow::notifyDraftChanged() { emit stateChanged(); }
+void ImportWorkflow::notifyDraftChanged() {
+  emit stateChanged();
+}
 
-bool ImportWorkflow::renameCurrentStatementDraft(const QString &name) {
-  auto *draft = statementDraft();
+bool ImportWorkflow::renameCurrentStatementDraft(const QString& name) {
+  auto* draft = statementDraft();
   if (!draft || !importAdapter_) {
     return false;
   }
@@ -961,16 +1116,16 @@ bool ImportWorkflow::renameCurrentStatementDraft(const QString &name) {
 }
 
 int ImportWorkflow::insertTransactionAfterCurrent() {
-  auto *draft = statementDraft();
+  auto* draft = statementDraft();
   if (!draft || !importAdapter_) {
     return -1;
   }
   core::ports::importing::draft::StatementDraftEdit edit;
-  edit.kind =
-      core::ports::importing::draft::StatementDraftEditKind::InsertTransactionAfter;
+  edit.kind = core::ports::importing::draft::StatementDraftEditKind::
+      InsertTransactionAfter;
   edit.index = currentTransactionIndex();
-  const int newIndex =
-      importAdapter_->updateStatementDraft(*draft, edit).selectedTransactionIndex;
+  const int newIndex = importAdapter_->updateStatementDraft(*draft, edit)
+                           .selectedTransactionIndex;
   if (newIndex >= 0) {
     setCurrentTransactionIndex(newIndex);
   }
@@ -978,16 +1133,16 @@ int ImportWorkflow::insertTransactionAfterCurrent() {
 }
 
 int ImportWorkflow::removeCurrentTransaction() {
-  auto *draft = statementDraft();
+  auto* draft = statementDraft();
   if (!draft || !importAdapter_) {
     return -1;
   }
   core::ports::importing::draft::StatementDraftEdit edit;
-  edit.kind =
-      core::ports::importing::draft::StatementDraftEditKind::RemoveTransactionAt;
+  edit.kind = core::ports::importing::draft::StatementDraftEditKind::
+      RemoveTransactionAt;
   edit.index = currentTransactionIndex();
-  const int newIndex =
-      importAdapter_->updateStatementDraft(*draft, edit).selectedTransactionIndex;
+  const int newIndex = importAdapter_->updateStatementDraft(*draft, edit)
+                           .selectedTransactionIndex;
   if (newIndex >= 0) {
     setCurrentTransactionIndex(newIndex);
   }
@@ -995,8 +1150,8 @@ int ImportWorkflow::removeCurrentTransaction() {
 }
 
 bool ImportWorkflow::applyCurrentTransactionPatch(
-    const core::ports::importing::draft::TransactionDraftPatch &patch) {
-  auto *transaction = currentTransactionDraft();
+    const core::ports::importing::draft::TransactionDraftPatch& patch) {
+  auto* transaction = currentTransactionDraft();
   if (!transaction || !importAdapter_) {
     return false;
   }
@@ -1010,7 +1165,7 @@ bool ImportWorkflow::applyCurrentTransactionPatch(
   return true;
 }
 
-bool ImportWorkflow::commitCurrentTransactionName(const QString &name) {
+bool ImportWorkflow::commitCurrentTransactionName(const QString& name) {
   core::ports::importing::draft::TransactionDraftPatch patch;
   patch.hasName = true;
   patch.name = strings::toStdString(name);
@@ -1018,14 +1173,14 @@ bool ImportWorkflow::commitCurrentTransactionName(const QString &name) {
 }
 
 bool ImportWorkflow::commitCurrentTransactionBookingDate(
-    const QString &bookingDate) {
+    const QString& bookingDate) {
   core::ports::importing::draft::TransactionDraftPatch patch;
   patch.hasBookingDate = true;
   patch.bookingDate = strings::toStdString(bookingDate);
   return applyCurrentTransactionPatch(patch);
 }
 
-bool ImportWorkflow::commitCurrentTransactionValuta(const QString &valuta) {
+bool ImportWorkflow::commitCurrentTransactionValuta(const QString& valuta) {
   core::ports::importing::draft::TransactionDraftPatch patch;
   patch.hasValuta = true;
   patch.valuta = strings::toStdString(valuta);
@@ -1048,8 +1203,8 @@ bool ImportWorkflow::setCurrentTransactionAllocatable(bool allocatable) {
 }
 
 bool ImportWorkflow::applyCurrentTransactionAmountText(
-    const QString &amountText) {
-  auto *transaction = currentTransactionDraft();
+    const QString& amountText) {
+  auto* transaction = currentTransactionDraft();
   if (!transaction || !importAdapter_) {
     return false;
   }
@@ -1064,13 +1219,14 @@ bool ImportWorkflow::applyCurrentTransactionAmountText(
   return true;
 }
 
-bool ImportWorkflow::selectCurrentTransactionActor(const QString &actorId) {
-  auto *transaction = currentTransactionDraft();
+bool ImportWorkflow::selectCurrentTransactionActor(const QString& actorId) {
+  auto* transaction = currentTransactionDraft();
   if (!transaction || !importAdapter_) {
     return false;
   }
   core::ports::importing::draft::TransactionDraftEdit edit;
-  edit.kind = core::ports::importing::draft::TransactionDraftEditKind::SelectActor;
+  edit.kind =
+      core::ports::importing::draft::TransactionDraftEditKind::SelectActor;
   edit.id = strings::toStdString(actorId);
   const bool changed =
       importAdapter_->updateTransactionDraft(*transaction, {}, edit);
@@ -1081,12 +1237,13 @@ bool ImportWorkflow::selectCurrentTransactionActor(const QString &actorId) {
 }
 
 bool ImportWorkflow::clearCurrentTransactionActor() {
-  auto *transaction = currentTransactionDraft();
+  auto* transaction = currentTransactionDraft();
   if (!transaction || !importAdapter_) {
     return false;
   }
   core::ports::importing::draft::TransactionDraftEdit edit;
-  edit.kind = core::ports::importing::draft::TransactionDraftEditKind::ClearActor;
+  edit.kind =
+      core::ports::importing::draft::TransactionDraftEditKind::ClearActor;
   const bool changed =
       importAdapter_->updateTransactionDraft(*transaction, {}, edit);
   if (changed) {
@@ -1096,14 +1253,14 @@ bool ImportWorkflow::clearCurrentTransactionActor() {
 }
 
 bool ImportWorkflow::setCurrentTransactionPropertySelected(
-    const QString &propertyId, bool selected) {
-  auto *transaction = currentTransactionDraft();
+    const QString& propertyId, bool selected) {
+  auto* transaction = currentTransactionDraft();
   if (!transaction || !importAdapter_) {
     return false;
   }
   core::ports::importing::draft::TransactionDraftEdit edit;
-  edit.kind =
-      core::ports::importing::draft::TransactionDraftEditKind::SetPropertySelected;
+  edit.kind = core::ports::importing::draft::TransactionDraftEditKind::
+      SetPropertySelected;
   edit.id = strings::toStdString(propertyId);
   edit.selected = selected;
   const bool changed =
@@ -1115,8 +1272,8 @@ bool ImportWorkflow::setCurrentTransactionPropertySelected(
 }
 
 bool ImportWorkflow::selectCurrentTransactionContract(
-    const QString &contractId) {
-  auto *transaction = currentTransactionDraft();
+    const QString& contractId) {
+  auto* transaction = currentTransactionDraft();
   if (!transaction || !importAdapter_) {
     return false;
   }
@@ -1133,7 +1290,7 @@ bool ImportWorkflow::selectCurrentTransactionContract(
 }
 
 bool ImportWorkflow::clearCurrentTransactionContract() {
-  auto *transaction = currentTransactionDraft();
+  auto* transaction = currentTransactionDraft();
   if (!transaction || !importAdapter_) {
     return false;
   }
@@ -1149,100 +1306,85 @@ bool ImportWorkflow::clearCurrentTransactionContract() {
 }
 
 bool ImportWorkflow::createActorForCurrentTransaction(
-    const QString &actorName) {
-  if (!workspace_) {
+    const QString& actorName) {
+  if (!commands_ || !selectors_) {
     return false;
   }
   const QString trimmedName = actorName.trimmed();
   if (trimmedName.isEmpty()) {
     return false;
   }
-  QString actorId;
-  const QVariantMap existing = workspace_->actorIdentityByName(trimmedName);
-  if (!existing.isEmpty()) {
-    actorId = existing.value(payload::keys::common::kId).toString();
-  }
+  QString actorId = selectors_->actorIdByName(trimmedName);
   if (actorId.isEmpty()) {
-    actorId = workspace_->saveActor({}, trimmedName);
+    actorId = commands_->saveActor({}, trimmedName);
   }
   return !actorId.isEmpty() && selectCurrentTransactionActor(actorId);
 }
 
 bool ImportWorkflow::createPropertyForCurrentTransaction(
-    const QString &propertyName) {
-  if (!workspace_) {
+    const QString& propertyName) {
+  if (!commands_ || !selectors_) {
     return false;
   }
   const QString trimmedName = propertyName.trimmed();
   if (trimmedName.isEmpty()) {
     return false;
   }
-  QString propertyId;
-  const QVariantMap existing = workspace_->propertyIdentityByName(trimmedName);
-  if (!existing.isEmpty()) {
-    propertyId = existing.value(payload::keys::common::kId).toString();
-  }
+  QString propertyId = selectors_->propertyIdByName(trimmedName);
   if (propertyId.isEmpty()) {
-    propertyId = workspace_->saveProperty({}, trimmedName);
+    propertyId = commands_->saveProperty({}, trimmedName);
   }
   return !propertyId.isEmpty() &&
          setCurrentTransactionPropertySelected(propertyId, true);
 }
 
 bool ImportWorkflow::createOrSelectContractForCurrentTransaction(
-    const QString &contractName, const QString &contractType,
-    const QString &allocatableMode) {
-  auto *transaction = currentTransactionDraft();
-  if (!transaction || !workspace_) {
+    const QString& contractName, const QString& contractType,
+    const QString& allocatableMode) {
+  auto* transaction = currentTransactionDraft();
+  if (!transaction || !commands_ || !selectors_) {
     return false;
   }
   const QString trimmedType = contractType.trimmed();
   if (trimmedType.isEmpty()) {
     return false;
   }
-  const QString effectiveName =
-      contractName.trimmed().isEmpty() ? workspace_->nextContractName()
-                                       : contractName.trimmed();
+  const QString effectiveName = contractName.trimmed().isEmpty()
+                                    ? selectors_->nextContractName()
+                                    : contractName.trimmed();
   QStringList actorIds;
-  const QString actorId = QString::fromStdString(transaction->actorId).trimmed();
+  const QString actorId =
+      QString::fromStdString(transaction->actorId).trimmed();
   if (!actorId.isEmpty()) {
     actorIds.push_back(actorId);
   }
   QStringList propertyIds;
   propertyIds.reserve(static_cast<int>(transaction->propertyIds.size()));
-  for (const auto &propertyId : transaction->propertyIds) {
+  for (const auto& propertyId : transaction->propertyIds) {
     propertyIds.push_back(QString::fromStdString(propertyId));
   }
 
-  QString contractId;
-  const QVariantMap existing = workspace_->contractIdentityBySignature(
+  QString contractId = selectors_->contractIdBySignature(
       effectiveName, trimmedType, actorIds, propertyIds);
-  if (!existing.isEmpty()) {
-    contractId = existing.value(payload::keys::common::kId).toString();
-  }
   if (contractId.isEmpty()) {
     QString mode = allocatableMode.trimmed().toLower();
     if (mode.isEmpty()) {
       mode = QStringLiteral("mixed");
     }
-    contractId = workspace_->saveContract({}, effectiveName, trimmedType,
-                                          actorIds, propertyIds, {}, mode);
+    contractId = commands_->saveContract({}, effectiveName, trimmedType,
+                                         actorIds, propertyIds, {}, mode);
   }
   return !contractId.isEmpty() && selectCurrentTransactionContract(contractId);
 }
 
 TransactionDraftView ImportWorkflow::currentTransactionView() const {
-  const auto *transaction = currentTransactionDraft();
+  const auto* transaction = currentTransactionDraft();
   if (!transaction || !importAdapter_) {
     return {};
   }
   try {
-    const QVariantMap viewState = adapters::ImportAdapter::toViewState(
-        importAdapter_->buildDraftDerivedState(
-            catalogSnapshotForDraft(),
-            adapters::ImportAdapter::toCoreSelection(*transaction)));
-    return adapters::ImportAdapter::toTransactionDraftView(*transaction,
-                                                             viewState);
+    return importAdapter_->transactionDraftView(*transaction,
+                                                catalogSnapshotForDraft());
   } catch (...) {
     reportException(observability::origins::workflow::import::kFinalize,
                     std::current_exception());
@@ -1252,7 +1394,7 @@ TransactionDraftView ImportWorkflow::currentTransactionView() const {
 
 core::ports::workspace::StatementDraftSnapshot
 ImportWorkflow::currentStatementDraftSnapshot() const {
-  const auto *draft = statementDraft();
+  const auto* draft = statementDraft();
   if (!draft || !importAdapter_) {
     return {};
   }
@@ -1261,23 +1403,23 @@ ImportWorkflow::currentStatementDraftSnapshot() const {
 }
 
 QString ImportWorkflow::finalizeCurrentStatementDraft() {
-  if (!workspace_ || !importAdapter_ || !state_.hasDraft()) {
+  if (!commands_ || !importAdapter_ || !state_->hasDraft()) {
     return {};
   }
-  flushSessionToWorkspace();
+  flushActiveDraftToWorkspace();
   const auto snapshot = currentStatementDraftSnapshot();
   if (snapshot.id.empty() || snapshot.transactions.empty()) {
     return {};
   }
-  return workspace_->finalizeStatementDraft(snapshot);
+  return commands_->finalizeStatementDraft(snapshot);
 }
 
-void ImportWorkflow::flushSessionToWorkspace() {
-  if (!workspace_ || !importAdapter_ || !state_.hasDraft()) {
+void ImportWorkflow::flushActiveDraftToWorkspace() {
+  if (!commands_ || !importAdapter_ || !state_->hasDraft()) {
     return;
   }
 
-  const auto *draft = state_.draft();
+  const auto* draft = state_->draft();
   if (!draft || draft->id.empty()) {
     return;
   }
@@ -1288,19 +1430,17 @@ void ImportWorkflow::flushSessionToWorkspace() {
     return;
   }
 
-  workspace_->saveStatementDraft(snapshot);
+  commands_->saveStatementDraft(snapshot);
 }
 
 core::ports::workspace::WorkspaceSnapshot
 ImportWorkflow::catalogSnapshotForDraft() const {
-  const auto liveSnapshot =
-      workspace_ ? workspace_->workspaceSnapshot()
-                 : core::ports::workspace::WorkspaceSnapshot{};
-  if (!state_.hasDraft() || !importAdapter_) {
+  const auto liveSnapshot = stateSnapshot();
+  if (!state_->hasDraft() || !importAdapter_) {
     return liveSnapshot;
   }
 
-  return importAdapter_->mergeWorkspaceState(state_.catalogSnapshot(),
+  return importAdapter_->mergeWorkspaceState(state_->catalogSnapshot(),
                                              liveSnapshot);
 }
 

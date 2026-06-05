@@ -13,8 +13,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <nlohmann/json.hpp>
-
 namespace core::application::annual {
 
 namespace annual_ports = core::ports::annual;
@@ -34,60 +32,17 @@ struct SnapshotTx {
   std::string sourceAnalysisName;
 };
 
-std::string jsonString(const nlohmann::json &object, const char *key) {
-  const auto it = object.find(key);
-  if (it == object.end() || !it->is_string())
-    return {};
-  return it->get<std::string>();
-}
-
-double jsonDouble(const nlohmann::json &object, const char *key) {
-  const auto it = object.find(key);
-  if (it == object.end() || !it->is_number())
-    return 0.0;
-  return it->get<double>();
-}
-
-bool jsonBool(const nlohmann::json &object, const char *key) {
-  const auto it = object.find(key);
-  if (it == object.end() || !it->is_boolean())
-    return false;
-  return it->get<bool>();
-}
-
-std::vector<std::string> jsonStringList(const nlohmann::json &object,
-                                        const char *key) {
-  std::vector<std::string> out;
-  const auto it = object.find(key);
-  if (it == object.end() || !it->is_array())
-    return out;
-  out.reserve(it->size());
-  for (const auto &item : *it) {
-    if (!item.is_string())
-      continue;
-    out.push_back(item.get<std::string>());
+void appendMissingLiveRow(annual_ports::AnnualResult &result,
+                          const annual_ports::AnnualRowResult &row,
+                          std::unordered_set<std::string> &seenKeys) {
+  if (!row.missingLive) {
+    return;
   }
-  return out;
-}
-
-std::vector<nlohmann::json> parseSnapshotRows(const std::string &raw) {
-  std::vector<nlohmann::json> out;
-  if (raw.empty())
-    return out;
-  nlohmann::json parsed;
-  try {
-    parsed = nlohmann::json::parse(raw);
-  } catch (...) {
-    return out;
+  const std::string key = row.key.empty() ? row.transactionId : row.key;
+  if (key.empty() || !seenKeys.insert(key).second) {
+    return;
   }
-  if (parsed.is_array()) {
-    out.reserve(parsed.size());
-    for (const auto &item : parsed)
-      if (item.is_object())
-        out.push_back(item);
-    return out;
-  }
-  return out;
+  result.missingLive.push_back(row);
 }
 
 int bookingYear(const std::string &value) {
@@ -150,6 +105,7 @@ annual_ports::AnnualResult AnnualService::buildAnnualResult(
 
   annual_ports::AnnualResult out;
   out.annualId = annualId;
+  std::unordered_set<std::string> missingLiveKeys;
 
   const AnnualSnapshot *annual = nullptr;
   for (const auto &row : workspace.annuals) {
@@ -189,21 +145,16 @@ annual_ports::AnnualResult AnnualService::buildAnnualResult(
     const auto it = analysisById.find(analysisId);
     if (it == analysisById.end())
       continue;
-    const auto rows = parseSnapshotRows(it->second.snapshotTransactionsJson);
-    for (const auto &row : rows) {
+    for (const auto &row : it->second.snapshotTransactions) {
       SnapshotTx tx;
-      tx.id = jsonString(row, "id");
-      tx.name = jsonString(row, "transactionName");
-      if (tx.name.empty())
-        tx.name = jsonString(row, "name");
-      tx.bookingDate = jsonString(row, "bookingDate");
-      if (tx.bookingDate.empty())
-        tx.bookingDate = jsonString(row, "date");
-      tx.amount = jsonDouble(row, "amount");
-      tx.allocatable = jsonBool(row, "allocatable");
-      tx.contractId = jsonString(row, "contractId");
-      tx.statementId = jsonString(row, "statementId");
-      tx.propertyIds = jsonStringList(row, "propertyIds");
+      tx.id = row.id;
+      tx.name = row.name;
+      tx.bookingDate = row.bookingDate;
+      tx.amount = row.amount;
+      tx.allocatable = row.allocatable;
+      tx.contractId = row.contractId;
+      tx.statementId = row.statementId;
+      tx.propertyIds = row.propertyIds;
       tx.sourceAnalysisId = it->second.id;
       tx.sourceAnalysisName = it->second.name;
       allSnapshotRows.push_back(std::move(tx));
@@ -272,8 +223,10 @@ annual_ports::AnnualResult AnnualService::buildAnnualResult(
     for (const auto &tx : allSnapshotRows) {
       auto row = buildRow({tx}, false, false);
       out.deduplicated.push_back(row);
-      if (row.missingLive)
+      if (row.missingLive) {
         out.stats.missingLive += 1;
+        appendMissingLiveRow(out, row, missingLiveKeys);
+      }
       if (row.mixedYear)
         out.stats.mixedYear += 1;
     }
@@ -327,8 +280,10 @@ annual_ports::AnnualResult AnnualService::buildAnnualResult(
       auto row = buildRow(group, false, false);
       out.deduplicated.push_back(row);
       out.stats.duplicateCount += 1;
-      if (row.missingLive)
+      if (row.missingLive) {
         out.stats.missingLive += 1;
+        appendMissingLiveRow(out, row, missingLiveKeys);
+      }
       if (row.mixedYear)
         out.stats.mixedYear += 1;
       consumedExact.insert(key);
@@ -356,8 +311,10 @@ annual_ports::AnnualResult AnnualService::buildAnnualResult(
     if (similarGroup.size() > 1) {
       auto row = buildRow(similarGroup, true, false);
       out.similar.push_back(row);
-      if (row.missingLive)
+      if (row.missingLive) {
         out.stats.missingLive += 1;
+        appendMissingLiveRow(out, row, missingLiveKeys);
+      }
       if (row.mixedYear)
         out.stats.mixedYear += 1;
       for (const auto &tx : similarGroup)
@@ -371,8 +328,10 @@ annual_ports::AnnualResult AnnualService::buildAnnualResult(
       continue;
     auto row = buildRow({tx}, false, true);
     out.divergent.push_back(row);
-    if (row.missingLive)
+    if (row.missingLive) {
       out.stats.missingLive += 1;
+      appendMissingLiveRow(out, row, missingLiveKeys);
+    }
     if (row.mixedYear)
       out.stats.mixedYear += 1;
   }

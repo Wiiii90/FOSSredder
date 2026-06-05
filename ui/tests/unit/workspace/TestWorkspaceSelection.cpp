@@ -1,21 +1,23 @@
 /**
  * @file ui/tests/unit/workspace/TestWorkspaceSelection.cpp
- * @brief Tests for the UI WorkspaceSelection synchronization layer.
+ * @brief Tests for workspace selection state.
  */
 
 #include <gtest/gtest.h>
 
 #include "support/WorkspaceTestData.h"
 #include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
 TEST(WorkspaceSelectionTest,
      WSP_SELECTION_001_TracksCurrentSelectionAcrossAllCollections) {
-  WorkspaceCacheModels models;
-  models.loadFromState(tests::support::makeWorkspaceSnapshot());
-
-  WorkspaceSelection selection(models);
+  WorkspaceStore store;
+  store.loadFromState(tests::support::makeWorkspaceSnapshot());
+  WorkspaceSelectors selectors(store);
+  WorkspaceSelection selection(store, selectors);
 
   selection.setSelectedActorId(QStringLiteral("actor-1"));
   selection.setSelectedPropertyId(QStringLiteral("property-1"));
@@ -24,7 +26,6 @@ TEST(WorkspaceSelectionTest,
   selection.setSelectedTransactionId(QStringLiteral("tx-1"));
   selection.setSelectedAnalysisId(QStringLiteral("analysis-1"));
   selection.setSelectedAnnualId(QStringLiteral("annual-1"));
-  selection.setLastAnalysisResult(QVariantMap{{QStringLiteral("ok"), true}});
 
   EXPECT_EQ(selection.selectedActorId(), QStringLiteral("actor-1"));
   EXPECT_EQ(selection.selectedPropertyId(), QStringLiteral("property-1"));
@@ -33,28 +34,23 @@ TEST(WorkspaceSelectionTest,
   EXPECT_EQ(selection.selectedTransactionId(), QStringLiteral("tx-1"));
   EXPECT_EQ(selection.selectedAnalysisId(), QStringLiteral("analysis-1"));
   EXPECT_EQ(selection.selectedAnnualId(), QStringLiteral("annual-1"));
-  ASSERT_TRUE(selection.lastAnalysisResult().isValid());
-
 }
 
 TEST(WorkspaceSelectionTest,
-     WSP_SELECTION_002_ClearsStaleSelectionsAndAnalysisResultAfterReload) {
-  WorkspaceCacheModels models;
-  models.loadFromState(tests::support::makeWorkspaceSnapshot());
+     WSP_SELECTION_002_ClearsStaleSelectionsAfterReload) {
+  WorkspaceStore store;
+  auto snapshot = tests::support::makeWorkspaceSnapshot();
+  store.loadFromState(snapshot);
+  WorkspaceSelectors selectors(store);
+  WorkspaceSelection selection(store, selectors);
 
-  WorkspaceSelection selection(models);
   selection.setSelectedActorId(QStringLiteral("actor-1"));
   selection.setSelectedAnalysisId(QStringLiteral("analysis-1"));
-  selection.setLastAnalysisResult(QVariantMap{{QStringLiteral("ok"), true}});
 
-  models.removeActorAt(0);
-  models.analyses().removeAt(0);
+  snapshot.actors.clear();
+  snapshot.analyses.clear();
+  store.loadFromState(snapshot);
 
-  EXPECT_TRUE(selection.selectedActorId().isEmpty());
-  EXPECT_TRUE(selection.selectedAnalysisId().isEmpty());
-  EXPECT_FALSE(selection.lastAnalysisResult().isValid());
-
-  selection.loadFromState();
   EXPECT_TRUE(selection.selectedActorId().isEmpty());
   EXPECT_TRUE(selection.selectedAnalysisId().isEmpty());
 }

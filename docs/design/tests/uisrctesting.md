@@ -6,7 +6,7 @@ This document defines the target test structure for the C++ UI bridge in
 `ui/src`.
 
 The main behavioral surface is the QML-facing ViewModel API. Most user actions
-enter through ViewModels, then route through workspace facade, workflows, and
+enter through ViewModels, then route through workspace roles, workflows, and
 adapters into core ports. Tests should therefore mirror that shape instead of
 rebuilding screen logic in arbitrary files.
 
@@ -55,12 +55,11 @@ ui/
         TestExportAdapter.cpp
         TestImportAdapter.cpp
       workspace/
-        TestWorkspaceCache.cpp
-        TestWorkspaceCacheModels.cpp
-        TestWorkspaceFacade.cpp
-        TestWorkspaceRowProjector.cpp
+        TestWorkspaceCommands.cpp
+        TestWorkspacePayloads.cpp
         TestWorkspaceSelection.cpp
-        TestWorkspaceStartupRehydration.cpp
+        TestWorkspaceSelectors.cpp
+        TestWorkspaceStore.cpp
       state/
         TestNavigationState.cpp
     interaction/
@@ -80,7 +79,7 @@ surface is meaningful.
 | `unit/viewmodels` | Public QML API entries: setters, invokables, emitted state, validation, and routing to workflow/workspace ports. |
 | `unit/workflows` | Feature orchestration that is too async or multi-step for a ViewModel-only test. |
 | `unit/adapters` | DTO and port-boundary translation. These tests should mock core ports and avoid workspace/QML concerns. |
-| `unit/workspace` | WorkspaceFacade, cache, row projection, selection, and startup rehydration. |
+| `unit/workspace` | WorkspaceStore, WorkspaceCommands, WorkspaceSelection, WorkspaceSelectors, and WorkspacePayloads. |
 | `unit/state` | Small UI-local state objects that are not feature ViewModels. |
 | `interaction` | Cross-object interaction smokes that need real UI wiring but no QML rendering. |
 
@@ -127,8 +126,8 @@ Adapter, and should avoid duplicating detailed unit assertions.
 | WSP-001 | Workspace snapshot loading | All catalog families, logs, drafts, analyses, and annuals appear in UI models. |
 | WSP-002 | Workspace mutations | Add/update/delete operations route through workspace writer ports and refresh projected rows. |
 | WSP-003 | Selection | Actor, property, contract, statement, transaction, analysis, and annual selection stay deterministic after reload/deletion. |
-| WSP-004 | Row projection | Rows expose stable ids, names, ordering, and QML payload keys. |
-| WSP-005 | Startup rehydration | Persisted workflow logs and workspace families restore without dropping relations. |
+| WSP-004 | Selectors and payloads | Rows expose stable ids, names, ordering, and QML payload keys without a parallel ListModel path. |
+| WSP-005 | Store rehydration | Persisted workflow logs and workspace families restore without dropping relations. |
 | WSP-006 | Storage commands | New/open/save/save-as route to writer ports and emit success/failure operations. |
 
 ## Interaction Matrix
@@ -148,7 +147,7 @@ Trace should be used for:
 - ViewModel command entry points that represent user actions.
 - Workflow state transitions and runner boundary events.
 - Adapter calls when a UI request crosses into a core port.
-- WorkspaceFacade mutations and file operations.
+- WorkspaceCommands mutations and file operations.
 
 Trace should not be used for:
 - simple property getters
@@ -157,13 +156,13 @@ Trace should not be used for:
 - replacing assertions in tests
 
 The channel is compiled as a no-op outside debug-style builds and can be turned
-off in debug sessions with `FOSSREDDER_UI_TRACE=0`.
+on in debug sessions with `FOSSREDDER_UI_TRACE=1`.
 
 ## Testing Principles
 
 - Test observable ViewModel API behavior before private helpers.
 - Mock core ports at adapter/workflow boundaries.
-- Use `support/ViewModelTestHarness.h` for common workspace facade wiring.
+- Use `support/ViewModelTestHarness.h` for common workspace role wiring.
 - Put shared runner stubs and UI port fakes in `support` once two tests use
   them.
 - Keep QML tests for rendering and source tests for behavior.
@@ -189,5 +188,5 @@ off in debug sessions with `FOSSREDDER_UI_TRACE=0`.
 
 The `ui/src` suite is complete when every public ViewModel command path is
 covered, every workflow has focused orchestration tests, every adapter has a
-mocked port-boundary test, and the workspace facade remains the only source-side
-workspace entry point exposed to ViewModels.
+mocked port-boundary test, and ViewModels only consume the concrete workspace
+roles they need: Store, Commands, Selection, Selectors, and Payloads.

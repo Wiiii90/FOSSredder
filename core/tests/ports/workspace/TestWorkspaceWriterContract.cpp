@@ -37,6 +37,7 @@ public:
     ValidationResult validateContract(const ContractCommand&) const override { return {}; }
     ValidationResult validateStatement(const StatementCommand&) const override { return {}; }
     ValidationResult validateTransaction(const TransactionCommand&) const override { return {}; }
+    ValidationResult validateStatementWithTransactions(const StatementWithTransactionsCommand&) const override { return {}; }
     ValidationResult validateAnalysis(const AnalysisCommand&) const override { return {}; }
     ValidationResult validateAnnual(const AnnualCommand&) const override { return {}; }
 
@@ -53,6 +54,7 @@ public:
     void updateContract(const ContractCommand&) override {}
     void deleteContract(const std::string&) override {}
     std::string addStatement(const StatementCommand&) override { return {}; }
+    std::string addStatementWithTransactions(const StatementWithTransactionsCommand&) override { return {}; }
     void updateStatement(const StatementCommand&) override {}
     void deleteStatement(const std::string&) override {}
     std::string addTransaction(const TransactionCommand&) override { return {}; }
@@ -67,14 +69,10 @@ public:
     std::string finalizeStatementDraft(const FinalizeStatementDraftCommand&) override { return {}; }
     void saveStatementDraft(const StatementDraftCommand&) override {}
     void clearStatementDraft(const std::string&) override {}
-    void setImportLogs(const ImportLogsCommand&) override {}
     void saveImportLog(const ImportLogCommand&) override {}
     void deleteImportLog(const std::string&) override {}
-    void clearImportLogs() override {}
-    void setExportLogs(const ExportLogsCommand&) override {}
     void saveExportLog(const ExportLogCommand&) override {}
     void deleteExportLog(const std::string&) override {}
-    void clearExportLogs() override {}
 };
 
 } // namespace

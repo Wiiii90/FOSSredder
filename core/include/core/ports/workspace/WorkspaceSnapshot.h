@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "core/ports/usecases/analysis/AnalysisRequest.h"
+
 namespace core::ports::workspace {
 
 struct AliasSnapshot {
@@ -67,10 +69,12 @@ struct TransactionSnapshot {
     double amount = 0.0;
     int status = 0;
     std::string contractId;
+    std::string contractType;
     std::string actorId;
     std::string statementId;
     bool allocatable = false;
     std::vector<std::string> propertyIds;
+    std::vector<std::string> propertyNames;
     std::string createdAt;
     std::string updatedAt;
 };
@@ -79,12 +83,11 @@ struct AnalysisSnapshot {
     std::string id;
     std::string name;
     std::string type;
-    std::string configJson;
-    std::string filterSpec;
+    core::ports::analysis::AnalysisConfigInput config;
+    core::ports::analysis::AnalysisFilterSelection filter;
     std::string exportFormat;
     bool includeCalculationAdjustments = true;
-    std::string exportStateJson;
-    std::string snapshotTransactionsJson;
+    std::vector<TransactionSnapshot> snapshotTransactions;
     std::vector<std::pair<std::string, double>> adjustments;
     std::string createdAt;
     std::string updatedAt;
@@ -144,7 +147,6 @@ struct ExportLogSnapshot {
     std::string targetPath;
     std::string status;
     std::string message;
-    std::string payload;
     std::vector<std::string> annualIds;
     std::vector<std::string> analysisIds;
 };
@@ -157,9 +159,45 @@ struct WorkspaceIdentitySnapshot {
     std::vector<std::string> actorIds;
     std::vector<std::string> propertyIds;
 
+    /**
+     * @brief Reports whether the identity has no id.
+     * @return True when the id is empty.
+     */
     [[nodiscard]] bool empty() const noexcept {
         return id.empty();
     }
+};
+
+/**
+ * @brief Transaction catalog ids selected by a UI form or workspace query.
+ */
+struct TransactionCatalogSelection {
+    /** @brief Selected actor id. */
+    std::string actorId;
+    /** @brief Selected contract id. */
+    std::string contractId;
+    /** @brief Selected property ids. */
+    std::vector<std::string> propertyIds;
+};
+
+/**
+ * @brief Catalog selection change request for transaction forms.
+ */
+struct TransactionCatalogSelectionChange {
+    /** @brief Current transaction catalog selection. */
+    TransactionCatalogSelection current;
+    /** @brief True when contractId contains a user-selected contract. */
+    bool contractChanged = false;
+    /** @brief True when actorId contains a user-selected actor. */
+    bool actorChanged = false;
+    /** @brief True when propertyIds contains user-selected properties. */
+    bool propertiesChanged = false;
+    /** @brief New contract id when contractChanged is true. */
+    std::string contractId;
+    /** @brief New actor id when actorChanged is true. */
+    std::string actorId;
+    /** @brief New property ids when propertiesChanged is true. */
+    std::vector<std::string> propertyIds;
 };
 
 struct WorkspaceSnapshot {
@@ -177,7 +215,10 @@ struct WorkspaceSnapshot {
     std::vector<ImportLogSnapshot> importLogs;
     std::vector<ExportLogSnapshot> exportLogs;
 
-    /** @brief Checks whether all snapshot collections are empty and no file is open. */
+    /**
+     * @brief Checks whether all snapshot collections are empty and no file is open.
+     * @return True when no workspace data is present.
+     */
     [[nodiscard]] bool empty() const noexcept {
         return !hasCurrentPath && actors.empty() && properties.empty() && contracts.empty() &&
                statements.empty() && transactions.empty() && analyses.empty() && annuals.empty() &&
@@ -198,6 +239,10 @@ struct DeletionImpact {
     std::vector<std::string> deletedImportLogIds;
     std::vector<std::string> deletedExportLogIds;
 
+    /**
+     * @brief Reports whether no ids were deleted.
+     * @return True when all deletion lists are empty.
+     */
     [[nodiscard]] bool empty() const noexcept {
         return deletedActorIds.empty() && deletedPropertyIds.empty() && deletedContractIds.empty() &&
                deletedStatementIds.empty() && deletedTransactionIds.empty() &&

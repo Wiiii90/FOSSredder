@@ -53,7 +53,7 @@ function(fossredder_configure_qt_runtime _target)
     if(WIN32 AND DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
         if(MSVC)
             set(_target_dir_macro "$(TargetDir)")
-            set(_dbg_env "$<$<CONFIG:Debug>:PATH=${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin$<SEMICOLON>QT_DEBUG_PLUGINS=1$<SEMICOLON>VCPKG_INSTALLED_DIR=${VCPKG_INSTALLED_DIR}$<SEMICOLON>QT_QPA_PLATFORM_PLUGIN_PATH=${_target_dir_macro}platforms$<SEMICOLON>QT_PLUGIN_PATH=${_target_dir_macro}$<SEMICOLON>QML2_IMPORT_PATH=${_target_dir_macro}qml$<SEMICOLON>QML_IMPORT_PATH=${_target_dir_macro}qml>")
+            set(_dbg_env "$<$<CONFIG:Debug>:PATH=${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin$<SEMICOLON>VCPKG_INSTALLED_DIR=${VCPKG_INSTALLED_DIR}$<SEMICOLON>QT_QPA_PLATFORM_PLUGIN_PATH=${_target_dir_macro}platforms$<SEMICOLON>QT_PLUGIN_PATH=${_target_dir_macro}$<SEMICOLON>QML2_IMPORT_PATH=${_target_dir_macro}qml$<SEMICOLON>QML_IMPORT_PATH=${_target_dir_macro}qml>")
             set(_rel_env "$<$<CONFIG:Release>:PATH=${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin$<SEMICOLON>QT_QPA_PLATFORM_PLUGIN_PATH=${_target_dir_macro}platforms$<SEMICOLON>QT_PLUGIN_PATH=${_target_dir_macro}$<SEMICOLON>QML2_IMPORT_PATH=${_target_dir_macro}qml$<SEMICOLON>QML_IMPORT_PATH=${_target_dir_macro}qml>")
 
             set_target_properties(${_target} PROPERTIES

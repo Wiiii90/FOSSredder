@@ -8,9 +8,6 @@
 #include <algorithm>
 #include <memory>
 
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QTest>
 
 #include "support/WorkspacePortFakes.h"
@@ -18,7 +15,10 @@
 #include "ui/viewmodels/AnalysisViewModel.h"
 #include "ui/adapters/AnalysisAdapter.h"
 #include "ui/workflows/AnalysisWorkflow.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
@@ -26,7 +26,10 @@ namespace {
 
 struct AnalysisStateHarness {
   std::unique_ptr<tests::support::InMemoryWorkspace> workspace;
-  std::unique_ptr<WorkspaceFacade> facade;
+  std::unique_ptr<WorkspaceStore> store;
+  std::unique_ptr<WorkspaceCommands> commands;
+  std::unique_ptr<WorkspaceSelectors> selectors;
+  std::unique_ptr<WorkspaceSelection> selection;
   std::unique_ptr<AnalysisWorkflow> workflow;
   std::unique_ptr<AnalysisViewModel> state;
 };
@@ -37,9 +40,11 @@ AnalysisStateHarness makeHarnessWithAdjustedAnalysis() {
   analysis.id = "analysis-plot";
   analysis.name = "Plot With Adjustments";
   analysis.type = "plot";
-  analysis.configJson =
-      "{\"plotType\":\"pie\",\"plotMeasure\":\"totalAmount\"}";
-  analysis.filterSpec = "date>=2026-01-01;date<=2026-12-31";
+  analysis.config.type = "plot";
+  analysis.config.plotType = "pie";
+  analysis.config.plotMeasure = "totalAmount";
+  analysis.filter.dateMode = "year";
+  analysis.filter.year = "2026";
   analysis.exportFormat = "png";
   analysis.includeCalculationAdjustments = true;
   analysis.adjustments.emplace_back("tx-1", 1500.0);
@@ -48,13 +53,18 @@ AnalysisStateHarness makeHarnessWithAdjustedAnalysis() {
   auto workspace =
       std::make_unique<tests::support::InMemoryWorkspace>(std::move(snapshot));
   auto *workspacePtr = workspace.get();
-  auto facade = std::make_unique<WorkspaceFacade>(workspacePtr, workspacePtr);
+  auto store = std::make_unique<WorkspaceStore>();
+  store->setWorkspacePorts(workspacePtr, workspacePtr);
+  store->loadFromState(workspacePtr->workspaceSnapshot());
+  auto commands = std::make_unique<WorkspaceCommands>(*store);
+  auto selectors = std::make_unique<WorkspaceSelectors>(*store);
+  auto selection = std::make_unique<WorkspaceSelection>(*store, *selectors);
   workspace->setSnapshotChangedCallback(
-      [facadePtr = facade.get()](
+      [storePtr = store.get()](
           const core::ports::workspace::WorkspaceSnapshot &nextSnapshot) {
-        facadePtr->loadFromState(nextSnapshot);
+        storePtr->loadFromState(nextSnapshot);
       });
-  facade->selection()->setSelectedAnalysisId(QStringLiteral("analysis-plot"));
+  selection->setSelectedAnalysisId(QStringLiteral("analysis-plot"));
 
   auto analysisAdapter = std::make_shared<ui::adapters::AnalysisAdapter>(
       std::make_shared<tests::support::FakeAnalysisRunner>());
@@ -63,10 +73,12 @@ AnalysisStateHarness makeHarnessWithAdjustedAnalysis() {
       analysisAdapter, nullptr);
 
   auto state = std::make_unique<AnalysisViewModel>();
-  state->setWorkspace(facade.get());
+  state->setWorkspaceRoles(store.get(), commands.get(), selection.get(),
+                           selectors.get());
   state->setAnalysisWorkflow(workflow.get());
 
-  return {std::move(workspace), std::move(facade), std::move(workflow),
+  return {std::move(workspace), std::move(store), std::move(commands),
+          std::move(selectors), std::move(selection), std::move(workflow),
           std::move(state)};
 }
 
@@ -76,13 +88,18 @@ AnalysisStateHarness makeCreateHarness() {
   auto workspace =
       std::make_unique<tests::support::InMemoryWorkspace>(std::move(snapshot));
   auto *workspacePtr = workspace.get();
-  auto facade = std::make_unique<WorkspaceFacade>(workspacePtr, workspacePtr);
+  auto store = std::make_unique<WorkspaceStore>();
+  store->setWorkspacePorts(workspacePtr, workspacePtr);
+  store->loadFromState(workspacePtr->workspaceSnapshot());
+  auto commands = std::make_unique<WorkspaceCommands>(*store);
+  auto selectors = std::make_unique<WorkspaceSelectors>(*store);
+  auto selection = std::make_unique<WorkspaceSelection>(*store, *selectors);
   workspace->setSnapshotChangedCallback(
-      [facadePtr = facade.get()](
+      [storePtr = store.get()](
           const core::ports::workspace::WorkspaceSnapshot &nextSnapshot) {
-        facadePtr->loadFromState(nextSnapshot);
+        storePtr->loadFromState(nextSnapshot);
       });
-  facade->selection()->setSelectedAnalysisId(QString());
+  selection->setSelectedAnalysisId(QString());
 
   auto analysisAdapter = std::make_shared<ui::adapters::AnalysisAdapter>(
       std::make_shared<tests::support::FakeAnalysisRunner>());
@@ -91,10 +108,12 @@ AnalysisStateHarness makeCreateHarness() {
       analysisAdapter, nullptr);
 
   auto state = std::make_unique<AnalysisViewModel>();
-  state->setWorkspace(facade.get());
+  state->setWorkspaceRoles(store.get(), commands.get(), selection.get(),
+                           selectors.get());
   state->setAnalysisWorkflow(workflow.get());
 
-  return {std::move(workspace), std::move(facade), std::move(workflow),
+  return {std::move(workspace), std::move(store), std::move(commands),
+          std::move(selectors), std::move(selection), std::move(workflow),
           std::move(state)};
 }
 
@@ -157,18 +176,13 @@ TEST(AnalysisViewModelTest,
   EXPECT_EQ(snapshot.analyses.front().adjustments.front().first,
             std::string("tx-2"));
   EXPECT_DOUBLE_EQ(snapshot.analyses.front().adjustments.front().second, -42.6);
-  const QJsonObject config =
-      QJsonDocument::fromJson(
-          QString::fromStdString(snapshot.analyses.front().configJson).toUtf8())
-          .object();
-  EXPECT_TRUE(config.value(QStringLiteral("properties")).toArray().isEmpty());
-  EXPECT_TRUE(
-      config.value(QStringLiteral("contractTypes")).toArray().isEmpty());
+  EXPECT_TRUE(snapshot.analyses.front().config.propertyIds.empty());
+  EXPECT_TRUE(snapshot.analyses.front().config.contractTypes.empty());
 
   const QVariantMap renderedWithStoredAdjustments =
       harness.workflow->computeAnalysisPreview(
-          harness.facade->selection()->selectedAnalysisId(), QString(), true,
-          QStringLiteral("{}"));
+          harness.selection->selectedAnalysisId(), QString(), true,
+          QVariantMap{});
   const QVariantList renderedTransactions =
       renderedWithStoredAdjustments.value(QStringLiteral("transactions"))
           .toList();

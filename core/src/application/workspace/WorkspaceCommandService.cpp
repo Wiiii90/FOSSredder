@@ -5,6 +5,7 @@
 
 #include "core/application/workspace/WorkspaceCommandService.h"
 
+#include "core/application/import/transaction/AmountParser.h"
 #include "core/application/analysis/AnalysisWorkflowSupport.h"
 #include "core/application/workspace/WorkspaceSession.h"
 
@@ -31,7 +32,10 @@
 #include "core/domain/values/Year.h"
 #include "core/utils/Time.h"
 
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
+#include <optional>
 #include <unordered_set>
 
 namespace {
@@ -146,15 +150,21 @@ void applyStatementName(core::domain::Statement& statement, const std::string& n
     statement.rename(name);
 }
 
+std::string serializeSnapshotTransactionsForDomain(
+    const std::vector<core::ports::workspace::TransactionSnapshot>& source);
+core::domain::FilterSpec analysisFilterSpecFromSelection(
+    const core::ports::analysis::AnalysisFilterSelection& selection);
+
 void applyAnalysisDraft(core::domain::Analysis& analysis, const core::application::AnalysisInput& input) {
     analysis.rename(input.name);
     analysis.setType(input.type);
-    analysis.setConfigJson(input.configJson);
-    analysis.setFilterSpec(input.filterSpec);
+    analysis.setConfigJson(core::application::analysis::buildAnalysisConfigJson(input.config));
+    analysis.setFilterSpec(analysisFilterSpecFromSelection(input.filter));
     analysis.setExportFormat(input.exportFormat);
     analysis.setIncludeCalculationAdjustments(input.includeCalculationAdjustments);
-    analysis.setExportStateJson(input.exportStateJson);
-    analysis.setSnapshotTransactionsJson(input.snapshotTransactionsJson);
+    analysis.setExportStateJson({});
+    analysis.setSnapshotTransactionsJson(
+        serializeSnapshotTransactionsForDomain(input.snapshotTransactions));
     analysis.clearAdjustments();
     for (const auto& [key, value] : input.adjustments) {
         analysis.setAdjustment(key, value);
@@ -184,11 +194,42 @@ void applyTransactionDraft(core::domain::Transaction& tx, const core::applicatio
 std::vector<std::pair<std::string, double>>
 analysisAdjustmentsFromCommand(
     const core::ports::workspace::AnalysisCommand& command) {
-    if (!command.adjustmentsJson.empty()) {
-        return core::application::analysis::parseAnalysisAdjustmentsJson(
-            command.adjustmentsJson);
-    }
     return command.adjustments;
+}
+
+core::domain::FilterSpec analysisFilterSpecFromSelection(
+    const core::ports::analysis::AnalysisFilterSelection& selection) {
+    return core::domain::FilterSpec(
+        core::ports::analysis::buildAnalysisFilterSpec(selection));
+}
+
+std::string serializeSnapshotTransactionsForDomain(
+    const std::vector<core::ports::workspace::TransactionSnapshot>& source) {
+    if (source.empty()) {
+        return {};
+    }
+    nlohmann::json rows = nlohmann::json::array();
+    for (const auto& tx : source) {
+        rows.push_back(nlohmann::json{
+            {"id", tx.id},
+            {"transactionId", tx.id},
+            {"name", tx.name},
+            {"transactionName", tx.name},
+            {"bookingDate", tx.bookingDate},
+            {"date", tx.bookingDate},
+            {"valuta", tx.valuta},
+            {"amount", tx.amount},
+            {"status", tx.status},
+            {"contractId", tx.contractId},
+            {"contractType", tx.contractType},
+            {"actorId", tx.actorId},
+            {"statementId", tx.statementId},
+            {"allocatable", tx.allocatable},
+            {"propertyIds", tx.propertyIds},
+            {"propertyNames", tx.propertyNames},
+        });
+    }
+    return rows.dump();
 }
 
 bool isBlank(const std::string& value) {
@@ -225,6 +266,51 @@ void requireId(core::ports::workspace::ValidationResult& result,
 
 bool valid(const core::ports::workspace::ValidationResult& result) {
     return result.valid();
+}
+
+void appendValidationIssues(core::ports::workspace::ValidationResult& target,
+                            const core::ports::workspace::ValidationResult& source) {
+    target.issues.insert(target.issues.end(), source.issues.begin(), source.issues.end());
+}
+
+std::optional<double> parseTransactionAmount(const core::ports::workspace::TransactionCommand& command) {
+    return core::application::importing::transaction::parseAmountString(command.amountText);
+}
+
+core::ports::workspace::ValidationResult validateTransactionCommand(
+    const core::ports::workspace::TransactionCommand& command,
+    bool requireStatementId) {
+    core::ports::workspace::ValidationResult result;
+    requireText(result, "bookingDate", command.bookingDate, "Booking date");
+    if (!isBlank(command.bookingDate) && !core::domain::policies::transaction::hasValidBookingDate(command.bookingDate)) {
+        result.addError("bookingDate", "invalid", "Booking date is invalid.");
+    }
+    const auto amount = parseTransactionAmount(command);
+    if (!amount || !core::domain::policies::transaction::hasValidAmount(*amount)) {
+        result.addError("amount", "invalid", "Amount is invalid.");
+    }
+    if (requireStatementId) {
+        requireId(result, "statementId", command.statementId, "Statement");
+    }
+    return result;
+}
+
+core::application::TransactionInput transactionInputFromCommand(
+    const core::ports::workspace::TransactionCommand& command,
+    double amount) {
+    core::application::TransactionInput input;
+    input.name = command.name;
+    input.bookingDate = core::domain::BookingDate(command.bookingDate);
+    input.valuta = command.valuta;
+    input.amount = amount;
+    input.statementId = command.statementId;
+    input.insertAfterTransactionId = command.insertAfterTransactionId;
+    input.status = static_cast<core::domain::Transaction::Status>(command.status);
+    input.actorId = command.actorId;
+    input.contractId = command.contractId;
+    input.allocatable = command.allocatable;
+    input.propertyIds = command.propertyIds;
+    return input;
 }
 
 bool syncActorRelations(core::domain::catalog::WorkspaceCatalog& state,
@@ -637,8 +723,9 @@ public:
     }
 
     std::string addAnalysis(core::domain::catalog::WorkspaceCatalog& state, const core::application::AnalysisInput& input) const {
+        const auto filterSpec = analysisFilterSpecFromSelection(input.filter);
         if (!core::domain::EntityName::isValid(input.name) || !core::domain::AnalysisType::isValid(input.type.value()) ||
-            !core::domain::FilterSpec::isValid(input.filterSpec.value()) || !core::domain::ExportFormat::isValid(input.exportFormat.value())) {
+            !core::domain::FilterSpec::isValid(filterSpec.value()) || !core::domain::ExportFormat::isValid(input.exportFormat.value())) {
             return {};
         }
         auto analyses = state.analyses();
@@ -648,8 +735,9 @@ public:
     }
 
     bool updateAnalysis(core::domain::catalog::WorkspaceCatalog& state, const std::string& id, const core::application::AnalysisInput& input) const {
+        const auto filterSpec = analysisFilterSpecFromSelection(input.filter);
         if (!core::domain::EntityName::isValid(input.name) || !core::domain::AnalysisType::isValid(input.type.value()) ||
-            !core::domain::FilterSpec::isValid(input.filterSpec.value()) || !core::domain::ExportFormat::isValid(input.exportFormat.value())) {
+            !core::domain::FilterSpec::isValid(filterSpec.value()) || !core::domain::ExportFormat::isValid(input.exportFormat.value())) {
             return false;
         }
         auto analyses = state.analyses();
@@ -781,15 +869,15 @@ core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const
 }
 
 core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const core::ports::workspace::TransactionCommand& command) const {
-    core::ports::workspace::ValidationResult result;
-    requireText(result, "bookingDate", command.bookingDate, "Booking date");
-    if (!isBlank(command.bookingDate) && !core::domain::policies::transaction::hasValidBookingDate(command.bookingDate)) {
-        result.addError("bookingDate", "invalid", "Booking date is invalid.");
+    return validateTransactionCommand(command, true);
+}
+
+core::ports::workspace::ValidationResult WorkspaceCommandService::validate(
+    const core::ports::workspace::StatementWithTransactionsCommand& command) const {
+    auto result = validate(command.statement);
+    for (const auto& transaction : command.transactions) {
+        appendValidationIssues(result, validateTransactionCommand(transaction, false));
     }
-    if (!core::domain::policies::transaction::hasValidAmount(command.amount)) {
-        result.addError("amount", "invalid", "Amount is invalid.");
-    }
-    requireId(result, "statementId", command.statementId, "Statement");
     return result;
 }
 
@@ -803,7 +891,8 @@ core::ports::workspace::ValidationResult WorkspaceCommandService::validate(const
     if (!isBlank(command.type) && !core::domain::policies::analysis::supportsResultType(command.type)) {
         result.addError("type", "unsupported", "Analysis type is not supported.");
     }
-    if (!isBlank(command.filterSpec) && !core::domain::FilterSpec::isValid(command.filterSpec)) {
+    const auto filterSpec = analysisFilterSpecFromSelection(command.filter);
+    if (!filterSpec.value().empty() && !core::domain::FilterSpec::isValid(filterSpec.value())) {
         result.addError("filterSpec", "invalid", "Filter specification is invalid.");
     }
     if (!isBlank(command.exportFormat) && !core::domain::ExportFormat::isValid(command.exportFormat)) {
@@ -902,6 +991,38 @@ std::string WorkspaceCommandService::addStatement(const core::ports::workspace::
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addStatement(mutableCatalogState(), command.name));
 }
 
+std::string WorkspaceCommandService::addStatementWithTransactions(
+    const core::ports::workspace::StatementWithTransactionsCommand& command) {
+    if (!valid(validate(command))) {
+        return {};
+    }
+
+    std::vector<TransactionInput> inputs;
+    inputs.reserve(command.transactions.size());
+    for (const auto& transaction : command.transactions) {
+        if (!valid(validateTransactionCommand(transaction, false))) {
+            return {};
+        }
+        const auto amount = parseTransactionAmount(transaction);
+        if (!amount) {
+            return {};
+        }
+        inputs.push_back(transactionInputFromCommand(transaction, *amount));
+    }
+
+    auto& state = mutableCatalogState();
+    const std::string statementId = catalogMutator().addStatement(state, command.statement.name);
+    if (statementId.empty()) {
+        return {};
+    }
+    for (auto& input : inputs) {
+        input.statementId = statementId;
+        static_cast<void>(catalogMutator().addTransaction(state, input));
+    }
+    notifyCatalogChanged();
+    return statementId;
+}
+
 void WorkspaceCommandService::updateStatement(const core::ports::workspace::StatementCommand& command) {
     auto validation = validate(command);
     requireId(validation, "id", command.id, "Statement");
@@ -919,18 +1040,11 @@ std::string WorkspaceCommandService::addTransaction(const core::ports::workspace
     if (!valid(validate(command))) {
         return {};
     }
-    TransactionInput input;
-    input.name = command.name;
-    input.bookingDate = core::domain::BookingDate(command.bookingDate);
-    input.valuta = command.valuta;
-    input.amount = command.amount;
-    input.statementId = command.statementId;
-    input.insertAfterTransactionId = command.insertAfterTransactionId;
-    input.status = static_cast<core::domain::Transaction::Status>(command.status);
-    input.actorId = command.actorId;
-    input.contractId = command.contractId;
-    input.allocatable = command.allocatable;
-    input.propertyIds = command.propertyIds;
+    const auto amount = parseTransactionAmount(command);
+    if (!amount) {
+        return {};
+    }
+    TransactionInput input = transactionInputFromCommand(command, *amount);
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addTransaction(mutableCatalogState(), input));
 }
 
@@ -940,17 +1054,11 @@ void WorkspaceCommandService::updateTransaction(const core::ports::workspace::Tr
     if (!valid(validation)) {
         return;
     }
-    TransactionInput input;
-    input.name = command.name;
-    input.bookingDate = core::domain::BookingDate(command.bookingDate);
-    input.valuta = command.valuta;
-    input.amount = command.amount;
-    input.statementId = command.statementId;
-    input.status = static_cast<core::domain::Transaction::Status>(command.status);
-    input.actorId = command.actorId;
-    input.contractId = command.contractId;
-    input.allocatable = command.allocatable;
-    input.propertyIds = command.propertyIds;
+    const auto amount = parseTransactionAmount(command);
+    if (!amount) {
+        return;
+    }
+    TransactionInput input = transactionInputFromCommand(command, *amount);
     WorkspaceCommandService::commitIfChanged(*this, catalogMutator().updateTransaction(mutableCatalogState(), command.id, input));
 }
 
@@ -965,12 +1073,11 @@ std::string WorkspaceCommandService::addAnalysis(const core::ports::workspace::A
     return WorkspaceCommandService::commitCreated(*this, catalogMutator().addAnalysis(mutableCatalogState(), {
         command.name,
         core::domain::AnalysisType(command.type),
-        command.configJson,
-        core::domain::FilterSpec(command.filterSpec),
+        command.config,
+        command.filter,
         core::domain::ExportFormat(command.exportFormat),
         command.includeCalculationAdjustments,
-        command.exportStateJson,
-        command.snapshotTransactionsJson,
+        command.snapshotTransactions,
         analysisAdjustmentsFromCommand(command)
     }));
 }
@@ -984,12 +1091,11 @@ void WorkspaceCommandService::updateAnalysis(const core::ports::workspace::Analy
     WorkspaceCommandService::commitIfChanged(*this, catalogMutator().updateAnalysis(mutableCatalogState(), command.id, {
         command.name,
         core::domain::AnalysisType(command.type),
-        command.configJson,
-        core::domain::FilterSpec(command.filterSpec),
+        command.config,
+        command.filter,
         core::domain::ExportFormat(command.exportFormat),
         command.includeCalculationAdjustments,
-        command.exportStateJson,
-        command.snapshotTransactionsJson,
+        command.snapshotTransactions,
         analysisAdjustmentsFromCommand(command)
     }));
 }

@@ -15,21 +15,32 @@
 
 namespace ui::strings {
 
-/** @brief Convert a `QString` to a UTF-8 encoded `std::string`. */
+/**
+ * @brief Converts a QString to a UTF-8 encoded std::string.
+ * @param value Qt string value.
+ * @return UTF-8 encoded standard string.
+ */
 inline std::string toStdString(const QString &value) {
   const auto utf8 = value.toUtf8();
   return std::string(utf8.constData(), static_cast<size_t>(utf8.size()));
 }
 
-/** @brief Convert a filesystem path to the platform-encoded byte
- * representation. */
+/**
+ * @brief Converts a filesystem path to the platform-encoded byte representation.
+ * @param path Qt filesystem path.
+ * @return Platform-encoded path string.
+ */
 inline std::string toEncodedPath(const QString &path) {
   const auto encodedPath = QFile::encodeName(path);
   return std::string(encodedPath.constData(),
                      static_cast<size_t>(encodedPath.size()));
 }
 
-/** @brief Convert a Qt string list into a standard string vector. */
+/**
+ * @brief Converts a Qt string list into a standard string vector.
+ * @param values Qt string list.
+ * @return Standard string vector.
+ */
 inline std::vector<std::string> toStdList(const QStringList &values) {
   std::vector<std::string> out;
   out.reserve(static_cast<size_t>(values.size()));
@@ -39,7 +50,11 @@ inline std::vector<std::string> toStdList(const QStringList &values) {
   return out;
 }
 
-/** @brief Trim, collapse whitespace, and lower-case text for comparisons. */
+/**
+ * @brief Normalizes text for case-insensitive UI comparisons.
+ * @param value Input text.
+ * @return Trimmed, simplified, lower-case text.
+ */
 inline QString normalizedText(const QString &value) {
   return value.trimmed().simplified().toLower();
 }

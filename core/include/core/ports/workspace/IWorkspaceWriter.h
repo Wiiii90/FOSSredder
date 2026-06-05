@@ -109,6 +109,12 @@ public:
      */
     [[nodiscard]] virtual ValidationResult validateTransaction(const TransactionCommand& command) const = 0;
     /**
+     * @brief Validates a statement batch command without mutating workspace state.
+     * @param command Statement and transaction command to validate.
+     * @return Validation result with field-level issues.
+     */
+    [[nodiscard]] virtual ValidationResult validateStatementWithTransactions(const StatementWithTransactionsCommand& command) const = 0;
+    /**
      * @brief Validates an analysis command without mutating workspace state.
      * @param command Analysis command to validate.
      * @return Validation result with field-level issues.
@@ -178,6 +184,12 @@ public:
      * @return Created statement identifier.
      */
     [[nodiscard]] virtual std::string addStatement(const StatementCommand& command) = 0;
+    /**
+     * @brief Adds a statement and its transactions as one workspace mutation.
+     * @param command Statement creation command with transaction commands.
+     * @return Created statement identifier.
+     */
+    [[nodiscard]] virtual std::string addStatementWithTransactions(const StatementWithTransactionsCommand& command) = 0;
     /**
      * @brief Updates a statement from a command.
      * @param command Statement update command.
@@ -258,11 +270,6 @@ public:
     virtual void clearStatementDraft(const std::string& draftId = {}) = 0;
 
     /**
-     * @brief Replaces import logs with command payload.
-     * @param command Import logs replacement command.
-     */
-    virtual void setImportLogs(const ImportLogsCommand& command) = 0;
-    /**
      * @brief Saves or updates one import log.
      * @param command Import log command.
      */
@@ -272,13 +279,6 @@ public:
      * @param id Import log identifier.
      */
     virtual void deleteImportLog(const std::string& id) = 0;
-    /** @brief Deletes all import logs. */
-    virtual void clearImportLogs() = 0;
-    /**
-     * @brief Replaces export logs with command payload.
-     * @param command Export logs replacement command.
-     */
-    virtual void setExportLogs(const ExportLogsCommand& command) = 0;
     /**
      * @brief Saves or updates one export log.
      * @param command Export log command.
@@ -289,8 +289,6 @@ public:
      * @param id Export log identifier.
      */
     virtual void deleteExportLog(const std::string& id) = 0;
-    /** @brief Deletes all export logs. */
-    virtual void clearExportLogs() = 0;
 };
 
 } // namespace core::ports::workspace

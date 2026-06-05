@@ -44,6 +44,11 @@ public:
         return {};
     }
 
+    TransactionCatalogSelection transactionCatalogSelection(
+        const TransactionCatalogSelectionChange& change) const override {
+        return change.current;
+    }
+
     std::string nextContractName() const override {
         return "Contract 1";
     }

@@ -246,7 +246,7 @@ inline QString analysisViewModelUnavailable() {
 } // namespace workflowErrors
 
 /**
- * @brief Import workflow labels, phases and persisted run log details.
+ * @brief Import workflow labels, phases and stored run log details.
  */
 namespace importing {
 
@@ -283,6 +283,12 @@ inline constexpr auto kMessageFinalizeFailedSource =
     QT_TRANSLATE_NOOP("Import", "Draft could not be finalized.");
 inline constexpr auto kMessageFinalizedSource =
     QT_TRANSLATE_NOOP("Import", "Draft was finalized into a statement.");
+inline constexpr auto kMessageImportPausedSource =
+    QT_TRANSLATE_NOOP("Import", "Import paused.");
+inline constexpr auto kMessageImportResumedSource =
+    QT_TRANSLATE_NOOP("Import", "Import resumed.");
+inline constexpr auto kMessageDraftReadySource =
+    QT_TRANSLATE_NOOP("Import", "Draft ready for manual review.");
 inline constexpr auto kPhaseStoppingSource =
     QT_TRANSLATE_NOOP("Import", "Stopping...");
 inline constexpr auto kPhaseStartingSource =
@@ -362,6 +368,18 @@ inline QString messageFinalizeFailed() {
 inline QString messageFinalized() {
   return detail::translate(kContext, kMessageFinalizedSource);
 }
+/** @brief Import log detail shown when a running import is paused. */
+inline QString messageImportPaused() {
+  return detail::translate(kContext, kMessageImportPausedSource);
+}
+/** @brief Import log detail shown when a paused import resumes. */
+inline QString messageImportResumed() {
+  return detail::translate(kContext, kMessageImportResumedSource);
+}
+/** @brief Import log detail shown when a draft is ready for review. */
+inline QString messageDraftReady() {
+  return detail::translate(kContext, kMessageDraftReadySource);
+}
 /** @brief Phase text while a cancellation request is being processed. */
 inline QString phaseStopping() {
   return detail::translate(kContext, kPhaseStoppingSource);
@@ -410,7 +428,41 @@ inline QString unassignedContractType() {
 } // namespace analysis
 
 /**
- * @brief Export workflow diagnostics and persisted run log details.
+ * @brief Transaction status labels shared by C++ presentation mappers.
+ */
+namespace transactionStatus {
+
+inline constexpr auto kContext = "TransactionStatus";
+inline constexpr auto kNeutralSource =
+    QT_TRANSLATE_NOOP("TransactionStatus", "Neutral");
+inline constexpr auto kUnverifiedSource =
+    QT_TRANSLATE_NOOP("TransactionStatus", "Unverified");
+inline constexpr auto kVerifiedSource =
+    QT_TRANSLATE_NOOP("TransactionStatus", "Verified");
+inline constexpr auto kCompletedSource =
+    QT_TRANSLATE_NOOP("TransactionStatus", "Completed");
+
+/** @brief Label for neutral transaction status. */
+inline QString neutral() {
+  return detail::translate(kContext, kNeutralSource);
+}
+/** @brief Label for unverified transaction status. */
+inline QString unverified() {
+  return detail::translate(kContext, kUnverifiedSource);
+}
+/** @brief Label for verified transaction status. */
+inline QString verified() {
+  return detail::translate(kContext, kVerifiedSource);
+}
+/** @brief Label for completed transaction status. */
+inline QString completed() {
+  return detail::translate(kContext, kCompletedSource);
+}
+
+} // namespace transactionStatus
+
+/**
+ * @brief Export workflow diagnostics and stored run log details.
  */
 namespace exporting {
 
@@ -423,6 +475,14 @@ inline constexpr auto kSuccessDetailSource =
     QT_TRANSLATE_NOOP("Export", "Export completed successfully.");
 inline constexpr auto kStartingDetailSource =
     QT_TRANSLATE_NOOP("Export", "Starting export...");
+inline constexpr auto kStatusSuccessSource =
+    QT_TRANSLATE_NOOP("Export", "Success");
+inline constexpr auto kStatusFailedSource =
+    QT_TRANSLATE_NOOP("Export", "Failed");
+inline constexpr auto kStatusCanceledSource =
+    QT_TRANSLATE_NOOP("Export", "Canceled");
+inline constexpr auto kStatusRunningSource =
+    QT_TRANSLATE_NOOP("Export", "Running");
 inline constexpr auto kPhaseStartingSource =
     QT_TRANSLATE_NOOP("Export", "Starting export...");
 inline constexpr auto kPhaseRunningSource =
@@ -431,6 +491,12 @@ inline constexpr auto kPhaseCancelRequestedSource =
     QT_TRANSLATE_NOOP("Export", "Cancel requested...");
 inline constexpr auto kPhasePausedSource =
     QT_TRANSLATE_NOOP("Export", "Paused");
+inline constexpr auto kPhaseFinishedSource =
+    QT_TRANSLATE_NOOP("Export", "Finished");
+inline constexpr auto kPhaseFailedSource =
+    QT_TRANSLATE_NOOP("Export", "Failed");
+inline constexpr auto kPhaseCanceledSource =
+    QT_TRANSLATE_NOOP("Export", "Canceled");
 
 /** @brief Error text when no export runner has been wired. */
 inline QString runnerUnavailable() {
@@ -448,6 +514,22 @@ inline QString successDetail() {
 inline QString startingDetail() {
   return detail::translate(kContext, kStartingDetailSource);
 }
+/** @brief Export log status for successful runs. */
+inline QString statusSuccess() {
+  return detail::translate(kContext, kStatusSuccessSource);
+}
+/** @brief Export log status for failed runs. */
+inline QString statusFailed() {
+  return detail::translate(kContext, kStatusFailedSource);
+}
+/** @brief Export log status for canceled runs. */
+inline QString statusCanceled() {
+  return detail::translate(kContext, kStatusCanceledSource);
+}
+/** @brief Export log status for active runs. */
+inline QString statusRunning() {
+  return detail::translate(kContext, kStatusRunningSource);
+}
 /** @brief Phase text when an export has just been submitted. */
 inline QString phaseStarting() {
   return detail::translate(kContext, kPhaseStartingSource);
@@ -463,6 +545,18 @@ inline QString phaseCancelRequested() {
 /** @brief Phase text while an export is paused. */
 inline QString phasePaused() {
   return detail::translate(kContext, kPhasePausedSource);
+}
+/** @brief Phase text after an export completed successfully. */
+inline QString phaseFinished() {
+  return detail::translate(kContext, kPhaseFinishedSource);
+}
+/** @brief Phase text after an export failed. */
+inline QString phaseFailed() {
+  return detail::translate(kContext, kPhaseFailedSource);
+}
+/** @brief Phase text after an export was canceled. */
+inline QString phaseCanceled() {
+  return detail::translate(kContext, kPhaseCanceledSource);
 }
 
 } // namespace exporting

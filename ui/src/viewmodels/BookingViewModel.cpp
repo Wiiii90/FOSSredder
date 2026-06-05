@@ -6,19 +6,20 @@
 #include "ui/viewmodels/BookingViewModel.h"
 
 #include <algorithm>
-#include <cmath>
 
-#include <QMetaType>
-
-#include "ui/presentation/PayloadMapper.h"
+#include "ui/i18n/Text.h"
 #include "ui/observability/Trace.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/presentation/PayloadMapper.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
 
 namespace {
 
-QString stringValue(const QVariant &value) {
+QString stringValue(const QVariant& value) {
   const QVariantMap map = value.toMap();
   if (!map.isEmpty()) {
     const QString aliasValue = map.value(QStringLiteral("value")).toString();
@@ -37,25 +38,25 @@ QString stringValue(const QVariant &value) {
   return value.toString();
 }
 
-QVariantList normalizeStringValues(const QVariantList &values) {
+QVariantList normalizeStringValues(const QVariantList& values) {
   QVariantList out;
   out.reserve(values.size());
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     out.push_back(stringValue(value));
   }
   return out;
 }
 
-QString rowIdAt(const QVariantList &rows, int index,
-                const QString &idKey = QStringLiteral("id")) {
+QString rowIdAt(const QVariantList& rows, int index,
+                const QString& idKey = QStringLiteral("id")) {
   if (index < 0 || index >= rows.size()) {
     return {};
   }
   return rows.at(index).toMap().value(idKey).toString();
 }
 
-int indexOfId(const QVariantList &rows, const QString &id,
-              const QString &idKey = QStringLiteral("id")) {
+int indexOfId(const QVariantList& rows, const QString& id,
+              const QString& idKey = QStringLiteral("id")) {
   if (id.isEmpty()) {
     return -1;
   }
@@ -67,8 +68,8 @@ int indexOfId(const QVariantList &rows, const QString &id,
   return -1;
 }
 
-int indexOfKeyValue(const QVariantList &rows, const QString &key,
-                    const QVariant &value) {
+int indexOfKeyValue(const QVariantList& rows, const QString& key,
+                    const QVariant& value) {
   for (int i = 0; i < rows.size(); ++i) {
     if (rows.at(i).toMap().value(key) == value) {
       return i;
@@ -77,15 +78,15 @@ int indexOfKeyValue(const QVariantList &rows, const QString &key,
   return -1;
 }
 
-QVariantMap rowById(const QVariantList &rows, const QString &id,
-                    const QString &idKey = QStringLiteral("id")) {
+QVariantMap rowById(const QVariantList& rows, const QString& id,
+                    const QString& idKey = QStringLiteral("id")) {
   const int index = indexOfId(rows, id.trimmed(), idKey);
   return index >= 0 ? rows.at(index).toMap() : QVariantMap{};
 }
 
-QString deleteNextSelectionId(const QVariantList &rows, const QString &removedId,
-                              int defaultIndex = 0,
-                              const QString &idKey = QStringLiteral("id")) {
+QString deleteNextSelectionId(const QVariantList& rows,
+                              const QString& removedId, int defaultIndex = 0,
+                              const QString& idKey = QStringLiteral("id")) {
   if (rows.isEmpty()) {
     return {};
   }
@@ -103,11 +104,11 @@ int wrappedIndex(int index, int count) {
   return normalized < 0 ? normalized + count : normalized;
 }
 
-QVariantList rowIds(const QVariantList &rows,
-                    const QString &idKey = QStringLiteral("id")) {
+QVariantList rowIds(const QVariantList& rows,
+                    const QString& idKey = QStringLiteral("id")) {
   QVariantList out;
   out.reserve(rows.size());
-  for (const auto &rowValue : rows) {
+  for (const auto& rowValue : rows) {
     const QString id = rowValue.toMap().value(idKey).toString();
     if (!id.isEmpty()) {
       out.push_back(id);
@@ -116,20 +117,20 @@ QVariantList rowIds(const QVariantList &rows,
   return out;
 }
 
-bool rowHasId(const QVariantList &rows, const QString &id,
-              const QString &idKey = QStringLiteral("id")) {
+bool rowHasId(const QVariantList& rows, const QString& id,
+              const QString& idKey = QStringLiteral("id")) {
   return indexOfId(rows, id.trimmed(), idKey) >= 0;
 }
 
-QVariantList pruneAndAppendMissingIds(const QVariantList &preferredIds,
-                                      const QVariantList &availableIds) {
+QVariantList pruneAndAppendMissingIds(const QVariantList& preferredIds,
+                                      const QVariantList& availableIds) {
   QVariantList out;
-  for (const auto &id : preferredIds) {
+  for (const auto& id : preferredIds) {
     if (availableIds.contains(id) && !out.contains(id)) {
       out.push_back(id);
     }
   }
-  for (const auto &id : availableIds) {
+  for (const auto& id : availableIds) {
     if (!out.contains(id)) {
       out.push_back(id);
     }
@@ -137,13 +138,13 @@ QVariantList pruneAndAppendMissingIds(const QVariantList &preferredIds,
   return out;
 }
 
-QVariantList orderRowsByIds(const QVariantList &rows,
-                            const QVariantList &orderIds,
-                            const QString &idKey = QStringLiteral("id")) {
+QVariantList orderRowsByIds(const QVariantList& rows,
+                            const QVariantList& orderIds,
+                            const QString& idKey = QStringLiteral("id")) {
   QVariantList out;
   out.reserve(rows.size());
-  for (const auto &orderId : orderIds) {
-    for (const auto &rowValue : rows) {
+  for (const auto& orderId : orderIds) {
+    for (const auto& rowValue : rows) {
       if (rowValue.toMap().value(idKey).toString() == orderId.toString() &&
           !out.contains(rowValue)) {
         out.push_back(rowValue);
@@ -151,7 +152,7 @@ QVariantList orderRowsByIds(const QVariantList &rows,
       }
     }
   }
-  for (const auto &rowValue : rows) {
+  for (const auto& rowValue : rows) {
     if (!out.contains(rowValue)) {
       out.push_back(rowValue);
     }
@@ -159,9 +160,9 @@ QVariantList orderRowsByIds(const QVariantList &rows,
   return out;
 }
 
-QVariantList orderWithInsertedId(const QVariantList &currentOrder,
-                                 const QVariantList &availableIds,
-                                 const QString &insertedId,
+QVariantList orderWithInsertedId(const QVariantList& currentOrder,
+                                 const QVariantList& availableIds,
+                                 const QString& insertedId,
                                  int insertAfterIndex) {
   QVariantList out = pruneAndAppendMissingIds(currentOrder, availableIds);
   if (!insertedId.isEmpty() && !out.contains(insertedId)) {
@@ -172,11 +173,10 @@ QVariantList orderWithInsertedId(const QVariantList &currentOrder,
   return out;
 }
 
-QVariantMap orderedSelectionState(const QVariantList &rows,
-                                  const QVariantList &preferredOrder,
-                                  int currentIndex,
-                                  const QString &selectedId,
-                                  const QString &idKey = QStringLiteral("id")) {
+QVariantMap orderedSelectionState(const QVariantList& rows,
+                                  const QVariantList& preferredOrder,
+                                  int currentIndex, const QString& selectedId,
+                                  const QString& idKey = QStringLiteral("id")) {
   const QVariantList orderIds =
       pruneAndAppendMissingIds(preferredOrder, rowIds(rows, idKey));
   const QVariantList orderedRows = orderRowsByIds(rows, orderIds, idKey);
@@ -188,10 +188,9 @@ QVariantMap orderedSelectionState(const QVariantList &rows,
   }
   const int selectedIndex = indexOfId(orderedRows, selectedId, idKey);
   const int lastIndex = static_cast<int>(orderedRows.size()) - 1;
-  const int resolvedIndex =
-      selectedIndex >= 0
-          ? selectedIndex
-          : std::clamp(currentIndex, 0, lastIndex);
+  const int resolvedIndex = selectedIndex >= 0
+                                ? selectedIndex
+                                : std::clamp(currentIndex, 0, lastIndex);
   const QString resolvedId = selectedIndex >= 0
                                  ? selectedId
                                  : rowIdAt(orderedRows, resolvedIndex, idKey);
@@ -201,10 +200,11 @@ QVariantMap orderedSelectionState(const QVariantList &rows,
           {QStringLiteral("id"), resolvedId}};
 }
 
-QVariantMap navigateSelectionState(const QVariantList &rows, int currentIndex,
-                                   const QString &selectedId, int delta,
-                                   int defaultIndex = 0,
-                                   const QString &idKey = QStringLiteral("id")) {
+QVariantMap
+navigateSelectionState(const QVariantList& rows, int currentIndex,
+                       const QString& selectedId, int delta,
+                       int defaultIndex = 0,
+                       const QString& idKey = QStringLiteral("id")) {
   const int selectedIndex = indexOfId(rows, selectedId, idKey);
   const int baseIndex = selectedIndex >= 0 ? selectedIndex : defaultIndex;
   const int nextIndex = wrappedIndex(baseIndex + delta, rows.size());
@@ -212,19 +212,19 @@ QVariantMap navigateSelectionState(const QVariantList &rows, int currentIndex,
           {QStringLiteral("id"), rowIdAt(rows, nextIndex, idKey)}};
 }
 
-QVariantMap deleteReselectionState(const QVariantList &rows,
-                                   const QVariantList &preferredOrder,
-                                   int currentIndex,
-                                   const QString &removedId,
-                                   const QString &idKey = QStringLiteral("id")) {
+QVariantMap
+deleteReselectionState(const QVariantList& rows,
+                       const QVariantList& preferredOrder, int currentIndex,
+                       const QString& removedId,
+                       const QString& idKey = QStringLiteral("id")) {
   QVariantList remainingRows;
-  for (const auto &rowValue : rows) {
+  for (const auto& rowValue : rows) {
     if (rowValue.toMap().value(idKey).toString() != removedId) {
       remainingRows.push_back(rowValue);
     }
   }
   QVariantList remainingOrder;
-  for (const auto &id : preferredOrder) {
+  for (const auto& id : preferredOrder) {
     if (id.toString() != removedId) {
       remainingOrder.push_back(id);
     }
@@ -233,10 +233,10 @@ QVariantMap deleteReselectionState(const QVariantList &rows,
                                idKey);
 }
 
-QString rememberedOrFirstRowId(const QVariantList &rows,
-                               const QVariantMap &rememberedIds,
-                               const QString &ownerId,
-                               const QString &idKey = QStringLiteral("id")) {
+QString rememberedOrFirstRowId(const QVariantList& rows,
+                               const QVariantMap& rememberedIds,
+                               const QString& ownerId,
+                               const QString& idKey = QStringLiteral("id")) {
   const QString remembered =
       rememberedIds.value(ownerId.trimmed()).toString().trimmed();
   if (rowHasId(rows, remembered, idKey)) {
@@ -245,12 +245,12 @@ QString rememberedOrFirstRowId(const QVariantList &rows,
   return rows.isEmpty() ? QString() : rowIdAt(rows, 0, idKey);
 }
 
-bool containsTrimmed(const QVariantList &values, const QString &id) {
+bool containsTrimmed(const QVariantList& values, const QString& id) {
   const QString nextId = id.trimmed();
   if (nextId.isEmpty()) {
     return false;
   }
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     if (stringValue(value).trimmed() == nextId) {
       return true;
     }
@@ -258,8 +258,8 @@ bool containsTrimmed(const QVariantList &values, const QString &id) {
   return false;
 }
 
-QVariantList addUniqueTrimmed(const QVariantList &values,
-                              const QString &value) {
+QVariantList addUniqueTrimmed(const QVariantList& values,
+                              const QString& value) {
   const QString next = value.trimmed();
   QVariantList out = normalizeStringValues(values);
   if (next.isEmpty() || containsTrimmed(out, next)) {
@@ -269,14 +269,14 @@ QVariantList addUniqueTrimmed(const QVariantList &values,
   return out;
 }
 
-QVariantList removeTrimmed(const QVariantList &values, const QString &value) {
+QVariantList removeTrimmed(const QVariantList& values, const QString& value) {
   const QString target = value.trimmed();
   if (target.isEmpty()) {
     return values;
   }
   QVariantList out;
   out.reserve(values.size());
-  for (const auto &entry : values) {
+  for (const auto& entry : values) {
     const QString current = stringValue(entry).trimmed();
     if (current != target) {
       out.push_back(current);
@@ -285,14 +285,15 @@ QVariantList removeTrimmed(const QVariantList &values, const QString &value) {
   return out;
 }
 
-bool setSelectedId(QVariantList &selectedIds, const QString &id,
+bool setSelectedId(QVariantList& selectedIds, const QString& id,
                    bool selected) {
   const QString normalizedId = id.trimmed();
   if (normalizedId.isEmpty()) {
     return false;
   }
-  const QVariantList next = selected ? addUniqueTrimmed(selectedIds, normalizedId)
-                                     : removeTrimmed(selectedIds, normalizedId);
+  const QVariantList next = selected
+                                ? addUniqueTrimmed(selectedIds, normalizedId)
+                                : removeTrimmed(selectedIds, normalizedId);
   if (next == selectedIds) {
     return false;
   }
@@ -317,16 +318,16 @@ QVariantMap emptyTransactionFormState() {
   return tx;
 }
 
-QVariantMap normalizeTransactionFormState(const QVariantMap &tx) {
+QVariantMap normalizeTransactionFormState(const QVariantMap& tx) {
   QVariantMap out = emptyTransactionFormState();
   for (auto it = tx.constBegin(); it != tx.constEnd(); ++it) {
     out.insert(it.key(), it.value());
   }
   out.insert(QStringLiteral("status"),
              out.value(QStringLiteral("status")).toInt());
-  out.insert(QStringLiteral("propertyIds"),
-             normalizeStringValues(
-                 out.value(QStringLiteral("propertyIds")).toList()));
+  out.insert(
+      QStringLiteral("propertyIds"),
+      normalizeStringValues(out.value(QStringLiteral("propertyIds")).toList()));
   out.insert(QStringLiteral("actorId"),
              out.value(QStringLiteral("actorId")).toString());
   out.insert(QStringLiteral("contractId"),
@@ -346,21 +347,19 @@ QVariantMap normalizeTransactionFormState(const QVariantMap &tx) {
   return out;
 }
 
-QVariantList normalizeTransactionFormStates(const QVariantList &values) {
+QVariantList normalizeTransactionFormStates(const QVariantList& values) {
   QVariantList out;
   out.reserve(values.size());
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     out.push_back(normalizeTransactionFormState(value.toMap()));
   }
   return out;
 }
 
-bool transactionFormStateHasContent(const QVariantMap &tx) {
+bool transactionFormStateHasContent(const QVariantMap& tx) {
   const QVariantMap normalized = normalizeTransactionFormState(tx);
   const QVariant amount = normalized.value(QStringLiteral("amount"));
-  const bool hasAmount = amount.userType() == QMetaType::Double
-                             ? amount.toDouble() != 0.0
-                             : !amount.toString().trimmed().isEmpty();
+  const bool hasAmount = !amount.toString().trimmed().isEmpty();
   return !normalized.value(QStringLiteral("name")).toString().isEmpty() ||
          !normalized.value(QStringLiteral("bookingDate"))
               .toString()
@@ -374,8 +373,8 @@ bool transactionFormStateHasContent(const QVariantMap &tx) {
          normalized.value(QStringLiteral("status")).toInt() != 0;
 }
 
-QVariantMap createFormStateList(const QVariantList &states, int currentIndex,
-                                const QVariantMap &emptyState) {
+QVariantMap createFormStateList(const QVariantList& states, int currentIndex,
+                                const QVariantMap& emptyState) {
   QVariantList normalizedStates = normalizeTransactionFormStates(states);
   if (normalizedStates.isEmpty()) {
     normalizedStates.push_back(normalizeTransactionFormState(emptyState));
@@ -386,9 +385,9 @@ QVariantMap createFormStateList(const QVariantList &states, int currentIndex,
           {QStringLiteral("index"), index}};
 }
 
-QVariantMap insertFormStateAfterCurrent(const QVariantList &states,
+QVariantMap insertFormStateAfterCurrent(const QVariantList& states,
                                         int currentIndex,
-                                        const QVariantMap &emptyState) {
+                                        const QVariantMap& emptyState) {
   const QVariantMap base =
       createFormStateList(states, currentIndex, emptyState);
   QVariantList normalizedStates = base.value(QStringLiteral("states")).toList();
@@ -401,9 +400,10 @@ QVariantMap insertFormStateAfterCurrent(const QVariantList &states,
           {QStringLiteral("index"), insertIndex}};
 }
 
-QVariantMap removeFormStateAt(const QVariantList &states, int currentIndex,
-                              const QVariantMap &emptyState) {
-  const QVariantMap base = createFormStateList(states, currentIndex, emptyState);
+QVariantMap removeFormStateAt(const QVariantList& states, int currentIndex,
+                              const QVariantMap& emptyState) {
+  const QVariantMap base =
+      createFormStateList(states, currentIndex, emptyState);
   QVariantList normalizedStates = base.value(QStringLiteral("states")).toList();
   int index = base.value(QStringLiteral("index")).toInt();
   if (index < 0 || index >= normalizedStates.size()) {
@@ -414,16 +414,16 @@ QVariantMap removeFormStateAt(const QVariantList &states, int currentIndex,
     normalizedStates.push_back(normalizeTransactionFormState(emptyState));
     index = 0;
   } else {
-    index = std::clamp(index, 0,
-                       static_cast<int>(normalizedStates.size()) - 1);
+    index = std::clamp(index, 0, static_cast<int>(normalizedStates.size()) - 1);
   }
   return {{QStringLiteral("states"), normalizedStates},
           {QStringLiteral("index"), index}};
 }
 
-QVariantMap currentFormState(const QVariantList &states, int currentIndex,
-                             const QVariantMap &emptyState) {
-  const QVariantMap base = createFormStateList(states, currentIndex, emptyState);
+QVariantMap currentFormState(const QVariantList& states, int currentIndex,
+                             const QVariantMap& emptyState) {
+  const QVariantMap base =
+      createFormStateList(states, currentIndex, emptyState);
   const QVariantList normalizedStates =
       base.value(QStringLiteral("states")).toList();
   const int index = base.value(QStringLiteral("index")).toInt();
@@ -433,9 +433,9 @@ QVariantMap currentFormState(const QVariantList &states, int currentIndex,
            normalizeTransactionFormState(normalizedStates.at(index).toMap())}};
 }
 
-QVariantMap setCurrentRawFormState(const QVariantList &states, int currentIndex,
-                                   const QVariantMap &formState,
-                                   const QVariantMap &emptyState) {
+QVariantMap setCurrentRawFormState(const QVariantList& states, int currentIndex,
+                                   const QVariantMap& formState,
+                                   const QVariantMap& emptyState) {
   QVariantMap state = currentFormState(states, currentIndex, emptyState);
   QVariantList nextStates = state.value(QStringLiteral("states")).toList();
   const int index = state.value(QStringLiteral("index")).toInt();
@@ -447,17 +447,22 @@ QVariantMap setCurrentRawFormState(const QVariantList &states, int currentIndex,
   return state;
 }
 
-bool bookingEditStateChanged(const QString &savedStatementName,
-                             const QVariantMap &savedTransactionState,
-                             const QString &currentStatementName,
-                             const QVariantMap &transaction) {
+bool bookingEditStateChanged(const QString& savedStatementName,
+                             const QVariantMap& savedTransactionState,
+                             const QString& currentStatementName,
+                             const QVariantMap& transaction) {
   return savedStatementName != currentStatementName ||
          savedTransactionState != normalizeTransactionFormState(transaction);
 }
 
 } // namespace
-BookingViewModel::BookingViewModel(WorkspaceFacade *workspace, QObject *parent)
-    : QObject(parent), workspace_(workspace) {
+BookingViewModel::BookingViewModel(WorkspaceStore* store,
+                                   WorkspaceCommands* commands,
+                                   WorkspaceSelection* selection,
+                                   WorkspaceSelectors* selectors,
+                                   QObject* parent)
+    : QObject(parent), store_(store), commands_(commands),
+      selection_(selection), selectors_(selectors) {
   createTransactionStates_ = QVariantList{emptyTransaction()};
   currentTransactionFormState_ = emptyTransaction();
   bindSignals();
@@ -476,7 +481,7 @@ QString BookingViewModel::statementName() const {
   return isCreateMode() ? createStatementName_ : editStatementName_;
 }
 
-void BookingViewModel::setStatementName(const QString &value) {
+void BookingViewModel::setStatementName(const QString& value) {
   if (isCreateMode()) {
     if (createStatementName_ == value) {
       return;
@@ -492,10 +497,10 @@ void BookingViewModel::setStatementName(const QString &value) {
 }
 
 void BookingViewModel::bindSignals() {
-  if (!workspace_) {
+  if (!store_ || !selection_) {
     return;
   }
-  QObject::connect(workspace_, &WorkspaceFacade::dataRevisionChanged, this,
+  QObject::connect(store_, &WorkspaceStore::dataRevisionChanged, this,
                    [this]() {
                      if (isCreateMode()) {
                        resetCreateState();
@@ -503,8 +508,8 @@ void BookingViewModel::bindSignals() {
                        syncEditState();
                      }
                    });
-  QObject::connect(workspace_, &WorkspaceFacade::selectedStatementIdChanged, this,
-                   [this]() {
+  QObject::connect(selection_, &WorkspaceSelection::selectedStatementIdChanged,
+                   this, [this]() {
                      if (isCreateMode()) {
                        resetCreateState();
                      } else {
@@ -513,7 +518,8 @@ void BookingViewModel::bindSignals() {
                        syncEditState();
                      }
                    });
-  QObject::connect(workspace_, &WorkspaceFacade::selectedTransactionIdChanged, this,
+  QObject::connect(selection_,
+                   &WorkspaceSelection::selectedTransactionIdChanged, this,
                    [this]() {
                      if (isCreateMode()) {
                        resetCreateState();
@@ -525,48 +531,50 @@ void BookingViewModel::bindSignals() {
 }
 
 QVariantList BookingViewModel::statementRows() const {
-  return workspace_ ? workspace_->statementRowsWithTransactions()
+  return selectors_ ? selectors_->statementRowsWithTransactions()
                     : QVariantList();
 }
 
 QString BookingViewModel::selectedStatementId() const {
-  return workspace_ ? workspace_->selectedStatementId() : QString();
+  return selection_ ? selection_->selectedStatementId() : QString();
 }
 
 QString BookingViewModel::selectedTransactionId() const {
-  return workspace_ ? workspace_->selectedTransactionId() : QString();
+  return selection_ ? selection_->selectedTransactionId() : QString();
 }
 
-bool BookingViewModel::hasStatements() const { return !statementRows().isEmpty(); }
+bool BookingViewModel::hasStatements() const {
+  return !statementRows().isEmpty();
+}
 
 QVariantList
-BookingViewModel::statementTransactionRows(const QString &statementId) const {
-  return workspace_ ? workspace_->statementTransactionRows(statementId)
+BookingViewModel::statementTransactionRows(const QString& statementId) const {
+  return selectors_ ? selectors_->statementTransactionRows(statementId)
                     : QVariantList();
 }
 
-void BookingViewModel::selectStatement(const QString &statementId) {
-  if (!workspace_) {
+void BookingViewModel::selectStatement(const QString& statementId) {
+  if (!selection_) {
     return;
   }
-  workspace_->selectTransaction(statementId, QString());
+  selection_->selectTransaction(statementId, QString());
 }
 
-void BookingViewModel::selectTransaction(const QString &statementId,
-                                     const QString &transactionId) {
-  if (!workspace_) {
+void BookingViewModel::selectTransaction(const QString& statementId,
+                                         const QString& transactionId) {
+  if (!selection_) {
     return;
   }
-  workspace_->selectTransaction(statementId, transactionId);
+  selection_->selectTransaction(statementId, transactionId);
 }
 
 QString BookingViewModel::transactionInfoText() const {
   if (isCreateMode()) {
-    return createTransactionStates_.isEmpty() ? tr("No transactions")
-                                               : tr("Transaction %1 / %2")
-                                                   .arg(createTransactionIndex_ + 1)
-                                               .arg(createTransactionStates_
-                                                        .size());
+    return createTransactionStates_.isEmpty()
+               ? tr("No transactions")
+               : tr("Transaction %1 / %2")
+                     .arg(createTransactionIndex_ + 1)
+                     .arg(createTransactionStates_.size());
   }
 
   const QVariantMap state = editTransactionState();
@@ -602,12 +610,13 @@ QVariantMap BookingViewModel::emptyTransaction() const {
   return emptyTransactionFormState();
 }
 
-QVariantMap BookingViewModel::normalizeTransaction(const QVariantMap &tx) const {
+QVariantMap
+BookingViewModel::normalizeTransaction(const QVariantMap& tx) const {
   return normalizeTransactionFormState(tx);
 }
 
 QVariantMap BookingViewModel::editTransactionState() const {
-  if (!workspace_ || selectedStatementId().isEmpty()) {
+  if (!selectors_ || selectedStatementId().isEmpty()) {
     return {{QStringLiteral("rows"), QVariantList()},
             {QStringLiteral("orderIds"), QVariantList()},
             {QStringLiteral("index"), -1},
@@ -621,23 +630,22 @@ QVariantMap BookingViewModel::editTransactionState() const {
                                selectedTransactionId(), QStringLiteral("id"));
 }
 
-QVariantMap BookingViewModel::transactionById(const QString &txId) const {
-  if (!workspace_ || txId.isEmpty()) {
+QVariantMap BookingViewModel::transactionById(const QString& txId) const {
+  if (!selectors_ || txId.isEmpty()) {
     return emptyTransaction();
   }
-  QVariantMap transaction = workspace_->transactionRowById(txId);
+  QVariantMap transaction = selectors_->transactionRowById(txId);
   if (transaction.isEmpty()) {
     return emptyTransaction();
   }
-  transaction.insert(
-      payload::keys::transaction::kPropertyIds,
-      payload::mapper::toVariantList(
-          transaction.value(payload::keys::transaction::kPropertyIds)));
+  transaction.insert(payload::keys::transaction::kPropertyIds,
+                     payload::mapper::toVariantList(transaction.value(
+                         payload::keys::transaction::kPropertyIds)));
   return normalizeTransaction(transaction);
 }
 
-QVariantMap BookingViewModel::normalizedTransactionState(
-    const QVariantMap &data) const {
+QVariantMap
+BookingViewModel::normalizedTransactionState(const QVariantMap& data) const {
   return normalizeTransactionFormState(data);
 }
 
@@ -645,11 +653,8 @@ QVariantMap BookingViewModel::transactionData() const {
   return isCreateMode() ? currentTransactionFormState_ : editTransactionData_;
 }
 
-void BookingViewModel::setTransactionData(const QVariantMap &value) {
+void BookingViewModel::setTransactionData(const QVariantMap& value) {
   if (isCreateMode()) {
-    if (!workspace_) {
-      return;
-    }
     const QVariantMap formState = value.isEmpty() ? emptyTransaction() : value;
     const QVariantMap state = setCurrentRawFormState(
         createTransactionStates_, createTransactionIndex_, formState,
@@ -666,30 +671,30 @@ void BookingViewModel::setTransactionData(const QVariantMap &value) {
   emit changed();
 }
 
-QVariant BookingViewModel::transactionField(const QString &key) const {
+QVariant BookingViewModel::transactionField(const QString& key) const {
   return transactionData().value(key);
 }
 
-void BookingViewModel::setTransactionField(const QString &key,
-                                           const QVariant &value) {
+void BookingViewModel::setTransactionField(const QString& key,
+                                           const QVariant& value) {
   QVariantMap next = transactionData();
   next.insert(key, value);
   setTransactionData(next);
 }
 
-void BookingViewModel::applyTransactionFormChange(const QVariantMap &changes) {
-  if (!workspace_) {
+void BookingViewModel::applyTransactionFormChange(const QVariantMap& changes) {
+  if (!selectors_) {
     return;
   }
-  setTransactionData(
-      workspace_->transactionFormWithCatalogSelection(transactionData(), changes));
+  setTransactionData(selectors_->transactionFormWithCatalogSelection(
+      transactionData(), changes));
 }
 
 QString BookingViewModel::transactionName() const {
   return transactionField(QStringLiteral("name")).toString();
 }
 
-void BookingViewModel::setTransactionName(const QString &value) {
+void BookingViewModel::setTransactionName(const QString& value) {
   setTransactionField(QStringLiteral("name"), value);
 }
 
@@ -697,7 +702,7 @@ QString BookingViewModel::transactionBookingDate() const {
   return transactionField(QStringLiteral("bookingDate")).toString();
 }
 
-void BookingViewModel::setTransactionBookingDate(const QString &value) {
+void BookingViewModel::setTransactionBookingDate(const QString& value) {
   setTransactionField(QStringLiteral("bookingDate"), value);
 }
 
@@ -705,7 +710,7 @@ QString BookingViewModel::transactionValuta() const {
   return transactionField(QStringLiteral("valuta")).toString();
 }
 
-void BookingViewModel::setTransactionValuta(const QString &value) {
+void BookingViewModel::setTransactionValuta(const QString& value) {
   setTransactionField(QStringLiteral("valuta"), value);
 }
 
@@ -714,7 +719,7 @@ QString BookingViewModel::transactionAmountText() const {
   return amount.isValid() ? amount.toString() : QString();
 }
 
-void BookingViewModel::setTransactionAmountText(const QString &value) {
+void BookingViewModel::setTransactionAmountText(const QString& value) {
   setTransactionField(QStringLiteral("amount"), value);
 }
 
@@ -732,7 +737,7 @@ void BookingViewModel::captureEditState() {
 }
 
 void BookingViewModel::syncCurrentCreateTransaction() {
-  if (!workspace_) {
+  if (!selectors_) {
     createTransactionStates_ = QVariantList{emptyTransaction()};
     createTransactionIndex_ = 0;
     currentTransactionFormState_ = emptyTransaction();
@@ -747,9 +752,9 @@ void BookingViewModel::syncCurrentCreateTransaction() {
 
 void BookingViewModel::resetCreateState() {
   createStatementName_.clear();
-  if (workspace_) {
-    const QVariantMap state = createFormStateList(
-        QVariantList(), 0, emptyTransaction());
+  if (selectors_) {
+    const QVariantMap state =
+        createFormStateList(QVariantList(), 0, emptyTransaction());
     createTransactionStates_ = state.value(QStringLiteral("states")).toList();
     createTransactionIndex_ = state.value(QStringLiteral("index")).toInt();
     currentTransactionFormState_ = state.value(QStringLiteral("state")).toMap();
@@ -762,7 +767,7 @@ void BookingViewModel::resetCreateState() {
 }
 
 void BookingViewModel::addTransactionAfterCurrent() {
-  if (!workspace_) {
+  if (!commands_ || !selection_) {
     return;
   }
   if (isCreateMode()) {
@@ -787,7 +792,7 @@ void BookingViewModel::addTransactionAfterCurrent() {
     insertAfterIndex = rows.size() - 1;
   }
   const QVariantMap current = normalizeTransaction(editTransactionData_);
-  const QString newId = workspace_->insertTransactionAfter(
+  const QString newId = commands_->insertTransactionAfter(
       current.value(QStringLiteral("id")).toString(), QString(),
       current.value(QStringLiteral("bookingDate")).toString(),
       current.value(QStringLiteral("valuta")).toString(), 0.0,
@@ -800,12 +805,12 @@ void BookingViewModel::addTransactionAfterCurrent() {
   const QVariantList updatedIds = rowIds(updatedRows);
   editTransactionOrderIds_ = orderWithInsertedId(
       editTransactionOrderIds_, updatedIds, newId, insertAfterIndex);
-  workspace_->selectTransaction(selectedStatementId(), newId);
+  selection_->selectTransaction(selectedStatementId(), newId);
   syncEditState();
 }
 
 void BookingViewModel::deleteCurrentTransaction() {
-  if (!workspace_) {
+  if (!commands_ || !selection_) {
     return;
   }
   if (isCreateMode()) {
@@ -825,7 +830,7 @@ void BookingViewModel::deleteCurrentTransaction() {
   const QVariantMap selectionState = editTransactionState();
   editTransactionOrderIds_ =
       selectionState.value(QStringLiteral("orderIds")).toList();
-  workspace_->deleteTransaction(deletedId);
+  commands_->deleteTransaction(deletedId);
   const QVariantMap reselectionState = deleteReselectionState(
       statementTransactionRows(selectedStatementId()), editTransactionOrderIds_,
       editTransactionIndex_, deletedId, QStringLiteral("id"));
@@ -834,14 +839,14 @@ void BookingViewModel::deleteCurrentTransaction() {
   editTransactionIndex_ =
       reselectionState.value(QStringLiteral("index")).toInt();
   const QString txId = reselectionState.value(QStringLiteral("id")).toString();
-  workspace_->selectTransaction(selectedStatementId(), txId);
+  selection_->selectTransaction(selectedStatementId(), txId);
   rememberSelectedTransaction();
   editTransactionData_ = transactionById(txId);
   emit changed();
 }
 
 void BookingViewModel::rememberSelectedTransaction() {
-  if (!workspace_ || selectedStatementId().isEmpty() ||
+  if (!selection_ || selectedStatementId().isEmpty() ||
       selectedTransactionId().isEmpty()) {
     return;
   }
@@ -850,8 +855,8 @@ void BookingViewModel::rememberSelectedTransaction() {
 }
 
 QString
-BookingViewModel::transactionIdForStatement(const QString &statementId) const {
-  return workspace_
+BookingViewModel::transactionIdForStatement(const QString& statementId) const {
+  return selectors_
              ? rememberedOrFirstRowId(statementTransactionRows(statementId),
                                       lastTransactionIdByStatementId_,
                                       statementId, QStringLiteral("id"))
@@ -859,7 +864,7 @@ BookingViewModel::transactionIdForStatement(const QString &statementId) const {
 }
 
 bool BookingViewModel::ensureSelectedTransactionForStatement() {
-  if (isCreateMode() || !workspace_ || selectedStatementId().isEmpty()) {
+  if (isCreateMode() || !selection_ || selectedStatementId().isEmpty()) {
     return true;
   }
   const QString statementId = selectedStatementId();
@@ -872,7 +877,7 @@ bool BookingViewModel::ensureSelectedTransactionForStatement() {
   if (currentTxId == nextTxId) {
     return true;
   }
-  workspace_->selectTransaction(statementId, nextTxId);
+  selection_->selectTransaction(statementId, nextTxId);
   return false;
 }
 
@@ -898,14 +903,15 @@ void BookingViewModel::syncEditState() {
   editTransactionIndex_ = state.value(QStringLiteral("index")).toInt();
   const QString txId = state.value(QStringLiteral("id")).toString();
   editTransactionData_ = transactionById(txId);
-  workspace_->selectTransaction(selectedStatementId(), txId);
+  if (selection_)
+    selection_->selectTransaction(selectedStatementId(), txId);
   rememberSelectedTransaction();
   captureEditState();
   emit changed();
 }
 
 void BookingViewModel::previousStatement() {
-  if (!workspace_) {
+  if (!selection_) {
     return;
   }
   const QVariantList rows = statementRows();
@@ -916,7 +922,7 @@ void BookingViewModel::previousStatement() {
   const int currentIndex = indexOfId(rows, currentId);
   if (currentIndex == 0) {
     rememberSelectedTransaction();
-    workspace_->selectTransaction(QString(), QString());
+    selection_->selectTransaction(QString(), QString());
     editTransactionOrderIds_.clear();
     editTransactionIndex_ = -1;
     emit changed();
@@ -926,14 +932,14 @@ void BookingViewModel::previousStatement() {
   const QString nextId =
       rows.value(nextIndex).toMap().value(QStringLiteral("id")).toString();
   rememberSelectedTransaction();
-  workspace_->selectTransaction(nextId, transactionIdForStatement(nextId));
+  selection_->selectTransaction(nextId, transactionIdForStatement(nextId));
   editTransactionOrderIds_.clear();
   editTransactionIndex_ = 0;
   emit changed();
 }
 
 void BookingViewModel::nextStatement() {
-  if (!workspace_) {
+  if (!selection_) {
     return;
   }
   const QVariantList rows = statementRows();
@@ -944,7 +950,7 @@ void BookingViewModel::nextStatement() {
   const int currentIndex = indexOfId(rows, currentId);
   if (currentIndex == rows.size() - 1) {
     rememberSelectedTransaction();
-    workspace_->selectTransaction(QString(), QString());
+    selection_->selectTransaction(QString(), QString());
     editTransactionOrderIds_.clear();
     editTransactionIndex_ = -1;
     emit changed();
@@ -954,23 +960,22 @@ void BookingViewModel::nextStatement() {
   const QString nextId =
       rows.value(nextIndex).toMap().value(QStringLiteral("id")).toString();
   rememberSelectedTransaction();
-  workspace_->selectTransaction(nextId, transactionIdForStatement(nextId));
+  selection_->selectTransaction(nextId, transactionIdForStatement(nextId));
   editTransactionOrderIds_.clear();
   editTransactionIndex_ = 0;
   emit changed();
 }
 
 void BookingViewModel::previousTransaction() {
-  if (!workspace_) {
+  if (!selection_) {
     return;
   }
   if (isCreateMode()) {
     if (createTransactionStates_.isEmpty()) {
       return;
     }
-    createTransactionIndex_ =
-        wrappedIndex(createTransactionIndex_ - 1,
-                     createTransactionStates_.size());
+    createTransactionIndex_ = wrappedIndex(createTransactionIndex_ - 1,
+                                           createTransactionStates_.size());
     syncCurrentCreateTransaction();
     emit changed();
     return;
@@ -988,22 +993,21 @@ void BookingViewModel::previousTransaction() {
   editTransactionIndex_ = next.value(QStringLiteral("index")).toInt();
   const QString txId = next.value(QStringLiteral("id")).toString();
   editTransactionData_ = transactionById(txId);
-  workspace_->selectTransaction(selectedStatementId(), txId);
+  selection_->selectTransaction(selectedStatementId(), txId);
   rememberSelectedTransaction();
   emit changed();
 }
 
 void BookingViewModel::nextTransaction() {
-  if (!workspace_) {
+  if (!selection_) {
     return;
   }
   if (isCreateMode()) {
     if (createTransactionStates_.isEmpty()) {
       return;
     }
-    createTransactionIndex_ =
-        wrappedIndex(createTransactionIndex_ + 1,
-                     createTransactionStates_.size());
+    createTransactionIndex_ = wrappedIndex(createTransactionIndex_ + 1,
+                                           createTransactionStates_.size());
     syncCurrentCreateTransaction();
     emit changed();
     return;
@@ -1020,114 +1024,55 @@ void BookingViewModel::nextTransaction() {
   editTransactionIndex_ = next.value(QStringLiteral("index")).toInt();
   const QString txId = next.value(QStringLiteral("id")).toString();
   editTransactionData_ = transactionById(txId);
-  workspace_->selectTransaction(selectedStatementId(), txId);
+  selection_->selectTransaction(selectedStatementId(), txId);
   rememberSelectedTransaction();
   emit changed();
 }
 
-bool BookingViewModel::transactionFormStateCanSubmit(
-    const QVariantMap &state) const {
-  if (!workspace_) {
-    return false;
-  }
-
-  const QVariantMap tx = normalizeTransaction(state);
-  if (!transactionFormStateHasContent(tx)) {
-    return true;
-  }
-
-  const QString bookingDate =
-      tx.value(QStringLiteral("bookingDate")).toString().trimmed();
-  if (bookingDate.isEmpty()) {
-    return false;
-  }
-
-  const double amount = workspace_->amountForTransactionCommit(
-      state.value(QStringLiteral("amount")), QString(),
-      tx.value(QStringLiteral("amount")).toDouble());
-  return std::isfinite(amount);
-}
-
-QVariantList BookingViewModel::submittableTransactionFormStates() const {
-  QVariantList out;
-  if (!workspace_) {
-    return out;
-  }
-
-  for (const QVariant &stateValue : createTransactionStates_) {
-    const QVariantMap state = stateValue.toMap();
-    const QVariantMap normalized = normalizeTransaction(state);
-    if (!transactionFormStateHasContent(normalized)) {
-      continue;
-    }
-    if (!transactionFormStateCanSubmit(state)) {
-      continue;
-    }
-    out.push_back(state);
-  }
-  return out;
-}
-
 bool BookingViewModel::canCreate() const {
-  if (createStatementName_.trimmed().isEmpty()) {
-    return false;
-  }
-  for (const QVariant &stateValue : createTransactionStates_) {
-    if (!transactionFormStateCanSubmit(stateValue.toMap())) {
-      return false;
-    }
-  }
-  return true;
+  return !createStatementName_.trimmed().isEmpty();
 }
 
 bool BookingViewModel::canUpdate() const {
-  if (isCreateMode() || !workspace_) {
+  if (isCreateMode() || !selection_) {
     return false;
   }
-  return bookingEditStateChanged(
-      savedEditStatementName_, savedEditTransactionState_, editStatementName_,
-      editTransactionData_);
+  return bookingEditStateChanged(savedEditStatementName_,
+                                 savedEditTransactionState_, editStatementName_,
+                                 editTransactionData_);
 }
 
 QString BookingViewModel::submit() {
-  if (!workspace_ || !canCreate()) {
+  if (!commands_ || !selectors_ || !selection_ || !canCreate()) {
     return QString();
   }
   observability::traceViewModel(
       "BookingViewModel::submit", "Booking create submitted",
       {{observability::context::kName, createStatementName_.toStdString()},
-       {"transactionCount",
-        std::to_string(submittableTransactionFormStates().size())}});
-  const QString statementName = createStatementName_;
-  const QVariantList transactionStates = submittableTransactionFormStates();
-  const QString statementId = workspace_->addStatement(statementName);
+       {"transactionCount", std::to_string(createTransactionStates_.size())}});
+  QVariantList transactionStates;
+  for (const QVariant& stateValue : createTransactionStates_) {
+    const QVariantMap rawTx = stateValue.toMap();
+    const QVariantMap tx = normalizeTransaction(rawTx);
+    if (!transactionFormStateHasContent(tx)) {
+      continue;
+    }
+    transactionStates.push_back(rawTx);
+  }
+  const QString statementId = commands_->addStatementWithTransactions(
+      createStatementName_, transactionStates);
   if (statementId.isEmpty()) {
     return QString();
   }
-  for (const QVariant &stateValue : transactionStates) {
-    const QVariantMap rawTx = stateValue.toMap();
-    const QVariantMap tx = normalizeTransaction(rawTx);
-    workspace_->addTransaction(
-        tx.value(QStringLiteral("name")).toString(),
-        tx.value(QStringLiteral("bookingDate")).toString(),
-        tx.value(QStringLiteral("valuta")).toString(),
-        workspace_->amountForTransactionCommit(
-            rawTx.value(QStringLiteral("amount")), QString(),
-            tx.value(QStringLiteral("amount")).toDouble()),
-        statementId, tx.value(payload::keys::common::kStatus).toInt(),
-        tx.value(payload::keys::transaction::kActorId).toString(),
-        tx.value(payload::keys::transaction::kContractId).toString(),
-        tx.value(QStringLiteral("allocatable")).toBool(),
-        payload::mapper::toQStringList(
-            tx.value(payload::keys::transaction::kPropertyIds).toList()));
-  }
   resetCreateState();
-  workspace_->selectTransaction(statementId, transactionIdForStatement(statementId));
+  selection_->selectTransaction(statementId,
+                                transactionIdForStatement(statementId));
   return statementId;
 }
 
 void BookingViewModel::updateCurrent() {
-  if (isCreateMode() || !workspace_ || selectedStatementId().isEmpty()) {
+  if (isCreateMode() || !commands_ || !selectors_ || !selection_ ||
+      selectedStatementId().isEmpty()) {
     return;
   }
   observability::traceViewModel(
@@ -1143,14 +1088,12 @@ void BookingViewModel::updateCurrent() {
       savedEditTransactionState_ != normalizedTransactionState(transactionData);
   const QVariantMap normalizedTx = normalizeTransaction(transactionData);
   if (transactionChanged && !txId.isEmpty()) {
-    workspace_->updateTransaction(
+    commands_->updateTransaction(
         txId, transactionData.value(QStringLiteral("name")).toString(),
         transactionData.value(QStringLiteral("bookingDate")).toString(),
         transactionData.value(QStringLiteral("valuta")).toString(),
-        workspace_->amountForTransactionCommit(
-            transactionData.value(QStringLiteral("amount")), txId,
-            normalizedTx.value(QStringLiteral("amount")).toDouble()),
-        statementId, normalizedTx.value(payload::keys::common::kStatus).toInt(),
+        transactionData.value(QStringLiteral("amount")), statementId,
+        normalizedTx.value(payload::keys::common::kStatus).toInt(),
         transactionData.value(payload::keys::transaction::kActorId).toString(),
         transactionData.value(payload::keys::transaction::kContractId)
             .toString(),
@@ -1160,32 +1103,29 @@ void BookingViewModel::updateCurrent() {
                 .toList()));
   }
   if (statementChanged) {
-    workspace_->updateStatement(statementId, statementName);
+    commands_->updateStatement(statementId, statementName);
   }
   syncEditState();
 }
 
 void BookingViewModel::deleteCurrentStatement() {
-  if (isCreateMode() || !workspace_) {
+  if (isCreateMode() || !commands_ || !selection_) {
     return;
   }
   observability::traceViewModel(
-      "BookingViewModel::deleteCurrentStatement",
-      "Statement delete submitted",
+      "BookingViewModel::deleteCurrentStatement", "Statement delete submitted",
       {{"statementId", selectedStatementId().toStdString()}});
   const QString removedId = selectedStatementId();
-  workspace_->deleteStatement(removedId);
+  commands_->deleteStatement(removedId);
   const QString nextId = deleteNextSelectionId(statementRows(), removedId, 0,
                                                QStringLiteral("id"));
-  workspace_->selectTransaction(nextId,
-                                nextId.isEmpty()
-                                    ? QString()
-                                    : transactionIdForStatement(nextId));
+  selection_->selectTransaction(
+      nextId, nextId.isEmpty() ? QString() : transactionIdForStatement(nextId));
   emit changed();
 }
 
 int BookingViewModel::transactionStatusIndex() const {
-  if (!workspace_) {
+  if (!selectors_) {
     return 0;
   }
   const QVariantMap tx = normalizeTransaction(transactionData());
@@ -1199,14 +1139,13 @@ int BookingViewModel::transactionStatusIndex() const {
 void BookingViewModel::setTransactionStatusIndex(int index) {
   const QVariantList options = transactionStatusOptions();
   const QVariantMap option = options.value(index).toMap();
-  setTransactionField(
-      payload::keys::common::kStatus,
-      option.value(payload::keys::common::kValue,
-                   payload::transaction_status::kNeutral));
+  setTransactionField(payload::keys::common::kStatus,
+                      option.value(payload::keys::common::kValue,
+                                   payload::transaction_status::kNeutral));
 }
 
 QVariantList BookingViewModel::propertyRows() const {
-  return workspace_ ? workspace_->propertyRows() : QVariantList();
+  return selectors_ ? selectors_->propertyRows() : QVariantList();
 }
 
 QVariantList BookingViewModel::selectedPropertyIds() const {
@@ -1217,20 +1156,23 @@ QVariantList BookingViewModel::selectedPropertyIds() const {
 
 QVariantList BookingViewModel::transactionStatusOptions() const {
   return payload::transaction_status::options(
-      tr("Neutral"), tr("Unverified"), tr("Verified"), tr("Completed"));
+      ui::text::transactionStatus::neutral(),
+      ui::text::transactionStatus::unverified(),
+      ui::text::transactionStatus::verified(),
+      ui::text::transactionStatus::completed());
 }
 
 QVariantList BookingViewModel::actorDisplayRows() const {
-  return workspace_ ? workspace_->actorDropdownRows() : QVariantList();
+  return selectors_ ? selectors_->actorDropdownRows() : QVariantList();
 }
 
 QVariantList BookingViewModel::contractDisplayRows() const {
-  return workspace_ ? workspace_->contractDropdownRows() : QVariantList();
+  return selectors_ ? selectors_->contractDropdownRows() : QVariantList();
 }
 
-int BookingViewModel::selectedIndexFor(const QVariantList &rows,
-                                   const QString &id) const {
-  if (!workspace_) {
+int BookingViewModel::selectedIndexFor(const QVariantList& rows,
+                                       const QString& id) const {
+  if (!selectors_) {
     return 0;
   }
   const int index = indexOfId(rows, id);
@@ -1238,20 +1180,20 @@ int BookingViewModel::selectedIndexFor(const QVariantList &rows,
 }
 
 int BookingViewModel::selectedActorIndex() const {
-  return selectedIndexFor(actorDisplayRows(),
-                          transactionField(payload::keys::transaction::kActorId)
-                              .toString());
+  return selectedIndexFor(
+      actorDisplayRows(),
+      transactionField(payload::keys::transaction::kActorId).toString());
 }
 
 int BookingViewModel::selectedContractIndex() const {
-  return selectedIndexFor(contractDisplayRows(),
-                          transactionField(payload::keys::transaction::kContractId)
-                              .toString());
+  return selectedIndexFor(
+      contractDisplayRows(),
+      transactionField(payload::keys::transaction::kContractId).toString());
 }
 
-void BookingViewModel::setPropertySelected(const QString &propertyId,
-                                       bool selected) {
-  if (!workspace_) {
+void BookingViewModel::setPropertySelected(const QString& propertyId,
+                                           bool selected) {
+  if (!selectors_) {
     return;
   }
   QVariantList propertyIds =

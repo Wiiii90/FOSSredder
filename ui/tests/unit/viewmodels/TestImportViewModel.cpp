@@ -21,9 +21,11 @@ TEST(ImportViewModelTest,
   tests::support::WorkspaceHarness harness;
   const auto runner = std::make_shared<tests::support::ImportRunnerStub>();
   const auto adapter =
-      std::make_shared<adapters::ImportAdapter>(harness.facade.get(), runner);
+      std::make_shared<adapters::ImportAdapter>(harness.workspace.get(), runner);
   const auto reporter = tests::support::noopErrorReporter();
-  ImportWorkflow workflow(adapter, reporter, harness.facade.get());
+  ImportWorkflow workflow(adapter, reporter,
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(), harness.selectors.get());
   ImportViewModel viewModel;
   viewModel.setImportWorkflow(&workflow);
 
@@ -43,13 +45,16 @@ TEST(ImportViewModelTest,
       tests::support::makeStateWithDraftStack());
   const auto runner = std::make_shared<tests::support::ImportRunnerStub>();
   const auto adapter =
-      std::make_shared<adapters::ImportAdapter>(harness.facade.get(), runner);
+      std::make_shared<adapters::ImportAdapter>(harness.workspace.get(), runner);
   const auto reporter = tests::support::noopErrorReporter();
-  ImportWorkflow workflow(adapter, reporter, harness.facade.get());
+  ImportWorkflow workflow(adapter, reporter,
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(), harness.selectors.get());
   NavigationState navigation;
   ImportViewModel viewModel;
   viewModel.setImportWorkflow(&workflow);
-  viewModel.setWorkspace(harness.facade.get());
+  viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
   viewModel.setNavigation(&navigation);
 
   viewModel.openImportLog(QStringLiteral("draft-2"), true, {}, {});
@@ -66,14 +71,17 @@ TEST(ImportViewModelTest,
       tests::support::makeStateWithDraftStack());
   const auto runner = std::make_shared<tests::support::ImportRunnerStub>();
   const auto adapter =
-      std::make_shared<adapters::ImportAdapter>(harness.facade.get(), runner);
+      std::make_shared<adapters::ImportAdapter>(harness.workspace.get(), runner);
   const auto reporter = tests::support::noopErrorReporter();
-  ImportWorkflow workflow(adapter, reporter, harness.facade.get());
+  ImportWorkflow workflow(adapter, reporter,
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(), harness.selectors.get());
   ASSERT_TRUE(workflow.openPersistedDraft(QStringLiteral("draft-1")));
 
   ImportViewModel viewModel;
   viewModel.setImportWorkflow(&workflow);
-  viewModel.setWorkspace(harness.facade.get());
+  viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
   viewModel.setStatementName(QStringLiteral("Renamed Draft"));
   viewModel.selectNextTransactionDraft();
 
@@ -89,9 +97,11 @@ TEST(ImportViewModelTest,
       tests::support::makeStateWithDraftStack());
   const auto runner = std::make_shared<tests::support::ImportRunnerStub>();
   const auto adapter =
-      std::make_shared<adapters::ImportAdapter>(harness.facade.get(), runner);
+      std::make_shared<adapters::ImportAdapter>(harness.workspace.get(), runner);
   const auto reporter = tests::support::noopErrorReporter();
-  ImportWorkflow workflow(adapter, reporter, harness.facade.get());
+  ImportWorkflow workflow(adapter, reporter,
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(), harness.selectors.get());
   ASSERT_TRUE(workflow.openPersistedDraft(QStringLiteral("draft-1")));
 
   ImportViewModel viewModel;
@@ -111,7 +121,9 @@ TEST(ImportViewModelTest,
   const auto adapter =
       std::make_shared<adapters::ImportAdapter>(runner);
   const auto reporter = tests::support::noopErrorReporter();
-  ImportWorkflow workflow(adapter, reporter, harness.facade.get());
+  ImportWorkflow workflow(adapter, reporter,
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(), harness.selectors.get());
   ASSERT_TRUE(workflow.openPersistedDraft(QStringLiteral("draft-1")));
 
   ImportViewModel viewModel;
@@ -138,7 +150,9 @@ TEST(ImportViewModelTest,
   const auto adapter =
       std::make_shared<adapters::ImportAdapter>(runner);
   const auto reporter = tests::support::noopErrorReporter();
-  ImportWorkflow workflow(adapter, reporter, harness.facade.get());
+  ImportWorkflow workflow(adapter, reporter,
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(), harness.selectors.get());
   ASSERT_TRUE(workflow.openPersistedDraft(QStringLiteral("draft-1")));
   auto *tx = workflow.currentTransactionDraft();
   ASSERT_NE(tx, nullptr);
@@ -147,7 +161,8 @@ TEST(ImportViewModelTest,
 
   ImportViewModel viewModel;
   viewModel.setImportWorkflow(&workflow);
-  viewModel.setWorkspace(harness.facade.get());
+  viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
   viewModel.setPropertySelected(QStringLiteral("property-1"), true);
 
   EXPECT_TRUE(tx->contractId.empty());

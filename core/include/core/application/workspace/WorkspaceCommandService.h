@@ -59,12 +59,11 @@ struct TransactionInput {
 struct AnalysisInput {
     std::string name;
     core::domain::AnalysisType type;
-    std::string configJson;
-    core::domain::FilterSpec filterSpec;
+    core::ports::analysis::AnalysisConfigInput config;
+    core::ports::analysis::AnalysisFilterSelection filter;
     core::domain::ExportFormat exportFormat;
     bool includeCalculationAdjustments = true;
-    std::string exportStateJson;
-    std::string snapshotTransactionsJson;
+    std::vector<core::ports::workspace::TransactionSnapshot> snapshotTransactions;
     std::vector<std::pair<std::string, double>> adjustments;
 };
 
@@ -102,6 +101,8 @@ public:
 
     /** @brief Adds statement and returns created id. */
     [[nodiscard]] std::string addStatement(const core::ports::workspace::StatementCommand& command);
+    /** @brief Adds statement and transactions in one workspace mutation. */
+    [[nodiscard]] std::string addStatementWithTransactions(const core::ports::workspace::StatementWithTransactionsCommand& command);
     /** @brief Updates statement identified by command id. */
     void updateStatement(const core::ports::workspace::StatementCommand& command);
     /** @brief Deletes statement by id. */
@@ -138,6 +139,8 @@ public:
     [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::StatementCommand& command) const;
     /** @brief Validates transaction command data without mutating state. */
     [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::TransactionCommand& command) const;
+    /** @brief Validates statement batch command data without mutating state. */
+    [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::StatementWithTransactionsCommand& command) const;
     /** @brief Validates analysis command data without mutating state. */
     [[nodiscard]] core::ports::workspace::ValidationResult validate(const core::ports::workspace::AnalysisCommand& command) const;
     /** @brief Validates annual command data without mutating state. */

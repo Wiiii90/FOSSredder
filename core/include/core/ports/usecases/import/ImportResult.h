@@ -34,12 +34,6 @@ struct DraftSuggestionBucket {
   std::vector<DraftSuggestionCandidate> candidates;
 };
 
-struct DraftImportSuggestions {
-  DraftSuggestionBucket actor;
-  DraftSuggestionBucket property;
-  DraftSuggestionBucket contract;
-};
-
 struct DraftTextSignals {
   std::string sharedText;
   std::string actorText;

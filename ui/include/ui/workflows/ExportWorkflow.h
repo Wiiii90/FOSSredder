@@ -32,59 +32,98 @@ public:
     CreateMode = 0,
     ProgressMode = 1
   };
-  Q_ENUM(Mode)
 
   using StateSnapshotProvider =
       std::function<core::ports::workspace::WorkspaceSnapshot()>;
   using ExportLogSink =
       std::function<void(const core::ports::workspace::ExportLogSnapshot&)>;
 
-  /** @brief Create an export workflow backed by a snapshot provider and export
-   * runner. */
+  /**
+   * @brief Creates an export workflow backed by a snapshot provider and runner.
+   * @param stateSnapshotProvider Provider for the current workspace snapshot.
+   * @param exportAdapter Adapter used to invoke the core export runner.
+   * @param parent Optional Qt parent.
+   */
   explicit ExportWorkflow(
       StateSnapshotProvider stateSnapshotProvider,
       std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter,
       QObject* parent = nullptr);
 
-  void refreshFromStateSnapshot();
+  /**
+   * @brief Sets the sink used to save export logs through workspace commands.
+   * @param sink Export log sink callback.
+   */
   void setExportLogSink(ExportLogSink sink);
 
+  /** @brief Reports whether an export is running. @return True while running. */
   bool isRunning() const noexcept {
     return isRunning_;
   }
+  /** @brief Reports whether the export is paused. @return True while paused. */
   bool isPaused() const noexcept {
     return isPaused_;
   }
+  /** @brief Returns export progress. @return Progress in the range 0..1. */
   double progress() const noexcept {
     return progress_;
   }
+  /** @brief Returns current export phase text. @return Phase text. */
   QString phase() const {
     return phase_;
   }
+  /** @brief Returns current export error text. @return Error text or empty. */
   QString error() const {
     return lastError_;
   }
+  /**
+   * @brief Returns the current export workflow mode.
+   * @return CreateMode or ProgressMode.
+   */
   int currentMode() const noexcept;
 
-  /** @brief Start an asynchronous export with the selected UI options.
-   *  @param format Export format enum value
-   *  @param path Output path
-   *  @param includeFormulas Whether to include formulas
-   *  @param locale Locale identifier
+  /**
+   * @brief Starts an export using a QML selection payload.
+   * @param format QML export format index.
+   * @param path Output path.
+   * @param includeFormulas Whether formulas should be included.
+   * @param locale Export locale.
+   * @param payload Selected export objects.
+   * @param totalSteps Total UI progress steps.
    */
-  void exportData(int format, const QString& path, bool includeFormulas = true,
-                  const QString& locale = QString());
   void exportDataWithPayload(int format, const QString& path,
                              bool includeFormulas, const QString& locale,
                              const QVariantMap& payload, int totalSteps = 1);
+  /**
+   * @brief Clears the active export log selection.
+   */
   void clearActiveExportLog();
+  /**
+   * @brief Requests cancellation of the running export.
+   */
   void cancelExport();
+  /**
+   * @brief Pauses the running export.
+   */
   void pauseExport();
+  /**
+   * @brief Resumes the paused export.
+   */
   void resumeExport();
 
 signals:
+  /**
+   * @brief Emitted when export workflow state changed.
+   */
   void stateChanged();
+  /**
+   * @brief Emitted when an export finished or stopped.
+   * @param success True when the export completed successfully.
+   */
   void exportFinished(bool success);
+  /**
+   * @brief Emitted when an export failed.
+   * @param error Error message.
+   */
   void exportFailed(const QString& error);
 
 private slots:
@@ -92,16 +131,48 @@ private slots:
   void onExportFinished();
 
 private:
+  /**
+   * @brief Builds the core export request from UI fields.
+   * @param format QML export format index.
+   * @param path Output path.
+   * @param includeFormulas Whether formulas should be included.
+   * @param locale Export locale.
+   * @param payload Selected export objects.
+   * @return Core export request.
+   */
   core::ports::exporting::ExportRequest
   buildRequest(int format, const QString& path, bool includeFormulas,
-               const QString& locale) const;
+               const QString& locale, const QVariantMap& payload) const;
+  /**
+   * @brief Publishes an export log snapshot through the configured sink.
+   * @param log Export log snapshot.
+   */
   void publishExportLog(const core::ports::workspace::ExportLogSnapshot& log);
+  /**
+   * @brief Builds and publishes an export log snapshot for a log id.
+   * @param logId Existing log id or empty for a new id.
+   * @param path Target path.
+   * @param status Log status.
+   * @param message Log message.
+   * @return Published export log snapshot.
+   */
   core::ports::workspace::ExportLogSnapshot
-  upsertExportLogById(const QString& logId, const QString& path,
-                      const QString& status, const QString& message,
-                      const QString& payload);
+  publishExportLogById(const QString& logId, const QString& path,
+                       const QString& status, const QString& message);
+  /**
+   * @brief Finalizes workflow state after an export result.
+   * @param success Whether the export succeeded.
+   * @param outputPath Resolved output path.
+   */
   void finishExport(bool success, const QString& outputPath = QString());
+  /**
+   * @brief Finalizes workflow state after cancellation.
+   */
   void finishCanceled();
+  /**
+   * @brief Returns the current workspace snapshot.
+   * @return Workspace snapshot or an empty snapshot.
+   */
   core::ports::workspace::WorkspaceSnapshot stateSnapshot() const;
   struct ExportControlState;
 
@@ -118,8 +189,6 @@ private:
   QString phase_;
   int totalSteps_ = 1;
   int completedSteps_ = 0;
-  QString pendingPayload_;
-  QVariantMap pendingPayloadMap_;
   QString activeExportLogId_;
   QString activeExportPath_;
   QString lastError_;

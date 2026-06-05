@@ -10,15 +10,6 @@
 
 namespace core::ports::analysis {
 
-struct AnalysisRequest {
-    std::string analysisId;
-    std::string filterSpecification;
-
-    [[nodiscard]] bool empty() const noexcept {
-        return analysisId.empty() && filterSpecification.empty();
-    }
-};
-
 struct AnalysisFilterSelection {
     std::string dateField = "bookingDate";
     std::string dateMode = "year";
@@ -30,6 +21,19 @@ struct AnalysisFilterSelection {
     std::vector<std::string> contractTypes;
     bool contractTypesUnassigned = false;
     std::string allocatableMode = "all";
+};
+
+struct AnalysisRequest {
+    std::string analysisId;
+    AnalysisFilterSelection filter;
+
+    /**
+     * @brief Reports whether the request has no target.
+     * @return True when no analysis id is set.
+     */
+    [[nodiscard]] bool empty() const noexcept {
+        return analysisId.empty();
+    }
 };
 
 struct AnalysisConfigInput {
@@ -46,8 +50,18 @@ struct AnalysisAdjustmentTransactionInput {
     double amount = 0.0;
 };
 
+/**
+ * @brief Parses a serialized analysis filter specification.
+ * @param filterSpec Serialized filter specification.
+ * @return Parsed filter selection.
+ */
 [[nodiscard]] AnalysisFilterSelection
 parseAnalysisFilterSelection(const std::string& filterSpec);
+/**
+ * @brief Serializes an analysis filter selection.
+ * @param selection Filter selection.
+ * @return Serialized filter specification.
+ */
 [[nodiscard]] std::string
 buildAnalysisFilterSpec(const AnalysisFilterSelection& selection);
 

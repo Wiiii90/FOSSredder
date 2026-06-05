@@ -20,10 +20,12 @@ TEST(ImportInteractionTest,
      INTERACTION_IMPORT_001_OverviewAppliesDefaultPathAndFiltersManualFiles) {
   tests::support::WorkspaceHarness harness;
   const auto adapter = std::make_shared<adapters::ImportAdapter>(
-      harness.facade.get(),
+      harness.workspace.get(),
       std::make_shared<tests::support::ImportRunnerStub>());
   ImportWorkflow workflow(adapter, tests::support::noopErrorReporter(),
-                          harness.facade.get());
+                          [&]() { return harness.store->snapshot(); },
+                          harness.commands.get(),
+                          harness.selectors.get());
   Settings settings;
   ImportViewModel viewModel;
 

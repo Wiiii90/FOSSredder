@@ -72,14 +72,15 @@ TEST(
       },
       adapter, nullptr);
   AnalysisViewModel viewModel;
-  viewModel.setWorkspace(harness.facade.get());
+  viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
   viewModel.setAnalysisWorkflow(&workflow);
 
   viewModel.setName(QStringLiteral("Interaction Analysis"));
   viewModel.setMainTypeIndex(0);
   viewModel.submitCreate();
 
-  const QString selectedId = harness.facade->selection()->selectedAnalysisId();
+  const QString selectedId = harness.selection->selectedAnalysisId();
   ASSERT_FALSE(selectedId.isEmpty());
   const auto workspace = harness.workspace->workspaceSnapshot();
   ASSERT_EQ(workspace.analyses.size(), 1U);
@@ -107,7 +108,8 @@ TEST(FeatureWiringInteractionTest,
       },
       adapter);
   AnnualViewModel viewModel;
-  viewModel.setWorkspace(harness.facade.get());
+  viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
   viewModel.setAnnualWorkflow(&workflow);
 
   viewModel.setName(QStringLiteral("Interaction Annual"));
@@ -115,7 +117,7 @@ TEST(FeatureWiringInteractionTest,
   viewModel.addAvailableAnalysisAtIndex(0);
   viewModel.submitCreate();
 
-  const QString selectedId = harness.facade->selection()->selectedAnnualId();
+  const QString selectedId = harness.selection->selectedAnnualId();
   ASSERT_FALSE(selectedId.isEmpty());
   const auto workspace = harness.workspace->workspaceSnapshot();
   ASSERT_EQ(workspace.annuals.size(), 1U);
@@ -139,7 +141,8 @@ TEST(
       },
       adapter);
   ExportViewModel viewModel;
-  viewModel.setWorkspace(harness.facade.get());
+  viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
+                              harness.selectors.get());
   viewModel.setExportWorkflow(&workflow);
   viewModel.setTargetDirectory(QStringLiteral("P:/exports/out.xlsx"));
 

@@ -13,7 +13,10 @@
 #include "ui/shell/StatusState.h"
 #include "ui/shell/window/CloseWorkflow.h"
 #include "ui/shell/window/DropHandler.h"
-#include "ui/workspace/WorkspaceFacade.h"
+#include "ui/workspace/WorkspaceCommands.h"
+#include "ui/workspace/WorkspaceSelection.h"
+#include "ui/workspace/WorkspaceSelectors.h"
+#include "ui/workspace/WorkspaceStore.h"
 
 QT_FORWARD_DECLARE_CLASS(QQmlImageProviderBase)
 QT_FORWARD_DECLARE_CLASS(QQmlEngine)
@@ -40,8 +43,15 @@ public:
   ui::bootstrap::AppContext* appContext() const noexcept {
     return appContext_;
   }
-  ui::WorkspaceFacade* workspace() const noexcept {
-    return workspace_;
+  ui::WorkspaceStore* workspaceStore() const noexcept { return workspaceStore_; }
+  ui::WorkspaceCommands* workspaceCommands() const noexcept {
+    return workspaceCommands_;
+  }
+  ui::WorkspaceSelection* workspaceSelection() const noexcept {
+    return workspaceSelection_;
+  }
+  ui::WorkspaceSelectors* workspaceSelectors() const noexcept {
+    return workspaceSelectors_;
   }
   ui::Settings* settings() const noexcept {
     return settings_;
@@ -78,7 +88,10 @@ private:
   QQuickView* m_quickView = nullptr;
   QTimer* autosaveTimer_ = nullptr;
   QWidget* m_quickContainer = nullptr;
-  ui::WorkspaceFacade* workspace_ = nullptr;
+  ui::WorkspaceStore* workspaceStore_ = nullptr;
+  ui::WorkspaceCommands* workspaceCommands_ = nullptr;
+  ui::WorkspaceSelection* workspaceSelection_ = nullptr;
+  ui::WorkspaceSelectors* workspaceSelectors_ = nullptr;
   ui::Settings* settings_ = nullptr;
   ui::Actions* actions_ = nullptr;
   ui::StatusState* status_ = nullptr;

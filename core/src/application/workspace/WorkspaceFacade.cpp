@@ -54,19 +54,11 @@ void WorkspaceFacade::setSnapshotChangedCallback(SnapshotChanged cb) {
     installStateChangedDispatcher();
 }
 
-void WorkspaceFacade::setStateChangedCallback(StateChanged cb) {
-    onStateChanged_ = std::move(cb);
-    installStateChangedDispatcher();
-}
-
 void WorkspaceFacade::installStateChangedDispatcher() {
     session_->setStateChangedCallback(
-        [this](const core::application::workspace::WorkspaceSessionState& state) {
+        [this](const core::application::workspace::WorkspaceSessionState&) {
             if (onSnapshotChanged_) {
                 onSnapshotChanged_(workspaceSnapshot());
-            }
-            if (onStateChanged_) {
-                onStateChanged_(state);
             }
         });
 }
@@ -116,6 +108,12 @@ core::ports::workspace::WorkspaceIdentitySnapshot WorkspaceFacade::contractIdent
     const std::vector<std::string>& actorIds,
     const std::vector<std::string>& propertyIds) const {
     return queries_->contractIdentityBySignature(name, type, actorIds, propertyIds);
+}
+
+core::ports::workspace::TransactionCatalogSelection
+WorkspaceFacade::transactionCatalogSelection(
+    const core::ports::workspace::TransactionCatalogSelectionChange& change) const {
+    return queries_->transactionCatalogSelection(change);
 }
 
 std::string WorkspaceFacade::nextContractName() const {
@@ -170,6 +168,11 @@ core::ports::workspace::ValidationResult WorkspaceFacade::validateTransaction(co
     return commands_->validate(command);
 }
 
+core::ports::workspace::ValidationResult WorkspaceFacade::validateStatementWithTransactions(
+    const core::ports::workspace::StatementWithTransactionsCommand& command) const {
+    return commands_->validate(command);
+}
+
 core::ports::workspace::ValidationResult WorkspaceFacade::validateAnalysis(const core::ports::workspace::AnalysisCommand& command) const {
     return commands_->validate(command);
 }
@@ -216,6 +219,11 @@ void WorkspaceFacade::updateContract(const core::ports::workspace::ContractComma
 
 std::string WorkspaceFacade::addStatement(const core::ports::workspace::StatementCommand& command) {
     return commands_->addStatement(command);
+}
+
+std::string WorkspaceFacade::addStatementWithTransactions(
+    const core::ports::workspace::StatementWithTransactionsCommand& command) {
+    return commands_->addStatementWithTransactions(command);
 }
 
 void WorkspaceFacade::updateStatement(const core::ports::workspace::StatementCommand& command) {
@@ -274,10 +282,6 @@ void WorkspaceFacade::clearStatementDraft(const std::string& draftId) {
     workflows_->clearStatementDraft(draftId);
 }
 
-void WorkspaceFacade::setImportLogs(const core::ports::workspace::ImportLogsCommand& command) {
-    workflows_->setImportLogs(command);
-}
-
 void WorkspaceFacade::saveImportLog(const core::ports::workspace::ImportLogCommand& command) {
     workflows_->saveImportLog(command);
 }
@@ -286,32 +290,12 @@ void WorkspaceFacade::deleteImportLog(const std::string& id) {
     workflows_->deleteImportLog(id);
 }
 
-void WorkspaceFacade::clearImportLogs() {
-    workflows_->clearImportLogs();
-}
-
-void WorkspaceFacade::setExportLogs(const core::ports::workspace::ExportLogsCommand& command) {
-    workflows_->setExportLogs(command);
-}
-
 void WorkspaceFacade::saveExportLog(const core::ports::workspace::ExportLogCommand& command) {
     workflows_->saveExportLog(command);
 }
 
 void WorkspaceFacade::deleteExportLog(const std::string& id) {
     workflows_->deleteExportLog(id);
-}
-
-void WorkspaceFacade::clearExportLogs() {
-    workflows_->clearExportLogs();
-}
-
-const core::application::workspace::WorkspaceSessionState& WorkspaceFacade::state() const noexcept {
-    return session_->state();
-}
-
-const core::domain::catalog::WorkspaceCatalog& WorkspaceFacade::catalogState() const noexcept {
-    return session_->catalogState();
 }
 
 std::string WorkspaceFacade::currentPath() const {

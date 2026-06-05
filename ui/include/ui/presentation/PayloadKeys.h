@@ -52,13 +52,12 @@ namespace statement {
 inline const auto kStatementId = QStringLiteral("statementId");
 }
 
-namespace exportRun {
+namespace exportLog {
 inline const auto kLogId = QStringLiteral("logId");
 inline const auto kTime = QStringLiteral("time");
 inline const auto kFile = QStringLiteral("file");
 inline const auto kMessage = QStringLiteral("message");
-inline const auto kPayload = QStringLiteral("payload");
-} // namespace exportRun
+} // namespace exportLog
 
 namespace transaction {
 inline const auto kBookingDate = QStringLiteral("bookingDate");
@@ -81,7 +80,6 @@ inline const auto kAdjustments = QStringLiteral("adjustments");
 inline const auto kExportFormat = QStringLiteral("exportFormat");
 inline const auto kIncludeCalcAdjustments =
     QStringLiteral("includeCalcAdjustments");
-inline const auto kExportState = QStringLiteral("exportState");
 inline const auto kSnapshotTransactions =
     QStringLiteral("snapshotTransactions");
 inline const auto kCreatedAt = QStringLiteral("createdAt");
@@ -103,7 +101,7 @@ inline const auto kPath = QStringLiteral("path");
 inline const auto kIsDir = QStringLiteral("isDir");
 } // namespace fileSystem
 
-namespace importRun {
+namespace importLog {
 inline const auto kLogId = QStringLiteral("logId");
 inline const auto kTime = QStringLiteral("time");
 inline const auto kFile = QStringLiteral("file");
@@ -111,7 +109,7 @@ inline const auto kMessage = QStringLiteral("message");
 inline const auto kDraftAttached = QStringLiteral("draftAttached");
 inline const auto kDraftId = QStringLiteral("draftId");
 inline const auto kStatementId = QStringLiteral("statementId");
-} // namespace importRun
+} // namespace importLog
 
 namespace draft {
 inline const auto kActorText = QStringLiteral("actorText");

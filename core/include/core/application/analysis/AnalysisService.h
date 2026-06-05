@@ -13,6 +13,7 @@
 #include "core/ports/usecases/analysis/IAnalysisRunner.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -106,7 +107,7 @@ public:
   core::ports::analysis::AnalysisPreviewResult
   previewTransactions(
       const core::ports::workspace::WorkspaceSnapshot &workspace,
-      const std::string &filterSpec = {}) const override;
+      const core::ports::analysis::AnalysisFilterSelection &filter) const override;
 
   core::ports::analysis::AnalysisFilterSelection filterSelectionFromFields(
       const std::string &dateField, const std::string &dateMode,
@@ -115,24 +116,46 @@ public:
       const std::vector<std::string> &contractTypes,
       const std::string &allocatableMode) const override;
 
+  /**
+   * @brief Parses a serialized filter spec through the analysis use case.
+   * @param filterSpec Serialized filter specification.
+   * @return Parsed filter selection.
+   */
+  core::ports::analysis::AnalysisFilterSelection
+  parseFilterSpec(const std::string &filterSpec) const override;
+
+  /**
+   * @brief Serializes a filter selection through the analysis use case.
+   * @param selection Filter selection.
+   * @return Serialized filter specification.
+   */
+  std::string buildFilterSpec(
+      const core::ports::analysis::AnalysisFilterSelection &selection)
+      const override;
+
   std::string buildAnalysisConfigJson(
       const core::ports::analysis::AnalysisConfigInput &input) const override;
 
-  std::string buildAnalysisAdjustmentsJson(
+  core::ports::analysis::AnalysisAdjustmentAmounts buildAnalysisAdjustments(
       const std::vector<
           core::ports::analysis::AnalysisAdjustmentTransactionInput>
           &transactions,
       const std::vector<std::string> &selectedTransactionIds,
       double taxPercent) const override;
 
+  std::optional<double>
+  parseAnalysisPercentText(const std::string &text) const override;
+
   void applyAnalysisPreviewOverrides(
       core::ports::workspace::WorkspaceSnapshot &workspace,
       const std::string &analysisId, bool includeCalculationAdjustments,
-      const std::string &adjustmentsJson) const override;
+      const core::ports::analysis::AnalysisAdjustmentAmounts &adjustments)
+      const override;
 
   core::ports::analysis::AnalysisTableState projectTableState(
       const core::ports::analysis::AnalysisResult &result,
-      const std::string &adjustmentsJson, bool includeCalculationAdjustments,
+      const core::ports::analysis::AnalysisAdjustmentAmounts &adjustments,
+      bool includeCalculationAdjustments,
       const std::string &unassignedLabel) const override;
 
   std::vector<std::string> contractTypes(

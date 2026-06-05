@@ -14,7 +14,8 @@ namespace ui {
 TEST(ContractViewModelTest,
      VM_CONTRACT_001_SubmitCreatesContractWithActorPropertyAndMode) {
   tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
-  ContractViewModel viewModel(harness.facade.get());
+  ContractViewModel viewModel(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
 
   viewModel.enterCreateMode();
   viewModel.setName(QStringLiteral("New Contract"));
@@ -27,7 +28,7 @@ TEST(ContractViewModelTest,
   const QString id = viewModel.submit();
 
   ASSERT_FALSE(id.isEmpty());
-  EXPECT_EQ(harness.facade->selectedContractId(), id);
+  EXPECT_EQ(harness.selection->selectedContractId(), id);
   const auto snapshot = harness.workspace->snapshot();
   ASSERT_EQ(snapshot.contracts.size(), 2);
   EXPECT_EQ(snapshot.contracts.back().name, "New Contract");
@@ -40,7 +41,8 @@ TEST(ContractViewModelTest,
 TEST(ContractViewModelTest,
      VM_CONTRACT_002_SelectEditUpdateAndDeleteCurrentContract) {
   tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
-  ContractViewModel viewModel(harness.facade.get());
+  ContractViewModel viewModel(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
 
   viewModel.selectContract(QStringLiteral("contract-1"));
   ASSERT_TRUE(viewModel.isEdit());
@@ -54,7 +56,7 @@ TEST(ContractViewModelTest,
 
   viewModel.deleteCurrent();
   EXPECT_TRUE(harness.workspace->snapshot().contracts.empty());
-  EXPECT_TRUE(harness.facade->selectedContractId().isEmpty());
+  EXPECT_TRUE(harness.selection->selectedContractId().isEmpty());
 }
 
 } // namespace ui

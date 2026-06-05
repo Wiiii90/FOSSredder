@@ -19,16 +19,16 @@ TestCase {
     width: 320
     height: 240
 
-    property var workspaceFacade: QtObject {
+    property var workspaceRoles: QtObject {
         property string selectedContractId: ""
         property var contractRows: []
         property var contractViewModel: QtObject {
-            readonly property string currentId: testCase.workspaceFacade.selectedContractId
-            property var contractRows: testCase.workspaceFacade.contractRows
+            readonly property string currentId: testCase.workspaceRoles.selectedContractId
+            property var contractRows: testCase.workspaceRoles.contractRows
             property string lastSelectedId: ""
             function selectContract(id) {
                 lastSelectedId = String(id || "")
-                testCase.workspaceFacade.selectedContractId = lastSelectedId
+                testCase.workspaceRoles.selectedContractId = lastSelectedId
             }
         }
     }
@@ -56,7 +56,7 @@ TestCase {
         ContractSidebar {
             width: 320
             height: 240
-            contractViewModel: testCase.workspaceFacade.contractViewModel
+            contractViewModel: testCase.workspaceRoles.contractViewModel
             theme: testCase.theme
         }
     }
@@ -70,13 +70,13 @@ TestCase {
     }
 
     function init() {
-        workspaceFacade.selectedContractId = ""
-        workspaceFacade.contractRows = []
-        workspaceFacade.contractViewModel.lastSelectedId = ""
+        workspaceRoles.selectedContractId = ""
+        workspaceRoles.contractRows = []
+        workspaceRoles.contractViewModel.lastSelectedId = ""
     }
 
-    function test_CON_S_001_rowsRenderFromWorkspaceFacade() {
-        workspaceFacade.contractRows = [
+    function test_CON_S_001_rowsRenderFromWorkspaceRoles() {
+        workspaceRoles.contractRows = [
             { id: "contract-1", name: "Lease 1" },
             { id: "contract-2", name: "Lease 2" }
         ]
@@ -87,7 +87,7 @@ TestCase {
     }
 
     function test_CON_S_002_rowClickWritesSelectedContractId() {
-        workspaceFacade.contractRows = [
+        workspaceRoles.contractRows = [
             { id: "contract-1", name: "Lease 1" },
             { id: "contract-2", name: "Lease 2" }
         ]
@@ -97,13 +97,13 @@ TestCase {
 
         mouseArea.clicked(null)
 
-        compare(workspaceFacade.selectedContractId, "contract-2")
-        compare(workspaceFacade.contractViewModel.lastSelectedId, "contract-2")
+        compare(workspaceRoles.selectedContractId, "contract-2")
+        compare(workspaceRoles.contractViewModel.lastSelectedId, "contract-2")
     }
 
     function test_CON_S_003_selectedRowUsesThemeHighlight() {
-        workspaceFacade.selectedContractId = "contract-2"
-        workspaceFacade.contractRows = [
+        workspaceRoles.selectedContractId = "contract-2"
+        workspaceRoles.contractRows = [
             { id: "contract-1", name: "Lease 1" },
             { id: "contract-2", name: "Lease 2" }
         ]
@@ -116,7 +116,7 @@ TestCase {
         const rows = []
         for (let i = 0; i < 12; ++i)
             rows.push({ id: "contract-" + i, name: "Contract " + i })
-        workspaceFacade.contractRows = rows
+        workspaceRoles.contractRows = rows
 
         const sidebar = createSidebar()
         const flick = findRequired(sidebar, "contractSidebarFlick")

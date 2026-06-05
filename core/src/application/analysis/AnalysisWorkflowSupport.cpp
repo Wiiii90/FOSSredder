@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <unordered_set>
 
 namespace core::application::analysis {
@@ -35,9 +36,14 @@ std::string toLower(std::string value) {
     return value;
 }
 
+void eraseAll(std::string& value, char ch) {
+    value.erase(std::remove(value.begin(), value.end(), ch), value.end());
+}
+
 } // namespace
 
-std::string buildAnalysisConfigJson(const AnalysisConfigInput& input) {
+std::string buildAnalysisConfigJson(
+    const core::ports::analysis::AnalysisConfigInput& input) {
     nlohmann::json config;
     const std::string normalizedType = toLower(trim(input.type));
 
@@ -134,6 +140,51 @@ parseAnalysisAdjustmentsJson(const std::string& adjustmentsJson) {
         return {};
     }
     return out;
+}
+
+std::optional<double> parseAnalysisPercentText(const std::string& text) {
+    std::string normalized = trim(text);
+    if (normalized.empty()) {
+        return std::nullopt;
+    }
+
+    if (normalized.back() == '%') {
+        normalized.pop_back();
+        normalized = trim(normalized);
+    }
+    eraseAll(normalized, ' ');
+
+    try {
+        size_t consumed = 0;
+        const double direct = std::stod(normalized, &consumed);
+        if (consumed == normalized.size() && std::isfinite(direct)) {
+            return direct;
+        }
+    } catch (...) {
+    }
+
+    const auto lastComma = normalized.find_last_of(',');
+    const auto lastDot = normalized.find_last_of('.');
+    if (lastComma != std::string::npos && lastDot != std::string::npos) {
+        if (lastComma > lastDot) {
+            eraseAll(normalized, '.');
+            std::replace(normalized.begin(), normalized.end(), ',', '.');
+        } else {
+            eraseAll(normalized, ',');
+        }
+    } else if (lastComma != std::string::npos) {
+        std::replace(normalized.begin(), normalized.end(), ',', '.');
+    }
+
+    try {
+        size_t consumed = 0;
+        const double parsed = std::stod(normalized, &consumed);
+        if (consumed == normalized.size() && std::isfinite(parsed)) {
+            return parsed;
+        }
+    } catch (...) {
+    }
+    return std::nullopt;
 }
 
 std::string buildAnalysisAdjustmentsJson(

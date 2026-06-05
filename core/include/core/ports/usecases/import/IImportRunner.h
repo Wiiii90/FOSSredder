@@ -90,17 +90,6 @@ public:
   importResult(const StatementImportHandle &handle) = 0;
 
   /**
-   * @brief Builds catalog suggestions for a transaction draft.
-   * @param state Workspace snapshot used as suggestion source.
-   * @param transaction Transaction draft to inspect.
-   * @return Actor, property, and contract suggestions.
-   */
-  [[nodiscard]] virtual core::ports::importing::draft::DraftImportSuggestions
-  buildImportSuggestions(
-      const core::ports::workspace::WorkspaceSnapshot &state,
-      const core::ports::importing::draft::TransactionDraft &transaction) const = 0;
-
-  /**
    * @brief Builds derived selection state for a draft link selection.
    * @param state Workspace snapshot used as catalog context.
    * @param selection Current draft link selection.

@@ -247,10 +247,10 @@ TestCase {
         readonly property bool canSubmit: name.trim().length > 0
                                           && type.trim().length > 0
                                           && (selectedActorIds.length > 0 || selectedPropertyIds.length > 0)
-        readonly property var contractRows: testCase.workspaceFacade.contractRows
-        readonly property var actorRows: testCase.workspaceFacade.actorRows
+        readonly property var contractRows: testCase.workspaceRoles.contractRows
+        readonly property var actorRows: testCase.workspaceRoles.actorRows
         readonly property var actorDisplayRows: testCase.session.displayRowsWithEmpty(actorRows, "No actor", "name")
-        readonly property var propertyRows: testCase.workspaceFacade.propertyRows
+        readonly property var propertyRows: testCase.workspaceRoles.propertyRows
         readonly property int selectedActorIndex: {
             const id = selectedActorIds.length > 0 ? selectedActorIds[0] : ""
             const index = testCase.session.indexOfId(actorDisplayRows, id)
@@ -342,14 +342,14 @@ TestCase {
             captureSavedState()
         }
         function previous() {
-            const rows = testCase.workspaceFacade.contractRows || []
+            const rows = testCase.workspaceRoles.contractRows || []
             if (rows.length === 0) return
             testCase.session.selectedContractId = testCase.session.navigatedId(rows, isEdit ? testCase.session.selectedContractId : "", -1, rows.length - 1)
             syncSelectionObject()
             reloadFakeFormFromSelection(true)
         }
         function next() {
-            const rows = testCase.workspaceFacade.contractRows || []
+            const rows = testCase.workspaceRoles.contractRows || []
             if (rows.length === 0) return
             testCase.session.selectedContractId = testCase.session.navigatedId(rows, isEdit ? testCase.session.selectedContractId : "", 1, 0)
             syncSelectionObject()
@@ -361,7 +361,7 @@ TestCase {
                 testCase.session.selectedContract = null
                 return
             }
-            const rows = testCase.workspaceFacade.contractRows || []
+            const rows = testCase.workspaceRoles.contractRows || []
             for (var i = 0; i < rows.length; ++i) {
                 if (String(rows[i].id || "") === id) {
                     testCase.session.selectedContract = testCase.createContractObject(rows[i])
@@ -370,7 +370,7 @@ TestCase {
             }
         }
         function submit() {
-            const id = testCase.workspaceFacade.saveContract(isEdit ? testCase.session.selectedContractId : "",
+            const id = testCase.workspaceRoles.saveContract(isEdit ? testCase.session.selectedContractId : "",
                                                              name,
                                                              type,
                                                              selectedActorIds || [],
@@ -384,12 +384,12 @@ TestCase {
         function deleteCurrent() {
             const removedId = testCase.session.selectedContractId || ""
             if (removedId.length === 0) return
-            testCase.workspaceFacade.deleteContract(removedId)
-            testCase.session.selectedContractId = testCase.session.deleteNextSelectionId(testCase.workspaceFacade.contractRows || [], removedId, 0, "id")
+            testCase.workspaceRoles.deleteContract(removedId)
+            testCase.session.selectedContractId = testCase.session.deleteNextSelectionId(testCase.workspaceRoles.contractRows || [], removedId, 0, "id")
         }
     }
 
-    property var workspaceFacade: QtObject {
+    property var workspaceRoles: QtObject {
         property var contractViewModel: testCase.contractViewModel
         property var session: testCase.session
         property var contractRows: testCase.session.contracts

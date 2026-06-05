@@ -20,7 +20,6 @@ public:
     std::string targetPath;
     std::string status;
     std::string message;
-    std::string payload;
     std::vector<std::string> annualIds;
     std::vector<std::string> analysisIds;
 };

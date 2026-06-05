@@ -56,11 +56,6 @@ public:
   importResult(
       const core::ports::importing::StatementImportHandle &handle) override;
 
-  [[nodiscard]] core::ports::importing::draft::DraftImportSuggestions
-  buildImportSuggestions(
-      const core::ports::workspace::WorkspaceSnapshot &state,
-      const core::ports::importing::draft::TransactionDraft &transaction) const
-      override;
   [[nodiscard]] core::ports::importing::draft::DraftDerivedState
   buildDraftDerivedState(
       const core::ports::workspace::WorkspaceSnapshot &state,

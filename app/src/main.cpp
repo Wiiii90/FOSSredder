@@ -3,8 +3,8 @@
  * @brief Initializes the desktop application and shared runtime infrastructure.
  */
 
-#include "Environment.h"
 #include "analysis-image-renderer/OpenCvAnalysisImageRendererAdapter.h"
+#include "app/Environment.h"
 #include "archive/ZipArchiveAdapter.h"
 #include "core/application/analysis/AnalysisService.h"
 #include "core/application/annual/AnnualService.h"
@@ -12,14 +12,13 @@
 #include "core/application/import/IImportStatement.h"
 #include "core/application/import/StatementImportRunner.h"
 #include "core/application/workspace/WorkspaceSessionState.h"
-#include "core/domain/catalog/WorkspaceCatalog.h"
+#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/pdf-rendering/IPdfRenderer.h"
+#include "core/ports/infra/text-recognition/ITextRecognizer.h"
 #include "core/ports/usecases/analysis/IAnalysisRunner.h"
 #include "core/ports/usecases/annual/IAnnualRunner.h"
 #include "core/ports/usecases/export/IExportRunner.h"
-#include "core/ports/infra/image-processing/IImageProcessor.h"
 #include "core/ports/usecases/import/IImportRunner.h"
-#include "core/ports/infra/pdf-rendering/IPdfRenderer.h"
-#include "core/ports/infra/text-recognition/ITextRecognizer.h"
 #include "core/ports/workspace/IWorkspaceReader.h"
 #include "core/ports/workspace/IWorkspaceWriter.h"
 #include <QApplication>
@@ -48,8 +47,11 @@
 
 #include <QDir>
 #include <QStandardPaths>
+#include <QtGlobal>
 #include <cstdio>
 #include <filesystem>
+#include <iostream>
+#include <string_view>
 
 std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer>
 createPdfRendererAdapter(std::shared_ptr<IDebugger> dbg);
@@ -60,8 +62,8 @@ createTextRecognizerAdapter(std::shared_ptr<IDebugger> dbg);
 
 namespace {
 
-void ensureParentDirectoryExists(const std::filesystem::path &path,
-                                 const char *origin) {
+void ensureParentDirectoryExists(const std::filesystem::path& path,
+                                 const char* origin) {
   try {
     if (path.has_parent_path())
       std::filesystem::create_directories(path.parent_path());
@@ -70,48 +72,165 @@ void ensureParentDirectoryExists(const std::filesystem::path &path,
                                   std::current_exception());
   }
 }
+
+bool startBannerEnabled() {
+  const QByteArray value =
+      qgetenv("FOSSREDDER_START_BANNER").trimmed().toLower();
+  return value != "0" && value != "false" && value != "off";
+}
+
+bool consoleColorEnabled() {
+  if (!qgetenv("NO_COLOR").isEmpty()) {
+    return false;
+  }
+  const QByteArray value =
+      qgetenv("FOSSREDDER_CONSOLE_COLOR").trimmed().toLower();
+  return value != "0" && value != "false" && value != "off";
+}
+
+const char* buildType() {
+#if defined(NDEBUG)
+  return "Release";
+#else
+  return "Debug";
+#endif
+}
+
+const char* appVersion() {
+#if defined(FOSSREDDER_VERSION)
+  return FOSSREDDER_VERSION;
+#else
+  return "dev";
+#endif
+}
+
+void printStartBanner(const QApplication& app,
+                      const std::filesystem::path& workspacePath,
+                      const std::filesystem::path& registryPath) {
+  if (!startBannerEnabled()) {
+    return;
+  }
+
+  const bool color = consoleColorEnabled();
+  const std::string_view cyan = color ? "\033[36m" : "";
+  const std::string_view dim = color ? "\033[2m" : "";
+  const std::string_view gold = color ? "\033[33m" : "";
+  const std::string_view reset = color ? "\033[0m" : "";
+
+  std::cout << '\n'
+            << cyan << "        .----------------.        " << reset << '\n'
+            << cyan << "      .'                  '.      " << reset << '\n'
+            << cyan << "     /      ________        \\     " << reset << '\n'
+            << cyan << "    |      /  ____/_,  o     |    " << reset << '\n'
+            << cyan << "    |     /  /___   o--'     |    " << reset << '\n'
+            << cyan << "    |    /  ____/-----" << gold << "o" << cyan
+            << "      |    " << reset << '\n'
+            << cyan << "    |   /__/                 |    " << reset << '\n'
+            << cyan << "     \\                      /     " << reset << '\n'
+            << cyan << "      '.                  .'      " << reset << '\n'
+            << cyan << "        '----------------'        " << reset << '\n'
+            << '\n'
+            << "  FossRedder" << dim << "  |  desktop workspace runtime"
+            << reset << '\n'
+            << dim << "  version: " << appVersion()
+            << "  |  build: " << buildType() << "  |  Qt: " << QT_VERSION_STR
+            << "  |  app: " << app.applicationName().toStdString() << reset
+            << '\n'
+            << dim << "  workspace: " << workspacePath.string() << reset << '\n'
+            << dim << "  registry:  " << registryPath.string() << reset << '\n'
+            << '\n';
+  std::cout.flush();
+}
+
+void printShutdownMessage(int exitCode) {
+  if (!startBannerEnabled()) {
+    return;
+  }
+
+  const bool color = consoleColorEnabled();
+  const std::string_view green = color ? "\033[32m" : "";
+  const std::string_view dim = color ? "\033[2m" : "";
+  const std::string_view reset = color ? "\033[0m" : "";
+
+  std::cout << green << "[shutdown] FossRedder stopped cleanly." << reset << dim
+            << " exitCode=" << exitCode << reset << '\n';
+  std::cout.flush();
+}
+
+struct UseCaseRunners {
+  std::shared_ptr<core::ports::analysis::IAnalysisRunner> analysis;
+  std::shared_ptr<core::ports::annual::IAnnualRunner> annual;
+  std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner;
+  std::shared_ptr<core::ports::importing::IImportRunner> import;
+};
+
+UseCaseRunners createUseCaseRunners(
+    const std::shared_ptr<core::errors::IErrorReporter>& errorReporter) {
+  UseCaseRunners runners;
+  runners.analysis =
+      std::make_shared<core::application::analysis::AnalysisService>(
+          std::make_shared<infra::analysis_image_renderer::
+                               OpenCvAnalysisImageRendererAdapter>());
+  runners.annual = std::make_shared<core::application::annual::AnnualService>();
+  runners.exportRunner =
+      std::make_shared<core::application::exporting::ExportService>(
+          std::make_shared<infra::archive::ZipArchiveAdapter>(),
+          std::make_shared<infra::xlsx_writer::XlntTableWriterAdapter>(),
+          std::make_shared<infra::analysis_image_renderer::
+                               OpenCvAnalysisImageRendererAdapter>());
+
+  auto importDebugger = std::make_shared<FileDebugger>(
+      "", std::string(debug::defaults::kImportProcessName));
+  auto importService = core::application::importing::createImportStatement(
+      createPdfRendererAdapter(importDebugger),
+      createImageProcessorAdapter(importDebugger),
+      createTextRecognizerAdapter(importDebugger), errorReporter);
+  const auto importRunBasePath =
+      QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+          .toStdString();
+  runners.import =
+      std::make_shared<core::application::importing::StatementImportRunner>(
+          importService, importRunBasePath, errorReporter);
+  return runners;
+}
+
 /**
- * @brief Global Qt message handler that redirects Qt logging to stderr with
- * context.
+ * @brief Global Qt message handler that forwards Qt diagnostics to the
+ * reporter.
  */
-static void qtMessageHandler(QtMsgType type, const QMessageLogContext &context,
-                             const QString &msg) {
+static void qtMessageHandler(QtMsgType type, const QMessageLogContext& context,
+                             const QString& msg) {
   QByteArray localMsg = msg.toLocal8Bit();
-  const char *file = context.file ? context.file : "";
-  const char *function = context.function ? context.function : "";
-  const std::string text = std::string(localMsg.constData()) + " (" + file +
-                           ":" + std::to_string(context.line) + ", " +
-                           function + ")";
+  const char* file = context.file ? context.file : "";
+  const std::string text = localMsg.constData();
   const core::errors::ErrorContext ctx = {
-      {"file", file},
-      {"line", std::to_string(context.line)},
-      {"function", function}};
+      {"file", file}, {"line", std::to_string(context.line)}};
   switch (type) {
-  case QtDebugMsg:
-    core::errors::report(core::errors::ErrorSeverity::Info,
-                         core::errors::codes::QtDebug,
-                         "app::qtMessageHandler", text, ctx);
-    break;
-  case QtInfoMsg:
-    core::errors::report(core::errors::ErrorSeverity::Info,
-                         core::errors::codes::QtInfo,
-                         "app::qtMessageHandler", text, ctx);
-    break;
-  case QtWarningMsg:
-    core::errors::report(core::errors::ErrorSeverity::Warning,
-                         core::errors::codes::QtWarning,
-                         "app::qtMessageHandler", text, ctx);
-    break;
-  case QtCriticalMsg:
-    core::errors::report(core::errors::ErrorSeverity::Error,
-                         core::errors::codes::QtCritical,
-                         "app::qtMessageHandler", text, ctx);
-    break;
-  case QtFatalMsg:
-    core::errors::report(core::errors::ErrorSeverity::Critical,
-                         core::errors::codes::QtFatal,
-                         "app::qtMessageHandler", text, ctx);
-    abort();
+    case QtDebugMsg:
+      core::errors::report(core::errors::ErrorSeverity::Info,
+                           core::errors::codes::QtDebug,
+                           "app::qtMessageHandler", text, ctx);
+      break;
+    case QtInfoMsg:
+      core::errors::report(core::errors::ErrorSeverity::Info,
+                           core::errors::codes::QtInfo, "app::qtMessageHandler",
+                           text, ctx);
+      break;
+    case QtWarningMsg:
+      core::errors::report(core::errors::ErrorSeverity::Warning,
+                           core::errors::codes::QtWarning,
+                           "app::qtMessageHandler", text, ctx);
+      break;
+    case QtCriticalMsg:
+      core::errors::report(core::errors::ErrorSeverity::Error,
+                           core::errors::codes::QtCritical,
+                           "app::qtMessageHandler", text, ctx);
+      break;
+    case QtFatalMsg:
+      core::errors::report(core::errors::ErrorSeverity::Critical,
+                           core::errors::codes::QtFatal,
+                           "app::qtMessageHandler", text, ctx);
+      abort();
   }
 }
 
@@ -123,22 +242,18 @@ static void qtMessageHandler(QtMsgType type, const QMessageLogContext &context,
  *
  * Implemented in `main_qml.cpp`. Only available when built with USE_QML.
  */
-extern int startQmlApp(QApplication &app,
-                       core::ports::workspace::IWorkspaceReader &workspaceReader,
-                       core::ports::workspace::IWorkspaceWriter &workspaceWriter,
-                       std::shared_ptr<core::errors::IErrorReporter>
-                           errorReporter,
-                       std::shared_ptr<core::ports::analysis::IAnalysisRunner>
-                           analysisRunner,
-                       std::shared_ptr<core::ports::annual::IAnnualRunner>
-                           annualRunner,
-                       std::shared_ptr<core::ports::exporting::IExportRunner>
-                           exportRunner,
-                       std::shared_ptr<core::ports::importing::IImportRunner>
-                           importRunner);
+extern int startQmlApp(
+    QApplication& app,
+    core::ports::workspace::IWorkspaceReader& workspaceReader,
+    core::ports::workspace::IWorkspaceWriter& workspaceWriter,
+    std::shared_ptr<core::errors::IErrorReporter> errorReporter,
+    std::shared_ptr<core::ports::analysis::IAnalysisRunner> analysisRunner,
+    std::shared_ptr<core::ports::annual::IAnnualRunner> annualRunner,
+    std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner,
+    std::shared_ptr<core::ports::importing::IImportRunner> importRunner);
 #endif
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   auto errorReporter = debug::createDefaultErrorReporter();
   core::errors::setGlobalErrorReporter(errorReporter);
 
@@ -148,18 +263,13 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  // Install global Qt message handler early so startup logs are captured
   const auto previousQtMessageHandler =
       qInstallMessageHandler(qtMessageHandler);
 
-  // Load runtime environment from .env if present
   app::runtime::loadDotEnv(".env", false);
 
-  // Ensure Qt Quick Controls uses a non-native style that supports
-  // customization Call before creating the QApplication/QGuiApplication
   QQuickStyle::setStyle(core::constants::runtime::kQtStyle.data());
 
-  // Create the Qt application (manages event loop and GUI resources)
   QApplication app(argc, argv);
   app.setStyle(core::constants::runtime::kQtStyle.data());
   app.setOrganizationName(QString::fromLatin1(
@@ -168,7 +278,6 @@ int main(int argc, char *argv[]) {
       core::constants::preferences::kApplicationName.data()));
   app.setWindowIcon(QIcon(ui::config::kAppIconResource));
 
-  // Setup storage manager and controller (manages application state files)
   const QString appDataLocation =
       QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
   const std::filesystem::path appDataRoot =
@@ -185,11 +294,12 @@ int main(int argc, char *argv[]) {
                               "app::main::createConfigDirectory");
   ensureParentDirectoryExists(registryDbPath,
                               "app::main::createRegistryDirectory");
+  printStartBanner(app, defaultDbPath, registryDbPath);
 
   std::shared_ptr<core::ports::storage::IRegistry> registry;
   try {
     registry = createSqliteRegistry(registryDbPath.string());
-  } catch (const std::exception &ex) {
+  } catch (const std::exception& ex) {
     core::errors::report(core::errors::ErrorSeverity::Warning,
                          core::errors::codes::ConfigDbOpenFailed,
                          "app::main::openRegistryDb",
@@ -204,14 +314,14 @@ int main(int argc, char *argv[]) {
   core::application::WorkspaceFacade appStateFacade(std::move(smPtr));
 
   appStateFacade.setErrorReporter(errorReporter);
-  appStateFacade.setAtomicStoreLoad([](const std::string &dbPath) {
+  appStateFacade.setAtomicStoreLoad([](const std::string& dbPath) {
     auto db = createSqliteDb(dbPath);
     WorkspaceStateStore store(db);
     return store.load();
   });
   appStateFacade.setAtomicStoreSave(
-      [](const std::string &dbPath,
-         const core::application::workspace::WorkspaceSessionState &document) {
+      [](const std::string& dbPath,
+         const core::application::workspace::WorkspaceSessionState& document) {
         auto db = createSqliteDb(dbPath);
         WorkspaceStateStore store(db);
         return store.save(document);
@@ -219,62 +329,33 @@ int main(int argc, char *argv[]) {
 
   try {
     appStateFacade.openLatest();
-  } catch (const std::exception &ex) {
+  } catch (const std::exception& ex) {
     core::errors::reportException(core::errors::ErrorSeverity::Warning,
                                   "app::main::openLatest",
                                   std::current_exception());
     // continue with empty state
   }
 
-  // Only create a new file if no path was found AND the loaded state is empty.
-  // This avoids accidentally overwriting a valid loaded state due to
-  // registry or ordering issues at startup.
-  if (appStateFacade.currentPath().empty() && appStateFacade.state().empty()) {
+  if (appStateFacade.currentPath().empty() &&
+      appStateFacade.workspaceSnapshot().empty()) {
     appStateFacade.newFile(defaultDbPath.string());
   }
 
-  // Ensure Qt finds deployed plugins and QML modules next to the executable
   QCoreApplication::addLibraryPath(QCoreApplication::applicationDirPath());
 
 #ifdef USE_QML
-  // Delegate to QML-specific startup
   try {
-    auto analysisRunner =
-        std::make_shared<core::application::analysis::AnalysisService>(
-            std::make_shared<infra::analysis_image_renderer::
-                                 OpenCvAnalysisImageRendererAdapter>());
-    auto annualRunner =
-        std::make_shared<core::application::annual::AnnualService>();
-    auto exportRunner =
-        std::make_shared<core::application::exporting::ExportService>(
-            std::make_shared<infra::archive::ZipArchiveAdapter>(),
-            std::make_shared<infra::xlsx_writer::XlntTableWriterAdapter>(),
-            std::make_shared<infra::analysis_image_renderer::
-                                 OpenCvAnalysisImageRendererAdapter>());
-
-    auto importDebugger = std::make_shared<FileDebugger>(
-        "", std::string(debug::defaults::kImportProcessName));
-    auto importService = core::application::importing::createImportStatement(
-        createPdfRendererAdapter(importDebugger),
-        createImageProcessorAdapter(importDebugger),
-        createTextRecognizerAdapter(importDebugger), errorReporter);
-    const auto importRunBasePath =
-        QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
-            .toStdString();
-    auto importRunner =
-        std::make_shared<core::application::importing::StatementImportRunner>(
-            importService, importRunBasePath, errorReporter);
-
+    auto runners = createUseCaseRunners(errorReporter);
     const int exitCode =
-        startQmlApp(app, appStateFacade, appStateFacade,
-                    errorReporter,
-                    std::move(analysisRunner), std::move(annualRunner),
-                    std::move(exportRunner), std::move(importRunner));
+        startQmlApp(app, appStateFacade, appStateFacade, errorReporter,
+                    std::move(runners.analysis), std::move(runners.annual),
+                    std::move(runners.exportRunner), std::move(runners.import));
+    printShutdownMessage(exitCode);
     qInstallMessageHandler(previousQtMessageHandler);
     appStateFacade.setErrorReporter({});
     core::errors::setGlobalErrorReporter({});
     return exitCode;
-  } catch (const std::exception &ex) {
+  } catch (const std::exception& ex) {
     qInstallMessageHandler(previousQtMessageHandler);
     core::errors::reportException(core::errors::ErrorSeverity::Critical,
                                   "app::main::startQmlApp",

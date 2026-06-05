@@ -16,7 +16,10 @@ namespace ui {
 
 class AnalysisWorkflow;
 class Settings;
-class WorkspaceFacade;
+class WorkspaceCommands;
+class WorkspaceSelection;
+class WorkspaceSelectors;
+class WorkspaceStore;
 
 /**
  * @brief Owns Analysis view form state and delegates analysis CRUD and
@@ -95,10 +98,11 @@ public:
   explicit AnalysisViewModel(QObject* parent = nullptr);
 
   /**
-   * @brief Sets the workspace API used for analysis CRUD and rows.
-   * @param value Workspace facade or nullptr.
+   * @brief Sets workspace roles used for analysis CRUD, rows and selection.
    */
-  void setWorkspace(WorkspaceFacade* value);
+  void setWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
+                         WorkspaceSelection *selection,
+                         WorkspaceSelectors *selectors);
 
   /**
    * @brief Sets the workflow used for analysis computation and rendering.
@@ -113,7 +117,7 @@ public:
   void setSettings(Settings* value);
 
   /**
-   * @brief Returns whether a persisted analysis is selected.
+   * @brief Returns whether an existing analysis is selected.
    * @return True in edit mode, false in create mode.
    */
   bool isEdit() const;
@@ -171,20 +175,6 @@ public:
    * @return Export format option rows.
    */
   QVariantList exportFormatOptions() const;
-
-  /**
-   * @brief Returns the current export format key.
-   * @return Export format key.
-   */
-  QString exportFormat() const {
-    return exportFormat_;
-  }
-
-  /**
-   * @brief Updates the current export format key.
-   * @param value Export format key.
-   */
-  void setExportFormat(const QString& value);
 
   /**
    * @brief Returns the selected export format index.
@@ -429,12 +419,6 @@ public:
   void setAdjustmentPercentText(const QString& value);
 
   /**
-   * @brief Returns the active analysis result type.
-   * @return Result type key.
-   */
-  QString currentResultType() const;
-
-  /**
    * @brief Returns whether the active result is a table.
    * @return True when the current result should be shown as a table.
    */
@@ -479,7 +463,7 @@ public:
   bool canSubmit() const;
 
   /**
-   * @brief Returns whether persisted analysis rows exist.
+   * @brief Returns whether analysis rows exist.
    * @return True when the sidebar has rows.
    */
   bool hasRows() const;
@@ -681,6 +665,16 @@ private:
    */
   QString currentFilterSpec() const;
   /**
+   * @brief Builds the current analysis config payload.
+   * @return Analysis config payload.
+   */
+  QVariantMap currentAnalysisConfig() const;
+  /**
+   * @brief Builds the current analysis filter payload.
+   * @return Analysis filter payload.
+   */
+  QVariantMap currentAnalysisFilter() const;
+  /**
    * @brief Normalizes an export format for the current UI type.
    * @param value Raw export format.
    * @param uiType UI type key.
@@ -688,6 +682,23 @@ private:
    */
   QString normalizedExportFormat(const QString& value,
                                  const QString& uiType) const;
+  /**
+   * @brief Updates the current export format key.
+   * @param value Export format key.
+   */
+  void setExportFormat(const QString& value);
+  /**
+   * @brief Returns the active analysis result type.
+   * @return Result type key.
+   */
+  QString currentResultType() const;
+  /**
+   * @brief Builds a renderable preview source URL from analysis artifacts.
+   * @param analysisResult Analysis result payload.
+   * @return Renderable source URL or empty.
+   */
+  QString renderedPreviewSourceFromResult(
+      const QVariantMap& analysisResult) const;
   /**
    * @brief Refreshes filter option rows from workspace and workflow data.
    */
@@ -729,12 +740,16 @@ private:
    */
   void emitChanged();
   /**
-   * @brief Connects workspace signals.
-   * @param value Workspace facade or nullptr.
+   * @brief Connects workspace role signals.
    */
-  void bindWorkspace(WorkspaceFacade* value);
+  void bindWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
+                          WorkspaceSelection *selection,
+                          WorkspaceSelectors *selectors);
 
-  WorkspaceFacade* workspace_ = nullptr;
+  WorkspaceStore *store_ = nullptr;
+  WorkspaceCommands *commands_ = nullptr;
+  WorkspaceSelection *selection_ = nullptr;
+  WorkspaceSelectors *selectors_ = nullptr;
   AnalysisWorkflow* analysisWorkflow_ = nullptr;
   Settings* settings_ = nullptr;
   QTimer previewDebounce_;
@@ -744,7 +759,6 @@ private:
   int plotSubtypeIndex_ = 0;
   QString exportFormat_;
   bool includeAdjustments_ = true;
-  QVariantMap exportState_;
   QVariantList snapshotTransactions_;
   bool filterEditMode_ = true;
   int filterContentIndex_ = 0;

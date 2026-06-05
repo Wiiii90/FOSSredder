@@ -7,7 +7,10 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
+
+#include "core/ports/usecases/analysis/AnalysisRequest.h"
 
 namespace core::ports::analysis {
 
@@ -53,7 +56,7 @@ struct AnalysisPreviewResult {
 
 struct AnalysisResult {
     std::string type;
-    std::string configJson;
+    AnalysisConfigInput config;
     std::map<std::string, double> metrics;
     std::vector<std::vector<std::string>> table;
     std::vector<std::string> artifacts;
@@ -73,5 +76,10 @@ struct AnalysisTableState {
     std::vector<AnalysisTablePropertyRow> propertyRows;
     double grandTotal = 0.0;
 };
+
+/**
+ * @brief Adjustment amount pairs keyed by transaction id.
+ */
+using AnalysisAdjustmentAmounts = std::vector<std::pair<std::string, double>>;
 
 } // namespace core::ports::analysis

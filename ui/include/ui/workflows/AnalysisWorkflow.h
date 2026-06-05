@@ -27,7 +27,7 @@ struct AnalysisRequest;
 namespace ui {
 
 /**
- * @brief Coordinates analysis persistence and computations for UI states.
+ * @brief Coordinates analysis preview and computation use cases for UI state.
  */
 class AnalysisWorkflow : public QObject {
   Q_OBJECT
@@ -35,95 +35,86 @@ public:
   using StateSnapshotProvider =
       std::function<core::ports::workspace::WorkspaceSnapshot()>;
 
+  /**
+   * @brief Creates an analysis workflow.
+   * @param stateSnapshotProvider Provider for the current workspace snapshot.
+   * @param analysisAdapter Adapter used to invoke the core analysis runner.
+   * @param parent Optional Qt parent.
+   */
   explicit AnalysisWorkflow(
       StateSnapshotProvider stateSnapshotProvider,
       std::shared_ptr<ui::adapters::AnalysisAdapter> analysisAdapter,
       QObject* parent = nullptr);
 
+  /**
+   * @brief Builds a serialized filter specification from UI fields.
+   * @param dateField Selected date field.
+   * @param dateMode Selected date mode.
+   * @param year Selected year text.
+   * @param dateFrom Start date text.
+   * @param dateTo End date text.
+   * @param propertyIds Selected property ids.
+   * @param contractTypes Selected contract types.
+   * @param allocatableMode Selected allocatable mode.
+   * @return Serialized filter specification.
+   */
   QString analysisFilterSpec(const QString& dateField, const QString& dateMode,
                              const QString& year, const QString& dateFrom,
                              const QString& dateTo,
                              const QStringList& propertyIds,
                              const QStringList& contractTypes,
                              const QString& allocatableMode) const;
-  QVariantMap parseAnalysisFilterSpec(const QString& filterSpec) const;
-
-  QString analysisConfigJson(const QString& type, const QString& plotType,
-                             const QString& plotMeasure,
-                             const QStringList& propertyIds,
-                             const QStringList& contractTypes,
-                             double taxPercent) const;
   /**
-   * @brief Parses analysis configuration JSON into a UI map.
-   * @param configJson Serialized analysis configuration.
-   * @return Parsed configuration map or an empty map.
+   * @brief Builds adjustment amounts from selected transactions and percent text.
+   * @param transactions Preview transaction rows containing id and amount.
+   * @param selectedTransactionIds Transaction ids selected for adjustment.
+   * @param percentText User-entered percent text.
+   * @return Adjustment amount map keyed by transaction id.
    */
-  QVariantMap analysisConfig(const QString& configJson) const;
-  /**
-   * @brief Parses serialized export state into a UI map.
-   * @param exportStateJson Serialized export state.
-   * @return Parsed export state or an empty map.
-   */
-  QVariantMap exportState(const QString& exportStateJson) const;
-  /**
-   * @brief Normalizes serialized export state to a compact JSON object string.
-   * @param exportStateJson Serialized export state.
-   * @return Compact JSON object string or "{}".
-   */
-  QString normalizedExportStateJson(const QString& exportStateJson) const;
-  /**
-   * @brief Serializes export state for workspace persistence.
-   * @param exportState Export state map.
-   * @return Compact JSON object string or "{}".
-   */
-  QString normalizedExportStateJson(const QVariantMap& exportState) const;
-
-  QString analysisAdjustmentsJson(const QVariantList& transactions,
-                                  const QStringList& selectedTransactionIds,
-                                  double taxPercent) const;
-  /**
-   * @brief Serializes UI adjustment amounts for workspace and runner calls.
-   * @param adjustments Adjustment amount map keyed by transaction id.
-   * @return Compact JSON object string.
-   */
-  QString analysisAdjustmentsJson(const QVariantMap& adjustments) const;
-
-  QString analysisAdjustmentsJsonFromPercentText(
+  QVariantMap analysisAdjustmentAmountsFromPercentText(
       const QVariantList& transactions,
-      const QVariantList& selectedTransactionIds,
+      const QStringList& selectedTransactionIds,
       const QString& percentText) const;
 
-  QVariantMap computeAnalysisPreview(const QString& analysisId,
-                                     const QString& filterSpecification,
-                                     bool includeAdjustments,
-                                     const QString& adjustmentsJson) const;
   /**
-   * @brief Parses analysis adjustments JSON into a UI map.
-   * @param adjustmentsJson Serialized adjustment map.
-   * @return Parsed adjustment map or an empty map.
+   * @brief Computes the current analysis preview.
+   * @param analysisId Analysis id.
+   * @param filterSpec Serialized filter specification.
+   * @param includeAdjustments Whether calculation adjustments are included.
+   * @param adjustmentAmounts Adjustment amount map keyed by transaction id.
+   * @return QML analysis result payload.
    */
-  QVariantMap analysisAdjustments(const QString& adjustmentsJson) const;
-
+  QVariantMap computeAnalysisPreview(const QString& analysisId,
+                                     const QString& filterSpec,
+                                     bool includeAdjustments,
+                                     const QVariantMap& adjustmentAmounts) const;
+  /**
+   * @brief Builds a transaction preview for the current filter.
+   * @param filterSpec Serialized filter specification.
+   * @return QML preview payload.
+   */
   QVariantMap previewTransactions(const QString& filterSpec) const;
 
+  /**
+   * @brief Returns contract types available in the current workspace snapshot.
+   * @return Contract type labels.
+   */
   QStringList contractTypes() const;
 
-  static QString plotTypeFromSubtypeIndex(int plotSubtypeIndex);
-  /**
-   * @brief Parses a serialized transaction snapshot into UI rows.
-   * @param snapshotTransactionsJson Serialized transaction snapshot.
-   * @return Transaction snapshot rows.
-   */
-  QVariantList transactionSnapshot(const QString& snapshotTransactionsJson) const;
-  QString transactionSnapshotJson(const QVariantList& transactions) const;
-  QVariantList adjustmentIds(const QVariantMap& adjustments) const;
-  QString renderedPreviewSource(const QVariantMap& analysisResult,
-                                int revision) const;
-
 private:
+  /**
+   * @brief Builds a core analysis request from UI fields.
+   * @param analysisId Analysis id.
+   * @param filterSpec Serialized filter specification.
+   * @return Core analysis request.
+   */
   core::ports::analysis::AnalysisRequest
   analysisRequest(const QString& analysisId,
-                  const QString& filterSpecification) const;
+                  const QString& filterSpec) const;
+  /**
+   * @brief Returns the current workspace snapshot.
+   * @return Workspace snapshot or an empty snapshot.
+   */
   core::ports::workspace::WorkspaceSnapshot stateSnapshot() const;
 
   StateSnapshotProvider stateSnapshotProvider_;

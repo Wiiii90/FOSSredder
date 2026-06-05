@@ -82,50 +82,44 @@ core::ports::workspace::WorkspaceSnapshot buildState() {
   analysisTable.name = "Table Export";
   analysisTable.type = "tab";
   analysisTable.exportFormat = "csv";
-  analysisTable.snapshotTransactionsJson = R"([
-        {
-            "id":"tx-1",
-            "name":"Rent",
-            "date":"2026-01-31",
-            "amount":100.0,
-            "contractId":"contract-1",
-            "contractType":"rent",
-            "propertyIds":["property-1"],
-            "propertyNames":["Building A"],
-            "allocatable":true
-        },
-        {
-            "id":"tx-2",
-            "name":"Misc",
-            "date":"2026-02-01",
-            "amount":50.0,
-            "contractId":"contract-2",
-            "contractType":"",
-            "propertyIds":[],
-            "propertyNames":[],
-            "allocatable":false
-        }
-    ])";
+  core::ports::workspace::TransactionSnapshot tableTx1;
+  tableTx1.id = "tx-1";
+  tableTx1.name = "Rent";
+  tableTx1.bookingDate = "2026-01-31";
+  tableTx1.amount = 100.0;
+  tableTx1.contractId = "contract-1";
+  tableTx1.contractType = "rent";
+  tableTx1.propertyIds = {"property-1"};
+  tableTx1.propertyNames = {"Building A"};
+  tableTx1.allocatable = true;
+  core::ports::workspace::TransactionSnapshot tableTx2;
+  tableTx2.id = "tx-2";
+  tableTx2.name = "Misc";
+  tableTx2.bookingDate = "2026-02-01";
+  tableTx2.amount = 50.0;
+  tableTx2.contractId = "contract-2";
+  tableTx2.allocatable = false;
+  analysisTable.snapshotTransactions = {tableTx1, tableTx2};
 
   core::ports::workspace::AnalysisSnapshot analysisPlot;
   analysisPlot.id = "analysis-plot";
   analysisPlot.name = "Plot Export";
   analysisPlot.type = "plot";
   analysisPlot.exportFormat = "png";
-  analysisPlot.configJson = R"({"plotType":"pie","plotMeasure":"totalAmount"})";
-  analysisPlot.snapshotTransactionsJson = R"([
-        {
-            "id":"tx-3",
-            "name":"PlotTx",
-            "date":"2026-03-01",
-            "amount":42.0,
-            "contractId":"contract-3",
-            "contractType":"service",
-            "propertyIds":["property-2"],
-            "propertyNames":["Building B"],
-            "allocatable":true
-        }
-    ])";
+  analysisPlot.config.type = "plot";
+  analysisPlot.config.plotType = "pie";
+  analysisPlot.config.plotMeasure = "totalAmount";
+  core::ports::workspace::TransactionSnapshot plotTx;
+  plotTx.id = "tx-3";
+  plotTx.name = "PlotTx";
+  plotTx.bookingDate = "2026-03-01";
+  plotTx.amount = 42.0;
+  plotTx.contractId = "contract-3";
+  plotTx.contractType = "service";
+  plotTx.propertyIds = {"property-2"};
+  plotTx.propertyNames = {"Building B"};
+  plotTx.allocatable = true;
+  analysisPlot.snapshotTransactions = {plotTx};
 
   state.analyses = {analysisTable, analysisPlot};
   return state;

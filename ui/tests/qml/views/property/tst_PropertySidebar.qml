@@ -74,7 +74,7 @@ TestCase {
         session.propertyRows = []
     }
 
-    function test_PROP_S_001_rowsRenderFromWorkspaceFacade() {
+    function test_PROP_S_001_rowsRenderFromWorkspaceRoles() {
         session.propertyRows = [
             { id: "property-1", name: "Flat 1" },
             { id: "property-2", name: "Flat 2" }

@@ -261,7 +261,7 @@ TestCase {
         }
     }
 
-    property var workspaceFacade: QtObject {
+    property var workspaceRoles: QtObject {
         property var actorRows: testCase.session.actorRows
         property var contractRows: testCase.session.contractRows
         property var actorViewModel: testCase.actorViewModel

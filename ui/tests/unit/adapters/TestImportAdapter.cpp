@@ -18,7 +18,7 @@ TEST(ImportAdapterTest,
      ADP_IMPORT_001_PropertySelectionDelegatesToImportRunnerAndNormalizesDraft) {
   tests::support::WorkspaceHarness harness;
   const auto adapter = std::make_shared<adapters::ImportAdapter>(
-      harness.facade.get(),
+      harness.workspace.get(),
       std::make_shared<tests::support::ImportRunnerStub>());
 
   core::ports::importing::draft::TransactionDraft transaction;
