@@ -51,7 +51,7 @@ jobs:
           if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
 
       - name: Validate runner prerequisites
-        run: .\ci\assert-quality-runner.ps1
+        run: .\ci\runner\assert-quality-runner.ps1
 
       - name: Configure CI preset
         run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset ci
@@ -86,7 +86,7 @@ jobs:
           if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
 
       - name: Validate runner prerequisites
-        run: .\ci\assert-quality-runner.ps1 -RequireClangTidy
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireClangTidy
 
       - name: Configure tidy preset
         run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset tidy
@@ -121,7 +121,7 @@ jobs:
           if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
 
       - name: Validate runner prerequisites
-        run: .\ci\assert-quality-runner.ps1 -RequireCoverageTools
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireCoverageTools
 
       - name: Configure coverage preset
         run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset coverage
@@ -130,7 +130,7 @@ jobs:
         run: cmake --build --preset release-coverage --parallel
 
       - name: Collect LLVM coverage
-        run: .\ci\coverage-windows.ps1 -BuildDir .build\coverage -Config Release -OutDir coverage
+        run: .\ci\coverage\coverage-windows.ps1 -BuildDir .build\coverage -Config Release -OutDir coverage
 
       - name: Publish coverage summary
         run: Get-Content .\coverage\coverage-summary.txt | Out-String | Add-Content -Path $env:GITHUB_STEP_SUMMARY
@@ -146,7 +146,7 @@ jobs:
         continue-on-error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: .\ci\upload-codecov.ps1 -CoverageFile .\coverage\coverage.lcov
+        run: .\ci\coverage\upload-codecov.ps1 -CoverageFile .\coverage\coverage.lcov
 
   package:
     runs-on:
@@ -155,6 +155,10 @@ jobs:
       - X64
     needs: build-and-test
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
+    env:
+      PACKAGE_VERSION: 0.1.0
 
     steps:
       - name: Checkout
@@ -173,13 +177,56 @@ jobs:
           if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
 
       - name: Validate runner prerequisites
-        run: .\ci\assert-quality-runner.ps1 -RequireInnoSetup
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireInnoSetup -RequireGitHubCli
 
       - name: Configure package preset
         run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset app
 
       - name: Build package preset
         run: cmake --build --preset release-package --parallel
+
+      - name: Validate installer artifact
+        run: .\ci\package\validate-package.ps1 -DistDir .build\app\dist
+
+      - name: Publish develop nightly pre-release
+        if: github.ref == 'refs/heads/develop'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "develop-nightly"
+          $installer = ".build\app\dist\FOSSredder-Setup-$env:PACKAGE_VERSION-win-x64.exe"
+          if (!(Test-Path $installer)) {
+            throw "Nightly installer not found: $installer"
+          }
+
+          git tag -f $tag $env:GITHUB_SHA
+          git push --force origin "refs/tags/$tag"
+
+          $notes = @(
+            "Latest develop validation build.",
+            "",
+            "Branch: develop",
+            "Commit: $env:GITHUB_SHA",
+            "Workflow run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID",
+            "",
+            "This pre-release is mutable and intended for testing only."
+          ) -join [Environment]::NewLine
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag `
+              --title "Develop Nightly" `
+              --notes "$notes" `
+              --prerelease `
+              --target $env:GITHUB_SHA
+          } else {
+            gh release edit $tag `
+              --title "Develop Nightly" `
+              --notes "$notes" `
+              --prerelease
+          }
+
+          gh release upload $tag $installer --clobber
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4

@@ -1,3 +1,4 @@
+# Developer helper for checking staged Qt deployment output.
 param(
     [string]$BuildDir = ".\\.build\\app",
     [string]$StagingDir = ".\\.build\\app\\staging",
@@ -14,7 +15,8 @@ if ([string]::IsNullOrWhiteSpace($VcpkgInstalled)) {
     }
 }
 
-$logsDir = "$PSScriptRoot\logs"
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).ProviderPath
+$logsDir = Join-Path $repoRoot ".build\logs\package-check"
 if (!(Test-Path $logsDir)) { New-Item -ItemType Directory -Path $logsDir | Out-Null }
 
 Write-Host "[CHECK] BuildDir: $BuildDir"
@@ -54,7 +56,7 @@ if ($candidates.Count -gt 0 -and (Test-Path $exe)) {
 } else { Write-Host "[SKIP] Skipping windeployqt run (no candidate or exe missing)" }
 
 # 4) Run cmake Qt deploy fallback
-Write-Host "[ACTION] Running cmake/QtDeploy.cmake fallback"
+Write-Host "[ACTION] Running cmake/modules/FossredderQtDeploy.cmake fallback"
 $qtdeployLog = Join-Path $logsDir "qtdeploy-log.txt"
 
 $vcpkgInstalledAbs = $VcpkgInstalled
@@ -62,7 +64,7 @@ if (Test-Path $VcpkgInstalled) {
     $vcpkgInstalledAbs = (Resolve-Path $VcpkgInstalled).ProviderPath
 }
 
-cmake -D TARGET_DIR="$stagingAbs" -D VCPKG_INSTALLED_DIR="$vcpkgInstalledAbs" -D VCPKG_TARGET_TRIPLET="x64-windows" -D BUILD_CONFIG="$Config" -P "$PSScriptRoot\..\cmake\QtDeploy.cmake" *> $qtdeployLog 2>&1
+cmake -D TARGET_DIR="$stagingAbs" -D VCPKG_INSTALLED_DIR="$vcpkgInstalledAbs" -D VCPKG_TARGET_TRIPLET="x64-windows" -D BUILD_CONFIG="$Config" -P "$repoRoot\cmake\modules\FossredderQtDeploy.cmake" *> $qtdeployLog 2>&1
 $rc2 = $LASTEXITCODE
 Write-Host "[RESULT] Qt deploy fallback exit code: $rc2. Log: $qtdeployLog"
 

@@ -78,7 +78,7 @@ function(fossredder_configure_qt_runtime _target)
         add_custom_command(TARGET ${_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND}
                 ${_deploy_args}
-                -P "${CMAKE_SOURCE_DIR}/cmake/QtDeploy.cmake"
+                -P "${CMAKE_SOURCE_DIR}/cmake/modules/FossredderQtDeploy.cmake"
             VERBATIM
         )
     endif()

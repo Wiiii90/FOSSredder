@@ -2,7 +2,7 @@ param(
     [string]$BuildDir = ".build\\app",
     [string]$Config = "Release",
     [string]$StagingDir = ".build\\app\\staging",
-    [string]$InstallerScript = "installer\\fossredder.iss",
+    [string]$InstallerScript = "installer\\inno\\fossredder.iss",
     [string]$ISCCPath = "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
     [string]$OutputDir = ".build\\app\\dist",
     [string]$Version = $env:PACKAGE_VERSION,
@@ -17,8 +17,8 @@ if (-not $Version) {
     $Version = "0.1.0"
 }
 
-# Repo root is parent of this script's directory (ci/..)
-$RepoRoot = (Resolve-Path -Path (Join-Path $PSScriptRoot "..")).ProviderPath
+# Repo root is two levels above this script's directory (ci/package/../..)
+$RepoRoot = (Resolve-Path -Path (Join-Path $PSScriptRoot "..\\..")).ProviderPath
 
 function Get-AbsPath([string]$PathValue, [string]$BaseDir) {
     if ([string]::IsNullOrWhiteSpace($PathValue)) { return $null }
@@ -48,9 +48,13 @@ $BuildDirAbs = Get-AbsPath $BuildDir $RepoRoot
 $StagingDirAbs = Get-AbsPath $StagingDir $RepoRoot
 $OutputDirAbs = Get-AbsPath $OutputDir $RepoRoot
 $InstallerAbs = Get-AbsPath $InstallerScript $RepoRoot
+$LicenseFileAbs = Get-AbsPath "LICENSE" $RepoRoot
+$IconFileAbs = Get-AbsPath "app\\assets\\icons\\fossredder.ico" $RepoRoot
 
 if (-not (Test-Path $BuildDirAbs)) { throw "BuildDir not found: $BuildDirAbs" }
 if (-not (Test-Path $InstallerAbs)) { throw "Installer script not found: $InstallerAbs" }
+if (-not (Test-Path $LicenseFileAbs)) { throw "License file not found: $LicenseFileAbs" }
+if (-not (Test-Path $IconFileAbs)) { throw "Installer icon file not found: $IconFileAbs" }
 
 # Clean staging to avoid leftovers (optional; CMake 'package' target might already manage staging)
 if ($CleanStaging -and (Test-Path $StagingDirAbs)) {
@@ -69,7 +73,7 @@ $ExePath = Join-Path $StagingDirAbs "bin\fossredder.exe"
 $BinDir = Join-Path $StagingDirAbs "bin"
 
 # Where we actually deploy Qt/plugins/qml and vcpkg runtime DLLs.
-# For consistency with the existing `cmake/qtdeploy.cmake`, deploy into the exe directory (staging/bin)
+# For consistency with `cmake/modules/FossredderQtDeploy.cmake`, deploy into the exe directory (staging/bin)
 # and keep qml/platforms paths relative to it.
 $DeployDir = $BinDir
 
@@ -152,24 +156,24 @@ function Get-PeDependents([string]$Dumpbin, [string]$FilePath) {
 }
 
 # Qt deployment
-# - Preferred: deterministic cmake/QtDeploy.cmake (same as ci/check-deploy.ps1)
+# - Preferred: deterministic cmake/modules/FossredderQtDeploy.cmake (same as ci/package/check-deploy.ps1)
 # - Optional: windeployqt (useful when adding new Qt modules/plugins)
 
-$logsDir = Join-Path $PSScriptRoot "logs"
+$logsDir = Join-Path $RepoRoot ".build\logs\package"
 if (!(Test-Path $logsDir)) {
     New-Item -ItemType Directory -Path $logsDir | Out-Null
 }
 
 if ($RunQtDeployFallback) {
-    $qtdeploy = Join-Path $RepoRoot "cmake\QtDeploy.cmake"
-    if (!(Test-Path $qtdeploy)) { throw "QtDeploy.cmake not found at $qtdeploy" }
+    $qtdeploy = Join-Path $RepoRoot "cmake\modules\FossredderQtDeploy.cmake"
+    if (!(Test-Path $qtdeploy)) { throw "FossredderQtDeploy.cmake not found at $qtdeploy" }
 
     $vcpkgInstalledAbsForCmake = $vcpkgInstalled
     if (Test-Path $vcpkgInstalled) { $vcpkgInstalledAbsForCmake = (Resolve-Path $vcpkgInstalled).ProviderPath }
 
-    Write-Host "Running deterministic QtDeploy.cmake" -ForegroundColor Cyan
+    Write-Host "Running deterministic FossredderQtDeploy.cmake" -ForegroundColor Cyan
     cmake -D TARGET_DIR="$DeployDir" -D VCPKG_INSTALLED_DIR="$vcpkgInstalledAbsForCmake" -D VCPKG_TARGET_TRIPLET="$vcpkgTriplet" -D BUILD_CONFIG="$Config" -P "$qtdeploy"
-    if ($LASTEXITCODE -ne 0) { throw "QtDeploy.cmake failed" }
+    if ($LASTEXITCODE -ne 0) { throw "FossredderQtDeploy.cmake failed" }
 }
 
 # Automatically copy vcpkg runtime dependencies (transitive) into deploy dir.
@@ -270,7 +274,7 @@ if (!(Test-Path $OutputDirAbs)) { New-Item -ItemType Directory -Path $OutputDirA
 
 # If a previous installer exe is open (e.g. in Explorer), ISCC may fail with Error 1224.
 # Remove the target output file up-front so compilation can proceed reliably.
-$expectedInstaller = Join-Path $OutputDirAbs ("fossredder-{0}.exe" -f $Version)
+$expectedInstaller = Join-Path $OutputDirAbs ("FOSSredder-Setup-{0}-win-x64.exe" -f $Version)
 if (Test-Path $expectedInstaller) {
     try {
         Remove-Item -Path $expectedInstaller -Force -ErrorAction Stop
@@ -286,7 +290,9 @@ $arguments = @(
     $InstallerAbs,
     "/DOutputDir=`"$OutputDirAbs`"",
     "/DVersion=`"$Version`"",
-    "/DStaging=`"$StagingDirAbs`""
+    "/DStaging=`"$StagingDirAbs`"",
+    "/DLicenseFile=`"$LicenseFileAbs`"",
+    "/DIconFile=`"$IconFileAbs`""
 )
 $proc = Start-Process -FilePath $ISCCPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $isccOut -RedirectStandardError $isccErr
 Get-Content $isccOut, $isccErr | Out-File -FilePath $isccLog -Encoding utf8

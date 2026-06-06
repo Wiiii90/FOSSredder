@@ -26,5 +26,5 @@ if ($RunTests) {
     & "$PSScriptRoot\run-tests.ps1" -BuildDir ".build\$ConfigurePreset" -Config Debug
     if ($LASTEXITCODE -ne 0) { throw "Debug test run failed." }
 } else {
-    Write-Host "Done. To run tests: .\\ci\\run-tests.ps1 -BuildDir .build\\$ConfigurePreset -Config Debug"
+    Write-Host "Done. To run tests: .\\ci\\dev\\run-tests.ps1 -BuildDir .build\\$ConfigurePreset -Config Debug"
 }

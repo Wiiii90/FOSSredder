@@ -17,7 +17,7 @@ function(fossredder_configure_packaging)
     set(_run_package_cmd "${CMAKE_BINARY_DIR}/run-package.cmd")
 
     set(BUILD_DIR "${CMAKE_BINARY_DIR}")
-    set(PACKAGE_SCRIPT "${CMAKE_SOURCE_DIR}/ci/package-inno.ps1")
+    set(PACKAGE_SCRIPT "${CMAKE_SOURCE_DIR}/ci/package/package-inno.ps1")
     set(STAGING_DIR "${_staging_dir}")
     set(OUTPUT_DIR "${_output_dir}")
     set(POWERSHELL_EXE "${_powershell_exe}")
@@ -25,7 +25,7 @@ function(fossredder_configure_packaging)
     set(LOG_FILE "${_package_log}")
 
     configure_file(
-        "${CMAKE_SOURCE_DIR}/cmake/run-package.cmd.in"
+        "${CMAKE_SOURCE_DIR}/cmake/templates/run-package.cmd.in"
         "${_run_package_cmd}"
         @ONLY
     )

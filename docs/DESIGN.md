@@ -785,10 +785,7 @@ This section documents how the codebase enforces the project's local-first priva
 
 [TODO]
 
-### 10.2 Architecture Decision Records (ADRs)
-Primary ADRs live in `docs/adr/` and document significant design choices.
-
-### 10.3 External dependencies
+### 10.2 External dependencies
 Dependencies are managed via `vcpkg.json` at the repository root. The design text uses grouped roles for readability; the exact manifest below is the authoritative source for reproducible builds.
 
 Grouped summary (by role):
@@ -800,7 +797,7 @@ Grouped summary (by role):
 - Logging / infra: `spdlog`
 - Build / test: `gtest` (test-only), `pkgconf`, `icu`
 
-### 10.4 Reference index (quick navigator)
+### 10.3 Reference index (quick navigator)
 | Concept | Representative files |
 |---|---|
 | Application entry / wiring | `app/src/main.cpp` |
@@ -816,6 +813,6 @@ Grouped summary (by role):
 | Job system / SlotLimiter | `core/src/jobs/*`, headers in `core/include/core/jobs/*` |
 | UI controllers / view models | `ui/src/controllers/*`, `ui/src/state/*`, QML in `ui/qml/*` |
 | Tests (unit / integration) | `core/tests/*`, `persistence/tests/*`, `ui/tests/*` |
-| ADRs & docs | `docs/adr/*`, `docs/DESIGN.md` |
+| Design docs | `docs/DESIGN.md`, `docs/design/*` |
 
 End of Appendix.

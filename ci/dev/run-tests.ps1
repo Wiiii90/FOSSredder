@@ -1,3 +1,4 @@
+# Developer helper for running CTest from a configured build directory.
 param(
     [string]$BuildDir = ".build/tests",
     [ValidateSet('Debug','Release')][string]$Config = "Release",

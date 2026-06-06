@@ -29,7 +29,8 @@ While the core problem could be addressed with simple scripts or well-known LLMs
 - Testing: GoogleTest (`gtest`)
 - Logging: `spdlog`
 - JSON: `nlohmann-json`
-- Packaging: Inno Setup (`installer/fossredder.iss`, `ci/package-inno.ps1`)
+- Packaging: Inno Setup (`installer/inno/fossredder.iss`, `ci/package/package-inno.ps1`)
+- Documentation: Doxygen (`Doxyfile`, `.github/workflows/docs.yml`)
 - Platform: Windows 10+
 
 ## Project Status
@@ -123,6 +124,9 @@ ctest --preset release-tests --output-on-failure
 ### Packaging
 
 The project uses Inno Setup for Windows installer packaging through the `release-package` preset.
+Validated develop installers are published as the mutable `develop-nightly`
+pre-release in GitHub Releases. Stable installers should be promoted from
+`master` as versioned releases.
 
 Build release package (creates the Windows installer via Inno Setup):
 
@@ -130,7 +134,7 @@ Build release package (creates the Windows installer via Inno Setup):
 cmake --build --preset release-package
 ```
 
-Installer: `./.build/app/dist/fossredder-<version>.exe`
+Installer: `./.build/app/dist/FOSSredder-Setup-<version>-win-x64.exe`
 
 ### Quality Workflow
 
@@ -198,6 +202,7 @@ Coverage output: `./coverage/` and `./coverage/coverage.lcov`.
 
 - `docs/` contains design artifacts and requirements. The implementation (code) should be considered the authoritative source when documentation and code disagree.
 - All source headers are documented using Doxygen-style comments (`@brief`, `@param`, etc.). You can generate the full HTML reference by running `doxygen Doxyfile` in the project root.
+- GitHub Actions publishes the generated Doxygen HTML as the `fossredder-doxygen-html` artifact from the docs workflow.
 
 ## License
 
