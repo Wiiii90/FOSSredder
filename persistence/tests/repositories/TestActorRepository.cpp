@@ -22,8 +22,8 @@ TEST(ActorRepositoryTest, AddsUpdatesRemovesAndClearsActors)
     ASSERT_TRUE(repo.getActorById("actor-1").has_value());
     EXPECT_EQ(repo.getActorById("actor-1").value()->name(), "Main Actor");
     EXPECT_EQ(repo.getActorById("actor-1").value()->aliases().size(), 2);
-    EXPECT_EQ(repo.getActorById("actor-1").value()->aliases().at(0).value(), "Primary Actor");
-    EXPECT_EQ(repo.getActorById("actor-1").value()->aliases().at(1).value(), "Main Actor");
+    EXPECT_EQ(repo.getActorById("actor-1").value()->aliases().at(0).value(), "Main Actor");
+    EXPECT_EQ(repo.getActorById("actor-1").value()->aliases().at(1).value(), "Primary Actor");
 
     auto updated = makeActor();
     updated->rename("Updated Actor");

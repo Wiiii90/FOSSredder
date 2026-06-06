@@ -1,6 +1,7 @@
 param(
     [switch]$RequireClangTidy,
-    [switch]$RequireCoverageTools
+    [switch]$RequireCoverageTools,
+    [switch]$RequireInnoSetup
 )
 
 function Resolve-VcpkgRoot {
@@ -64,6 +65,13 @@ if ($RequireCoverageTools) {
         if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
             throw "$tool was not found on the self-hosted runner. Install the LLVM toolset on the runner."
         }
+    }
+}
+
+if ($RequireInnoSetup) {
+    $isccPath = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+    if (!(Test-Path $isccPath)) {
+        throw "Inno Setup compiler was not found at '$isccPath'. Install Inno Setup 6 on the self-hosted runner."
     }
 }
 

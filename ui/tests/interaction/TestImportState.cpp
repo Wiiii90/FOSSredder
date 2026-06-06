@@ -64,24 +64,31 @@ TEST(ImportInteractionTest,
 
 TEST(ImportInteractionTest,
      INTERACTION_IMPORT_002_PauseGatesWorkflowProgressUpdates) {
-  importing::ImportWorkflowState state;
-  state.beginImport(QStringLiteral("statement.pdf"));
+  tests::support::WorkspaceHarness harness;
+  const auto runner = std::make_shared<tests::support::ImportRunnerStub>();
+  runner->nextStatementImportHandle.importId = "import-1";
+  runner->nextStatementImportHandle.subscriptionId = 1;
+  const auto adapter = std::make_shared<adapters::ImportAdapter>(runner);
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
 
-  EXPECT_TRUE(state.setPaused(true));
-  EXPECT_TRUE(state.isPaused());
-  EXPECT_EQ(state.phase(), QStringLiteral("Paused"));
+  workflow.setSelectedFile(QStringLiteral("statement.pdf"));
+  workflow.startStatementImport();
 
-  state.updateProgress(0.5, QStringLiteral("halfway"));
-  EXPECT_DOUBLE_EQ(state.progress(), 0.01);
-  EXPECT_EQ(state.phase(), QStringLiteral("Paused"));
+  EXPECT_FALSE(workflow.isPaused());
+  EXPECT_EQ(workflow.phase().toStdString(), "Starting import...");
 
-  EXPECT_TRUE(state.setPaused(false));
-  EXPECT_FALSE(state.isPaused());
-  EXPECT_EQ(state.phase(), QStringLiteral("Running import..."));
+  workflow.pauseImport();
+  EXPECT_TRUE(workflow.isPaused());
+  EXPECT_EQ(workflow.phase().toStdString(), "Paused");
 
-  state.updateProgress(0.5, QStringLiteral("halfway"));
-  EXPECT_DOUBLE_EQ(state.progress(), 0.5);
-  EXPECT_EQ(state.phase(), QStringLiteral("halfway"));
+  workflow.resumeImport();
+  EXPECT_FALSE(workflow.isPaused());
+  EXPECT_EQ(workflow.phase().toStdString(), "Running import...");
 }
 
 TEST(

@@ -22,10 +22,12 @@ namespace ui::tests::support {
 
 class ImportRunnerStub final : public core::ports::importing::IImportRunner {
 public:
+  core::ports::importing::StatementImportHandle nextStatementImportHandle;
+
   core::ports::importing::StatementImportHandle startStatementImport(
       const core::ports::importing::ImportRequest&,
       core::ports::importing::StatementImportEventCallback) override {
-    return {};
+    return nextStatementImportHandle;
   }
 
   void

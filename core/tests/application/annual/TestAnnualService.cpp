@@ -12,9 +12,38 @@ namespace core::application::annual {
 TEST(AnnualServiceTest, ParsesArraySnapshotPayloads)
 {
     core::ports::workspace::WorkspaceSnapshot workspace;
-    workspace.annuals.push_back({"annual-1", "Annual 2026", 2026, {"analysis-a", "analysis-b"}});
-    workspace.analyses.push_back({"analysis-a", "Analysis A", "plot", "", "", "", true, "", R"([{"id":"tx-a"}])"});
-    workspace.analyses.push_back({"analysis-b", "Analysis B", "plot", "", "", "", true, "", R"([{"id":"tx-b","bookingDate":"2026-02-01","amount":20.0,"allocatable":false}])"});
+    core::ports::workspace::AnnualSnapshot annual;
+    annual.id = "annual-1";
+    annual.name = "Annual 2026";
+    annual.year = 2026;
+    annual.analysisIds = {"analysis-a", "analysis-b"};
+    workspace.annuals.push_back(annual);
+
+    core::ports::workspace::AnalysisSnapshot analysisA;
+    analysisA.id = "analysis-a";
+    analysisA.name = "Analysis A";
+    analysisA.type = "plot";
+    analysisA.includeCalculationAdjustments = true;
+    analysisA.snapshotTransactions = {
+        core::ports::workspace::TransactionSnapshot{.id = "tx-a"}
+    };
+    workspace.analyses.push_back(analysisA);
+
+    core::ports::workspace::AnalysisSnapshot analysisB;
+    analysisB.id = "analysis-b";
+    analysisB.name = "Analysis B";
+    analysisB.type = "plot";
+    analysisB.includeCalculationAdjustments = true;
+    analysisB.snapshotTransactions = {
+        core::ports::workspace::TransactionSnapshot{
+            .id = "tx-b",
+            .bookingDate = "2026-02-01",
+            .amount = 20.0,
+            .allocatable = false,
+        }
+    };
+    workspace.analyses.push_back(analysisB);
+
     core::ports::workspace::TransactionSnapshot liveA;
     liveA.id = "tx-a";
     liveA.name = "Live A";
@@ -35,17 +64,75 @@ TEST(AnnualServiceTest, ParsesArraySnapshotPayloads)
 TEST(AnnualServiceTest, CategorizesRowsAndBuildsStatsDeterministically)
 {
     core::ports::workspace::WorkspaceSnapshot workspace;
-    workspace.annuals.push_back({"annual-1", "Annual 2026", 2026, {"analysis-a", "analysis-b"}});
+    core::ports::workspace::AnnualSnapshot annual;
+    annual.id = "annual-1";
+    annual.name = "Annual 2026";
+    annual.year = 2026;
+    annual.analysisIds = {"analysis-a", "analysis-b"};
+    workspace.annuals.push_back(annual);
 
-    workspace.analyses.push_back({"analysis-a", "Analysis A", "plot", "", "", "", true, "", R"([
-        {"id":"dup","date":"2026-03-01","amount":100.0,"allocatable":true,"contractId":"c-1","statementId":"s-1"},
-        {"id":"sim-1","date":"2026-04-01","amount":10.0,"allocatable":true,"contractId":"c-1","statementId":"s-2"},
-        {"id":"div-1","date":"2025-12-31","amount":33.0,"allocatable":false,"contractId":"c-2","statementId":"s-3"}
-    ])"});
-    workspace.analyses.push_back({"analysis-b", "Analysis B", "plot", "", "", "", true, "", R"([
-        {"id":"dup","date":"2026-03-01","amount":100.0,"allocatable":true,"contractId":"c-1","statementId":"s-1"},
-        {"id":"sim-2","date":"2026-04-01","amount":12.0,"allocatable":true,"contractId":"c-1","statementId":"s-2"}
-    ])"});
+    core::ports::workspace::AnalysisSnapshot analysisA;
+    analysisA.id = "analysis-a";
+    analysisA.name = "Analysis A";
+    analysisA.type = "plot";
+    analysisA.includeCalculationAdjustments = true;
+    analysisA.snapshotTransactions = {
+        core::ports::workspace::TransactionSnapshot{
+            .id = "dup",
+            .bookingDate = "2026-03-01",
+            .amount = 100.0,
+            .status = 0,
+            .contractId = "c-1",
+            .statementId = "s-1",
+            .allocatable = true,
+        },
+        core::ports::workspace::TransactionSnapshot{
+            .id = "sim-1",
+            .bookingDate = "2026-04-01",
+            .amount = 10.0,
+            .status = 0,
+            .contractId = "c-1",
+            .statementId = "s-2",
+            .allocatable = true,
+        },
+        core::ports::workspace::TransactionSnapshot{
+            .id = "div-1",
+            .bookingDate = "2025-12-31",
+            .amount = 33.0,
+            .status = 0,
+            .contractId = "c-2",
+            .statementId = "s-3",
+            .allocatable = false,
+        },
+    };
+    workspace.analyses.push_back(analysisA);
+
+    core::ports::workspace::AnalysisSnapshot analysisB;
+    analysisB.id = "analysis-b";
+    analysisB.name = "Analysis B";
+    analysisB.type = "plot";
+    analysisB.includeCalculationAdjustments = true;
+    analysisB.snapshotTransactions = {
+        core::ports::workspace::TransactionSnapshot{
+            .id = "dup",
+            .bookingDate = "2026-03-01",
+            .amount = 100.0,
+            .status = 0,
+            .contractId = "c-1",
+            .statementId = "s-1",
+            .allocatable = true,
+        },
+        core::ports::workspace::TransactionSnapshot{
+            .id = "sim-2",
+            .bookingDate = "2026-04-01",
+            .amount = 12.0,
+            .status = 0,
+            .contractId = "c-1",
+            .statementId = "s-2",
+            .allocatable = true,
+        },
+    };
+    workspace.analyses.push_back(analysisB);
 
     workspace.contracts.push_back({"c-1", "Main", "rent"});
     workspace.contracts.push_back({"c-2", "Legacy", "service"});
@@ -85,11 +172,39 @@ TEST(AnnualServiceTest, CategorizesRowsAndBuildsStatsDeterministically)
 TEST(AnnualServiceTest, SingleAnalysisProjectsSnapshotRowsAsDeduplicatedOnly)
 {
     core::ports::workspace::WorkspaceSnapshot workspace;
-    workspace.annuals.push_back({"annual-1", "Annual 2026", 2026, {"analysis-a"}});
-    workspace.analyses.push_back({"analysis-a", "Analysis A", "plot", "", "", "", true, "", R"([
-        {"id":"tx-1","date":"2026-04-01","amount":10.0,"allocatable":true,"contractId":"c-1","statementId":"s-1"},
-        {"id":"tx-2","date":"2026-04-01","amount":12.0,"allocatable":true,"contractId":"c-1","statementId":"s-1"}
-    ])"});
+    core::ports::workspace::AnnualSnapshot annual;
+    annual.id = "annual-1";
+    annual.name = "Annual 2026";
+    annual.year = 2026;
+    annual.analysisIds = {"analysis-a"};
+    workspace.annuals.push_back(annual);
+
+    core::ports::workspace::AnalysisSnapshot analysis;
+    analysis.id = "analysis-a";
+    analysis.name = "Analysis A";
+    analysis.type = "plot";
+    analysis.includeCalculationAdjustments = true;
+    analysis.snapshotTransactions = {
+        core::ports::workspace::TransactionSnapshot{
+            .id = "tx-1",
+            .bookingDate = "2026-04-01",
+            .amount = 10.0,
+            .status = 0,
+            .contractId = "c-1",
+            .statementId = "s-1",
+            .allocatable = true,
+        },
+        core::ports::workspace::TransactionSnapshot{
+            .id = "tx-2",
+            .bookingDate = "2026-04-01",
+            .amount = 12.0,
+            .status = 0,
+            .contractId = "c-1",
+            .statementId = "s-1",
+            .allocatable = true,
+        },
+    };
+    workspace.analyses.push_back(analysis);
 
     AnnualService service;
     const auto result = service.buildAnnualResult(workspace, "annual-1");

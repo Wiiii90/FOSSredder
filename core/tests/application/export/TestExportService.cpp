@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 namespace core::application::exporting {
@@ -73,6 +74,23 @@ public:
     return static_cast<bool>(out);
   }
 };
+
+std::vector<std::string> splitCsvHeader(std::string line) {
+  if (line.size() >= 3 &&
+      static_cast<unsigned char>(line[0]) == 0xEF &&
+      static_cast<unsigned char>(line[1]) == 0xBB &&
+      static_cast<unsigned char>(line[2]) == 0xBF) {
+    line.erase(0, 3);
+  }
+
+  std::vector<std::string> columns;
+  std::stringstream stream(line);
+  std::string column;
+  while (std::getline(stream, column, ';')) {
+    columns.push_back(column);
+  }
+  return columns;
+}
 
 core::ports::workspace::WorkspaceSnapshot buildState() {
   core::ports::workspace::WorkspaceSnapshot state;
@@ -170,25 +188,34 @@ TEST(ExportServiceTest, XlsxUsesSameTableHeaderShapeAsCsvPath) {
                          ("fossredder-export-xlsx-header-" + unique);
   std::filesystem::create_directories(outputDir);
 
-  ExportRequest request;
-  request.outputPath = outputDir.string();
-  request.objectRequests = {{ExportObjectType::Analysis, "analysis-table", "",
-                             AnalysisExportFormat::Xlsx, "table-xlsx"}};
-
   auto writer = std::make_shared<FakeXlsxWriter>();
   ExportService service({}, writer,
                         std::make_shared<FakeAnalysisImageRenderer>());
-  const auto result = service.runExport(state, request);
+
+  ExportRequest csvRequest;
+  csvRequest.outputPath = outputDir.string();
+  csvRequest.objectRequests = {{ExportObjectType::Analysis, "analysis-table",
+                                "", AnalysisExportFormat::Csv, "table-csv"}};
+  const auto csvResult = service.runExport(state, csvRequest);
+  ASSERT_TRUE(csvResult.success);
+
+  std::ifstream csv(outputDir / "table-csv.csv", std::ios::binary);
+  ASSERT_TRUE(csv);
+  std::string csvHeaderLine;
+  ASSERT_TRUE(std::getline(csv, csvHeaderLine));
+  const auto csvHeader = splitCsvHeader(csvHeaderLine);
+
+  ExportRequest xlsxRequest;
+  xlsxRequest.outputPath = outputDir.string();
+  xlsxRequest.objectRequests = {{ExportObjectType::Analysis, "analysis-table",
+                                 "", AnalysisExportFormat::Xlsx,
+                                 "table-xlsx"}};
+  const auto result = service.runExport(state, xlsxRequest);
 
   ASSERT_TRUE(result.success);
   ASSERT_FALSE(writer->lastRows.empty());
   const auto &header = writer->lastRows.front();
-  ASSERT_GE(header.size(), 3u);
-  EXPECT_EQ(header.front(), "Gebäude");
-  EXPECT_EQ(header.back(), "Summe");
-  EXPECT_NE(std::find(header.begin(), header.end(), "rent"), header.end());
-  EXPECT_NE(std::find(header.begin(), header.end(), "(Unassigned)"),
-            header.end());
+  EXPECT_EQ(header, csvHeader);
 
   std::error_code ec;
   std::filesystem::remove_all(outputDir, ec);

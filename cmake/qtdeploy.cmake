@@ -101,6 +101,7 @@ if(NOT EXISTS "${_src_bin}")
 endif()
 
 file(MAKE_DIRECTORY "${TARGET_DIR}")
+file(LOCK "${TARGET_DIR}/.qtdeploy.lock" GUARD PROCESS TIMEOUT 120)
 file(REMOVE_RECURSE "${TARGET_DIR}/platforms")
 file(REMOVE_RECURSE "${TARGET_DIR}/imageformats")
 file(REMOVE_RECURSE "${TARGET_DIR}/qml")
@@ -198,6 +199,9 @@ foreach(_ld IN LISTS _folderlist_candidates)
         set(_copy_rc 1)
         set(_attempt 0)
         while(_attempt LESS 3 AND _copy_rc)
+            if(EXISTS "${_temp_dest}")
+                file(REMOVE "${_temp_dest}")
+            endif()
             execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${_ld}" "${_temp_dest}"
                 RESULT_VARIABLE _copy_rc
                 OUTPUT_VARIABLE _copy_out

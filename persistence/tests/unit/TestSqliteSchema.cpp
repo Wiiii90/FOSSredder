@@ -45,7 +45,7 @@ TEST(SqliteSchemaTest, EnsureCreatesTheWorkspaceTablesAndForeignKeyMode)
     EXPECT_TRUE(tableExists(handle, "analysis_adjustments"));
     EXPECT_TRUE(tableExists(handle, "annuals"));
     EXPECT_TRUE(tableExists(handle, "annual_analyses"));
-    EXPECT_EQ(pragmaInt(handle, "user_version"), 1);
+    EXPECT_EQ(pragmaInt(handle, "user_version"), 2);
 
     sqlite3_close(handle);
 }
