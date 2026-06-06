@@ -136,7 +136,7 @@ jobs:
         run: Get-Content .\coverage\coverage-summary.txt | Out-String | Add-Content -Path $env:GITHUB_STEP_SUMMARY
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-report
           path: coverage
@@ -234,7 +234,7 @@ jobs:
           gh release upload $tag $installer --clobber
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fossredder-installer
           path: .build/app/dist/*

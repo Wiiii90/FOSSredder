@@ -1,12 +1,15 @@
-﻿# FOSSredder
+<p align="center">
+  <img src="app/assets/icons/fossredder.png" alt="FOSSredder" width="96">
+</p>
 
-**Branch health**
+<h1 align="center">FOSSredder</h1>
 
-[![Develop CI](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml/badge.svg?branch=develop)](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Adevelop)
-[![Develop coverage](https://codecov.io/gh/Wiiii90/fossredder/branch/develop/graph/badge.svg?token=LGALNE53Z6)](https://codecov.io/gh/Wiiii90/fossredder/branch/develop)
-
-[![Master CI](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml/badge.svg?branch=master)](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Amaster)
-[![Master coverage](https://codecov.io/gh/Wiiii90/fossredder/branch/master/graph/badge.svg?token=LGALNE53Z6)](https://codecov.io/gh/Wiiii90/fossredder/branch/master)
+<p align="center">
+  <a href="https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Amaster"><img alt="Stable CI" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/fossredder/quality.yml?branch=master&label=stable%20ci&style=flat-square"></a>
+  <a href="https://codecov.io/gh/Wiiii90/fossredder/branch/master"><img alt="Stable coverage" src="https://img.shields.io/codecov/c/github/Wiiii90/fossredder/master?token=LGALNE53Z6&label=stable%20coverage&style=flat-square"></a>
+  <a href="https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Adevelop"><img alt="Nightly CI" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/fossredder/quality.yml?branch=develop&label=nightly%20ci&style=flat-square"></a>
+  <a href="https://codecov.io/gh/Wiiii90/fossredder/branch/develop"><img alt="Nightly coverage" src="https://img.shields.io/codecov/c/github/Wiiii90/fossredder/develop?token=LGALNE53Z6&label=nightly%20coverage&style=flat-square"></a>
+</p>
 
 **FOSSredder** is a deliberately overengineered Windows desktop application built for a concrete, real-world use case: extracting structured data from PDF bank statements issued by Commerzbank, a major German banking institution, in order to automate the annual allocation of recoverable costs to tenants.
 
@@ -18,20 +21,18 @@ While the core problem could be addressed with simple scripts or well-known LLMs
 * **Modern Development:** Built using an iterative, AI-assisted workflow with a strong emphasis on Clean Architecture principles.
 * **Privacy by Design:** Since financial data is sensitive, the system runs strictly locally. No cloud, no external APIs.
 
-## Technology stack
+## Technology Stack
 
-- Language: C++20
-- GUI: Qt6 (QML / Qt Quick)
-- Build System: CMake
-- Dependency Management: vcpkg (manifest mode)
-- Persistence: SQLite (runtime storage)
-- PDF / Image / OCR: Poppler, OpenCV, Tesseract
-- Testing: GoogleTest (`gtest`)
-- Logging: `spdlog`
-- JSON: `nlohmann-json`
-- Packaging: Inno Setup (`installer/inno/fossredder.iss`, `ci/package/package-inno.ps1`)
-- Documentation: Doxygen (`Doxyfile`, `.github/workflows/docs.yml`)
-- Platform: Windows 10+
+| | |
+| --- | --- |
+| Application | C++20, Qt 6, QML / Qt Quick |
+| Architecture | Modular CMake targets for `core`, `persistence`, `ui`, `infra`, and `app` |
+| Data & Persistence | SQLite, `nlohmann-json` |
+| Document Processing | Poppler, OpenCV, Tesseract |
+| Testing & Quality | GoogleTest, clang-tidy, LLVM coverage, Codecov |
+| Build & Packaging | CMake, vcpkg, Inno Setup, GitHub Actions |
+| Documentation | Doxygen, GitHub Pages |
+| Platform | Windows 10+ |
 
 ## Project Status
 This application is in **Active Alpha** and has reached its first named baseline milestone. The current codebase is installable, launchable, and functional for the core Commerzbank statement workflow, while still being actively hardened and refined.

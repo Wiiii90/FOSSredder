@@ -35,7 +35,7 @@ logs/
 # Packaging outputs
 dist/
 staging/
-coverage/
+/coverage/
 
 # Local resources
 services/llama/res/
