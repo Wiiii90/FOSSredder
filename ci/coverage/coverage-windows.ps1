@@ -57,7 +57,7 @@ function Remove-CoverageNoise {
     return @($Lines | Where-Object { $_ -notmatch '^warning: \d+ functions have mismatched data$' })
 }
 
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $resolvedBuildDir = (Resolve-Path $BuildDir).Path
 $resolvedOutDir = Join-Path $repoRoot $OutDir
 $profilesDir = Join-Path $resolvedOutDir "profiles"
@@ -70,6 +70,11 @@ $lcovFile = Join-Path $resolvedOutDir "coverage.lcov"
 
 $llvmCovPath = Resolve-ExecutablePath -CommandName "llvm-cov.exe" -ExplicitPath $LlvmCovExe -EnvironmentVariable "LLVM_COV"
 $llvmProfdataPath = Resolve-ExecutablePath -CommandName "llvm-profdata.exe" -ExplicitPath $LlvmProfdataExe -EnvironmentVariable "LLVM_PROFDATA"
+
+$scriptDir = (Resolve-Path $PSScriptRoot).Path
+if ($resolvedOutDir -eq $scriptDir -or $scriptDir.StartsWith($resolvedOutDir, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Refusing to use script directory as coverage output: $resolvedOutDir"
+}
 
 if (Test-Path $resolvedOutDir) {
     Remove-Item -Path $resolvedOutDir -Recurse -Force
