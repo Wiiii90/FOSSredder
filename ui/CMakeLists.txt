@@ -42,7 +42,7 @@ set(UI_SOURCES
     src/viewmodels/PropertyViewModel.cpp
     src/viewmodels/ExportViewModel.cpp
     src/viewmodels/ImportViewModel.cpp
-    src/shell/NavigationState.cpp
+    src/shell/Navigation.cpp
     src/viewmodels/SettingsViewModel.cpp
     src/viewmodels/AnalysisViewModel.cpp
     src/viewmodels/AnnualViewModel.cpp
@@ -91,13 +91,13 @@ set(UI_HEADERS
     include/ui/viewmodels/PropertyViewModel.h
     include/ui/viewmodels/ExportViewModel.h
     include/ui/viewmodels/ImportViewModel.h
-    include/ui/shell/NavigationState.h
+    include/ui/shell/Navigation.h
     include/ui/viewmodels/SettingsViewModel.h
     include/ui/viewmodels/AnalysisViewModel.h
     include/ui/viewmodels/AnnualViewModel.h
     include/ui/viewmodels/BookingViewModel.h
     include/ui/workspace/WorkspaceSelection.h
-    include/ui/shell/StatusState.h
+    include/ui/shell/Status.h
     include/ui/shell/window/CloseWorkflow.h
     include/ui/shell/window/DropHandler.h
     include/ui/shell/window/MainWindowContext.h
@@ -368,7 +368,7 @@ if(BUILD_UI_TESTS)
         tests/unit/adapters/TestAnnualAdapter.cpp
         tests/unit/adapters/TestExportAdapter.cpp
         tests/unit/adapters/TestImportAdapter.cpp
-        tests/unit/state/TestNavigationState.cpp
+        tests/unit/shell/TestNavigation.cpp
         tests/unit/viewmodels/TestActorViewModel.cpp
         tests/unit/viewmodels/TestAnalysisViewModel.cpp
         tests/unit/viewmodels/TestAnnualViewModel.cpp
@@ -382,7 +382,10 @@ if(BUILD_UI_TESTS)
         tests/unit/workflows/TestAnnualWorkflow.cpp
         tests/unit/workflows/TestExportWorkflow.cpp
         tests/unit/workflows/TestImportWorkflow.cpp
+        tests/unit/workspace/TestWorkspaceCommands.cpp
         tests/unit/workspace/TestWorkspaceSelection.cpp
+        tests/unit/workspace/TestWorkspaceSelectors.cpp
+        tests/unit/workspace/TestWorkspaceStore.cpp
     )
 
     add_executable(ui_unit_tests ${UI_UNIT_TEST_SRCS})

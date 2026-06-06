@@ -18,13 +18,13 @@ namespace ui::bootstrap {
  * @param quickView QML view whose load status should be inspected.
  * @param source Source URL or module marker used for context.
  */
-void reportQmlLoadErrors(QQuickView *quickView, const QUrl &source);
+void reportQmlLoadErrors(QQuickView* quickView, const QUrl& source);
 
 /**
  * @brief Wires QQmlEngine runtime warnings into structured error reporting.
  * @param engine QML engine to observe.
  * @param context Qt context object owning the connection lifetime.
  */
-void wireQmlWarnings(QQmlEngine *engine, QObject *context);
+void wireQmlWarnings(QQmlEngine* engine, QObject* context);
 
 } // namespace ui::bootstrap

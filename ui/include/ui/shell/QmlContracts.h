@@ -46,10 +46,15 @@ inline constexpr auto kContractCreateModeButton = "contractCreateModeButton";
 } // namespace labels
 
 /** Supported export formats exposed to QML. */
-enum class ExportFormat : int { Csv = 0, Xlsx = 1 };
+enum class ExportFormat : int {
+  Csv = 0,
+  Xlsx = 1
+};
 
 Q_ENUM_NS(ExportFormat)
 
+/** Navigation and sub-navigation values exposed as stable QML enum constants.
+ */
 enum class NavigationValue : int {
   SectionActors = 0,
   SectionProperties = 1,

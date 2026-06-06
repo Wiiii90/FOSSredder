@@ -14,8 +14,8 @@
 namespace ui::tests::support {
 
 inline core::ports::workspace::AliasSnapshot
-makeAlias(const std::string &value, const std::string &kind = {},
-          const std::string &source = {}) {
+makeAlias(const std::string& value, const std::string& kind = {},
+          const std::string& source = {}) {
   return {value, kind, source.empty() ? value : source, 0, {}, {}, {}};
 }
 
@@ -66,11 +66,11 @@ inline core::ports::workspace::StatementSnapshot makeStatement() {
 }
 
 inline core::ports::workspace::TransactionSnapshot
-makeTransaction(const std::string &id, const std::string &name,
-                const std::string &bookingDate, double amount,
-                const std::string &statementId, bool allocatable,
-                const std::string &contractId = "contract-1",
-                const std::string &actorId = "actor-1",
+makeTransaction(const std::string& id, const std::string& name,
+                const std::string& bookingDate, double amount,
+                const std::string& statementId, bool allocatable,
+                const std::string& contractId = "contract-1",
+                const std::string& actorId = "actor-1",
                 std::vector<std::string> propertyIds = {"property-1"},
                 int status = 2) {
   core::ports::workspace::TransactionSnapshot transaction;
@@ -100,10 +100,10 @@ inline core::ports::workspace::AnalysisSnapshot makeAnalysis() {
   analysis.filter.year = "2026";
   analysis.exportFormat = "csv";
   analysis.includeCalculationAdjustments = true;
-  analysis.snapshotTransactions = {makeTransaction(
-      "tx-1", "Income", "2026-01-15", 1250.0, "actor-1", "contract-1",
-      "statement-1", true, {"property-1"})};
-  analysis.adjustments.emplace_back("actor-1", 19.25);
+  analysis.snapshotTransactions = {
+      makeTransaction("tx-1", "Income", "2026-01-15", 1250.0, "statement-1",
+                      true, "contract-1", "actor-1", {"property-1"})};
+  analysis.adjustments.emplace_back("tx-1", 1500.0);
   analysis.createdAt = "2026-01-01T08:00:00Z";
   analysis.updatedAt = "2026-01-02T08:00:00Z";
   return analysis;

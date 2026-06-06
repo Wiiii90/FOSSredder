@@ -22,18 +22,15 @@ TEST(ExportAdapterTest,
   const QVariantMap payload{
       {QStringLiteral("packageFormatIndex"), 1},
       {QStringLiteral("items"),
-       QVariantList{QVariantMap{{QStringLiteral("objectId"),
-                                 QStringLiteral("analysis-1")},
-                                {QStringLiteral("objectName"),
-                                 QStringLiteral("Analysis")},
-                                {QStringLiteral("objectType"),
-                                 QStringLiteral("analysis")},
-                                {QStringLiteral("exportType"),
-                                 QStringLiteral("png")}}}}};
+       QVariantList{QVariantMap{
+           {QStringLiteral("objectId"), QStringLiteral("analysis-1")},
+           {QStringLiteral("objectName"), QStringLiteral("Analysis")},
+           {QStringLiteral("objectType"), QStringLiteral("analysis")},
+           {QStringLiteral("exportType"), QStringLiteral("png")}}}}};
 
-  const auto request = adapter.buildExportRequest(
-      1, QStringLiteral("C:/tmp/out.xlsx"), false, QStringLiteral("de_DE"),
-      payload);
+  const auto request =
+      adapter.buildExportRequest(1, QStringLiteral("C:/tmp/out.xlsx"), false,
+                                 QStringLiteral("de_DE"), payload);
 
   EXPECT_EQ(request.format, core::ports::exporting::ExportFormat::Xlsx);
   EXPECT_EQ(request.packageFormat, core::ports::exporting::PackageFormat::Zip);
@@ -46,9 +43,8 @@ TEST(ExportAdapterTest,
 TEST(ExportAdapterTest, ADP_EXPORT_002_RunExportDelegatesToRunner) {
   adapters::ExportAdapter adapter(
       std::make_shared<tests::support::ExportRunnerStub>());
-  const auto result =
-      adapter.runExport({}, adapter.buildExportRequest(0, QStringLiteral("out"),
-                                                       true, {}, {}));
+  const auto result = adapter.runExport(
+      {}, adapter.buildExportRequest(0, QStringLiteral("out"), true, {}, {}));
 
   EXPECT_TRUE(result.success);
   EXPECT_EQ(result.resolvedOutputPath, "out");

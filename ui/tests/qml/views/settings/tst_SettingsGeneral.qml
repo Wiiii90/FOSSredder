@@ -105,7 +105,7 @@ TestCase {
         settingsViewModel.selectedThemeModeIndex = -1
     }
 
-    function test_SET_G_001_languageSelectionDelegatesToSettingsState() {
+    function test_SET_G_001_languageSelectionDelegatesToSettings() {
         const view = createView()
         const languageDropdown = TestSupport.findRequired(Lookup, view, "settingsLanguageDropdown")
 
@@ -132,7 +132,7 @@ TestCase {
         compare(settingsViewModel.language, "en")
     }
 
-    function test_SET_G_003_languageDropdownReflectsSettingsStateIndex() {
+    function test_SET_G_003_languageDropdownReflectsSettingsIndex() {
         settingsViewModel.language = "de"
         settingsViewModel.languageIndex = 1
 
@@ -142,7 +142,7 @@ TestCase {
         compare(languageDropdown.currentIndex, 1)
     }
 
-    function test_SET_G_004_themeModeSelectionDelegatesToSettingsState() {
+    function test_SET_G_004_themeModeSelectionDelegatesToSettings() {
         const view = createView()
         const themeModeDropdown = TestSupport.findRequired(Lookup, view, "settingsThemeModeDropdown")
 
@@ -153,7 +153,7 @@ TestCase {
         compare(settingsViewModel.themeMode, "dark")
     }
 
-    function test_SET_G_005_autosaveControlsDelegateToSettingsState() {
+    function test_SET_G_005_autosaveControlsDelegateToSettings() {
         const view = createView()
         const saveOnCloseCheck = TestSupport.findRequired(
                     Lookup, view, "settingsAutosaveOnCloseCheckBox")

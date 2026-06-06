@@ -9,8 +9,8 @@
 
 #include "support/WorkspacePortFakes.h"
 #include "support/WorkspaceTestData.h"
-#include "ui/viewmodels/ExportViewModel.h"
 #include "ui/shell/Settings.h"
+#include "ui/viewmodels/ExportViewModel.h"
 #include "ui/workspace/WorkspaceCommands.h"
 #include "ui/workspace/WorkspaceSelectors.h"
 #include "ui/workspace/WorkspaceStore.h"
@@ -54,7 +54,7 @@ auto makeExportSnapshot() {
 ExportStateHarness makeHarness() {
   auto workspace =
       std::make_unique<tests::support::InMemoryWorkspace>(makeExportSnapshot());
-  auto *workspacePtr = workspace.get();
+  auto* workspacePtr = workspace.get();
   auto store = std::make_unique<WorkspaceStore>();
   store->setWorkspacePorts(workspacePtr, workspacePtr);
   store->loadFromState(workspacePtr->workspaceSnapshot());
@@ -69,7 +69,7 @@ ExportStateHarness makeHarness() {
           std::move(selectors), std::move(state)};
 }
 
-QVariantMap firstMap(const QVariantList &values) {
+QVariantMap firstMap(const QVariantList& values) {
   return values.empty() ? QVariantMap() : values.front().toMap();
 }
 
@@ -85,7 +85,8 @@ TEST(ExportViewModelTest, VM_EXPORT_001_LoadsWorkspaceRowsAndSelectsAnnual) {
   EXPECT_TRUE(harness.state->canAddEntry());
 }
 
-TEST(ExportViewModelTest, VM_EXPORT_002_AnnualEntryProjectsAssignedAnalysesForExport) {
+TEST(ExportViewModelTest,
+     VM_EXPORT_002_AnnualEntryProjectsAssignedAnalysesForExport) {
   auto harness = makeHarness();
 
   harness.state->addSelectedEntry();
@@ -99,11 +100,13 @@ TEST(ExportViewModelTest, VM_EXPORT_002_AnnualEntryProjectsAssignedAnalysesForEx
   const QVariantList analyses =
       annual.value(QStringLiteral("analyses")).toList();
   ASSERT_EQ(analyses.size(), 2);
-  EXPECT_EQ(analyses.at(1).toMap().value(QStringLiteral("exportType")).toString(),
-            QStringLiteral("PNG"));
+  EXPECT_EQ(
+      analyses.at(1).toMap().value(QStringLiteral("exportType")).toString(),
+      QStringLiteral("PNG"));
 }
 
-TEST(ExportViewModelTest, VM_EXPORT_003_StandalonePlotDefaultsToImageExportOptions) {
+TEST(ExportViewModelTest,
+     VM_EXPORT_003_StandalonePlotDefaultsToImageExportOptions) {
   auto harness = makeHarness();
 
   harness.state->setAddMode(QStringLiteral("analysis"));
@@ -120,7 +123,8 @@ TEST(ExportViewModelTest, VM_EXPORT_003_StandalonePlotDefaultsToImageExportOptio
             2);
 }
 
-TEST(ExportViewModelTest, VM_EXPORT_005_SettingsDefaultsRefreshPristineExportForm) {
+TEST(ExportViewModelTest,
+     VM_EXPORT_004_SettingsDefaultsRefreshPristineExportForm) {
   ExportViewModel state;
   Settings settings;
 

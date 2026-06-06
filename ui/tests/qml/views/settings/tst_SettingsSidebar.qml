@@ -60,7 +60,7 @@ TestCase {
         settingsViewModel.selectedCategory = -1
     }
 
-    function test_SET_S_001_categoryRowsDelegateSelectionToSettingsState() {
+    function test_SET_S_001_categoryRowsDelegateSelectionToSettings() {
         const view = createView()
         const importButton = TestSupport.findRequired(Lookup, view, "settingsSidebarCategoryClick_1")
         wait(0)

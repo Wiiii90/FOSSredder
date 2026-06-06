@@ -14,18 +14,25 @@
 
 namespace ui {
 
-TEST(ImportAdapterTest,
-     ADP_IMPORT_001_PropertySelectionDelegatesToImportRunnerAndNormalizesDraft) {
+TEST(
+    ImportAdapterTest,
+    ADP_IMPORT_001_PropertySelectionDelegatesToImportRunnerAndNormalizesDraft) {
   tests::support::WorkspaceHarness harness;
   const auto adapter = std::make_shared<adapters::ImportAdapter>(
-      harness.workspace.get(),
       std::make_shared<tests::support::ImportRunnerStub>());
 
   core::ports::importing::draft::TransactionDraft transaction;
   transaction.contractId = "contract-1";
   transaction.contractSelected = true;
 
-  ASSERT_TRUE(adapter->setPropertySelected(transaction, "property-1", true));
+  core::ports::importing::draft::TransactionDraftEdit edit;
+  edit.kind = core::ports::importing::draft::TransactionDraftEditKind::
+      SetPropertySelected;
+  edit.id = "property-1";
+  edit.selected = true;
+
+  ASSERT_TRUE(adapter->updateTransactionDraft(transaction,
+                                              harness.store->snapshot(), edit));
 
   EXPECT_TRUE(transaction.contractId.empty());
   EXPECT_FALSE(transaction.contractSelected);

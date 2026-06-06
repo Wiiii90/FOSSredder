@@ -23,119 +23,122 @@ namespace ui::tests::support {
 class ImportRunnerStub final : public core::ports::importing::IImportRunner {
 public:
   core::ports::importing::StatementImportHandle startStatementImport(
-      const core::ports::importing::ImportRequest &,
+      const core::ports::importing::ImportRequest&,
       core::ports::importing::StatementImportEventCallback) override {
     return {};
   }
 
-  void unsubscribe(
-      const core::ports::importing::StatementImportHandle &) override {}
-  void cancel(const core::ports::importing::StatementImportHandle &) override {}
-  void pause(const core::ports::importing::StatementImportHandle &) override {}
-  void resume(const core::ports::importing::StatementImportHandle &) override {}
+  void
+  unsubscribe(const core::ports::importing::StatementImportHandle&) override {}
+  void cancel(const core::ports::importing::StatementImportHandle&) override {}
+  void pause(const core::ports::importing::StatementImportHandle&) override {}
+  void resume(const core::ports::importing::StatementImportHandle&) override {}
 
-  core::ports::importing::ImportResult importResult(
-      const core::ports::importing::StatementImportHandle &) override {
+  core::ports::importing::ImportResult
+  importResult(const core::ports::importing::StatementImportHandle&) override {
     return {};
   }
 
   core::ports::importing::draft::DraftDerivedState buildDraftDerivedState(
-      const core::ports::workspace::WorkspaceSnapshot &,
-      const core::ports::importing::draft::DraftLinkSelection &) const override {
+      const core::ports::workspace::WorkspaceSnapshot&,
+      const core::ports::importing::draft::DraftLinkSelection&) const override {
     return {};
   }
 
   bool updateTransactionDraft(
-      core::ports::importing::draft::TransactionDraft &draft,
-      const core::ports::workspace::WorkspaceSnapshot &,
-      const core::ports::importing::draft::TransactionDraftEdit &edit)
+      core::ports::importing::draft::TransactionDraft& draft,
+      const core::ports::workspace::WorkspaceSnapshot&,
+      const core::ports::importing::draft::TransactionDraftEdit& edit)
       const override {
     using Kind = core::ports::importing::draft::TransactionDraftEditKind;
     switch (edit.kind) {
-    case Kind::Patch:
-      if (edit.patch.hasName) {
-        draft.name = edit.patch.name;
-      }
-      if (edit.patch.hasBookingDate) {
-        draft.bookingDate = edit.patch.bookingDate;
-      }
-      if (edit.patch.hasValuta) {
-        draft.valuta = edit.patch.valuta;
-      }
-      if (edit.patch.hasAmount) {
-        draft.amount = edit.patch.amount;
-      }
-      if (edit.patch.hasStatus) {
-        draft.status = edit.patch.status;
-      }
-      if (edit.patch.hasAllocatable) {
-        draft.allocatable = edit.patch.allocatable;
-      }
-      return true;
-    case Kind::SetPropertySelected:
-      if (edit.selected) {
-        draft.propertyIds.push_back(edit.id);
-      } else {
-        draft.propertyIds.erase(
-            std::remove(draft.propertyIds.begin(), draft.propertyIds.end(),
-                        edit.id),
-            draft.propertyIds.end());
-      }
-      return true;
-    default:
-      return false;
+      case Kind::Patch:
+        if (edit.patch.hasName) {
+          draft.name = edit.patch.name;
+        }
+        if (edit.patch.hasBookingDate) {
+          draft.bookingDate = edit.patch.bookingDate;
+        }
+        if (edit.patch.hasValuta) {
+          draft.valuta = edit.patch.valuta;
+        }
+        if (edit.patch.hasAmount) {
+          draft.amount = edit.patch.amount;
+        }
+        if (edit.patch.hasStatus) {
+          draft.status = edit.patch.status;
+        }
+        if (edit.patch.hasAllocatable) {
+          draft.allocatable = edit.patch.allocatable;
+        }
+        return true;
+      case Kind::SetPropertySelected:
+        if (edit.selected) {
+          if (std::find(draft.propertyIds.begin(), draft.propertyIds.end(),
+                        edit.id) == draft.propertyIds.end()) {
+            draft.propertyIds.push_back(edit.id);
+          }
+          draft.contractId.clear();
+          draft.contractSelected = false;
+        } else {
+          draft.propertyIds.erase(std::remove(draft.propertyIds.begin(),
+                                              draft.propertyIds.end(), edit.id),
+                                  draft.propertyIds.end());
+        }
+        return true;
+      default:
+        return false;
     }
   }
 
-  core::ports::importing::draft::StatementDraftEditResult updateStatementDraft(
-      core::ports::importing::draft::StatementDraft &draft,
-      const core::ports::importing::draft::StatementDraftEdit &edit)
-      const override {
+  core::ports::importing::draft::StatementDraftEditResult
+  updateStatementDraft(core::ports::importing::draft::StatementDraft& draft,
+                       const core::ports::importing::draft::StatementDraftEdit&
+                           edit) const override {
     using Kind = core::ports::importing::draft::StatementDraftEditKind;
     core::ports::importing::draft::StatementDraftEditResult result;
     result.selectedTransactionIndex = edit.index;
     switch (edit.kind) {
-    case Kind::Rename:
-      draft.name = edit.text;
-      result.changed = true;
-      break;
-    case Kind::InsertTransactionAfter:
-      if (!draft.transactions.empty()) {
-        core::ports::importing::draft::TransactionDraft row;
-        row.id = "inserted";
-        draft.transactions.insert(
-            draft.transactions.begin() +
-                static_cast<std::ptrdiff_t>(edit.index + 1),
-            row);
-        result.selectedTransactionIndex = edit.index + 1;
+      case Kind::Rename:
+        draft.name = edit.text;
         result.changed = true;
-      }
-      break;
-    case Kind::RemoveTransactionAt:
-      if (draft.transactions.size() > 1 && edit.index >= 0 &&
-          static_cast<std::size_t>(edit.index) < draft.transactions.size()) {
-        draft.transactions.erase(draft.transactions.begin() +
-                                 static_cast<std::ptrdiff_t>(edit.index));
-        result.selectedTransactionIndex =
-            std::min(edit.index, static_cast<int>(draft.transactions.size()) - 1);
-        result.changed = true;
-      }
-      break;
+        break;
+      case Kind::InsertTransactionAfter:
+        if (!draft.transactions.empty()) {
+          core::ports::importing::draft::TransactionDraft row;
+          row.id = "inserted";
+          draft.transactions.insert(
+              draft.transactions.begin() +
+                  static_cast<std::ptrdiff_t>(edit.index + 1),
+              row);
+          result.selectedTransactionIndex = edit.index + 1;
+          result.changed = true;
+        }
+        break;
+      case Kind::RemoveTransactionAt:
+        if (draft.transactions.size() > 1 && edit.index >= 0 &&
+            static_cast<std::size_t>(edit.index) < draft.transactions.size()) {
+          draft.transactions.erase(draft.transactions.begin() +
+                                   static_cast<std::ptrdiff_t>(edit.index));
+          result.selectedTransactionIndex = std::min(
+              edit.index, static_cast<int>(draft.transactions.size()) - 1);
+          result.changed = true;
+        }
+        break;
     }
     return result;
   }
 
   core::ports::importing::draft::StatementDraft buildStatementDraft(
-      const std::string &,
-      const core::ports::workspace::StatementSnapshot &,
-      const core::ports::workspace::WorkspaceSnapshot &,
-      const std::vector<core::ports::importing::draft::TransactionDraft> &,
-      const std::string &) const override {
+      const std::string&, const core::ports::workspace::StatementSnapshot&,
+      const core::ports::workspace::WorkspaceSnapshot&,
+      const std::vector<core::ports::importing::draft::TransactionDraft>&,
+      const std::string&) const override {
     return {};
   }
 
   core::ports::importing::draft::StatementDraft restoreStatementDraft(
-      const core::ports::workspace::StatementDraftSnapshot &snapshot)
+      const core::ports::workspace::StatementDraftSnapshot& snapshot)
       const override {
     core::ports::importing::draft::StatementDraft draft;
     draft.id = snapshot.id;
@@ -144,7 +147,7 @@ public:
     draft.createdAt = snapshot.createdAt;
     draft.updatedAt = snapshot.updatedAt;
     draft.transactions.reserve(snapshot.transactions.size());
-    for (const auto &tx : snapshot.transactions) {
+    for (const auto& tx : snapshot.transactions) {
       core::ports::importing::draft::TransactionDraft transaction;
       transaction.id = tx.id;
       transaction.statementDraftId = tx.statementDraftId;
@@ -163,21 +166,21 @@ public:
       draft.transactions.push_back(std::move(transaction));
     }
     std::sort(draft.transactions.begin(), draft.transactions.end(),
-              [](const auto &lhs, const auto &rhs) {
+              [](const auto& lhs, const auto& rhs) {
                 return lhs.position < rhs.position;
               });
     return draft;
   }
 
   core::ports::workspace::StatementDraftSnapshot buildStatementDraftSnapshot(
-      const core::ports::importing::draft::StatementDraft &draft,
-      const core::ports::workspace::WorkspaceSnapshot &) const override {
+      const core::ports::importing::draft::StatementDraft& draft,
+      const core::ports::workspace::WorkspaceSnapshot&) const override {
     core::ports::workspace::StatementDraftSnapshot snapshot;
     snapshot.id = draft.id;
     snapshot.name = draft.name;
     snapshot.transactionIds = draft.transactionIds;
     for (std::size_t i = 0; i < draft.transactions.size(); ++i) {
-      const auto &tx = draft.transactions[i];
+      const auto& tx = draft.transactions[i];
       core::ports::workspace::TransactionDraftSnapshot row;
       row.id = tx.id;
       row.statementDraftId = tx.statementDraftId;
@@ -193,7 +196,7 @@ public:
 
   core::ports::workspace::WorkspaceSnapshot mergeWorkspaceState(
       core::ports::workspace::WorkspaceSnapshot primary,
-      const core::ports::workspace::WorkspaceSnapshot &) const override {
+      const core::ports::workspace::WorkspaceSnapshot&) const override {
     return primary;
   }
 };

@@ -15,12 +15,22 @@
 
 namespace ui::window {
 
-inline core::errors::ErrorContext makePathContext(const QString &path) {
+/**
+ * @brief Builds trace context for a single filesystem path.
+ * @param path Filesystem path reported by the main window flow.
+ * @return Error context containing the path.
+ */
+inline core::errors::ErrorContext makePathContext(const QString& path) {
   return {{ui::observability::context::kPath, path.toStdString()}};
 }
 
+/**
+ * @brief Builds trace context for a list of selected or dropped files.
+ * @param files Files selected through a dialog or dropped into the UI.
+ * @return Error context containing the count and first file when available.
+ */
 inline core::errors::ErrorContext
-makeFileListContext(const QStringList &files) {
+makeFileListContext(const QStringList& files) {
   core::errors::ErrorContext context{
       {ui::observability::context::kCount, std::to_string(files.size())}};
   if (!files.isEmpty())
@@ -29,8 +39,15 @@ makeFileListContext(const QStringList &files) {
   return context;
 }
 
+/**
+ * @brief Emits a structured main-window flow diagnostic.
+ * @param origin Stable origin identifier.
+ * @param message Human-readable diagnostic message.
+ * @param severity Diagnostic severity.
+ * @param context Optional structured diagnostic context.
+ */
 inline void reportMainWindowFlow(
-    const char *origin, std::string message,
+    const char* origin, std::string message,
     core::errors::ErrorSeverity severity = core::errors::ErrorSeverity::Info,
     core::errors::ErrorContext context = {}) {
   ui::observability::reportFlow(severity,

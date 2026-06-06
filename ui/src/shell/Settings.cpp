@@ -70,6 +70,32 @@ void Settings::emitStateChanged() {
   emit stateChanged();
 }
 
+bool Settings::Values::operator==(const Values& other) const {
+  return language == other.language && themeMode == other.themeMode &&
+         autosaveOnClose == other.autosaveOnClose &&
+         autosaveIntervalMinutes == other.autosaveIntervalMinutes &&
+         importDefaultPath == other.importDefaultPath &&
+         importPoppler == other.importPoppler &&
+         importOpenCv == other.importOpenCv &&
+         importTesseract == other.importTesseract &&
+         importParser == other.importParser &&
+         importMatcher == other.importMatcher &&
+         exportDefaultDirectory == other.exportDefaultDirectory &&
+         exportArchiveFormat == other.exportArchiveFormat &&
+         exportIncludeFormulas == other.exportIncludeFormulas &&
+         analysisDefaultDateMode == other.analysisDefaultDateMode &&
+         analysisDefaultYear == other.analysisDefaultYear &&
+         toolbarShowBooking == other.toolbarShowBooking &&
+         toolbarShowActors == other.toolbarShowActors &&
+         toolbarShowProperties == other.toolbarShowProperties &&
+         toolbarShowContracts == other.toolbarShowContracts &&
+         toolbarShowImport == other.toolbarShowImport &&
+         toolbarShowExport == other.toolbarShowExport &&
+         toolbarShowAnalysis == other.toolbarShowAnalysis &&
+         toolbarShowAnnual == other.toolbarShowAnnual &&
+         toolbarShowSettings == other.toolbarShowSettings;
+}
+
 Settings::Values Settings::defaultValues() {
   Values out;
   out.language = languages::kEnglish;

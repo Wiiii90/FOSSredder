@@ -53,20 +53,20 @@ public:
    * @brief Creates the annual view model.
    * @param parent Optional Qt parent object.
    */
-  explicit AnnualViewModel(QObject *parent = nullptr);
+  explicit AnnualViewModel(QObject* parent = nullptr);
 
   /**
    * @brief Sets workspace roles used for annual rows, selection and mutations.
    */
-  void setWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
-                         WorkspaceSelection *selection,
-                         WorkspaceSelectors *selectors);
+  void setWorkspaceRoles(WorkspaceStore* store, WorkspaceCommands* commands,
+                         WorkspaceSelection* selection,
+                         WorkspaceSelectors* selectors);
 
   /**
    * @brief Sets the workflow used for annual computation.
    * @param value Annual workflow or nullptr.
    */
-  void setAnnualWorkflow(AnnualWorkflow *value);
+  void setAnnualWorkflow(AnnualWorkflow* value);
 
   /**
    * @brief Returns whether an existing annual is selected.
@@ -90,19 +90,23 @@ public:
    * @brief Returns the annual name field.
    * @return Annual name.
    */
-  QString name() const { return name_; }
+  QString name() const {
+    return name_;
+  }
 
   /**
    * @brief Updates the annual name field.
    * @param value Annual name.
    */
-  void setName(const QString &value);
+  void setName(const QString& value);
 
   /**
    * @brief Returns the selected annual year.
    * @return Year value.
    */
-  int year() const noexcept { return year_; }
+  int year() const noexcept {
+    return year_;
+  }
 
   /**
    * @brief Updates the selected annual year.
@@ -120,25 +124,33 @@ public:
    * @brief Returns analyses available for assignment.
    * @return Available analysis rows.
    */
-  QVariantList availableAnalysisRows() const { return availableAnalysisRows_; }
+  QVariantList availableAnalysisRows() const {
+    return availableAnalysisRows_;
+  }
 
   /**
    * @brief Returns analyses assigned to the annual.
    * @return Assigned analysis rows.
    */
-  QVariantList assignedAnalysisRows() const { return assignedAnalysisRows_; }
+  QVariantList assignedAnalysisRows() const {
+    return assignedAnalysisRows_;
+  }
 
   /**
    * @brief Returns the active annual content stack index.
    * @return Content stack index.
    */
-  int contentIndex() const noexcept { return contentIndex_; }
+  int contentIndex() const noexcept {
+    return contentIndex_;
+  }
 
   /**
    * @brief Returns annual transaction preview rows.
    * @return Annual transaction rows.
    */
-  QVariantList annualTransactions() const { return annualTransactions_; }
+  QVariantList annualTransactions() const {
+    return annualTransactions_;
+  }
 
   /**
    * @brief Returns grouped annual transaction sections.
@@ -162,7 +174,9 @@ public:
    * @brief Returns whether the current annual can be submitted.
    * @return True when quick UI checks pass.
    */
-  bool canSubmit() const noexcept { return year_ > 0; }
+  bool canSubmit() const noexcept {
+    return year_ > 0;
+  }
 
   /**
    * @brief Returns whether annual rows exist.
@@ -211,7 +225,7 @@ public:
    * @brief Selects an annual row.
    * @param id Annual id or empty string for create mode.
    */
-  Q_INVOKABLE void selectAnnual(const QString &id);
+  Q_INVOKABLE void selectAnnual(const QString& id);
 
   /**
    * @brief Toggles between annual analysis assignment and transaction preview.
@@ -234,21 +248,21 @@ public:
    * @brief Removes an analysis from the annual.
    * @param id Analysis id.
    */
-  Q_INVOKABLE void removeAnalysis(const QString &id);
+  Q_INVOKABLE void removeAnalysis(const QString& id);
 
   /**
    * @brief Updates export format for an assigned analysis.
    * @param id Analysis id.
    * @param exportFormat Export format key.
    */
-  Q_INVOKABLE void setAnalysisExportFormat(const QString &id,
-                                           const QString &exportFormat);
+  Q_INVOKABLE void setAnalysisExportFormat(const QString& id,
+                                           const QString& exportFormat);
 
   /**
    * @brief Toggles expansion state for a transaction section.
    * @param key Section key.
    */
-  Q_INVOKABLE void toggleTransactionSection(const QString &key);
+  Q_INVOKABLE void toggleTransactionSection(const QString& key);
 
 signals:
   void changed();
@@ -259,31 +273,31 @@ private:
    * @param values String, row, or list payload from workspace/QML.
    * @return Unique analysis ids.
    */
-  QStringList normalizedAnalysisIds(const QVariant &values) const;
+  QStringList normalizedAnalysisIds(const QVariant& values) const;
   /**
    * @brief Extracts an analysis id from a scalar or row payload.
    * @param value Input value.
    * @return Analysis id or empty string.
    */
-  QString analysisIdFromVariant(const QVariant &value) const;
+  QString analysisIdFromVariant(const QVariant& value) const;
   /**
    * @brief Returns an annual row by id.
    * @param id Annual id.
    * @return Annual row or empty map.
    */
-  QVariantMap annualRowById(const QString &id) const;
+  QVariantMap annualRowById(const QString& id) const;
   /**
    * @brief Returns a normalized analysis row by id.
    * @param id Analysis id.
    * @return Analysis row or empty map.
    */
-  QVariantMap analysisRowById(const QString &id) const;
+  QVariantMap analysisRowById(const QString& id) const;
   /**
    * @brief Normalizes a workspace analysis row for annual selection.
    * @param value Raw workspace row.
    * @return Normalized analysis row.
    */
-  QVariantMap normalizeAnalysisRow(const QVariant &value) const;
+  QVariantMap normalizeAnalysisRow(const QVariant& value) const;
   /**
    * @brief Returns normalized analysis rows from workspace.
    * @return Analysis rows.
@@ -304,29 +318,29 @@ private:
    * @param row Normalized analysis row.
    * @return Augmented row.
    */
-  QVariantMap augmentAnalysisRow(const QVariantMap &row) const;
+  QVariantMap augmentAnalysisRow(const QVariantMap& row) const;
   /**
    * @brief Returns export format options for an analysis type.
    * @param type Analysis type.
    * @return Export option rows.
    */
-  QVariantList exportOptionsForType(const QString &type) const;
+  QVariantList exportOptionsForType(const QString& type) const;
   /**
    * @brief Resolves the selected export format index.
    * @param options Available export options.
    * @param exportFormat Selected export format.
    * @return Option index.
    */
-  int exportFormatIndex(const QVariantList &options,
-                        const QString &exportFormat) const;
+  int exportFormatIndex(const QVariantList& options,
+                        const QString& exportFormat) const;
   /**
    * @brief Normalizes an export format for an analysis type.
    * @param value Raw export format.
    * @param type Analysis type.
    * @return Normalized export format.
    */
-  QString normalizedExportFormat(const QString &value,
-                                 const QString &type) const;
+  QString normalizedExportFormat(const QString& value,
+                                 const QString& type) const;
   /**
    * @brief Returns the default annual year.
    * @return Default year.
@@ -352,7 +366,7 @@ private:
    * @brief Applies an annual workflow result to presentation fields.
    * @param result Workflow result payload.
    */
-  void applyAnnualResult(const QVariantMap &result);
+  void applyAnnualResult(const QVariantMap& result);
   /**
    * @brief Captures current form state for dirty checks.
    */
@@ -361,7 +375,7 @@ private:
    * @brief Replaces assigned analysis ids.
    * @param ids New analysis ids.
    */
-  void setAnalysisIds(const QStringList &ids);
+  void setAnalysisIds(const QStringList& ids);
   /**
    * @brief Creates an empty verification issue payload.
    * @return Empty issue map.
@@ -377,13 +391,13 @@ private:
    * @param rows Raw result rows.
    * @return QML transaction rows.
    */
-  QVariantList rowsFromResultBucket(const QVariantList &rows) const;
+  QVariantList rowsFromResultBucket(const QVariantList& rows) const;
   /**
    * @brief Adapts one annual transaction result row for QML.
    * @param source Source row.
    * @return Transaction row.
    */
-  QVariantMap transactionRow(const QVariantMap &source) const;
+  QVariantMap transactionRow(const QVariantMap& source) const;
   /**
    * @brief Builds one expandable transaction section.
    * @param key Section key.
@@ -391,14 +405,14 @@ private:
    * @param rows Section rows.
    * @return Section payload.
    */
-  QVariantMap transactionSection(const QString &key, const QString &title,
-                                 const QVariantList &rows) const;
+  QVariantMap transactionSection(const QString& key, const QString& title,
+                                 const QVariantList& rows) const;
   /**
    * @brief Returns whether a transaction section is expanded.
    * @param key Section key.
    * @return True when expanded.
    */
-  bool isTransactionSectionExpanded(const QString &key) const;
+  bool isTransactionSectionExpanded(const QString& key) const;
   /**
    * @brief Returns the current workspace revision.
    * @return Workspace revision or -1.
@@ -407,19 +421,19 @@ private:
   /**
    * @brief Connects workspace role signals.
    */
-  void bindWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
-                          WorkspaceSelection *selection,
-                          WorkspaceSelectors *selectors);
+  void bindWorkspaceRoles(WorkspaceStore* store, WorkspaceCommands* commands,
+                          WorkspaceSelection* selection,
+                          WorkspaceSelectors* selectors);
   /**
    * @brief Emits the shared changed signal.
    */
   void emitChanged();
 
-  WorkspaceStore *store_ = nullptr;
-  WorkspaceCommands *commands_ = nullptr;
-  WorkspaceSelection *selection_ = nullptr;
-  WorkspaceSelectors *selectors_ = nullptr;
-  AnnualWorkflow *annualWorkflow_ = nullptr;
+  WorkspaceStore* store_ = nullptr;
+  WorkspaceCommands* commands_ = nullptr;
+  WorkspaceSelection* selection_ = nullptr;
+  WorkspaceSelectors* selectors_ = nullptr;
+  AnnualWorkflow* annualWorkflow_ = nullptr;
   QString name_;
   int year_ = 0;
   QStringList analysisIds_;

@@ -33,9 +33,12 @@ public:
 
   /**
    * @brief Creates an annual workflow.
-   * @param stateSnapshotProvider Provider for the current workspace snapshot.
-   * @param annualAdapter Adapter used to invoke the core annual runner.
-   * @param parent Optional Qt parent.
+   * @param stateSnapshotProvider
+   * Provider for the current workspace snapshot.
+   * @param annualAdapter
+   * Adapter used to invoke the core annual runner.
+   * @param parent Optional
+   * Qt parent.
    */
   explicit AnnualWorkflow(
       StateSnapshotProvider stateSnapshotProvider,
@@ -44,10 +47,13 @@ public:
 
   /**
    * @brief Computes an annual preview through the core runner.
+   *
    * @param annualId Annual id.
-   * @param analysisIds Analysis ids assigned to the annual.
+   * @param analysisIds Analysis ids assigned to
+   * the annual.
    * @param year Annual year.
-   * @return QML annual result payload.
+   * @return QML annual result
+   * payload.
    */
   QVariantMap computeAnnualPreview(const QString& annualId,
                                    const QStringList& analysisIds,
@@ -56,7 +62,8 @@ public:
 private:
   /**
    * @brief Returns the current workspace snapshot.
-   * @return Workspace snapshot or an empty snapshot.
+   * @return Workspace
+   * snapshot or an empty snapshot.
    */
   core::ports::workspace::WorkspaceSnapshot stateSnapshot() const;
 

@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <memory>
 
 #include "support/ImportRunnerStub.h"
@@ -20,12 +21,13 @@ TEST(ImportWorkflowTest,
   tests::support::WorkspaceHarness harness(
       tests::support::makeStateWithDraftStack());
   const auto adapter = std::make_shared<adapters::ImportAdapter>(
-      harness.workspace.get(),
       std::make_shared<tests::support::ImportRunnerStub>());
-  ImportWorkflow workflow(adapter, tests::support::noopErrorReporter(),
-                          [&]() { return harness.store->snapshot(); },
-                          harness.commands.get(),
-                          harness.selectors.get());
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
   ImportViewModel viewModel;
   viewModel.setImportWorkflow(&workflow);
   viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
@@ -37,7 +39,7 @@ TEST(ImportWorkflowTest,
   EXPECT_EQ(workflow.currentDraftId(), QStringLiteral("draft-1"));
   workflow.clearDraft();
 
-  ASSERT_TRUE(workflow.openPersistedDraft(QStringLiteral("draft-3")));
+  ASSERT_TRUE(workflow.openStoredDraft(QStringLiteral("draft-3")));
   ASSERT_TRUE(workflow.hasDraft());
   viewModel.selectNextDraft();
   EXPECT_FALSE(workflow.hasDraft());
@@ -59,21 +61,93 @@ TEST(ImportWorkflowTest,
   tests::support::WorkspaceHarness harness(
       tests::support::makeStateWithDraftStack());
   const auto adapter = std::make_shared<adapters::ImportAdapter>(
-      harness.workspace.get(),
       std::make_shared<tests::support::ImportRunnerStub>());
-  ImportWorkflow workflow(adapter, tests::support::noopErrorReporter(),
-                          [&]() { return harness.store->snapshot(); },
-                          harness.commands.get(),
-                          harness.selectors.get());
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
 
-  ASSERT_TRUE(workflow.openPersistedDraft(QStringLiteral("draft-1")));
+  ASSERT_TRUE(workflow.openStoredDraft(QStringLiteral("draft-1")));
   ASSERT_TRUE(workflow.hasDraft());
   workflow.setCurrentTransactionIndex(1);
 
   workflow.clearDraft();
-  ASSERT_TRUE(workflow.openPersistedDraft(QStringLiteral("draft-1")));
+  ASSERT_TRUE(workflow.openStoredDraft(QStringLiteral("draft-1")));
   ASSERT_TRUE(workflow.hasDraft());
   EXPECT_EQ(workflow.currentTransactionIndex(), 1);
+}
+
+TEST(ImportWorkflowTest,
+     WF_IMPORT_003_AddFilesSelectsFirstAndDeduplicatesQueue) {
+  tests::support::WorkspaceHarness harness;
+  const auto adapter = std::make_shared<adapters::ImportAdapter>(
+      std::make_shared<tests::support::ImportRunnerStub>());
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
+
+  workflow.addFiles(
+      {QStringLiteral(" P:/imports/a.pdf "), QStringLiteral("P:/imports/b.pdf"),
+       QStringLiteral("P:/imports/a.pdf"), QStringLiteral("P:/imports/b.pdf")});
+
+  EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/a.pdf"));
+  EXPECT_EQ(workflow.queuedFiles(),
+            QStringList{QStringLiteral("P:/imports/b.pdf")});
+  EXPECT_EQ(workflow.queuedCount(), 1);
+}
+
+TEST(ImportWorkflowTest,
+     WF_IMPORT_004_FlushActiveDraftWritesWorkspaceDraftSnapshot) {
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeStateWithDraftStack());
+  const auto adapter = std::make_shared<adapters::ImportAdapter>(
+      std::make_shared<tests::support::ImportRunnerStub>());
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
+
+  ASSERT_TRUE(workflow.openStoredDraft(QStringLiteral("draft-1")));
+  ASSERT_TRUE(workflow.renameCurrentStatementDraft(QStringLiteral("Renamed")));
+  workflow.flushActiveDraftToWorkspace();
+
+  const auto snapshot = harness.workspace->workspaceSnapshot();
+  const auto it =
+      std::find_if(snapshot.statementDrafts.begin(),
+                   snapshot.statementDrafts.end(), [](const auto& row) {
+                     return row.id == "draft-1";
+                   });
+  ASSERT_NE(it, snapshot.statementDrafts.end());
+  EXPECT_EQ(it->name, std::string("Renamed"));
+}
+
+TEST(ImportWorkflowTest,
+     WF_IMPORT_005_FinalizeActiveDraftDelegatesToWorkspaceCommands) {
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeStateWithDraftStack());
+  const auto adapter = std::make_shared<adapters::ImportAdapter>(
+      std::make_shared<tests::support::ImportRunnerStub>());
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
+
+  ASSERT_TRUE(workflow.openStoredDraft(QStringLiteral("draft-1")));
+  workflow.finalizeActiveDraft();
+
+  const auto snapshot = harness.workspace->workspaceSnapshot();
+  EXPECT_EQ(snapshot.statementDrafts.size(), 2U);
+  ASSERT_FALSE(snapshot.statements.empty());
+  EXPECT_EQ(snapshot.statements.back().name, std::string("Draft 1"));
 }
 
 } // namespace ui

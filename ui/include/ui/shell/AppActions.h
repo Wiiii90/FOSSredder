@@ -17,52 +17,64 @@ namespace ui {
  */
 class Actions : public QObject {
   Q_OBJECT
-  Q_PROPERTY(QAction *newFileAction READ newFileAction CONSTANT)
-  Q_PROPERTY(QAction *openFileAction READ openFileAction CONSTANT)
-  Q_PROPERTY(QAction *saveFileAction READ saveFileAction CONSTANT)
-  Q_PROPERTY(QAction *saveFileAsAction READ saveFileAsAction CONSTANT)
-  Q_PROPERTY(QAction *quitAction READ quitAction CONSTANT)
-  Q_PROPERTY(QAction *aboutAction READ aboutAction CONSTANT)
+  Q_PROPERTY(QAction* newFileAction READ newFileAction CONSTANT)
+  Q_PROPERTY(QAction* openFileAction READ openFileAction CONSTANT)
+  Q_PROPERTY(QAction* saveFileAction READ saveFileAction CONSTANT)
+  Q_PROPERTY(QAction* saveFileAsAction READ saveFileAsAction CONSTANT)
+  Q_PROPERTY(QAction* quitAction READ quitAction CONSTANT)
+  Q_PROPERTY(QAction* aboutAction READ aboutAction CONSTANT)
 
 public:
   /**
    * @brief Construct the actions container.
    * @param parent QObject parent
    */
-  explicit Actions(QObject *parent = nullptr);
+  explicit Actions(QObject* parent = nullptr);
 
   /** @brief Return the QAction for creating a new file.
    *  @return Pointer to the QAction
    */
-  QAction *newFileAction() const;
+  QAction* newFileAction() const;
   /** @brief Return the QAction for opening a file.
    *  @return Pointer to the QAction
    */
-  QAction *openFileAction() const;
+  QAction* openFileAction() const;
   /** @brief Return the QAction for saving the current file.
    *  @return Pointer to the QAction
    */
-  QAction *saveFileAction() const;
+  QAction* saveFileAction() const;
   /** @brief Return the QAction for saving the current file under a new name.
    *  @return Pointer to the QAction
    */
-  QAction *saveFileAsAction() const;
+  QAction* saveFileAsAction() const;
   /** @brief Return the QAction for quitting the application.
    *  @return Pointer to the QAction
    */
-  QAction *quitAction() const;
+  QAction* quitAction() const;
   /** @brief Return the QAction for showing the about dialog.
    *  @return Pointer to the QAction
    */
-  QAction *aboutAction() const;
+  QAction* aboutAction() const;
 
+  /** @brief Requests creation of a new workspace file. */
   Q_INVOKABLE void newFile();
+
+  /** @brief Requests opening an existing workspace file. */
   Q_INVOKABLE void openFile();
+
+  /** @brief Requests saving the current workspace file. */
   Q_INVOKABLE void saveFile();
+
+  /** @brief Requests saving the current workspace file under a new path. */
   Q_INVOKABLE void saveFileAs();
 
+  /** @brief Requests an import PDF file picker. */
   Q_INVOKABLE void browseImportPdf();
+
+  /** @brief Requests an export file picker. */
   Q_INVOKABLE void browseExportFile();
+
+  /** @brief Requests an export directory picker. */
   Q_INVOKABLE void browseExportDirectory();
 
 signals:
@@ -70,54 +82,64 @@ signals:
    * @brief Emitted when QML requests an import file dialog.
    * @param filter Native file dialog filter string (e.g. "PDF Files (*.pdf)").
    */
-  void importBrowseRequested(const QString &filter);
+  void importBrowseRequested(const QString& filter);
 
   /**
    * @brief Emitted after a single import file was selected by the user.
    * @param path Absolute path of the selected file.
    */
-  void importFileSelected(const QString &path);
+  void importFileSelected(const QString& path);
 
   /**
    * @brief Emitted after multiple import files were selected by the user.
    * @param paths List of absolute file paths.
    */
-  void importFilesSelected(const QStringList &paths);
+  void importFilesSelected(const QStringList& paths);
 
   /**
    * @brief Emitted when a file was dropped onto an import target in QML.
    * @param path Absolute path of the dropped file.
    */
-  void importFileDropped(const QString &path);
+  void importFileDropped(const QString& path);
 
   /**
    * @brief Emitted when multiple files were dropped onto an import target in
    * QML.
    * @param paths List of absolute file paths.
    */
-  void importFilesDropped(const QStringList &paths);
+  void importFilesDropped(const QStringList& paths);
 
   /**
    * @brief Emitted when QML requests an export file dialog.
    * @param filter Native file dialog filter string (e.g. "All Files (*.*)").
    */
-  void exportBrowseRequested(const QString &filter);
-  void exportDirectoryBrowseRequested(const QString &title);
+  void exportBrowseRequested(const QString& filter);
+
+  /**
+   * @brief Emitted when QML requests an export directory dialog.
+   * @param title Native file dialog title.
+   */
+  void exportDirectoryBrowseRequested(const QString& title);
 
   /**
    * @brief Emitted after an export path was chosen by the user.
    * @param path Absolute path of the target file.
    */
-  void exportFileSelected(const QString &path);
-  void exportDirectorySelected(const QString &path);
+  void exportFileSelected(const QString& path);
+
+  /**
+   * @brief Emitted after an export directory was chosen by the user.
+   * @param path Absolute path of the target directory.
+   */
+  void exportDirectorySelected(const QString& path);
 
 private:
-  QAction *newFileAction_ = nullptr;
-  QAction *openFileAction_ = nullptr;
-  QAction *saveFileAction_ = nullptr;
-  QAction *saveFileAsAction_ = nullptr;
-  QAction *quitAction_ = nullptr;
-  QAction *aboutAction_ = nullptr;
+  QAction* newFileAction_ = nullptr;
+  QAction* openFileAction_ = nullptr;
+  QAction* saveFileAction_ = nullptr;
+  QAction* saveFileAsAction_ = nullptr;
+  QAction* quitAction_ = nullptr;
+  QAction* aboutAction_ = nullptr;
 };
 
 } // namespace ui

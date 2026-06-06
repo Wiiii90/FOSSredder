@@ -26,7 +26,7 @@ void AppContext::setActions(ui::Actions* value) {
   assignIfChanged(actions_, value, this, &AppContext::actionsChanged);
 }
 
-void AppContext::setNavigation(ui::NavigationState* value) {
+void AppContext::setNavigation(ui::Navigation* value) {
   assignIfChanged(navigation_, value, this, &AppContext::navigationChanged);
 }
 
@@ -35,7 +35,7 @@ void AppContext::setFileSystemBrowser(ui::FileSystemBrowser* value) {
                   &AppContext::fileSystemBrowserChanged);
 }
 
-void AppContext::setStatus(ui::StatusState* value) {
+void AppContext::setStatus(ui::Status* value) {
   assignIfChanged(status_, value, this, &AppContext::statusChanged);
 }
 

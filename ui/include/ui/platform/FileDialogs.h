@@ -17,32 +17,39 @@ namespace ui::dialogs {
  *  @param filter Native file dialog filter string
  *  @return List of selected file paths
  */
-QStringList pickImportFiles(QWidget *parent, const QString &filter);
+QStringList pickImportFiles(QWidget* parent, const QString& filter);
 
 /** @brief Opens a save dialog for export targets.
  *  @param parent Parent widget for the dialog
  *  @param filter Native file dialog filter string
  *  @return Chosen export file path or empty when cancelled
  */
-QString pickExportFile(QWidget *parent, const QString &filter);
-QString pickExportDirectory(QWidget *parent, const QString &title);
+QString pickExportFile(QWidget* parent, const QString& filter);
+
+/**
+ * @brief Opens a directory picker for export targets.
+ * @param parent Parent widget for the dialog.
+ * @param title Native dialog title.
+ * @return Chosen export directory path or empty when cancelled.
+ */
+QString pickExportDirectory(QWidget* parent, const QString& title);
 
 /** @brief Opens a save dialog for creating a new storage database.
  *  @param parent Parent widget for the dialog
  *  @return Chosen storage file path or empty when cancelled
  */
-QString pickNewStorageFile(QWidget *parent);
+QString pickNewStorageFile(QWidget* parent);
 
 /** @brief Opens a file dialog for selecting an existing storage database.
  *  @param parent Parent widget for the dialog
  *  @return Selected storage file path or empty when cancelled
  */
-QString pickOpenStorageFile(QWidget *parent);
+QString pickOpenStorageFile(QWidget* parent);
 
 /** @brief Opens a save dialog for choosing a database target path.
  *  @param parent Parent widget for the dialog
  *  @return Chosen storage file path or empty when cancelled
  */
-QString pickSaveStorageFileAs(QWidget *parent);
+QString pickSaveStorageFileAs(QWidget* parent);
 
 } // namespace ui::dialogs

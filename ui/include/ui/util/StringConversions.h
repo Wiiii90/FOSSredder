@@ -20,17 +20,18 @@ namespace ui::strings {
  * @param value Qt string value.
  * @return UTF-8 encoded standard string.
  */
-inline std::string toStdString(const QString &value) {
+inline std::string toStdString(const QString& value) {
   const auto utf8 = value.toUtf8();
   return std::string(utf8.constData(), static_cast<size_t>(utf8.size()));
 }
 
 /**
- * @brief Converts a filesystem path to the platform-encoded byte representation.
+ * @brief Converts a filesystem path to the platform-encoded byte
+ * representation.
  * @param path Qt filesystem path.
  * @return Platform-encoded path string.
  */
-inline std::string toEncodedPath(const QString &path) {
+inline std::string toEncodedPath(const QString& path) {
   const auto encodedPath = QFile::encodeName(path);
   return std::string(encodedPath.constData(),
                      static_cast<size_t>(encodedPath.size()));
@@ -41,10 +42,10 @@ inline std::string toEncodedPath(const QString &path) {
  * @param values Qt string list.
  * @return Standard string vector.
  */
-inline std::vector<std::string> toStdList(const QStringList &values) {
+inline std::vector<std::string> toStdList(const QStringList& values) {
   std::vector<std::string> out;
   out.reserve(static_cast<size_t>(values.size()));
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     out.push_back(value.toStdString());
   }
   return out;
@@ -55,7 +56,7 @@ inline std::vector<std::string> toStdList(const QStringList &values) {
  * @param value Input text.
  * @return Trimmed, simplified, lower-case text.
  */
-inline QString normalizedText(const QString &value) {
+inline QString normalizedText(const QString& value) {
   return value.trimmed().simplified().toLower();
 }
 

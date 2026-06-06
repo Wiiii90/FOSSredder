@@ -24,16 +24,16 @@ core::ports::workspace::WorkspaceSnapshot makeAnnualSnapshot() {
   tabular.name = "Table";
   tabular.type = "tabular";
   tabular.snapshotTransactions = {tests::support::makeTransaction(
-      "tx-1", "Rent", "2026-01-05", 1250.0, {}, "contract-1",
-      "statement-1", true, {"property-1"})};
+      "tx-1", "Rent", "2026-01-05", 1250.0, "statement-1", true, "contract-1",
+      {}, {"property-1"})};
 
   auto plot = tests::support::makeAnalysis();
   plot.id = "analysis-plot";
   plot.name = "Plot";
   plot.type = "plot";
   plot.snapshotTransactions = {tests::support::makeTransaction(
-      "tx-2", "Fees", "2026-01-06", -35.5, {}, {}, "statement-1",
-      false, {"property-1"})};
+      "tx-2", "Fees", "2026-01-06", -35.5, "statement-1", false, {}, {},
+      {"property-1"})};
 
   auto annual = tests::support::makeAnnual();
   annual.analysisIds = {"analysis-table"};
@@ -46,13 +46,19 @@ core::ports::workspace::WorkspaceSnapshot makeAnnualSnapshot() {
 
 } // namespace
 
-TEST(AnnualWorkflowTest, WF_ANNUAL_001_ComputeAnnualUsesStoredAnnualAssignments) {
+TEST(AnnualWorkflowTest,
+     WF_ANNUAL_001_ComputeAnnualUsesStoredAnnualAssignments) {
   const auto snapshot = makeAnnualSnapshot();
   auto annualAdapter = std::make_shared<ui::adapters::AnnualAdapter>(
       std::make_shared<tests::support::FakeAnnualRunner>());
-  AnnualWorkflow workflow([snapshot]() { return snapshot; }, annualAdapter);
+  AnnualWorkflow workflow(
+      [snapshot]() {
+        return snapshot;
+      },
+      annualAdapter);
 
-  const QVariantMap result = workflow.computeAnnual(QStringLiteral("annual-1"));
+  const QVariantMap result = workflow.computeAnnualPreview(
+      QStringLiteral("annual-1"), {QStringLiteral("analysis-table")}, 2026);
   const QVariantMap stats = result.value(QStringLiteral("stats")).toMap();
 
   EXPECT_EQ(result.value(QStringLiteral("annualId")).toString(),
@@ -67,7 +73,11 @@ TEST(AnnualWorkflowTest,
   const auto snapshot = makeAnnualSnapshot();
   auto annualAdapter = std::make_shared<ui::adapters::AnnualAdapter>(
       std::make_shared<tests::support::FakeAnnualRunner>());
-  AnnualWorkflow workflow([snapshot]() { return snapshot; }, annualAdapter);
+  AnnualWorkflow workflow(
+      [snapshot]() {
+        return snapshot;
+      },
+      annualAdapter);
 
   const QVariantMap result = workflow.computeAnnualPreview(
       QStringLiteral("annual-1"),
@@ -109,8 +119,9 @@ TEST(AnnualWorkflowTest, WF_ANNUAL_003_WorkspaceCommandsSaveAndDeleteAnnual) {
   EXPECT_EQ(snapshot.annuals.front().id, std::string("annual-1"));
 }
 
-TEST(AnnualWorkflowTest,
-     WF_ANNUAL_004_WorkspaceCommandsPreserveAnalysisPayloadWhenExportFormatChanges) {
+TEST(
+    AnnualWorkflowTest,
+    WF_ANNUAL_004_WorkspaceCommandsPreserveAnalysisPayloadWhenExportFormatChanges) {
   tests::support::InMemoryWorkspace workspace(makeAnnualSnapshot());
   WorkspaceStore store;
   store.setWorkspacePorts(&workspace, &workspace);

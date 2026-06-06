@@ -35,9 +35,9 @@ public:
    * @param request Analysis request.
    * @return Core analysis result.
    */
-  core::ports::analysis::AnalysisResult runAnalysis(
-      const core::ports::workspace::WorkspaceSnapshot& workspace,
-      const core::ports::analysis::AnalysisRequest& request) const;
+  core::ports::analysis::AnalysisResult
+  runAnalysis(const core::ports::workspace::WorkspaceSnapshot& workspace,
+              const core::ports::analysis::AnalysisRequest& request) const;
   /**
    * @brief Builds preview transactions through the core runner.
    * @param workspace Workspace snapshot used as input.
@@ -47,6 +47,23 @@ public:
   core::ports::analysis::AnalysisPreviewResult previewTransactions(
       const core::ports::workspace::WorkspaceSnapshot& workspace,
       const std::string& filterSpec) const;
+  /**
+   * @brief Builds an analysis request from UI-facing ids and filter specs.
+   * @param analysisId Analysis id.
+   * @param filterSpec Serialized filter specification.
+   * @return Core analysis request.
+   */
+  [[nodiscard]] core::ports::analysis::AnalysisRequest
+  buildAnalysisRequest(const QString& analysisId,
+                       const QString& filterSpec) const;
+  /**
+   * @brief Parses a serialized analysis filter specification through the core
+   * runner.
+   * @param filterSpec Serialized filter specification.
+   * @return Core filter selection.
+   */
+  [[nodiscard]] core::ports::analysis::AnalysisFilterSelection
+  parseFilterSpec(const std::string& filterSpec) const;
   /**
    * @brief Builds a serialized analysis filter specification from UI fields.
    * @param dateField Selected date field.
@@ -61,8 +78,7 @@ public:
    */
   QString buildFilterSpec(const QString& dateField, const QString& dateMode,
                           const QString& year, const QString& dateFrom,
-                          const QString& dateTo,
-                          const QStringList& propertyIds,
+                          const QString& dateTo, const QStringList& propertyIds,
                           const QStringList& contractTypes,
                           const QString& allocatableMode) const;
   /**
@@ -72,10 +88,10 @@ public:
    * @param taxPercent Tax percentage applied by core.
    * @return Adjustment amount map keyed by transaction id.
    */
-  QVariantMap buildAnalysisAdjustmentAmounts(
-      const QVariantList& transactions,
-      const QStringList& selectedTransactionIds,
-      double taxPercent) const;
+  QVariantMap
+  buildAnalysisAdjustmentAmounts(const QVariantList& transactions,
+                                 const QStringList& selectedTransactionIds,
+                                 double taxPercent) const;
   /**
    * @brief Converts a QML adjustment amount map to core adjustment pairs.
    * @param amountsById Adjustment amount map keyed by transaction id.
@@ -89,9 +105,9 @@ public:
    * @param defaultValue Value used when parsing fails or no runner exists.
    * @return Parsed percent value or default value.
    */
-  [[nodiscard]] double parseAnalysisPercentText(
-      const QString& text,
-      double defaultValue = 0.0) const;
+  [[nodiscard]] double
+  parseAnalysisPercentText(const QString& text,
+                           double defaultValue = 0.0) const;
   /**
    * @brief Applies preview-only overrides to a workspace snapshot.
    * @param workspace Workspace snapshot to mutate for preview only.
@@ -101,9 +117,9 @@ public:
    */
   void applyAnalysisPreviewOverrides(
       core::ports::workspace::WorkspaceSnapshot& workspace,
-      const std::string& analysisId,
-      bool includeCalculationAdjustments,
-      const core::ports::analysis::AnalysisAdjustmentAmounts& adjustments) const;
+      const std::string& analysisId, bool includeCalculationAdjustments,
+      const core::ports::analysis::AnalysisAdjustmentAmounts& adjustments)
+      const;
   /**
    * @brief Projects table state for QML presentation.
    * @param result Analysis result.
@@ -168,12 +184,9 @@ private:
    * @return Core filter selection.
    */
   core::ports::analysis::AnalysisFilterSelection filterSelectionFromFields(
-      const std::string& dateField,
-      const std::string& dateMode,
-      const std::string& year,
-      const std::string& dateFrom,
-      const std::string& dateTo,
-      const std::vector<std::string>& propertyIds,
+      const std::string& dateField, const std::string& dateMode,
+      const std::string& year, const std::string& dateFrom,
+      const std::string& dateTo, const std::vector<std::string>& propertyIds,
       const std::vector<std::string>& contractTypes,
       const std::string& allocatableMode) const;
   /**
@@ -183,10 +196,10 @@ private:
    * @param taxPercent Tax percentage.
    * @return Adjustment amount pairs.
    */
-  core::ports::analysis::AnalysisAdjustmentAmounts buildAnalysisAdjustments(
-      const QVariantList& transactions,
-      const QStringList& selectedTransactionIds,
-      double taxPercent) const;
+  core::ports::analysis::AnalysisAdjustmentAmounts
+  buildAnalysisAdjustments(const QVariantList& transactions,
+                           const QStringList& selectedTransactionIds,
+                           double taxPercent) const;
   /**
    * @brief Builds adjustments from core transaction inputs.
    * @param transactions Core adjustment transaction inputs.

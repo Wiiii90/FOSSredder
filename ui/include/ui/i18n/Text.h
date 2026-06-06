@@ -23,7 +23,7 @@ namespace detail {
  * @param source Source string registered through `QT_TRANSLATE_NOOP`.
  * @return Localized string for the active application translator.
  */
-inline QString translate(const char *context, const char *source) {
+inline QString translate(const char* context, const char* source) {
   return QCoreApplication::translate(context, source);
 }
 
@@ -38,7 +38,9 @@ inline constexpr auto kContext = "Messages";
 inline constexpr auto kReadySource = QT_TRANSLATE_NOOP("Messages", "Ready");
 
 /** @brief Text for the idle application state. */
-inline QString ready() { return detail::translate(kContext, kReadySource); }
+inline QString ready() {
+  return detail::translate(kContext, kReadySource);
+}
 
 } // namespace status
 
@@ -57,7 +59,9 @@ inline constexpr auto kQuitSource = QT_TRANSLATE_NOOP("Actions", "Quit");
 inline constexpr auto kAboutSource = QT_TRANSLATE_NOOP("Actions", "About");
 
 /** @brief Label for creating a new workspace file. */
-inline QString newFile() { return detail::translate(kContext, kNewFileSource); }
+inline QString newFile() {
+  return detail::translate(kContext, kNewFileSource);
+}
 /** @brief Label for opening an existing workspace file. */
 inline QString openFile() {
   return detail::translate(kContext, kOpenFileSource);
@@ -71,9 +75,13 @@ inline QString saveFileAs() {
   return detail::translate(kContext, kSaveFileAsSource);
 }
 /** @brief Label for quitting the application. */
-inline QString quit() { return detail::translate(kContext, kQuitSource); }
+inline QString quit() {
+  return detail::translate(kContext, kQuitSource);
+}
 /** @brief Label for opening the about dialog. */
-inline QString about() { return detail::translate(kContext, kAboutSource); }
+inline QString about() {
+  return detail::translate(kContext, kAboutSource);
+}
 
 } // namespace actions
 
@@ -263,8 +271,7 @@ inline constexpr auto kStatusRunningSource =
     QT_TRANSLATE_NOOP("Import", "Running");
 inline constexpr auto kStatusPausedSource =
     QT_TRANSLATE_NOOP("Import", "Paused");
-inline constexpr auto kStatusDraftSource =
-    QT_TRANSLATE_NOOP("Import", "Draft");
+inline constexpr auto kStatusDraftSource = QT_TRANSLATE_NOOP("Import", "Draft");
 inline constexpr auto kStatusFinalizedSource =
     QT_TRANSLATE_NOOP("Import", "Finalized");
 inline constexpr auto kStatusDeletedSource =

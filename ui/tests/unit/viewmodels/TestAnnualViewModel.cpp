@@ -9,8 +9,8 @@
 
 #include "support/WorkspacePortFakes.h"
 #include "support/WorkspaceTestData.h"
-#include "ui/viewmodels/AnnualViewModel.h"
 #include "ui/adapters/AnnualAdapter.h"
+#include "ui/viewmodels/AnnualViewModel.h"
 #include "ui/workflows/AnnualWorkflow.h"
 #include "ui/workspace/WorkspaceCommands.h"
 #include "ui/workspace/WorkspaceSelection.h"
@@ -39,8 +39,8 @@ auto makeAnnualSnapshot() {
   tabular.type = "tabular";
   tabular.exportFormat = "csv";
   tabular.snapshotTransactions = {tests::support::makeTransaction(
-      "tx-1", "Rent", "2026-01-05", 1250.0, {}, "contract-1",
-      "statement-1", true, {"property-1"})};
+      "tx-1", "Rent", "2026-01-05", 1250.0, "statement-1", true, "contract-1",
+      {}, {"property-1"})};
 
   auto plot = tests::support::makeAnalysis();
   plot.id = "analysis-plot";
@@ -48,8 +48,8 @@ auto makeAnnualSnapshot() {
   plot.type = "plot";
   plot.exportFormat = "png";
   plot.snapshotTransactions = {tests::support::makeTransaction(
-      "tx-2", "Fees", "2026-01-06", -35.5, {}, {}, "statement-1",
-      false, {"property-1"})};
+      "tx-2", "Fees", "2026-01-06", -35.5, "statement-1", false, {}, {},
+      {"property-1"})};
 
   auto annual = tests::support::makeAnnual();
   annual.name = "Annual 2026";
@@ -67,7 +67,7 @@ AnnualStateHarness makeHarness(bool selectAnnual) {
   }
   auto workspace =
       std::make_unique<tests::support::InMemoryWorkspace>(std::move(snapshot));
-  auto *workspacePtr = workspace.get();
+  auto* workspacePtr = workspace.get();
   auto store = std::make_unique<WorkspaceStore>();
   store->setWorkspacePorts(workspacePtr, workspacePtr);
   store->loadFromState(workspacePtr->workspaceSnapshot());
@@ -76,16 +76,18 @@ AnnualStateHarness makeHarness(bool selectAnnual) {
   auto selection = std::make_unique<WorkspaceSelection>(*store, *selectors);
   workspace->setSnapshotChangedCallback(
       [storePtr = store.get()](
-          const core::ports::workspace::WorkspaceSnapshot &nextSnapshot) {
+          const core::ports::workspace::WorkspaceSnapshot& nextSnapshot) {
         storePtr->loadFromState(nextSnapshot);
       });
-  selection->setSelectedAnnualId(
-      selectAnnual ? QStringLiteral("annual-1") : QString());
+  selection->setSelectedAnnualId(selectAnnual ? QStringLiteral("annual-1")
+                                              : QString());
 
   auto annualAdapter = std::make_shared<ui::adapters::AnnualAdapter>(
       std::make_shared<tests::support::FakeAnnualRunner>());
   auto workflow = std::make_unique<AnnualWorkflow>(
-      [workspacePtr]() { return workspacePtr->workspaceSnapshot(); },
+      [workspacePtr]() {
+        return workspacePtr->workspaceSnapshot();
+      },
       annualAdapter);
 
   auto state = std::make_unique<AnnualViewModel>();
@@ -93,13 +95,13 @@ AnnualStateHarness makeHarness(bool selectAnnual) {
                            selectors.get());
   state->setAnnualWorkflow(workflow.get());
 
-  return {std::move(workspace), std::move(store), std::move(commands),
+  return {std::move(workspace), std::move(store),     std::move(commands),
           std::move(selectors), std::move(selection), std::move(workflow),
           std::move(state)};
 }
 
-bool sectionVisible(const QVariantList &sections, const QString &key) {
-  for (const QVariant &value : sections) {
+bool sectionVisible(const QVariantList& sections, const QString& key) {
+  for (const QVariant& value : sections) {
     const QVariantMap section = value.toMap();
     if (section.value(QStringLiteral("key")).toString() == key) {
       return section.value(QStringLiteral("visible")).toBool();
@@ -145,7 +147,8 @@ TEST(AnnualViewModelTest,
             std::string("analysis-plot"));
 }
 
-TEST(AnnualViewModelTest, VM_ANNUAL_003_CreateStatePersistsNewAnnualThroughWorkspace) {
+TEST(AnnualViewModelTest,
+     VM_ANNUAL_003_CreateStatePersistsNewAnnualThroughWorkspace) {
   auto harness = makeHarness(false);
 
   harness.state->setName(QStringLiteral("Created Annual"));
@@ -163,7 +166,8 @@ TEST(AnnualViewModelTest, VM_ANNUAL_003_CreateStatePersistsNewAnnualThroughWorks
   EXPECT_FALSE(harness.selection->selectedAnnualId().isEmpty());
 }
 
-TEST(AnnualViewModelTest, VM_ANNUAL_004_ExportFormatChangesRouteThroughWorkspace) {
+TEST(AnnualViewModelTest,
+     VM_ANNUAL_004_ExportFormatChangesRouteThroughWorkspace) {
   auto harness = makeHarness(true);
 
   harness.state->setAnalysisExportFormat(QStringLiteral("analysis-plot"),

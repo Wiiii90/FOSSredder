@@ -20,10 +20,6 @@ namespace ui::adapters {
 class AnalysisAdapter;
 }
 
-namespace core::ports::analysis {
-struct AnalysisRequest;
-}
-
 namespace ui {
 
 /**
@@ -65,7 +61,8 @@ public:
                              const QStringList& contractTypes,
                              const QString& allocatableMode) const;
   /**
-   * @brief Builds adjustment amounts from selected transactions and percent text.
+   * @brief Builds adjustment amounts from selected transactions and percent
+   * text.
    * @param transactions Preview transaction rows containing id and amount.
    * @param selectedTransactionIds Transaction ids selected for adjustment.
    * @param percentText User-entered percent text.
@@ -84,10 +81,10 @@ public:
    * @param adjustmentAmounts Adjustment amount map keyed by transaction id.
    * @return QML analysis result payload.
    */
-  QVariantMap computeAnalysisPreview(const QString& analysisId,
-                                     const QString& filterSpec,
-                                     bool includeAdjustments,
-                                     const QVariantMap& adjustmentAmounts) const;
+  QVariantMap
+  computeAnalysisPreview(const QString& analysisId, const QString& filterSpec,
+                         bool includeAdjustments,
+                         const QVariantMap& adjustmentAmounts) const;
   /**
    * @brief Builds a transaction preview for the current filter.
    * @param filterSpec Serialized filter specification.
@@ -102,15 +99,6 @@ public:
   QStringList contractTypes() const;
 
 private:
-  /**
-   * @brief Builds a core analysis request from UI fields.
-   * @param analysisId Analysis id.
-   * @param filterSpec Serialized filter specification.
-   * @return Core analysis request.
-   */
-  core::ports::analysis::AnalysisRequest
-  analysisRequest(const QString& analysisId,
-                  const QString& filterSpec) const;
   /**
    * @brief Returns the current workspace snapshot.
    * @return Workspace snapshot or an empty snapshot.

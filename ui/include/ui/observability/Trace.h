@@ -8,8 +8,8 @@
 #include <string>
 #include <utility>
 
-#include "core/errors/ErrorEvent.h"
 #include "core/errors/ErrorCodes.h"
+#include "core/errors/ErrorEvent.h"
 #include "core/errors/ErrorReporterRegistry.h"
 #include "ui/observability/ErrorCodes.h"
 
@@ -62,7 +62,7 @@ bool isTraceEnabled();
  * @param message Trace message.
  * @param context Structured trace context.
  */
-void trace(const char *layer, const char *origin, std::string message,
+void trace(const char* layer, const char* origin, std::string message,
            core::errors::ErrorContext context = {});
 
 /**
@@ -71,7 +71,7 @@ void trace(const char *layer, const char *origin, std::string message,
  * @param message Trace message.
  * @param context Structured trace context.
  */
-inline void traceAdapter(const char *origin, std::string message,
+inline void traceAdapter(const char* origin, std::string message,
                          core::errors::ErrorContext context = {}) {
   trace(layer::kAdapter, origin, std::move(message), std::move(context));
 }
@@ -82,7 +82,7 @@ inline void traceAdapter(const char *origin, std::string message,
  * @param message Trace message.
  * @param context Structured trace context.
  */
-inline void traceComposition(const char *origin, std::string message,
+inline void traceComposition(const char* origin, std::string message,
                              core::errors::ErrorContext context = {}) {
   trace(layer::kComposition, origin, std::move(message), std::move(context));
 }
@@ -93,7 +93,7 @@ inline void traceComposition(const char *origin, std::string message,
  * @param message Trace message.
  * @param context Structured trace context.
  */
-inline void traceViewModel(const char *origin, std::string message,
+inline void traceViewModel(const char* origin, std::string message,
                            core::errors::ErrorContext context = {}) {
   trace(layer::kViewModel, origin, std::move(message), std::move(context));
 }
@@ -104,7 +104,7 @@ inline void traceViewModel(const char *origin, std::string message,
  * @param message Trace message.
  * @param context Structured trace context.
  */
-inline void traceWorkflow(const char *origin, std::string message,
+inline void traceWorkflow(const char* origin, std::string message,
                           core::errors::ErrorContext context = {}) {
   trace(layer::kWorkflow, origin, std::move(message), std::move(context));
 }
@@ -115,7 +115,7 @@ inline void traceWorkflow(const char *origin, std::string message,
  * @param message Trace message.
  * @param context Structured trace context.
  */
-inline void traceWorkspace(const char *origin, std::string message,
+inline void traceWorkspace(const char* origin, std::string message,
                            core::errors::ErrorContext context = {}) {
   trace(layer::kWorkspace, origin, std::move(message), std::move(context));
 }
@@ -128,8 +128,8 @@ inline void traceWorkspace(const char *origin, std::string message,
  * @param message Error message.
  * @param context Structured error context.
  */
-inline void reportFlow(core::errors::ErrorSeverity severity, const char *code,
-                       const char *origin, std::string message,
+inline void reportFlow(core::errors::ErrorSeverity severity, const char* code,
+                       const char* origin, std::string message,
                        core::errors::ErrorContext context = {}) {
   core::errors::report(severity, code, origin, std::move(message),
                        std::move(context));
@@ -142,7 +142,7 @@ inline void reportFlow(core::errors::ErrorSeverity severity, const char *code,
  * @param message Error message.
  * @param context Structured error context.
  */
-inline void reportFlow(core::errors::ErrorSeverity severity, const char *origin,
+inline void reportFlow(core::errors::ErrorSeverity severity, const char* origin,
                        std::string message,
                        core::errors::ErrorContext context = {}) {
   reportFlow(severity, core::errors::codes::GenericError, origin,

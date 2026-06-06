@@ -38,7 +38,8 @@ TEST(BookingViewModelTest,
 
 TEST(BookingViewModelTest,
      VM_BOOKING_002_UpdateCurrentRoutesStatementAndTransactionChanges) {
-  tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeWorkspaceSnapshot());
   BookingViewModel viewModel(harness.store.get(), harness.commands.get(),
                              harness.selection.get(), harness.selectors.get());
 

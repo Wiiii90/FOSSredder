@@ -26,8 +26,9 @@ public:
    * @param selectors Workspace selectors used for existence checks.
    * @param parent Optional Qt parent.
    */
-  explicit WorkspaceSelection(WorkspaceStore &store, WorkspaceSelectors &selectors,
-                              QObject *parent = nullptr);
+  explicit WorkspaceSelection(WorkspaceStore& store,
+                              WorkspaceSelectors& selectors,
+                              QObject* parent = nullptr);
 
   /** @brief Refreshes selection objects after the underlying store reloaded. */
   void loadFromState();
@@ -38,9 +39,11 @@ public:
   QString selectedPropertyId() const;
   /** @brief Returns the selected contract id. @return Contract id or empty. */
   QString selectedContractId() const;
-  /** @brief Returns the selected statement id. @return Statement id or empty. */
+  /** @brief Returns the selected statement id. @return Statement id or empty.
+   */
   QString selectedStatementId() const;
-  /** @brief Returns the selected transaction id. @return Transaction id or empty. */
+  /** @brief Returns the selected transaction id. @return Transaction id or
+   * empty. */
   QString selectedTransactionId() const;
   /** @brief Returns the selected analysis id. @return Analysis id or empty. */
   QString selectedAnalysisId() const;
@@ -48,36 +51,36 @@ public:
   QString selectedAnnualId() const;
 
   /** @brief Selects an actor id. @param id Actor id. */
-  void setSelectedActorId(const QString &id);
+  void setSelectedActorId(const QString& id);
   /** @brief Selects a property id. @param id Property id. */
-  void setSelectedPropertyId(const QString &id);
+  void setSelectedPropertyId(const QString& id);
   /** @brief Selects a contract id. @param id Contract id. */
-  void setSelectedContractId(const QString &id);
+  void setSelectedContractId(const QString& id);
   /** @brief Selects a statement id. @param id Statement id. */
-  void setSelectedStatementId(const QString &id);
+  void setSelectedStatementId(const QString& id);
   /** @brief Selects an analysis id. @param id Analysis id. */
-  void setSelectedAnalysisId(const QString &id);
+  void setSelectedAnalysisId(const QString& id);
   /** @brief Selects an annual id. @param id Annual id. */
-  void setSelectedAnnualId(const QString &id);
+  void setSelectedAnnualId(const QString& id);
 
   /** @brief Selects an actor. @param id Actor id. */
-  void selectActor(const QString &id);
+  void selectActor(const QString& id);
   /** @brief Selects a property. @param id Property id. */
-  void selectProperty(const QString &id);
+  void selectProperty(const QString& id);
   /** @brief Selects a contract. @param id Contract id. */
-  void selectContract(const QString &id);
+  void selectContract(const QString& id);
   /** @brief Selects a statement. @param id Statement id. */
-  void selectStatement(const QString &id);
+  void selectStatement(const QString& id);
   /**
    * @brief Selects a statement and transaction.
    * @param statementId Statement id.
    * @param id Transaction id.
    */
-  void selectTransaction(const QString &statementId, const QString &id);
+  void selectTransaction(const QString& statementId, const QString& id);
   /** @brief Selects an analysis. @param id Analysis id. */
-  void selectAnalysis(const QString &id);
+  void selectAnalysis(const QString& id);
   /** @brief Selects an annual. @param id Annual id. */
-  void selectAnnual(const QString &id);
+  void selectAnnual(const QString& id);
 
 signals:
   /** @brief Emitted when the selected actor id changed. */
@@ -101,8 +104,8 @@ private:
   /** @brief Clears selections that no longer exist in the workspace store. */
   void validateSelections();
 
-  WorkspaceStore &store_;
-  WorkspaceSelectors &selectors_;
+  WorkspaceStore& store_;
+  WorkspaceSelectors& selectors_;
   QString selectedActorId_;
   QString selectedPropertyId_;
   QString selectedContractId_;

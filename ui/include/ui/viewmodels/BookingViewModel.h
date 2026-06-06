@@ -69,10 +69,10 @@ public:
    * @brief Creates the booking view model backed by workspace roles.
    * @param parent Optional Qt parent object.
    */
-  explicit BookingViewModel(WorkspaceStore *store, WorkspaceCommands *commands,
-                            WorkspaceSelection *selection,
-                            WorkspaceSelectors *selectors,
-                            QObject *parent = nullptr);
+  explicit BookingViewModel(WorkspaceStore* store, WorkspaceCommands* commands,
+                            WorkspaceSelection* selection,
+                            WorkspaceSelectors* selectors,
+                            QObject* parent = nullptr);
 
   /**
    * @brief Returns whether the form currently creates a new statement.
@@ -90,7 +90,7 @@ public:
    * @brief Updates the statement name shown in the form.
    * @param value New statement name.
    */
-  void setStatementName(const QString &value);
+  void setStatementName(const QString& value);
 
   /**
    * @brief Returns the current transaction name field.
@@ -102,7 +102,7 @@ public:
    * @brief Updates the current transaction name field.
    * @param value New transaction name.
    */
-  void setTransactionName(const QString &value);
+  void setTransactionName(const QString& value);
 
   /**
    * @brief Returns the current transaction booking date field.
@@ -114,7 +114,7 @@ public:
    * @brief Updates the current transaction booking date field.
    * @param value New booking date text.
    */
-  void setTransactionBookingDate(const QString &value);
+  void setTransactionBookingDate(const QString& value);
 
   /**
    * @brief Returns the current transaction valuta field.
@@ -126,7 +126,7 @@ public:
    * @brief Updates the current transaction valuta field.
    * @param value New valuta text.
    */
-  void setTransactionValuta(const QString &value);
+  void setTransactionValuta(const QString& value);
 
   /**
    * @brief Returns the current amount field as text.
@@ -138,7 +138,7 @@ public:
    * @brief Updates the current amount field.
    * @param value New amount text.
    */
-  void setTransactionAmountText(const QString &value);
+  void setTransactionAmountText(const QString& value);
 
   /**
    * @brief Returns the selected transaction status option index.
@@ -306,7 +306,7 @@ public:
    * @param propertyId Property id from the checkbox row.
    * @param selected True to select the property, false to remove it.
    */
-  Q_INVOKABLE void setPropertySelected(const QString &propertyId,
+  Q_INVOKABLE void setPropertySelected(const QString& propertyId,
                                        bool selected);
 
   /**
@@ -325,18 +325,19 @@ public:
    * @brief Selects a statement from the sidebar.
    * @param statementId Statement id to select.
    */
-  Q_INVOKABLE void selectStatement(const QString &statementId);
+  Q_INVOKABLE void selectStatement(const QString& statementId);
 
   /**
    * @brief Selects a transaction from the sidebar.
    * @param statementId Parent statement id.
    * @param transactionId Transaction id to select.
    */
-  Q_INVOKABLE void selectTransaction(const QString &statementId,
-                                     const QString &transactionId);
+  Q_INVOKABLE void selectTransaction(const QString& statementId,
+                                     const QString& transactionId);
 
   /**
-   * @brief Creates a statement and its transaction form states through workspace.
+   * @brief Creates a statement and its transaction form states through
+   * workspace.
    * @return Created statement id or an empty string when creation failed.
    */
   Q_INVOKABLE QString submit();
@@ -366,7 +367,7 @@ private:
    * @param tx Raw transaction form map.
    * @return Normalized transaction form map.
    */
-  QVariantMap normalizeTransaction(const QVariantMap &tx) const;
+  QVariantMap normalizeTransaction(const QVariantMap& tx) const;
 
   /**
    * @brief Returns the current transaction form state.
@@ -378,27 +379,27 @@ private:
    * @brief Replaces the current transaction form state.
    * @param value New transaction form state.
    */
-  void setTransactionData(const QVariantMap &value);
+  void setTransactionData(const QVariantMap& value);
 
   /**
    * @brief Reads a field from the current transaction form state.
    * @param key Field key.
    * @return Current field value.
    */
-  QVariant transactionField(const QString &key) const;
+  QVariant transactionField(const QString& key) const;
 
   /**
    * @brief Updates one field in the current transaction form state.
    * @param key Field key.
    * @param value New field value.
    */
-  void setTransactionField(const QString &key, const QVariant &value);
+  void setTransactionField(const QString& key, const QVariant& value);
 
   /**
    * @brief Applies dependent actor, contract, and property changes to the form.
    * @param changes Partial transaction form changes.
    */
-  void applyTransactionFormChange(const QVariantMap &changes);
+  void applyTransactionFormChange(const QVariantMap& changes);
 
   /**
    * @brief Resolves the selected index for an id in a row list.
@@ -406,7 +407,7 @@ private:
    * @param id Selected id.
    * @return Matching row index or zero for the empty option.
    */
-  int selectedIndexFor(const QVariantList &rows, const QString &id) const;
+  int selectedIndexFor(const QVariantList& rows, const QString& id) const;
 
   /**
    * @brief Builds the current edit transaction selection state.
@@ -419,21 +420,21 @@ private:
    * @param txId Transaction id.
    * @return Transaction form state or an empty transaction.
    */
-  QVariantMap transactionById(const QString &txId) const;
+  QVariantMap transactionById(const QString& txId) const;
 
   /**
    * @brief Returns transaction rows for a statement.
    * @param statementId Statement id whose transactions should be returned.
    * @return Transaction rows belonging to the statement.
    */
-  QVariantList statementTransactionRows(const QString &statementId) const;
+  QVariantList statementTransactionRows(const QString& statementId) const;
 
   /**
    * @brief Normalizes transaction form state for dirty-state comparison.
    * @param data Transaction form state.
    * @return Normalized transaction form state.
    */
-  QVariantMap normalizedTransactionState(const QVariantMap &data) const;
+  QVariantMap normalizedTransactionState(const QVariantMap& data) const;
 
   /**
    * @brief Captures the current edit state for dirty-state comparison.
@@ -450,7 +451,7 @@ private:
    * @param statementId Statement id.
    * @return Remembered transaction id or the first transaction id.
    */
-  QString transactionIdForStatement(const QString &statementId) const;
+  QString transactionIdForStatement(const QString& statementId) const;
 
   /**
    * @brief Ensures the workspace selection points at a valid transaction.
@@ -473,10 +474,10 @@ private:
    */
   void bindSignals();
 
-  WorkspaceStore *store_ = nullptr;
-  WorkspaceCommands *commands_ = nullptr;
-  WorkspaceSelection *selection_ = nullptr;
-  WorkspaceSelectors *selectors_ = nullptr;
+  WorkspaceStore* store_ = nullptr;
+  WorkspaceCommands* commands_ = nullptr;
+  WorkspaceSelection* selection_ = nullptr;
+  WorkspaceSelectors* selectors_ = nullptr;
   QString createStatementName_;
   QVariantList createTransactionStates_;
   int createTransactionIndex_ = 0;

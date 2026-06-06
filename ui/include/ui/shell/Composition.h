@@ -33,7 +33,7 @@ class IImportRunner;
 namespace core::ports::workspace {
 class IWorkspaceReader;
 class IWorkspaceWriter;
-}
+} // namespace core::ports::workspace
 
 namespace ui::shell {
 
@@ -50,10 +50,10 @@ namespace ui::shell {
  * @param importRunner Core import use-case runner.
  */
 void createComposition(
-    QApplication &app, MainWindow &w,
-    core::ports::workspace::IWorkspaceReader &workspaceReader,
-    core::ports::workspace::IWorkspaceWriter &workspaceWriter,
-    const std::shared_ptr<core::errors::IErrorReporter> &errorReporter,
+    QApplication& app, MainWindow& w,
+    core::ports::workspace::IWorkspaceReader& workspaceReader,
+    core::ports::workspace::IWorkspaceWriter& workspaceWriter,
+    const std::shared_ptr<core::errors::IErrorReporter>& errorReporter,
     std::shared_ptr<core::ports::analysis::IAnalysisRunner> analysisRunner,
     std::shared_ptr<core::ports::annual::IAnnualRunner> annualRunner,
     std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner,
@@ -66,7 +66,7 @@ void createComposition(
  * @param errorReporter Error reporter for callback failures.
  */
 void wireWorkspaceCallbacks(
-    MainWindow &w, core::ports::workspace::IWorkspaceWriter &workspaceWriter,
-    const std::shared_ptr<core::errors::IErrorReporter> &errorReporter);
+    MainWindow& w, core::ports::workspace::IWorkspaceWriter& workspaceWriter,
+    const std::shared_ptr<core::errors::IErrorReporter>& errorReporter);
 
 } // namespace ui::shell

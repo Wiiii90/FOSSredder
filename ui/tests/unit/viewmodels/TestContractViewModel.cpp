@@ -13,7 +13,8 @@ namespace ui {
 
 TEST(ContractViewModelTest,
      VM_CONTRACT_001_SubmitCreatesContractWithActorPropertyAndMode) {
-  tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeWorkspaceSnapshot());
   ContractViewModel viewModel(harness.store.get(), harness.commands.get(),
                               harness.selection.get(), harness.selectors.get());
 
@@ -40,7 +41,8 @@ TEST(ContractViewModelTest,
 
 TEST(ContractViewModelTest,
      VM_CONTRACT_002_SelectEditUpdateAndDeleteCurrentContract) {
-  tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeWorkspaceSnapshot());
   ContractViewModel viewModel(harness.store.get(), harness.commands.get(),
                               harness.selection.get(), harness.selectors.get());
 

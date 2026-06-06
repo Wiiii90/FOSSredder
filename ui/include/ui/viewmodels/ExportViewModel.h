@@ -57,64 +57,71 @@ public:
    * @brief Creates the export view model.
    * @param parent Optional QObject parent.
    */
-  explicit ExportViewModel(QObject *parent = nullptr);
+  explicit ExportViewModel(QObject* parent = nullptr);
 
   /**
    * @brief Binds workspace roles used for catalog rows and export logs.
    */
-  void setWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
-                         WorkspaceSelectors *selectors);
+  void setWorkspaceRoles(WorkspaceStore* store, WorkspaceCommands* commands,
+                         WorkspaceSelectors* selectors);
   /**
    * @brief Binds the workflow used to execute exports.
    * @param value Export workflow or nullptr.
    */
-  void setExportWorkflow(ExportWorkflow *value);
+  void setExportWorkflow(ExportWorkflow* value);
   /**
    * @brief Binds shell actions such as the export directory picker.
    * @param value Actions object or nullptr.
    */
-  void setActions(Actions *value);
+  void setActions(Actions* value);
   /**
    * @brief Binds filesystem defaults used by the export form.
    * @param value File system browser or nullptr.
    */
-  void setFileSystemBrowser(FileSystemBrowser *value);
+  void setFileSystemBrowser(FileSystemBrowser* value);
   /**
    * @brief Binds export settings used by defaults and package options.
    * @param value Settings object or nullptr.
    */
-  void setSettings(Settings *value);
+  void setSettings(Settings* value);
 
   /**
    * @brief Returns the selected export target directory.
    * @return Target directory path.
    */
-  QString targetDirectory() const { return targetDirectory_; }
+  QString targetDirectory() const {
+    return targetDirectory_;
+  }
   /**
    * @brief Updates the selected export target directory.
    * @param value Target directory path.
    */
-  void setTargetDirectory(const QString &value);
+  void setTargetDirectory(const QString& value);
   /**
    * @brief Returns the selected package format index.
    * @return Package format index.
    */
-  int packageFormatIndex() const noexcept { return packageFormatIndex_; }
+  int packageFormatIndex() const noexcept {
+    return packageFormatIndex_;
+  }
   /**
    * @brief Updates the selected package format index.
    * @param value Package format index.
    */
   void setPackageFormatIndex(int value);
   /**
-   * @brief Returns whether the add combobox currently shows annuals or analyses.
+   * @brief Returns whether the add combobox currently shows annuals or
+   * analyses.
    * @return Add mode key.
    */
-  QString addMode() const { return addMode_; }
+  QString addMode() const {
+    return addMode_;
+  }
   /**
    * @brief Switches the add combobox between annual and analysis mode.
    * @param value Add mode key.
    */
-  void setAddMode(const QString &value);
+  void setAddMode(const QString& value);
 
   /**
    * @brief Returns annual rows available for export selection.
@@ -150,7 +157,9 @@ public:
    * @brief Returns the currently configured export package entries.
    * @return Export package entries.
    */
-  QVariantList exportEntries() const { return exportEntries_; }
+  QVariantList exportEntries() const {
+    return exportEntries_;
+  }
   /**
    * @brief Returns whether the export can be started.
    * @return True when export can start.
@@ -208,7 +217,8 @@ public:
   Q_INVOKABLE void browseDirectory();
   /** @brief Clears the export form back to defaults. */
   Q_INVOKABLE void clearForm();
-  /** @brief Starts the export workflow with the current package configuration. */
+  /** @brief Starts the export workflow with the current package configuration.
+   */
   Q_INVOKABLE void startExport();
   /** @brief Cancels the active export workflow. */
   Q_INVOKABLE void cancelExport();
@@ -220,12 +230,12 @@ public:
    * @brief Opens the target folder for an export log.
    * @param logId Stable export log id.
    */
-  Q_INVOKABLE void openExportLogLocation(const QString &logId);
+  Q_INVOKABLE void openExportLogLocation(const QString& logId);
   /**
    * @brief Deletes an export log from the workspace.
    * @param logId Stable export log id.
    */
-  Q_INVOKABLE void deleteExportLog(const QString &logId);
+  Q_INVOKABLE void deleteExportLog(const QString& logId);
   /**
    * @brief Selects a row in the current add combobox.
    * @param index Index into addRows().
@@ -262,8 +272,8 @@ public:
    * @param entryIndex Export entry index.
    * @param exportType Export type key.
    */
-  Q_INVOKABLE void updateStandaloneAnalysisExportType(
-      int entryIndex, const QString &exportType);
+  Q_INVOKABLE void
+  updateStandaloneAnalysisExportType(int entryIndex, const QString& exportType);
   /**
    * @brief Updates export type for an analysis inside an annual entry.
    * @param entryIndex Export entry index.
@@ -272,7 +282,7 @@ public:
    */
   Q_INVOKABLE void updateAnnualAnalysisExportType(int entryIndex,
                                                   int analysisIndex,
-                                                  const QString &exportType);
+                                                  const QString& exportType);
 signals:
   /** @brief Emitted when export view model state changed. */
   void changed();
@@ -288,13 +298,13 @@ private:
    * @param id Annual id.
    * @return Annual row or empty map.
    */
-  QVariantMap annualRowById(const QString &id) const;
+  QVariantMap annualRowById(const QString& id) const;
   /**
    * @brief Returns an analysis row by id.
    * @param id Analysis id.
    * @return Analysis row or empty map.
    */
-  QVariantMap analysisRowById(const QString &id) const;
+  QVariantMap analysisRowById(const QString& id) const;
   /**
    * @brief Returns the selected object id for the current add mode.
    * @return Selected annual or analysis id.
@@ -320,8 +330,8 @@ private:
    * @param analyses Nested analysis entries.
    * @return Export entry row.
    */
-  QVariantMap createAnnualEntry(const QString &id, const QString &name,
-                                const QVariantList &analyses) const;
+  QVariantMap createAnnualEntry(const QString& id, const QString& name,
+                                const QVariantList& analyses) const;
   /**
    * @brief Builds a standalone analysis package entry.
    * @param id Analysis id.
@@ -330,43 +340,43 @@ private:
    * @param exportType Export type key.
    * @return Export entry row.
    */
-  QVariantMap createAnalysisEntry(const QString &id, const QString &name,
-                                  const QString &type,
-                                  const QString &exportType) const;
+  QVariantMap createAnalysisEntry(const QString& id, const QString& name,
+                                  const QString& type,
+                                  const QString& exportType) const;
   /**
    * @brief Builds nested analysis entries for an annual.
    * @param annualId Annual id.
    * @param currentAnalyses Existing nested entries.
    * @return Nested analysis entries.
    */
-  QVariantList analysesForAnnual(const QString &annualId,
-                                 const QVariantList &currentAnalyses) const;
+  QVariantList analysesForAnnual(const QString& annualId,
+                                 const QVariantList& currentAnalyses) const;
   /**
    * @brief Returns export type options for an analysis type.
    * @param type Analysis type.
    * @return Export option rows.
    */
-  QVariantList exportOptionsForAnalysisType(const QString &type) const;
+  QVariantList exportOptionsForAnalysisType(const QString& type) const;
   /**
    * @brief Normalizes an export type for an analysis type.
    * @param exportType Raw export type.
    * @param type Analysis type.
    * @return Normalized export type.
    */
-  QString normalizedExportType(const QString &exportType,
-                               const QString &type) const;
+  QString normalizedExportType(const QString& exportType,
+                               const QString& type) const;
   /**
    * @brief Returns the default export type for an analysis type.
    * @param type Analysis type.
    * @return Export type key.
    */
-  QString defaultExportType(const QString &type) const;
+  QString defaultExportType(const QString& type) const;
   /**
    * @brief Returns analysis type for an analysis id.
    * @param id Analysis id.
    * @return Analysis type key.
    */
-  QString analysisTypeById(const QString &id) const;
+  QString analysisTypeById(const QString& id) const;
   /**
    * @brief Returns the default target directory.
    * @return Directory path.
@@ -391,23 +401,23 @@ private:
    * @brief Connects workspace signals.
    * @param value Export workflow or nullptr.
    */
-  void bindWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
-                          WorkspaceSelectors *selectors);
+  void bindWorkspaceRoles(WorkspaceStore* store, WorkspaceCommands* commands,
+                          WorkspaceSelectors* selectors);
   /**
    * @brief Connects shell action signals.
    * @param value Actions object or nullptr.
    */
-  void bindActions(Actions *value);
+  void bindActions(Actions* value);
   /**
    * @brief Connects settings signals.
    * @param value Settings object or nullptr.
    */
-  void bindSettings(Settings *value);
+  void bindSettings(Settings* value);
   /**
    * @brief Connects workflow signals.
    * @param value Export workflow or nullptr.
    */
-  void bindWorkflow(ExportWorkflow *value);
+  void bindWorkflow(ExportWorkflow* value);
   /**
    * @brief Configures the workflow export-log sink.
    */
@@ -417,13 +427,13 @@ private:
    */
   void emitChanged();
 
-  WorkspaceStore *store_ = nullptr;
-  WorkspaceCommands *commands_ = nullptr;
-  WorkspaceSelectors *selectors_ = nullptr;
-  ExportWorkflow *exportWorkflow_ = nullptr;
-  Actions *actions_ = nullptr;
-  FileSystemBrowser *fileSystemBrowser_ = nullptr;
-  Settings *settings_ = nullptr;
+  WorkspaceStore* store_ = nullptr;
+  WorkspaceCommands* commands_ = nullptr;
+  WorkspaceSelectors* selectors_ = nullptr;
+  ExportWorkflow* exportWorkflow_ = nullptr;
+  Actions* actions_ = nullptr;
+  FileSystemBrowser* fileSystemBrowser_ = nullptr;
+  Settings* settings_ = nullptr;
   QString targetDirectory_;
   QString appliedDefaultTargetDirectory_;
   int packageFormatIndex_ = 0;

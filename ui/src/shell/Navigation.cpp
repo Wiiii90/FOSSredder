@@ -1,17 +1,17 @@
 /**
- * @file ui/src/shell/NavigationState.cpp
- * @brief Implementation of the UI NavigationState component.
+ * @file ui/src/shell/Navigation.cpp
+ * @brief Implementation of the UI Navigation component.
  */
 
-#include "ui/shell/NavigationState.h"
+#include "ui/shell/Navigation.h"
 
 #include <QMetaObject>
 
 namespace ui {
 
-NavigationState::NavigationState(QObject *parent) : QObject(parent) {}
+Navigation::Navigation(QObject* parent) : QObject(parent) {}
 
-void NavigationState::setSection(Section s) {
+void Navigation::setSection(Section s) {
   if (section_ == s)
     return;
   section_ = s;
@@ -27,15 +27,15 @@ void NavigationState::setSection(Section s) {
       Qt::QueuedConnection);
 }
 
-void NavigationState::setSectionValue(int value) {
+void Navigation::setSectionValue(int value) {
   setSection(static_cast<Section>(value));
 }
 
-void NavigationState::navigateToSection(int section) {
+void Navigation::navigateToSection(int section) {
   setSectionValue(section);
 }
 
-void NavigationState::setSettingsCategory(SettingsCategory c) {
+void Navigation::setSettingsCategory(SettingsCategory c) {
   if (settingsCategory_ == c)
     return;
   settingsCategory_ = c;
@@ -51,7 +51,7 @@ void NavigationState::setSettingsCategory(SettingsCategory c) {
       Qt::QueuedConnection);
 }
 
-void NavigationState::setSettingsCategoryValue(int value) {
+void Navigation::setSettingsCategoryValue(int value) {
   setSettingsCategory(static_cast<SettingsCategory>(value));
 }
 

@@ -14,7 +14,7 @@ namespace ui {
 
 class Actions;
 class LanguageService;
-class NavigationState;
+class Navigation;
 class Settings;
 
 /**
@@ -89,7 +89,7 @@ public:
    * @brief Sets the shell navigation object used by the settings page.
    * @param value Navigation object or nullptr.
    */
-  void setNavigation(NavigationState* value);
+  void setNavigation(Navigation* value);
 
   /**
    * @brief Sets the settings state object used for persisted settings values.
@@ -491,7 +491,7 @@ private:
    * @brief Connects navigation signals.
    * @param value Navigation state or nullptr.
    */
-  void bindNavigation(NavigationState* value);
+  void bindNavigation(Navigation* value);
   /**
    * @brief Connects settings signals.
    * @param value Settings object or nullptr.
@@ -507,7 +507,7 @@ private:
    */
   void emitChanged();
 
-  NavigationState* navigation_ = nullptr;
+  Navigation* navigation_ = nullptr;
   Settings* settings_ = nullptr;
   Actions* actions_ = nullptr;
   LanguageService* languageService_ = nullptr;

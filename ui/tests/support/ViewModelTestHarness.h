@@ -20,7 +20,7 @@ namespace ui::tests::support {
 
 class NoopErrorReporter final : public core::errors::IErrorReporter {
 public:
-  void report(const core::errors::ErrorEvent &) override {}
+  void report(const core::errors::ErrorEvent&) override {}
 };
 
 struct WorkspaceHarness {
@@ -33,10 +33,10 @@ struct WorkspaceHarness {
         commands(std::make_unique<WorkspaceCommands>(*store)) {
     store->setWorkspacePorts(workspace.get(), workspace.get());
     store->loadFromState(workspace->workspaceSnapshot());
-    workspace->setSnapshotChangedCallback([this](
-        const core::ports::workspace::WorkspaceSnapshot &nextSnapshot) {
-      store->loadFromState(nextSnapshot);
-    });
+    workspace->setSnapshotChangedCallback(
+        [this](const core::ports::workspace::WorkspaceSnapshot& nextSnapshot) {
+          store->loadFromState(nextSnapshot);
+        });
   }
 
   std::unique_ptr<InMemoryWorkspace> workspace;

@@ -9,7 +9,7 @@
 #include "ui/platform/LanguageService.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/Defaults.h"
-#include "ui/shell/NavigationState.h"
+#include "ui/shell/Navigation.h"
 #include "ui/shell/Settings.h"
 
 namespace ui {
@@ -58,7 +58,7 @@ QVariantMap autosaveIntervalOption(int minutes, const QString& label) {
 
 SettingsViewModel::SettingsViewModel(QObject* parent) : QObject(parent) {}
 
-void SettingsViewModel::setNavigation(NavigationState* value) {
+void SettingsViewModel::setNavigation(Navigation* value) {
   if (navigation_ == value) {
     return;
   }
@@ -99,13 +99,13 @@ void SettingsViewModel::setLanguageService(LanguageService* value) {
   emitChanged();
 }
 
-void SettingsViewModel::bindNavigation(NavigationState* value) {
+void SettingsViewModel::bindNavigation(Navigation* value) {
   if (navigation_) {
     disconnect(navigation_, nullptr, this, nullptr);
   }
   navigation_ = value;
   if (navigation_) {
-    connect(navigation_, &NavigationState::settingsCategoryChanged, this,
+    connect(navigation_, &Navigation::settingsCategoryChanged, this,
             &SettingsViewModel::emitChanged);
   }
 }

@@ -37,33 +37,29 @@ public:
    * @brief Removes an import event subscription.
    * @param handle Import handle returned by startStatementImport().
    */
-  void unsubscribe(
-      const core::ports::importing::StatementImportHandle& handle);
+  void unsubscribe(const core::ports::importing::StatementImportHandle& handle);
   /**
    * @brief Requests cancellation of a running import.
    * @param handle Import handle returned by startStatementImport().
    */
-  void
-  cancel(const core::ports::importing::StatementImportHandle& handle);
+  void cancel(const core::ports::importing::StatementImportHandle& handle);
   /**
    * @brief Requests pausing of a running import.
    * @param handle Import handle returned by startStatementImport().
    */
-  void
-  pause(const core::ports::importing::StatementImportHandle& handle);
+  void pause(const core::ports::importing::StatementImportHandle& handle);
   /**
    * @brief Requests resuming of a paused import.
    * @param handle Import handle returned by startStatementImport().
    */
-  void
-  resume(const core::ports::importing::StatementImportHandle& handle);
+  void resume(const core::ports::importing::StatementImportHandle& handle);
   /**
    * @brief Reads the final import result for a handle.
    * @param handle Import handle returned by startStatementImport().
    * @return Import result or an empty result when no runner is available.
    */
-  core::ports::importing::ImportResult importResult(
-      const core::ports::importing::StatementImportHandle& handle);
+  core::ports::importing::ImportResult
+  importResult(const core::ports::importing::StatementImportHandle& handle);
 
   /**
    * @brief Builds derived draft suggestion state through the runner.
@@ -73,8 +69,7 @@ public:
    */
   core::ports::importing::draft::DraftDerivedState buildDraftDerivedState(
       const core::ports::workspace::WorkspaceSnapshot& state,
-      const core::ports::importing::draft::DraftLinkSelection& selection)
-      const;
+      const core::ports::importing::draft::DraftLinkSelection& selection) const;
   /**
    * @brief Applies a transaction draft edit through the runner.
    * @param draft Transaction draft to mutate.
@@ -117,8 +112,7 @@ public:
    * @return Statement draft.
    */
   core::ports::importing::draft::StatementDraft restoreStatementDraft(
-      const core::ports::workspace::StatementDraftSnapshot& draft)
-      const;
+      const core::ports::workspace::StatementDraftSnapshot& draft) const;
   /**
    * @brief Builds workspace draft state from the active statement draft.
    * @param draft Statement draft.
@@ -134,10 +128,9 @@ public:
    * @param secondary Secondary workspace snapshot.
    * @return Merged workspace snapshot.
    */
-  core::ports::workspace::WorkspaceSnapshot
-  mergeWorkspaceState(core::ports::workspace::WorkspaceSnapshot primary,
-                      const core::ports::workspace::WorkspaceSnapshot&
-                          secondary) const;
+  core::ports::workspace::WorkspaceSnapshot mergeWorkspaceState(
+      core::ports::workspace::WorkspaceSnapshot primary,
+      const core::ports::workspace::WorkspaceSnapshot& secondary) const;
 
   /**
    * @brief Builds the QML transaction draft view through core-derived state.

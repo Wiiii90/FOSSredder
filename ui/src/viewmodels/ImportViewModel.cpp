@@ -12,9 +12,9 @@
 #include "ui/observability/Trace.h"
 #include "ui/presentation/PayloadMapper.h"
 #include "ui/shell/AppActions.h"
-#include "ui/shell/NavigationState.h"
+#include "ui/shell/Navigation.h"
 #include "ui/shell/Settings.h"
-#include "ui/shell/StatusState.h"
+#include "ui/shell/Status.h"
 #include "ui/util/StringConversions.h"
 #include "ui/workflows/ImportWorkflow.h"
 #include "ui/workspace/WorkspaceCommands.h"
@@ -67,7 +67,7 @@ void ImportViewModel::setActions(Actions* value) {
   emit changed();
 }
 
-void ImportViewModel::setNavigation(NavigationState* value) {
+void ImportViewModel::setNavigation(Navigation* value) {
   if (navigation_ == value) {
     return;
   }
@@ -75,7 +75,7 @@ void ImportViewModel::setNavigation(NavigationState* value) {
   emit changed();
 }
 
-void ImportViewModel::setStatus(StatusState* value) {
+void ImportViewModel::setStatus(Status* value) {
   if (status_ == value) {
     return;
   }
@@ -526,7 +526,7 @@ void ImportViewModel::openImportLog(const QString& logId, bool draftAttached,
       importWorkflow_->openStoredDraft(targetDraftId);
     }
     if (navigation_) {
-      navigation_->setSection(NavigationState::Section::Import);
+      navigation_->setSection(Navigation::Section::Import);
     }
     return;
   }
@@ -540,7 +540,7 @@ void ImportViewModel::openImportLog(const QString& logId, bool draftAttached,
                                 {{"logId", logId.toStdString()},
                                  {"statementId", statementId.toStdString()}});
   if (navigation_) {
-    navigation_->setSection(NavigationState::Section::Booking);
+    navigation_->setSection(Navigation::Section::Booking);
   }
 }
 

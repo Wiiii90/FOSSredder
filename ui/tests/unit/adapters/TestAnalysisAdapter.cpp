@@ -44,4 +44,19 @@ TEST(AnalysisAdapterTest,
   EXPECT_TRUE(payload.contains(QStringLiteral("artifacts")));
 }
 
+TEST(AnalysisAdapterTest,
+     ADP_ANALYSIS_003_BuildAnalysisRequestParsesFilterThroughRunner) {
+  adapters::AnalysisAdapter adapter(
+      std::make_shared<tests::support::FakeAnalysisRunner>());
+
+  const auto request = adapter.buildAnalysisRequest(
+      QStringLiteral(" analysis-1 "),
+      QStringLiteral("propertyId=property-1;allocatable=allocatable"));
+
+  EXPECT_EQ(request.analysisId, "analysis-1");
+  ASSERT_EQ(request.filter.propertyIds.size(), 1U);
+  EXPECT_EQ(request.filter.propertyIds.front(), "property-1");
+  EXPECT_EQ(request.filter.allocatableMode, "allocatable");
+}
+
 } // namespace ui

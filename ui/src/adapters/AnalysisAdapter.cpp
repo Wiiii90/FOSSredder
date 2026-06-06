@@ -145,11 +145,24 @@ core::ports::analysis::AnalysisPreviewResult
 AnalysisAdapter::previewTransactions(
     const core::ports::workspace::WorkspaceSnapshot& workspace,
     const std::string& filterSpec) const {
-  return runner_ ? runner_->previewTransactions(
-                       workspace,
-                       core::ports::analysis::parseAnalysisFilterSelection(
-                           filterSpec))
+  return runner_ ? runner_->previewTransactions(workspace,
+                                                parseFilterSpec(filterSpec))
                  : core::ports::analysis::AnalysisPreviewResult{};
+}
+
+core::ports::analysis::AnalysisRequest
+AnalysisAdapter::buildAnalysisRequest(const QString& analysisId,
+                                      const QString& filterSpec) const {
+  core::ports::analysis::AnalysisRequest request;
+  request.analysisId = analysisId.trimmed().toStdString();
+  request.filter = parseFilterSpec(filterSpec.trimmed().toStdString());
+  return request;
+}
+
+core::ports::analysis::AnalysisFilterSelection
+AnalysisAdapter::parseFilterSpec(const std::string& filterSpec) const {
+  return runner_ ? runner_->parseFilterSpec(filterSpec)
+                 : core::ports::analysis::AnalysisFilterSelection{};
 }
 
 core::ports::analysis::AnalysisFilterSelection

@@ -62,7 +62,7 @@ TestCase {
         settingsViewModel.browseCalls = 0
     }
 
-    function test_SET_I_001_defaultPathFieldUpdatesSettingsState() {
+    function test_SET_I_001_defaultPathFieldUpdatesSettings() {
         const view = createView()
         const pathField = TestSupport.findRequired(Lookup, view, "settingsImportDefaultPathField")
 
@@ -71,7 +71,7 @@ TestCase {
         compare(settingsViewModel.importDefaultPath, "test:///import/default.pdf")
     }
 
-    function test_SET_I_002_browseButtonDelegatesToSettingsState() {
+    function test_SET_I_002_browseButtonDelegatesToSettings() {
         const view = createView()
         const browseButton = TestSupport.findRequired(Lookup, view, "settingsImportBrowseButton")
 
@@ -80,7 +80,7 @@ TestCase {
         compare(settingsViewModel.browseCalls, 1)
     }
 
-    function test_SET_I_003_pipelineFieldsUpdateSettingsState() {
+    function test_SET_I_003_pipelineFieldsUpdateSettings() {
         const view = createView()
         const fields = [
             { objectName: "settingsImportPopplerField", propertyName: "importPoppler", value: "poppler" },

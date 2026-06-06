@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include <functional>
 #include <QHash>
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <functional>
 #include <memory>
 
 #include "core/errors/IErrorReporter.h"
@@ -81,8 +81,8 @@ public:
       std::shared_ptr<ui::adapters::ImportAdapter> importAdapter,
       std::shared_ptr<core::errors::IErrorReporter> errorReporter,
       StateSnapshotProvider stateSnapshotProvider = {},
-      WorkspaceCommands *commands = nullptr,
-      WorkspaceSelectors *selectors = nullptr, QObject *parent = nullptr);
+      WorkspaceCommands* commands = nullptr,
+      WorkspaceSelectors* selectors = nullptr, QObject* parent = nullptr);
   /**
    * @brief Destroys the workflow and its internal state.
    */
@@ -93,18 +93,21 @@ public:
    * @param commands Workspace commands.
    * @param selectors Workspace selectors.
    */
-  void setWorkspaceRoles(WorkspaceCommands *commands,
-                         WorkspaceSelectors *selectors);
+  void setWorkspaceRoles(WorkspaceCommands* commands,
+                         WorkspaceSelectors* selectors);
 
-  /** @brief Reports whether an import is running. @return True while running. */
+  /** @brief Reports whether an import is running. @return True while running.
+   */
   bool isRunning() const noexcept;
-  /** @brief Reports whether the running import is paused. @return True while paused. */
+  /** @brief Reports whether the running import is paused. @return True while
+   * paused. */
   bool isPaused() const noexcept;
   /** @brief Returns import progress. @return Progress in the range 0..1. */
   double progress() const noexcept;
   /** @brief Returns the current import phase text. @return Phase text. */
   QString phase() const;
-  /** @brief Returns the current import error text. @return Error text or empty. */
+  /** @brief Returns the current import error text. @return Error text or empty.
+   */
   QString error() const;
   /** @brief Returns the selected import file. @return Selected file path. */
   QString selectedFile() const;
@@ -117,18 +120,21 @@ public:
   int queuedCount() const noexcept;
   /** @brief Returns queued import files. @return Queued file paths. */
   QStringList queuedFiles() const;
-  /** @brief Reports whether an active statement draft exists. @return True when a draft is loaded. */
+  /** @brief Reports whether an active statement draft exists. @return True when
+   * a draft is loaded. */
   bool hasDraft() const noexcept;
   /** @brief Returns the active draft id. @return Draft id or empty. */
   QString currentDraftId() const;
-  /** @brief Returns the selected transaction draft index. @return Zero-based transaction index. */
+  /** @brief Returns the selected transaction draft index. @return Zero-based
+   * transaction index. */
   int currentTransactionIndex() const noexcept;
   /**
    * @brief Selects the current transaction draft by index.
    * @param index Zero-based transaction index.
    */
   void setCurrentTransactionIndex(int index);
-  /** @brief Returns transaction count in the active draft. @return Transaction count. */
+  /** @brief Returns transaction count in the active draft. @return Transaction
+   * count. */
   int transactionCount() const noexcept;
 
   /**
@@ -291,7 +297,8 @@ public:
   void clearDraft();
   /**
    * @brief Opens a statement draft stored in workspace state.
-   * @param draftId Draft id; empty selects the remembered or first attached draft.
+   * @param draftId Draft id; empty selects the remembered or first attached
+   * draft.
    * @return True when a draft was restored.
    */
   bool openStoredDraft(const QString& draftId = {});
@@ -512,8 +519,8 @@ private:
   std::unique_ptr<importing::ImportWorkflowState> state_;
   std::shared_ptr<ui::adapters::ImportAdapter> importAdapter_;
   StateSnapshotProvider stateSnapshotProvider_;
-  WorkspaceCommands *commands_ = nullptr;
-  WorkspaceSelectors *selectors_ = nullptr;
+  WorkspaceCommands* commands_ = nullptr;
+  WorkspaceSelectors* selectors_ = nullptr;
   std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
 
   QString activeDraftId_;

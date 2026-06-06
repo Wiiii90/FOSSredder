@@ -23,10 +23,10 @@ namespace ui::payload::mapper {
  * @param values Standard string values.
  * @return Qt string list.
  */
-inline QStringList toQStringList(const std::vector<std::string> &values) {
+inline QStringList toQStringList(const std::vector<std::string>& values) {
   QStringList out;
   out.reserve(static_cast<int>(values.size()));
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     out.push_back(QString::fromStdString(value));
   }
   return out;
@@ -38,10 +38,10 @@ inline QStringList toQStringList(const std::vector<std::string> &values) {
  * @return QVariantList containing QString values.
  */
 inline QVariantList
-toVariantStringList(const std::vector<std::string> &values) {
+toVariantStringList(const std::vector<std::string>& values) {
   QVariantList out;
   out.reserve(static_cast<int>(values.size()));
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     out.push_back(QString::fromStdString(value));
   }
   return out;
@@ -52,10 +52,10 @@ toVariantStringList(const std::vector<std::string> &values) {
  * @param values Qt string values.
  * @return QVariantList containing QString values.
  */
-inline QVariantList toVariantStringList(const QStringList &values) {
+inline QVariantList toVariantStringList(const QStringList& values) {
   QVariantList out;
   out.reserve(values.size());
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     out.push_back(value);
   }
   return out;
@@ -66,10 +66,10 @@ inline QVariantList toVariantStringList(const QStringList &values) {
  * @param values QVariant values.
  * @return Qt string list.
  */
-inline QStringList toQStringList(const QVariantList &values) {
+inline QStringList toQStringList(const QVariantList& values) {
   QStringList out;
   out.reserve(values.size());
-  for (const auto &value : values) {
+  for (const auto& value : values) {
     out.push_back(value.toString());
   }
   return out;
@@ -80,7 +80,7 @@ inline QStringList toQStringList(const QVariantList &values) {
  * @param value QVariant that may contain QStringList or QVariantList.
  * @return QVariantList projection.
  */
-inline QVariantList toVariantList(const QVariant &value) {
+inline QVariantList toVariantList(const QVariant& value) {
   if (value.metaType() == QMetaType::fromType<QStringList>()) {
     return toVariantStringList(value.toStringList());
   }
@@ -93,7 +93,7 @@ inline QVariantList toVariantList(const QVariant &value) {
  * @param index Row index.
  * @return Row map or an empty map.
  */
-inline QVariantMap mapAt(const QVariantList &rows, int index) {
+inline QVariantMap mapAt(const QVariantList& rows, int index) {
   return index >= 0 && index < rows.size() ? rows.at(index).toMap()
                                            : QVariantMap{};
 }
@@ -103,7 +103,7 @@ inline QVariantMap mapAt(const QVariantList &rows, int index) {
  * @param row Row map.
  * @return Row id.
  */
-inline QString rowId(const QVariantMap &row) {
+inline QString rowId(const QVariantMap& row) {
   return row.value(keys::common::kId).toString();
 }
 
@@ -112,7 +112,7 @@ inline QString rowId(const QVariantMap &row) {
  * @param row Row map.
  * @return Row type.
  */
-inline QString rowType(const QVariantMap &row) {
+inline QString rowType(const QVariantMap& row) {
   return row.value(keys::common::kType).toString();
 }
 
@@ -121,7 +121,7 @@ inline QString rowType(const QVariantMap &row) {
  * @param row Row map.
  * @return Row name or display text.
  */
-inline QString rowDisplayName(const QVariantMap &row) {
+inline QString rowDisplayName(const QVariantMap& row) {
   return row.value(keys::common::kName, row.value(keys::common::kDisplay))
       .toString();
 }
@@ -132,7 +132,7 @@ inline QString rowDisplayName(const QVariantMap &row) {
  * @param fallback Value returned when the row has no integer value.
  * @return Row integer value.
  */
-inline int rowIntValue(const QVariantMap &row, int fallback = 0) {
+inline int rowIntValue(const QVariantMap& row, int fallback = 0) {
   return row.value(keys::common::kValue, fallback).toInt();
 }
 
@@ -142,8 +142,8 @@ inline int rowIntValue(const QVariantMap &row, int fallback = 0) {
  * @param fallback Value returned when the row has no string value.
  * @return Row string value.
  */
-inline QString rowStringValue(const QVariantMap &row,
-                              const QString &fallback = {}) {
+inline QString rowStringValue(const QVariantMap& row,
+                              const QString& fallback = {}) {
   return row.value(keys::common::kValue, fallback).toString();
 }
 
@@ -153,7 +153,7 @@ inline QString rowStringValue(const QVariantMap &row,
  * @param id Row id to find.
  * @return Matching index or 0.
  */
-inline int indexById(const QVariantList &rows, const QString &id) {
+inline int indexById(const QVariantList& rows, const QString& id) {
   for (int index = 0; index < rows.size(); ++index) {
     if (rowId(mapAt(rows, index)) == id) {
       return index;
@@ -168,7 +168,7 @@ inline int indexById(const QVariantList &rows, const QString &id) {
  * @param key Value key.
  * @return String value.
  */
-inline QString stringValue(const QVariantMap &map, const QString &key) {
+inline QString stringValue(const QVariantMap& map, const QString& key) {
   return map.value(key).toString();
 }
 
@@ -178,7 +178,7 @@ inline QString stringValue(const QVariantMap &map, const QString &key) {
  * @param key Value key.
  * @return List value.
  */
-inline QVariantList listValue(const QVariantMap &map, const QString &key) {
+inline QVariantList listValue(const QVariantMap& map, const QString& key) {
   return toVariantList(map.value(key));
 }
 
@@ -188,8 +188,7 @@ inline QVariantList listValue(const QVariantMap &map, const QString &key) {
  * @param key Value key.
  * @return String list value.
  */
-inline QStringList stringListValue(const QVariantMap &map,
-                                   const QString &key) {
+inline QStringList stringListValue(const QVariantMap& map, const QString& key) {
   const QVariant value = map.value(key);
   if (value.metaType() == QMetaType::fromType<QStringList>()) {
     return value.toStringList();
@@ -214,9 +213,8 @@ inline constexpr int kCompleted = 3;
  * @param completed Completed label.
  * @return Transaction status option rows.
  */
-inline QVariantList options(const QString &neutral, const QString &unverified,
-                            const QString &verified,
-                            const QString &completed) {
+inline QVariantList options(const QString& neutral, const QString& unverified,
+                            const QString& verified, const QString& completed) {
   return {QVariantMap{{keys::common::kLabel, neutral},
                       {keys::common::kValue, kNeutral}},
           QVariantMap{{keys::common::kLabel, unverified},
@@ -233,7 +231,7 @@ inline QVariantList options(const QString &neutral, const QString &unverified,
  * @param index Option index.
  * @return Transaction status value.
  */
-inline int statusAt(const QVariantList &options, int index) {
+inline int statusAt(const QVariantList& options, int index) {
   return mapper::rowIntValue(mapper::mapAt(options, index), kNeutral);
 }
 
@@ -243,7 +241,7 @@ inline int statusAt(const QVariantList &options, int index) {
  * @param status Transaction status value.
  * @return Matching option index or 0.
  */
-inline int indexForStatus(const QVariantList &options, int status) {
+inline int indexForStatus(const QVariantList& options, int status) {
   for (int index = 0; index < options.size(); ++index) {
     if (statusAt(options, index) == status) {
       return index;
@@ -267,8 +265,8 @@ inline const auto kNonAllocatable = QStringLiteral("non-allocatable");
  * @param nonAllocatable Non-allocatable label.
  * @return Contract allocatable mode option rows.
  */
-inline QVariantList options(const QString &mixed, const QString &allocatable,
-                            const QString &nonAllocatable) {
+inline QVariantList options(const QString& mixed, const QString& allocatable,
+                            const QString& nonAllocatable) {
   return {QVariantMap{{keys::common::kLabel, mixed},
                       {keys::common::kValue, kMixed}},
           QVariantMap{{keys::common::kLabel, allocatable},
@@ -283,7 +281,7 @@ inline QVariantList options(const QString &mixed, const QString &allocatable,
  * @param index Option index.
  * @return Allocatable mode key.
  */
-inline QString modeAt(const QVariantList &options, int index) {
+inline QString modeAt(const QVariantList& options, int index) {
   return mapper::rowStringValue(mapper::mapAt(options, index), kMixed);
 }
 
@@ -293,7 +291,7 @@ inline QString modeAt(const QVariantList &options, int index) {
  * @param mode Allocatable mode key.
  * @return Matching option index or 0.
  */
-inline int indexForMode(const QVariantList &options, const QString &mode) {
+inline int indexForMode(const QVariantList& options, const QString& mode) {
   for (int index = 0; index < options.size(); ++index) {
     if (modeAt(options, index) == mode) {
       return index;

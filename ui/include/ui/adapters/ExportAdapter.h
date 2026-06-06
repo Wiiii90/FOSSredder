@@ -48,6 +48,7 @@ public:
   buildExportRequest(int formatIndex, const QString& path, bool includeFormulas,
                      const QString& locale,
                      const QVariantMap& selectionPayload) const;
+
 private:
   /**
    * @brief Maps a QML export format index to the core enum.

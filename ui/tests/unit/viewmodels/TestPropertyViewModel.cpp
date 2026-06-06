@@ -13,7 +13,8 @@ namespace ui {
 
 TEST(PropertyViewModelTest,
      VM_PROPERTY_001_SubmitCreatesPropertyAndPersistsContracts) {
-  tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeWorkspaceSnapshot());
   PropertyViewModel viewModel(harness.store.get(), harness.commands.get(),
                               harness.selection.get(), harness.selectors.get());
 
@@ -35,7 +36,8 @@ TEST(PropertyViewModelTest,
 
 TEST(PropertyViewModelTest,
      VM_PROPERTY_002_SelectEditUpdateAndDeleteCurrentProperty) {
-  tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeWorkspaceSnapshot());
   PropertyViewModel viewModel(harness.store.get(), harness.commands.get(),
                               harness.selection.get(), harness.selectors.get());
 

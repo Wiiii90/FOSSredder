@@ -27,7 +27,7 @@ public:
    * @param store Workspace store dependency.
    * @param parent Optional Qt parent.
    */
-  explicit WorkspaceSelectors(WorkspaceStore &store, QObject *parent = nullptr);
+  explicit WorkspaceSelectors(WorkspaceStore& store, QObject* parent = nullptr);
 
   /**
    * @brief Returns the current workspace data revision.
@@ -75,21 +75,22 @@ public:
    * @param statementId Statement id used for filtering.
    * @return Transaction rows for the statement.
    */
-  QVariantList statementTransactionRows(const QString &statementId) const;
+  QVariantList statementTransactionRows(const QString& statementId) const;
   /**
    * @brief Looks up a transaction row by id.
    * @param id Transaction id.
    * @return Transaction row or an empty map.
    */
-  QVariantMap transactionRowById(const QString &id) const;
+  QVariantMap transactionRowById(const QString& id) const;
   /**
    * @brief Applies catalog-dependent transaction form selection changes.
    * @param transaction Current transaction form payload.
    * @param changes Field changes from the form.
    * @return Updated transaction form payload.
    */
-  QVariantMap transactionFormWithCatalogSelection(
-      const QVariantMap &transaction, const QVariantMap &changes) const;
+  QVariantMap
+  transactionFormWithCatalogSelection(const QVariantMap& transaction,
+                                      const QVariantMap& changes) const;
   /**
    * @brief Returns actor dropdown rows including the empty option.
    * @return Actor dropdown rows.
@@ -125,20 +126,20 @@ public:
    * @param id Export log id.
    * @return Target path or an empty string.
    */
-  QString exportLogTargetPath(const QString &id) const;
+  QString exportLogTargetPath(const QString& id) const;
 
   /**
    * @brief Looks up an actor id by display name.
    * @param name Actor name.
    * @return Actor id or an empty string.
    */
-  QString actorIdByName(const QString &name) const;
+  QString actorIdByName(const QString& name) const;
   /**
    * @brief Looks up a property id by display name.
    * @param name Property name.
    * @return Property id or an empty string.
    */
-  QString propertyIdByName(const QString &name) const;
+  QString propertyIdByName(const QString& name) const;
   /**
    * @brief Looks up a contract id by unique signature.
    * @param name Contract name.
@@ -147,29 +148,36 @@ public:
    * @param propertyIds Property ids linked to the contract.
    * @return Contract id or an empty string.
    */
-  QString contractIdBySignature(const QString &name, const QString &type,
-                                const QStringList &actorIds,
-                                const QStringList &propertyIds) const;
+  QString contractIdBySignature(const QString& name, const QString& type,
+                                const QStringList& actorIds,
+                                const QStringList& propertyIds) const;
   /**
    * @brief Returns the next generated contract name.
    * @return Generated contract name.
    */
   QString nextContractName() const;
 
-  /** @brief Checks whether an actor id exists. @param id Actor id. @return True when found. */
-  bool hasActorId(const QString &id) const;
-  /** @brief Checks whether a property id exists. @param id Property id. @return True when found. */
-  bool hasPropertyId(const QString &id) const;
-  /** @brief Checks whether a contract id exists. @param id Contract id. @return True when found. */
-  bool hasContractId(const QString &id) const;
-  /** @brief Checks whether a statement id exists. @param id Statement id. @return True when found. */
-  bool hasStatementId(const QString &id) const;
-  /** @brief Checks whether a transaction id exists. @param id Transaction id. @return True when found. */
-  bool hasTransactionId(const QString &id) const;
-  /** @brief Checks whether an analysis id exists. @param id Analysis id. @return True when found. */
-  bool hasAnalysisId(const QString &id) const;
-  /** @brief Checks whether an annual id exists. @param id Annual id. @return True when found. */
-  bool hasAnnualId(const QString &id) const;
+  /** @brief Checks whether an actor id exists. @param id Actor id. @return True
+   * when found. */
+  bool hasActorId(const QString& id) const;
+  /** @brief Checks whether a property id exists. @param id Property id. @return
+   * True when found. */
+  bool hasPropertyId(const QString& id) const;
+  /** @brief Checks whether a contract id exists. @param id Contract id. @return
+   * True when found. */
+  bool hasContractId(const QString& id) const;
+  /** @brief Checks whether a statement id exists. @param id Statement id.
+   * @return True when found. */
+  bool hasStatementId(const QString& id) const;
+  /** @brief Checks whether a transaction id exists. @param id Transaction id.
+   * @return True when found. */
+  bool hasTransactionId(const QString& id) const;
+  /** @brief Checks whether an analysis id exists. @param id Analysis id.
+   * @return True when found. */
+  bool hasAnalysisId(const QString& id) const;
+  /** @brief Checks whether an annual id exists. @param id Annual id. @return
+   * True when found. */
+  bool hasAnnualId(const QString& id) const;
 
 private:
   /**
@@ -177,9 +185,9 @@ private:
    * @param contractId Contract id.
    * @return Contract type or empty.
    */
-  QString contractTypeForId(const QString &contractId) const;
+  QString contractTypeForId(const QString& contractId) const;
 
-  WorkspaceStore &store_;
+  WorkspaceStore& store_;
 };
 
 } // namespace ui

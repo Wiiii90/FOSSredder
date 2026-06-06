@@ -10,15 +10,15 @@
 #include <QVariantMap>
 
 #include "ui/shell/AppActions.h"
-#include "ui/shell/NavigationState.h"
-#include "ui/viewmodels/SettingsViewModel.h"
+#include "ui/shell/Navigation.h"
 #include "ui/shell/Settings.h"
+#include "ui/viewmodels/SettingsViewModel.h"
 
 namespace ui {
 
 namespace {
 
-QVariantMap rowAt(const QVariantList &rows, int index) {
+QVariantMap rowAt(const QVariantList& rows, int index) {
   return rows.at(index).toMap();
 }
 
@@ -29,15 +29,15 @@ void ensureQtApplication() {
 
   static int argc = 1;
   static char appName[] = "ui_unit_tests";
-  static char *argv[] = {appName, nullptr};
+  static char* argv[] = {appName, nullptr};
   static QCoreApplication app(argc, argv);
 }
 
 } // namespace
 
 TEST(SettingsViewModelTest,
-     VM_SETTINGS_001_CategoryNavigationWrapsThroughNavigationState) {
-  NavigationState navigation;
+     VM_SETTINGS_001_CategoryNavigationWrapsThroughNavigation) {
+  Navigation navigation;
   SettingsViewModel state;
   state.setNavigation(&navigation);
 
@@ -50,7 +50,7 @@ TEST(SettingsViewModelTest,
 }
 
 TEST(SettingsViewModelTest, VM_SETTINGS_002_CategoryRowsMarkSelectedCategory) {
-  NavigationState navigation;
+  Navigation navigation;
   SettingsViewModel state;
   state.setNavigation(&navigation);
 

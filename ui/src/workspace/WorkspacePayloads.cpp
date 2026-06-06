@@ -239,6 +239,8 @@ transactionRow(const core::ports::workspace::TransactionSnapshot& transaction,
   row[payload::keys::common::kType] =
       contractType.isEmpty() ? QString::fromStdString(transaction.contractType)
                              : contractType;
+  row[payload::keys::transaction::kContractType] =
+      row.value(payload::keys::common::kType);
   row[payload::keys::transaction::kAllocatable] = transaction.allocatable;
   row[payload::keys::transaction::kPropertyIds] =
       payload::mapper::toVariantStringList(transaction.propertyIds);

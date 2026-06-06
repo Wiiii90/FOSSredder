@@ -330,6 +330,7 @@ void WorkspaceCommands::saveImportLog(
   core::ports::workspace::ImportLogCommand command;
   command.log = log;
   store_.writer()->saveImportLog(command);
+  refreshStoreFromReader();
 }
 
 void WorkspaceCommands::upsertImportLog(
@@ -377,6 +378,7 @@ void WorkspaceCommands::upsertImportLog(
 void WorkspaceCommands::deleteImportLog(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteImportLog(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 
@@ -388,11 +390,13 @@ void WorkspaceCommands::saveExportLog(
   core::ports::workspace::ExportLogCommand command;
   command.log = log;
   store_.writer()->saveExportLog(command);
+  refreshStoreFromReader();
 }
 
 void WorkspaceCommands::deleteExportLog(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteExportLog(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 
@@ -452,14 +456,17 @@ QString WorkspaceCommands::saveActor(const QString& id, const QString& name,
                            store_.writer()->validateActor(command))) {
     return {};
   }
-  return id.isEmpty()
-             ? QString::fromStdString(store_.writer()->addActor(command))
-             : (store_.writer()->updateActor(command), id);
+  const QString savedId =
+      id.isEmpty() ? QString::fromStdString(store_.writer()->addActor(command))
+                   : (store_.writer()->updateActor(command), id);
+  refreshStoreFromReader();
+  return savedId;
 }
 
 void WorkspaceCommands::deleteActor(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteActor(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 
@@ -485,14 +492,18 @@ QString WorkspaceCommands::saveProperty(const QString& id, const QString& name,
                            store_.writer()->validateProperty(command))) {
     return {};
   }
-  return id.isEmpty()
-             ? QString::fromStdString(store_.writer()->addProperty(command))
-             : (store_.writer()->updateProperty(command), id);
+  const QString savedId =
+      id.isEmpty()
+          ? QString::fromStdString(store_.writer()->addProperty(command))
+          : (store_.writer()->updateProperty(command), id);
+  refreshStoreFromReader();
+  return savedId;
 }
 
 void WorkspaceCommands::deleteProperty(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteProperty(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 
@@ -523,14 +534,18 @@ QString WorkspaceCommands::saveContract(const QString& id, const QString& name,
                            store_.writer()->validateContract(command))) {
     return {};
   }
-  return id.isEmpty()
-             ? QString::fromStdString(store_.writer()->addContract(command))
-             : (store_.writer()->updateContract(command), id);
+  const QString savedId =
+      id.isEmpty()
+          ? QString::fromStdString(store_.writer()->addContract(command))
+          : (store_.writer()->updateContract(command), id);
+  refreshStoreFromReader();
+  return savedId;
 }
 
 void WorkspaceCommands::deleteContract(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteContract(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 
@@ -554,7 +569,10 @@ QString WorkspaceCommands::addStatement(const QString& name) {
                            store_.writer()->validateStatement(command))) {
     return {};
   }
-  return QString::fromStdString(store_.writer()->addStatement(command));
+  const QString savedId =
+      QString::fromStdString(store_.writer()->addStatement(command));
+  refreshStoreFromReader();
+  return savedId;
 }
 
 QString WorkspaceCommands::addStatementWithTransactions(
@@ -574,8 +592,10 @@ QString WorkspaceCommands::addStatementWithTransactions(
           store_.writer()->validateStatementWithTransactions(command))) {
     return {};
   }
-  return QString::fromStdString(
+  const QString savedId = QString::fromStdString(
       store_.writer()->addStatementWithTransactions(command));
+  refreshStoreFromReader();
+  return savedId;
 }
 
 void WorkspaceCommands::updateStatement(const QString& id,
@@ -589,12 +609,14 @@ void WorkspaceCommands::updateStatement(const QString& id,
   if (!rejectInvalidCommand("WorkspaceCommands::updateStatement",
                             store_.writer()->validateStatement(command))) {
     store_.writer()->updateStatement(command);
+    refreshStoreFromReader();
   }
 }
 
 void WorkspaceCommands::deleteStatement(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteStatement(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 
@@ -626,7 +648,10 @@ QString WorkspaceCommands::addTransaction(
                            store_.writer()->validateTransaction(command))) {
     return {};
   }
-  return QString::fromStdString(store_.writer()->addTransaction(command));
+  const QString savedId =
+      QString::fromStdString(store_.writer()->addTransaction(command));
+  refreshStoreFromReader();
+  return savedId;
 }
 
 QString WorkspaceCommands::insertTransactionAfter(
@@ -645,7 +670,10 @@ QString WorkspaceCommands::insertTransactionAfter(
                            store_.writer()->validateTransaction(command))) {
     return {};
   }
-  return QString::fromStdString(store_.writer()->addTransaction(command));
+  const QString savedId =
+      QString::fromStdString(store_.writer()->addTransaction(command));
+  refreshStoreFromReader();
+  return savedId;
 }
 
 void WorkspaceCommands::updateTransaction(
@@ -662,12 +690,14 @@ void WorkspaceCommands::updateTransaction(
   if (!rejectInvalidCommand("WorkspaceCommands::updateTransaction",
                             store_.writer()->validateTransaction(command))) {
     store_.writer()->updateTransaction(command);
+    refreshStoreFromReader();
   }
 }
 
 void WorkspaceCommands::deleteTransaction(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteTransaction(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 
@@ -689,7 +719,10 @@ QString WorkspaceCommands::addAnalysis(const QString& name, const QString& type,
                            store_.writer()->validateAnalysis(command))) {
     return {};
   }
-  return QString::fromStdString(store_.writer()->addAnalysis(command));
+  const QString savedId =
+      QString::fromStdString(store_.writer()->addAnalysis(command));
+  refreshStoreFromReader();
+  return savedId;
 }
 
 void WorkspaceCommands::updateAnalysis(
@@ -707,12 +740,14 @@ void WorkspaceCommands::updateAnalysis(
   if (!rejectInvalidCommand("WorkspaceCommands::updateAnalysis",
                             store_.writer()->validateAnalysis(command))) {
     store_.writer()->updateAnalysis(command);
+    refreshStoreFromReader();
   }
 }
 
 void WorkspaceCommands::deleteAnalysis(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteAnalysis(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 
@@ -741,6 +776,7 @@ void WorkspaceCommands::updateAnalysisExportFormat(
   if (!rejectInvalidCommand("WorkspaceCommands::updateAnalysisExportFormat",
                             store_.writer()->validateAnalysis(command))) {
     store_.writer()->updateAnalysis(command);
+    refreshStoreFromReader();
   }
 }
 
@@ -765,7 +801,10 @@ QString WorkspaceCommands::addAnnual(const QString& name, int year,
                            store_.writer()->validateAnnual(command))) {
     return {};
   }
-  return QString::fromStdString(store_.writer()->addAnnual(command));
+  const QString savedId =
+      QString::fromStdString(store_.writer()->addAnnual(command));
+  refreshStoreFromReader();
+  return savedId;
 }
 
 void WorkspaceCommands::updateAnnual(const QString& id, const QString& name,
@@ -777,12 +816,14 @@ void WorkspaceCommands::updateAnnual(const QString& id, const QString& name,
   if (!rejectInvalidCommand("WorkspaceCommands::updateAnnual",
                             store_.writer()->validateAnnual(command))) {
     store_.writer()->updateAnnual(command);
+    refreshStoreFromReader();
   }
 }
 
 void WorkspaceCommands::deleteAnnual(const QString& id) {
   if (store_.writer()) {
     store_.writer()->deleteAnnual(strings::toStdString(id));
+    refreshStoreFromReader();
   }
 }
 

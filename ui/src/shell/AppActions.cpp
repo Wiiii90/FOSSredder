@@ -14,8 +14,8 @@
 
 namespace ui {
 
-Actions::Actions(QObject *parent) : QObject(parent) {
-  if (!qobject_cast<QGuiApplication *>(QCoreApplication::instance())) {
+Actions::Actions(QObject* parent) : QObject(parent) {
+  if (!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
     return;
   }
 
@@ -35,12 +35,24 @@ Actions::Actions(QObject *parent) : QObject(parent) {
   aboutAction_->setObjectName(ui::config::objectNames::kActionAbout);
 }
 
-QAction *Actions::newFileAction() const { return newFileAction_; }
-QAction *Actions::openFileAction() const { return openFileAction_; }
-QAction *Actions::saveFileAction() const { return saveFileAction_; }
-QAction *Actions::saveFileAsAction() const { return saveFileAsAction_; }
-QAction *Actions::quitAction() const { return quitAction_; }
-QAction *Actions::aboutAction() const { return aboutAction_; }
+QAction* Actions::newFileAction() const {
+  return newFileAction_;
+}
+QAction* Actions::openFileAction() const {
+  return openFileAction_;
+}
+QAction* Actions::saveFileAction() const {
+  return saveFileAction_;
+}
+QAction* Actions::saveFileAsAction() const {
+  return saveFileAsAction_;
+}
+QAction* Actions::quitAction() const {
+  return quitAction_;
+}
+QAction* Actions::aboutAction() const {
+  return aboutAction_;
+}
 
 void Actions::newFile() {
   if (newFileAction_)

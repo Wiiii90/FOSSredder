@@ -55,7 +55,8 @@ public:
    */
   void setExportLogSink(ExportLogSink sink);
 
-  /** @brief Reports whether an export is running. @return True while running. */
+  /** @brief Reports whether an export is running. @return True while running.
+   */
   bool isRunning() const noexcept {
     return isRunning_;
   }

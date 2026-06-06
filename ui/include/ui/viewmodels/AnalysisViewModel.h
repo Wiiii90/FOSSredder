@@ -100,9 +100,9 @@ public:
   /**
    * @brief Sets workspace roles used for analysis CRUD, rows and selection.
    */
-  void setWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
-                         WorkspaceSelection *selection,
-                         WorkspaceSelectors *selectors);
+  void setWorkspaceRoles(WorkspaceStore* store, WorkspaceCommands* commands,
+                         WorkspaceSelection* selection,
+                         WorkspaceSelectors* selectors);
 
   /**
    * @brief Sets the workflow used for analysis computation and rendering.
@@ -655,7 +655,8 @@ private:
    */
   QStringList effectiveSelectedPropertyIds() const;
   /**
-   * @brief Returns selected contract types or all types when selection is empty.
+   * @brief Returns selected contract types or all types when selection is
+   * empty.
    * @return Effective contract type keys.
    */
   QStringList effectiveSelectedContractTypes() const;
@@ -697,8 +698,8 @@ private:
    * @param analysisResult Analysis result payload.
    * @return Renderable source URL or empty.
    */
-  QString renderedPreviewSourceFromResult(
-      const QVariantMap& analysisResult) const;
+  QString
+  renderedPreviewSourceFromResult(const QVariantMap& analysisResult) const;
   /**
    * @brief Refreshes filter option rows from workspace and workflow data.
    */
@@ -742,14 +743,14 @@ private:
   /**
    * @brief Connects workspace role signals.
    */
-  void bindWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
-                          WorkspaceSelection *selection,
-                          WorkspaceSelectors *selectors);
+  void bindWorkspaceRoles(WorkspaceStore* store, WorkspaceCommands* commands,
+                          WorkspaceSelection* selection,
+                          WorkspaceSelectors* selectors);
 
-  WorkspaceStore *store_ = nullptr;
-  WorkspaceCommands *commands_ = nullptr;
-  WorkspaceSelection *selection_ = nullptr;
-  WorkspaceSelectors *selectors_ = nullptr;
+  WorkspaceStore* store_ = nullptr;
+  WorkspaceCommands* commands_ = nullptr;
+  WorkspaceSelection* selection_ = nullptr;
+  WorkspaceSelectors* selectors_ = nullptr;
   AnalysisWorkflow* analysisWorkflow_ = nullptr;
   Settings* settings_ = nullptr;
   QTimer previewDebounce_;
@@ -785,7 +786,6 @@ private:
   QVariantList tableContractTypes_;
   QVariantList tablePropertyRows_;
   double tableGrandTotal_ = 0.0;
-
 };
 
 } // namespace ui

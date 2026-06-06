@@ -8,7 +8,6 @@
 
 #include "core/errors/ErrorCodes.h"
 #include "core/errors/ErrorReporterRegistry.h"
-#include "core/ports/usecases/analysis/AnalysisRequest.h"
 #include "ui/adapters/AnalysisAdapter.h"
 #include "ui/i18n/Text.h"
 #include "ui/observability/Origins.h"
@@ -16,8 +15,6 @@
 #include "ui/util/StringConversions.h"
 
 #include <utility>
-
-#include <QVariant>
 
 namespace ui {
 
@@ -27,16 +24,6 @@ AnalysisWorkflow::AnalysisWorkflow(
     QObject* parent)
     : QObject(parent), stateSnapshotProvider_(std::move(stateSnapshotProvider)),
       analysisAdapter_(std::move(analysisAdapter)) {}
-
-core::ports::analysis::AnalysisRequest
-AnalysisWorkflow::analysisRequest(const QString& analysisId,
-                                  const QString& filterSpec) const {
-  core::ports::analysis::AnalysisRequest request;
-  request.analysisId = analysisId.trimmed().toStdString();
-  request.filter = core::ports::analysis::parseAnalysisFilterSelection(
-      filterSpec.trimmed().toStdString());
-  return request;
-}
 
 QString AnalysisWorkflow::analysisFilterSpec(
     const QString& dateField, const QString& dateMode, const QString& year,
@@ -97,7 +84,8 @@ QVariantMap AnalysisWorkflow::computeAnalysisPreview(
         adjustments);
 
     const auto result = analysisAdapter_->runAnalysis(
-        snapshot, analysisRequest(analysisId, filterSpec));
+        snapshot,
+        analysisAdapter_->buildAnalysisRequest(analysisId, filterSpec));
     if (!result.found) {
       return {};
     }

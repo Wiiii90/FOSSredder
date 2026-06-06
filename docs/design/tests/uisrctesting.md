@@ -56,20 +56,19 @@ ui/
         TestImportAdapter.cpp
       workspace/
         TestWorkspaceCommands.cpp
-        TestWorkspacePayloads.cpp
         TestWorkspaceSelection.cpp
         TestWorkspaceSelectors.cpp
         TestWorkspaceStore.cpp
-      state/
-        TestNavigationState.cpp
+      shell/
+        TestNavigation.cpp
     interaction/
       TestFeatureWiring.cpp
       TestImportState.cpp
 ```
 
-The current tree already uses the layer folders. Missing ViewModel and adapter
-files are planned coverage, not placeholders that must exist before the tested
-surface is meaningful.
+The current unit tree is the active `ui/src` source test suite. QML rendering
+tests live in the separate QML matrix and are intentionally not duplicated here.
+Interaction tests cover small cross-layer smokes that do not render QML.
 
 ## Layer Responsibilities
 
@@ -80,64 +79,155 @@ surface is meaningful.
 | `unit/workflows` | Feature orchestration that is too async or multi-step for a ViewModel-only test. |
 | `unit/adapters` | DTO and port-boundary translation. These tests should mock core ports and avoid workspace/QML concerns. |
 | `unit/workspace` | WorkspaceStore, WorkspaceCommands, WorkspaceSelection, WorkspaceSelectors, and WorkspacePayloads. |
-| `unit/state` | Small UI-local state objects that are not feature ViewModels. |
-| `interaction` | Cross-object interaction smokes that need real UI wiring but no QML rendering. |
-
-Interaction tests should stay small. Each test should exercise one user-facing
-flow across at least two UI source layers, such as ViewModel plus Workflow plus
-Adapter, and should avoid duplicating detailed unit assertions.
+| `unit/shell` | Small shell objects that are not feature ViewModels. |
+| `interaction` | Cross-layer ViewModel, Workflow, Adapter, and Workspace wiring without QML rendering. |
 
 ## ViewModel Matrix
 
 | ID | File | Scope |
 |---|---|---|
-| VM-ACTOR | `TestActorViewModel.cpp` | Create, update, delete, alias handling, contract selection routing, dirty state. |
-| VM-PROPERTY | `TestPropertyViewModel.cpp` | Create, update, delete, alias handling, contract selection routing, dirty state. |
-| VM-CONTRACT | `TestContractViewModel.cpp` | Create, update, delete, actor/property assignment, allocatable mode, incompatible selection cleanup. |
-| VM-BOOKING | `TestBookingViewModel.cpp` | Statement and transaction creation/editing, amount parsing, selection, delete operations. |
-| VM-IMPORT | `TestImportViewModel.cpp` | Import command API, file selection, run log projection, draft fields, draft transaction edits, and draft navigation. |
-| VM-ANALYSIS | `TestAnalysisViewModel.cpp` | Filter composition, preview, create/update/delete, calculation adjustments, export settings. |
-| VM-ANNUAL | `TestAnnualViewModel.cpp` | Annual assignment, preview, create/update/delete, export-format routing. |
-| VM-EXPORT | `TestExportViewModel.cpp` | Export item construction, restored runs, settings defaults, delete/clear logs. |
-| VM-SETTINGS | `TestSettingsViewModel.cpp` | Category navigation, persisted settings delegation, file-selection updates. |
+| VM-ACTOR-001 | `TestActorViewModel.cpp` | Create actor and select the persisted row. |
+| VM-ACTOR-002 | `TestActorViewModel.cpp` | Select, edit, update, and delete the current actor. |
+| VM-PROPERTY-001 | `TestPropertyViewModel.cpp` | Create property and persist contract assignments. |
+| VM-PROPERTY-002 | `TestPropertyViewModel.cpp` | Select, edit, update, and delete the current property. |
+| VM-CONTRACT-001 | `TestContractViewModel.cpp` | Create contract with actor, property, and allocatable mode. |
+| VM-CONTRACT-002 | `TestContractViewModel.cpp` | Select, edit, update, and delete the current contract. |
+| VM-BOOKING-001 | `TestBookingViewModel.cpp` | Create a statement and transaction through the booking API. |
+| VM-BOOKING-002 | `TestBookingViewModel.cpp` | Update current statement and transaction fields. |
+| VM-IMPORT-001 | `TestImportViewModel.cpp` | Queue only supported PDF files from editable import input. |
+| VM-IMPORT-002 | `TestImportViewModel.cpp` | Open a draft import log and switch to draft content/navigation. |
+| VM-IMPORT-003 | `TestImportViewModel.cpp` | Rename current draft and navigate transaction drafts. |
+| VM-IMPORT-004 | `TestImportViewModel.cpp` | Add and delete transaction drafts through the adapter. |
+| VM-IMPORT-005 | `TestImportViewModel.cpp` | Commit editable transaction text into the current draft state. |
+| VM-IMPORT-006 | `TestImportViewModel.cpp` | Update property selection for the current transaction draft. |
+| VM-ANALYSIS-001 | `TestAnalysisViewModel.cpp` | Toggle calculation adjustments and refresh visible preview state. |
+| VM-ANALYSIS-002 | `TestAnalysisViewModel.cpp` | Create analysis and persist adjustments for the initial preview. |
+| VM-ANALYSIS-003 | `TestAnalysisViewModel.cpp` | Update analysis while preserving stored adjustment amounts. |
+| VM-ANALYSIS-004 | `TestAnalysisViewModel.cpp` | Expose unassigned/none filter options and submit gating. |
+| VM-ANNUAL-001 | `TestAnnualViewModel.cpp` | Load selected annual and derived transaction panels. |
+| VM-ANNUAL-002 | `TestAnnualViewModel.cpp` | Update assignments, preview, and persisted annual state. |
+| VM-ANNUAL-003 | `TestAnnualViewModel.cpp` | Create a new annual through workspace commands. |
+| VM-ANNUAL-004 | `TestAnnualViewModel.cpp` | Route analysis export format changes through workspace. |
+| VM-EXPORT-001 | `TestExportViewModel.cpp` | Load workspace rows and select annual export mode. |
+| VM-EXPORT-002 | `TestExportViewModel.cpp` | Project assigned analyses from an annual export entry. |
+| VM-EXPORT-003 | `TestExportViewModel.cpp` | Default standalone plot entries to image export options. |
+| VM-EXPORT-004 | `TestExportViewModel.cpp` | Refresh pristine export form from settings defaults. |
+| VM-SETTINGS-001 | `TestSettingsViewModel.cpp` | Wrap category navigation through shell navigation. |
+| VM-SETTINGS-002 | `TestSettingsViewModel.cpp` | Mark the selected settings category row. |
+| VM-SETTINGS-003 | `TestSettingsViewModel.cpp` | Apply file-selection signals to settings values. |
+| VM-SETTINGS-004 | `TestSettingsViewModel.cpp` | Delegate settings properties to the settings store. |
 
 ## Workflow Matrix
 
 | ID | File | Scope |
 |---|---|---|
-| WF-IMPORT | `TestImportWorkflow.cpp` | Import runner orchestration, draft persistence, run logs, pause/resume/cancel state. |
-| WF-EXPORT | `TestExportWorkflow.cpp` | Export runner orchestration, restored runs, snapshot refresh, log store behavior. |
-| WF-ANALYSIS | `TestAnalysisWorkflow.cpp` | Analysis preview/run coordination, filter defaults, table projection, snapshot JSON, and adjustment helpers. |
-| WF-ANNUAL | `TestAnnualWorkflow.cpp` | Annual preview/run coordination and assigned analysis input. |
+| WF-IMPORT-001 | `TestImportWorkflow.cpp` | Cycle draft-stack navigation through the import home view. |
+| WF-IMPORT-002 | `TestImportWorkflow.cpp` | Restore remembered transaction index when reopening a draft. |
+| WF-IMPORT-003 | `TestImportWorkflow.cpp` | Select first added file and deduplicate queued files. |
+| WF-IMPORT-004 | `TestImportWorkflow.cpp` | Flush active draft to a workspace draft snapshot. |
+| WF-IMPORT-005 | `TestImportWorkflow.cpp` | Finalize active draft through workspace commands. |
+| WF-EXPORT-001 | `TestExportWorkflow.cpp` | Publish export logs through the workspace sink. |
+| WF-EXPORT-002 | `TestExportWorkflow.cpp` | Publish success log and reset state after a successful export. |
+| WF-EXPORT-003 | `TestExportWorkflow.cpp` | Propagate cancel requests and publish canceled logs. |
+| WF-EXPORT-004 | `TestExportWorkflow.cpp` | Update workflow state for pause and resume. |
+| WF-ANALYSIS-001 | `TestAnalysisWorkflow.cpp` | Return all matching workspace transactions for previews. |
+| WF-ANALYSIS-002 | `TestAnalysisWorkflow.cpp` | Honor analysis filters in transaction previews. |
+| WF-ANALYSIS-003 | `TestAnalysisWorkflow.cpp` | Use year defaults and omit fully selected groups in filter specs. |
+| WF-ANALYSIS-004 | `TestAnalysisWorkflow.cpp` | Emit explicit filter clauses for partial selections. |
+| WF-ANALYSIS-005 | `TestAnalysisWorkflow.cpp` | Store adjusted amounts by transaction id. |
+| WF-ANALYSIS-006 | `TestAnalysisWorkflow.cpp` | Persist analysis snapshots and adjustments through workspace commands. |
+| WF-ANALYSIS-007 | `TestAnalysisWorkflow.cpp` | Carry stored adjustments into plot previews. |
+| WF-ANALYSIS-008 | `TestAnalysisWorkflow.cpp` | Include projected table state in computed previews. |
+| WF-ANNUAL-001 | `TestAnnualWorkflow.cpp` | Compute annual preview from stored annual assignments. |
+| WF-ANNUAL-002 | `TestAnnualWorkflow.cpp` | Use injected analysis ids and year for preview computation. |
+| WF-ANNUAL-003 | `TestAnnualWorkflow.cpp` | Save and delete annuals through workspace commands. |
+| WF-ANNUAL-004 | `TestAnnualWorkflow.cpp` | Preserve analysis payload when export format changes. |
 
 ## Adapter Matrix
 
 | ID | File | Scope |
 |---|---|---|
-| ADP-IMPORT | `TestImportAdapter.cpp` | Import DTO mapping, draft matcher/derived-state delegation via `IImportRunner`. |
-| ADP-EXPORT | `TestExportAdapter.cpp` | Export request/log payload mapping and runner delegation. |
-| ADP-ANALYSIS | `TestAnalysisAdapter.cpp` | Analysis request/result mapping and runner delegation. |
-| ADP-ANNUAL | `TestAnnualAdapter.cpp` | Annual request/result mapping and runner delegation. |
+| ADP-IMPORT-001 | `TestImportAdapter.cpp` | Delegate property selection to `IImportRunner` and normalize draft state. |
+| ADP-EXPORT-001 | `TestExportAdapter.cpp` | Build export requests from package and object selection. |
+| ADP-EXPORT-002 | `TestExportAdapter.cpp` | Delegate export execution to the export runner. |
+| ADP-ANALYSIS-001 | `TestAnalysisAdapter.cpp` | Delegate analysis run and preview calls to the analysis runner. |
+| ADP-ANALYSIS-002 | `TestAnalysisAdapter.cpp` | Map analysis results to QML payload shape. |
+| ADP-ANALYSIS-003 | `TestAnalysisAdapter.cpp` | Build analysis requests by parsing filters through the runner. |
+| ADP-ANNUAL-001 | `TestAnnualAdapter.cpp` | Delegate annual computation to the annual runner. |
+| ADP-ANNUAL-002 | `TestAnnualAdapter.cpp` | Map annual results to QML payload shape. |
+| ADP-ANNUAL-003 | `TestAnnualAdapter.cpp` | Map missing-live annual buckets from core results. |
 
 ## Workspace Matrix
 
-| ID | Scope | Expected |
+| ID | File | Scope |
 |---|---|---|
-| WSP-001 | Workspace snapshot loading | All catalog families, logs, drafts, analyses, and annuals appear in UI models. |
-| WSP-002 | Workspace mutations | Add/update/delete operations route through workspace writer ports and refresh projected rows. |
-| WSP-003 | Selection | Actor, property, contract, statement, transaction, analysis, and annual selection stay deterministic after reload/deletion. |
-| WSP-004 | Selectors and payloads | Rows expose stable ids, names, ordering, and QML payload keys without a parallel ListModel path. |
-| WSP-005 | Store rehydration | Persisted workflow logs and workspace families restore without dropping relations. |
-| WSP-006 | Storage commands | New/open/save/save-as route to writer ports and emit success/failure operations. |
+| WSP-COMMANDS-001 | `TestWorkspaceCommands.cpp` | Route actor save through writer and refresh the store. |
+| WSP-COMMANDS-002 | `TestWorkspaceCommands.cpp` | Persist import and export logs through workspace commands. |
+| WSP-COMMANDS-003 | `TestWorkspaceCommands.cpp` | Run the pre-save callback before storage save. |
+| WSP-SELECTION-001 | `TestWorkspaceSelection.cpp` | Track current selection across all workspace collections. |
+| WSP-SELECTION-002 | `TestWorkspaceSelection.cpp` | Clear stale selections after workspace reload. |
+| WSP-SELECTORS-001 | `TestWorkspaceSelectors.cpp` | Project catalog rows and lookup helpers. |
+| WSP-SELECTORS-002 | `TestWorkspaceSelectors.cpp` | Project statement transactions and transaction rows. |
+| WSP-SELECTORS-003 | `TestWorkspaceSelectors.cpp` | Delegate catalog selection rules to the workspace reader. |
+| WSP-STORE-001 | `TestWorkspaceStore.cpp` | Load snapshots and track data revisions. |
+| WSP-STORE-002 | `TestWorkspaceStore.cpp` | Apply deletion impacts across related collections. |
+| WSP-STORE-003 | `TestWorkspaceStore.cpp` | Resolve current path through the bound reader. |
+
+## Shell Matrix
+
+| ID | File | Scope |
+|---|---|---|
+| SHELL-NAVIGATION-001 | `TestNavigation.cpp` | Store and expose current section and settings category. |
+| SHELL-NAVIGATION-002 | `TestNavigation.cpp` | Expose QML section constants and navigate by value. |
 
 ## Interaction Matrix
 
 | ID | File | Scope |
 |---|---|---|
-| INTERACTION-IMPORT | `TestImportState.cpp` | Import overview defaults, manual file filtering, and pause-state gating. |
-| INTERACTION-ANALYSIS | `TestFeatureWiring.cpp` | AnalysisViewModel creates an analysis through workflow and workspace wiring. |
-| INTERACTION-ANNUAL | `TestFeatureWiring.cpp` | AnnualViewModel creates an annual through workflow and workspace wiring. |
-| INTERACTION-EXPORT | `TestFeatureWiring.cpp` | ExportViewModel starts an export through workflow, adapter, runner, and log sink. |
+| INTERACTION-IMPORT-001 | `TestImportState.cpp` | Apply default import path and filter manual files. |
+| INTERACTION-IMPORT-002 | `TestImportState.cpp` | Gate workflow progress updates while paused. |
+| INTERACTION-IMPORT-003 | `TestImportState.cpp` | Finalize draft through ViewModel, workflow, and workspace. |
+| INTERACTION-ANALYSIS-001 | `TestFeatureWiring.cpp` | Create analysis through ViewModel, workflow, and workspace. |
+| INTERACTION-ANNUAL-001 | `TestFeatureWiring.cpp` | Create annual through ViewModel, workflow, and workspace. |
+| INTERACTION-EXPORT-001 | `TestFeatureWiring.cpp` | Run export through ViewModel, workflow, adapter, and log sink. |
+
+## Current Unit Test Coverage
+
+| File | Test count |
+|---|---:|
+| `unit/adapters/TestAnalysisAdapter.cpp` | 3 |
+| `unit/adapters/TestAnnualAdapter.cpp` | 3 |
+| `unit/adapters/TestExportAdapter.cpp` | 2 |
+| `unit/adapters/TestImportAdapter.cpp` | 1 |
+| `unit/shell/TestNavigation.cpp` | 2 |
+| `unit/viewmodels/TestActorViewModel.cpp` | 2 |
+| `unit/viewmodels/TestAnalysisViewModel.cpp` | 4 |
+| `unit/viewmodels/TestAnnualViewModel.cpp` | 4 |
+| `unit/viewmodels/TestBookingViewModel.cpp` | 2 |
+| `unit/viewmodels/TestContractViewModel.cpp` | 2 |
+| `unit/viewmodels/TestExportViewModel.cpp` | 4 |
+| `unit/viewmodels/TestImportViewModel.cpp` | 6 |
+| `unit/viewmodels/TestPropertyViewModel.cpp` | 2 |
+| `unit/viewmodels/TestSettingsViewModel.cpp` | 4 |
+| `unit/workflows/TestAnalysisWorkflow.cpp` | 8 |
+| `unit/workflows/TestAnnualWorkflow.cpp` | 4 |
+| `unit/workflows/TestExportWorkflow.cpp` | 4 |
+| `unit/workflows/TestImportWorkflow.cpp` | 5 |
+| `unit/workspace/TestWorkspaceCommands.cpp` | 3 |
+| `unit/workspace/TestWorkspaceSelection.cpp` | 2 |
+| `unit/workspace/TestWorkspaceSelectors.cpp` | 3 |
+| `unit/workspace/TestWorkspaceStore.cpp` | 3 |
+
+Total: 22 unit test files, 73 test cases.
+
+## Current Interaction Test Coverage
+
+| File | Test count |
+|---|---:|
+| `interaction/TestFeatureWiring.cpp` | 3 |
+| `interaction/TestImportState.cpp` | 3 |
+
+Total: 2 interaction test files, 6 test cases.
 
 ## Debug Trace Expectations
 
@@ -156,7 +246,7 @@ Trace should not be used for:
 - replacing assertions in tests
 
 The channel is compiled as a no-op outside debug-style builds and can be turned
-on in debug sessions with `FOSSREDDER_UI_TRACE=1`.
+off in debug sessions with `FOSSREDDER_UI_TRACE=0`.
 
 ## Testing Principles
 
@@ -166,8 +256,6 @@ on in debug sessions with `FOSSREDDER_UI_TRACE=1`.
 - Put shared runner stubs and UI port fakes in `support` once two tests use
   them.
 - Keep QML tests for rendering and source tests for behavior.
-- Keep `interaction` as a thin wiring smoke suite; detailed behavior belongs in
-  `unit`.
 - Prefer focused, family-based assertions where the same workspace rule applies
   to multiple collections.
 - Avoid placeholder tests that only instantiate a class without asserting a real
@@ -175,18 +263,17 @@ on in debug sessions with `FOSSREDDER_UI_TRACE=1`.
 
 ## Implementation Order
 
-1. Keep the existing workspace, workflow, and migrated ViewModel tests green.
-2. Add missing `Test*ViewModel.cpp` files for Actor, Property, Contract, and
-   Booking.
-3. Add adapter tests for Import, Export, Analysis, and Annual.
-4. Move repeated local fakes into `support` only when at least two tests share
+1. Keep the existing workspace, workflow, adapter, shell, and ViewModel tests
+   green.
+2. Move repeated local fakes into `support` only when at least two tests share
    them.
-5. Remove obsolete state naming from test classes once the ViewModel files are
-   fully migrated internally.
+3. Add new source tests only when they cover a public ViewModel command path,
+   workflow orchestration contract, adapter boundary, or workspace/state role.
 
 ## Definition of Done
 
-The `ui/src` suite is complete when every public ViewModel command path is
-covered, every workflow has focused orchestration tests, every adapter has a
-mocked port-boundary test, and ViewModels only consume the concrete workspace
-roles they need: Store, Commands, Selection, Selectors, and Payloads.
+The `ui/src` suite is complete when every public ViewModel command path that can
+change state is covered, every workflow has focused orchestration tests, every
+adapter has a mocked port-boundary test, and ViewModels only consume the
+concrete workspace roles they need: Store, Commands, Selection, Selectors, and
+Payloads.

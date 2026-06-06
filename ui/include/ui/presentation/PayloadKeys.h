@@ -146,7 +146,8 @@ inline const auto kAllocatableSuggestionConfidence =
 inline const auto kEffectiveAllocatable =
     QStringLiteral("effectiveAllocatable");
 inline const auto kActorCurrentIndex = QStringLiteral("actorCurrentIndex");
-inline const auto kContractCurrentIndex = QStringLiteral("contractCurrentIndex");
+inline const auto kContractCurrentIndex =
+    QStringLiteral("contractCurrentIndex");
 inline const auto kActorTopSuggestion = QStringLiteral("actorTopSuggestion");
 inline const auto kPropertyTopSuggestion =
     QStringLiteral("propertyTopSuggestion");

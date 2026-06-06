@@ -13,7 +13,8 @@ namespace ui {
 
 TEST(ActorViewModelTest,
      VM_ACTOR_001_SubmitCreatesActorAndSelectsPersistedEntity) {
-  tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeWorkspaceSnapshot());
   ActorViewModel viewModel(harness.store.get(), harness.commands.get(),
                            harness.selection.get(), harness.selectors.get());
 
@@ -36,7 +37,8 @@ TEST(ActorViewModelTest,
 }
 
 TEST(ActorViewModelTest, VM_ACTOR_002_SelectEditUpdateAndDeleteCurrentActor) {
-  tests::support::WorkspaceHarness harness(tests::support::makeWorkspaceSnapshot());
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeWorkspaceSnapshot());
   ActorViewModel viewModel(harness.store.get(), harness.commands.get(),
                            harness.selection.get(), harness.selectors.get());
 
@@ -47,8 +49,7 @@ TEST(ActorViewModelTest, VM_ACTOR_002_SelectEditUpdateAndDeleteCurrentActor) {
   viewModel.setName(QStringLiteral("Updated Actor"));
   EXPECT_TRUE(viewModel.hasChanges());
   EXPECT_EQ(viewModel.submit(), QStringLiteral("actor-1"));
-  EXPECT_EQ(harness.workspace->snapshot().actors.front().name,
-            "Updated Actor");
+  EXPECT_EQ(harness.workspace->snapshot().actors.front().name, "Updated Actor");
 
   viewModel.deleteCurrent();
   EXPECT_TRUE(harness.workspace->snapshot().actors.empty());

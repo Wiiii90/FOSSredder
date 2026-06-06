@@ -65,7 +65,7 @@ TestCase {
         settingsViewModel.toolbarShowSettings = true
     }
 
-    function test_SET_M_001_toolbarCheckboxesUpdateSettingsState() {
+    function test_SET_M_001_toolbarCheckboxesUpdateSettings() {
         const view = createView()
         const bookingCheck = TestSupport.findRequired(Lookup, view, "settingsToolbarBookingCheckBox")
         const importCheck = TestSupport.findRequired(Lookup, view, "settingsToolbarImportCheckBox")

@@ -8,9 +8,9 @@
 #include <QMainWindow>
 #include <QUrl>
 
-#include "ui/shell/Defaults.h"
 #include "ui/shell/AppActions.h"
-#include "ui/shell/StatusState.h"
+#include "ui/shell/Defaults.h"
+#include "ui/shell/Status.h"
 #include "ui/shell/window/CloseWorkflow.h"
 #include "ui/shell/window/DropHandler.h"
 #include "ui/workspace/WorkspaceCommands.h"
@@ -43,7 +43,9 @@ public:
   ui::bootstrap::AppContext* appContext() const noexcept {
     return appContext_;
   }
-  ui::WorkspaceStore* workspaceStore() const noexcept { return workspaceStore_; }
+  ui::WorkspaceStore* workspaceStore() const noexcept {
+    return workspaceStore_;
+  }
   ui::WorkspaceCommands* workspaceCommands() const noexcept {
     return workspaceCommands_;
   }
@@ -94,7 +96,7 @@ private:
   ui::WorkspaceSelectors* workspaceSelectors_ = nullptr;
   ui::Settings* settings_ = nullptr;
   ui::Actions* actions_ = nullptr;
-  ui::StatusState* status_ = nullptr;
+  ui::Status* status_ = nullptr;
   ui::bootstrap::AppContext* appContext_ = nullptr;
   bool qmlShutdownPrepared_ = false;
   ui::window::CloseWorkflow closeWorkflow_;

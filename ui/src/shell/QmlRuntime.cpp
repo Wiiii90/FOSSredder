@@ -15,9 +15,9 @@
 #include "ui/platform/LanguageService.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/Defaults.h"
-#include "ui/shell/NavigationState.h"
+#include "ui/shell/Navigation.h"
 #include "ui/shell/QmlContracts.h"
-#include "ui/shell/StatusState.h"
+#include "ui/shell/Status.h"
 #include "ui/viewmodels/ActorViewModel.h"
 #include "ui/viewmodels/AnalysisViewModel.h"
 #include "ui/viewmodels/AnnualViewModel.h"
@@ -48,7 +48,7 @@ void registerTypes() {
   if (registered)
     return;
 
-  qmlRegisterUncreatableType<ui::NavigationState>(
+  qmlRegisterUncreatableType<ui::Navigation>(
       ui::qml::contracts::module::kName,
       ui::qml::contracts::module::kMajorVersion,
       ui::qml::contracts::module::kMinorVersion,
@@ -57,7 +57,7 @@ void registerTypes() {
   registerContextObjectType<ui::Actions>("Actions");
   registerContextObjectType<ui::FileSystemBrowser>("FileSystemBrowser");
   registerContextObjectType<ui::LanguageService>("LanguageService");
-  registerContextObjectType<ui::StatusState>("StatusState");
+  registerContextObjectType<ui::Status>("Status");
   registerContextObjectType<ui::ActorViewModel>("ActorViewModel");
   registerContextObjectType<ui::BookingViewModel>("BookingViewModel");
   registerContextObjectType<ui::ContractViewModel>("ContractViewModel");

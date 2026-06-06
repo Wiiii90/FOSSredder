@@ -56,7 +56,7 @@ TestCase {
         settingsViewModel.browseCalls = 0
     }
 
-    function test_SET_E_001_defaultDirectoryFieldUpdatesSettingsState() {
+    function test_SET_E_001_defaultDirectoryFieldUpdatesSettings() {
         const view = createView()
         const pathField = TestSupport.findRequired(Lookup, view, "settingsExportDefaultDirectoryField")
 
@@ -65,7 +65,7 @@ TestCase {
         compare(settingsViewModel.exportDefaultDirectory, "test:///export/out")
     }
 
-    function test_SET_E_002_archiveFormatSelectionUpdatesSettingsState() {
+    function test_SET_E_002_archiveFormatSelectionUpdatesSettings() {
         const view = createView()
         const archiveCombo = TestSupport.findRequired(Lookup, view, "settingsExportArchiveFormatComboBox")
 
@@ -75,7 +75,7 @@ TestCase {
         compare(settingsViewModel.exportArchiveFormat, 1)
     }
 
-    function test_SET_E_003_includeFormulasToggleUpdatesSettingsState() {
+    function test_SET_E_003_includeFormulasToggleUpdatesSettings() {
         const view = createView()
         const formulasCheck = TestSupport.findRequired(Lookup, view, "settingsExportIncludeFormulasCheckBox")
 
@@ -85,7 +85,7 @@ TestCase {
         compare(settingsViewModel.exportIncludeFormulas, false)
     }
 
-    function test_SET_E_004_browseButtonDelegatesToSettingsState() {
+    function test_SET_E_004_browseButtonDelegatesToSettings() {
         const view = createView()
         const browseButton = TestSupport.findRequired(Lookup, view, "settingsExportBrowseButton")
 

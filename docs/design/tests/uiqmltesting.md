@@ -742,9 +742,9 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| SET-V-001 | Settings stack mount | QML/State | Settings view receives SettingsState | Mount view | The category stack follows SettingsState and activation is delegated once |
+| SET-V-001 | Settings stack mount | QML/State | Settings view receives Settings | Mount view | The category stack follows Settings and activation is delegated once |
 | SET-V-002 | Category navigation | QML/Interaction | Settings view loaded | Click next and previous category controls | Settings category advances and returns with loaded page content |
-| SET-V-003 | Update settings | QML/Interaction | Settings view receives SettingsState | Click Update | Save is delegated to SettingsState |
+| SET-V-003 | Update settings | QML/Interaction | Settings view receives Settings | Click Update | Save is delegated to Settings |
 | SET-V-004 | Reset settings | QML/Interaction | Settings category is not the default | Click Default | Settings reset and category returns to General |
 | SET-V-005 | Category navigation wraps | QML/Interaction | Settings category is at either edge | Click next from the last category or previous from the first category | Category wraps to the opposite edge |
 
@@ -752,39 +752,39 @@ ui/
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| SET-G-001 | Language selection | QML/Interaction | General settings receives language options | Select a language | Selection is delegated to SettingsState |
-| SET-G-002 | Unavailable language | QML/Interaction | General settings receives an unavailable option | Select the unavailable language | SettingsState keeps the active language unchanged |
-| SET-G-003 | Current language binding | QML/State | SettingsState exposes a selected language index | Mount general settings | The dropdown reflects the selected index |
-| SET-G-004 | Theme mode selection | QML/Interaction | General settings receives theme mode options | Select a theme mode | Selection is delegated to SettingsState |
+| SET-G-001 | Language selection | QML/Interaction | General settings receives language options | Select a language | Selection is delegated to Settings |
+| SET-G-002 | Unavailable language | QML/Interaction | General settings receives an unavailable option | Select the unavailable language | Settings keeps the active language unchanged |
+| SET-G-003 | Current language binding | QML/State | Settings exposes a selected language index | Mount general settings | The dropdown reflects the selected index |
+| SET-G-004 | Theme mode selection | QML/Interaction | General settings receives theme mode options | Select a theme mode | Selection is delegated to Settings |
 
 ### SettingsImport
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| SET-I-001 | Default import path | QML/Interaction | Import settings receives SettingsState | Edit default path | The path updates SettingsState |
-| SET-I-002 | Browse import path | QML/Interaction | Import settings receives SettingsState | Click Browse | Browse is delegated to SettingsState |
-| SET-I-003 | Import pipeline defaults | QML/Interaction | Import settings receives SettingsState | Edit pipeline fields | Poppler, OpenCV, Tesseract, parser, and matcher defaults update SettingsState |
+| SET-I-001 | Default import path | QML/Interaction | Import settings receives Settings | Edit default path | The path updates Settings |
+| SET-I-002 | Browse import path | QML/Interaction | Import settings receives Settings | Click Browse | Browse is delegated to Settings |
+| SET-I-003 | Import pipeline defaults | QML/Interaction | Import settings receives Settings | Edit pipeline fields | Poppler, OpenCV, Tesseract, parser, and matcher defaults update Settings |
 
 ### SettingsExport
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| SET-E-001 | Default export directory | QML/Interaction | Export settings receives SettingsState | Edit default output folder | The directory updates SettingsState |
-| SET-E-002 | Archive format | QML/Interaction | Export settings receives SettingsState | Select archive format | The archive format updates SettingsState |
-| SET-E-003 | XLSX formulas toggle | QML/Interaction | Export settings receives SettingsState | Toggle formula setting | The formula flag updates SettingsState |
-| SET-E-004 | Browse export directory | QML/Interaction | Export settings receives SettingsState | Click Browse | Browse is delegated to SettingsState |
+| SET-E-001 | Default export directory | QML/Interaction | Export settings receives Settings | Edit default output folder | The directory updates Settings |
+| SET-E-002 | Archive format | QML/Interaction | Export settings receives Settings | Select archive format | The archive format updates Settings |
+| SET-E-003 | XLSX formulas toggle | QML/Interaction | Export settings receives Settings | Toggle formula setting | The formula flag updates Settings |
+| SET-E-004 | Browse export directory | QML/Interaction | Export settings receives Settings | Click Browse | Browse is delegated to Settings |
 
 ### SettingsMiscellaneous
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| SET-M-001 | Toolbar visibility flags | QML/Interaction | Miscellaneous settings receives SettingsState | Toggle toolbar entries | Toolbar visibility flags update SettingsState |
+| SET-M-001 | Toolbar visibility flags | QML/Interaction | Miscellaneous settings receives Settings | Toggle toolbar entries | Toolbar visibility flags update Settings |
 
 ### SettingsSidebar
 
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
-| SET-S-001 | Category row selection | QML/Interaction | Settings sidebar receives category rows | Click a category row | Category selection is delegated to SettingsState |
+| SET-S-001 | Category row selection | QML/Interaction | Settings sidebar receives category rows | Click a category row | Category selection is delegated to Settings |
 
 ## Common Controls and Shared Components
 

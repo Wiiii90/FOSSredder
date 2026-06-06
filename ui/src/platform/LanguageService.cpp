@@ -39,7 +39,7 @@ QList<LanguageDefinition> supportedLanguages() {
 }
 
 /** @brief Creates the payload for a single language option entry. */
-QVariantMap makeLanguageOption(const QString &code, const QString &label,
+QVariantMap makeLanguageOption(const QString& code, const QString& label,
                                bool available) {
   QVariantMap option;
   option.insert(payload::keys::language::kCode, code);
@@ -58,8 +58,8 @@ QSettings openLanguageSettings() {
 
 } // namespace
 
-LanguageService::LanguageService(QApplication *application, QQmlEngine *engine,
-                                 QObject *parent)
+LanguageService::LanguageService(QApplication* application, QQmlEngine* engine,
+                                 QObject* parent)
     : QObject(parent), application_(application), engine_(engine) {
   refreshAvailableLanguages();
 
@@ -69,23 +69,23 @@ LanguageService::LanguageService(QApplication *application, QQmlEngine *engine,
 
 void LanguageService::refreshAvailableLanguages() {
   availableLanguages_.clear();
-  for (const auto &language : supportedLanguages()) {
-    availableLanguages_.append(makeLanguageOption(
-        language.code, language.labelFactory(),
-        isLanguageAvailable(language.code)));
+  for (const auto& language : supportedLanguages()) {
+    availableLanguages_.append(
+        makeLanguageOption(language.code, language.labelFactory(),
+                           isLanguageAvailable(language.code)));
   }
 }
 
-bool LanguageService::applyLanguage(const QString &languageCode) {
+bool LanguageService::applyLanguage(const QString& languageCode) {
   const bool changed = applyCurrentLanguage(languageCode);
   return changed || normalizeLanguageCode(languageCode) == currentLanguage_;
 }
 
-void LanguageService::setCurrentLanguage(const QString &languageCode) {
+void LanguageService::setCurrentLanguage(const QString& languageCode) {
   applyCurrentLanguage(languageCode);
 }
 
-bool LanguageService::applyCurrentLanguage(const QString &languageCode) {
+bool LanguageService::applyCurrentLanguage(const QString& languageCode) {
   const QString normalizedLanguage = normalizeLanguageCode(languageCode);
   QString targetLanguage = normalizedLanguage;
   if (!isLanguageAvailable(targetLanguage)) {
@@ -128,7 +128,7 @@ bool LanguageService::applyCurrentLanguage(const QString &languageCode) {
   return true;
 }
 
-bool LanguageService::isLanguageAvailable(const QString &languageCode) const {
+bool LanguageService::isLanguageAvailable(const QString& languageCode) const {
   const QString normalizedLanguage = normalizeLanguageCode(languageCode);
   if (normalizedLanguage == ui::config::languages::kEnglish)
     return true;
@@ -136,12 +136,11 @@ bool LanguageService::isLanguageAvailable(const QString &languageCode) const {
 }
 
 QString
-LanguageService::normalizeLanguageCode(const QString &languageCode) const {
-  const QString normalized =
-      languageCode.trimmed().toLower().replace(QLatin1Char('-'),
-                                               QLatin1Char('_'));
+LanguageService::normalizeLanguageCode(const QString& languageCode) const {
+  const QString normalized = languageCode.trimmed().toLower().replace(
+      QLatin1Char('-'), QLatin1Char('_'));
 
-  for (const auto &language : supportedLanguages()) {
+  for (const auto& language : supportedLanguages()) {
     if (normalized == language.code ||
         normalized.startsWith(language.code + QLatin1Char('_'))) {
       return language.code;
@@ -152,12 +151,12 @@ LanguageService::normalizeLanguageCode(const QString &languageCode) const {
 }
 
 QString
-LanguageService::translationFileName(const QString &languageCode) const {
+LanguageService::translationFileName(const QString& languageCode) const {
   return QStringLiteral("%1_%2.qm")
       .arg(ui::config::kTranslationBaseName, languageCode);
 }
 
-bool LanguageService::translationFileExists(const QString &languageCode) const {
+bool LanguageService::translationFileExists(const QString& languageCode) const {
   if (languageCode == ui::config::languages::kEnglish)
     return true;
 
@@ -173,7 +172,7 @@ bool LanguageService::translationFileExists(const QString &languageCode) const {
   return QFileInfo::exists(resourceTranslationPath);
 }
 
-bool LanguageService::loadTranslation(const QString &languageCode) {
+bool LanguageService::loadTranslation(const QString& languageCode) {
   const QString fileName = translationFileName(languageCode);
   const QString appTranslationDir = QCoreApplication::applicationDirPath() +
                                     QLatin1Char('/') +
@@ -199,7 +198,7 @@ void LanguageService::retranslateUi() {
     engine_->retranslate();
 }
 
-void LanguageService::persistLanguage(const QString &languageCode) {
+void LanguageService::persistLanguage(const QString& languageCode) {
   auto settings = openLanguageSettings();
   settings.setValue(ui::config::preferences::keys::kLanguage, languageCode);
   settings.sync();

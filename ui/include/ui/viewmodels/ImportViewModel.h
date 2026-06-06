@@ -13,9 +13,9 @@
 #include <qqmlintegration.h>
 
 #include "ui/shell/AppActions.h"
-#include "ui/shell/NavigationState.h"
+#include "ui/shell/Navigation.h"
 #include "ui/shell/Settings.h"
-#include "ui/shell/StatusState.h"
+#include "ui/shell/Status.h"
 #include "ui/workflows/ImportWorkflow.h"
 
 namespace ui {
@@ -26,7 +26,8 @@ class WorkspaceSelectors;
 class WorkspaceStore;
 
 /**
- * @brief Exposes import overview, statement draft, and transaction draft state to QML.
+ * @brief Exposes import overview, statement draft, and transaction draft state
+ * to QML.
  */
 class ImportViewModel : public QObject {
   Q_OBJECT
@@ -50,7 +51,7 @@ class ImportViewModel : public QObject {
                  NOTIFY changed)
   Q_PROPERTY(QStringList importFiles READ importFiles NOTIFY changed)
   Q_PROPERTY(QString importFileSummary READ importFileSummary NOTIFY changed)
-  Q_PROPERTY(ui::NavigationState* navigation READ navigation NOTIFY changed)
+  Q_PROPERTY(ui::Navigation* navigation READ navigation NOTIFY changed)
   Q_PROPERTY(int queuedCount READ queuedCount NOTIFY changed)
   Q_PROPERTY(QVariantList importLogs READ importLogs NOTIFY changed)
   Q_PROPERTY(QString selectedDraftId READ selectedDraftId NOTIFY changed)
@@ -60,8 +61,8 @@ class ImportViewModel : public QObject {
 
   Q_PROPERTY(QString statementName READ statementName WRITE setStatementName
                  NOTIFY changed)
-  Q_PROPERTY(int currentTransactionNumber READ currentTransactionNumber NOTIFY
-                 changed)
+  Q_PROPERTY(
+      int currentTransactionNumber READ currentTransactionNumber NOTIFY changed)
   Q_PROPERTY(int transactionCount READ transactionCount NOTIFY changed)
   Q_PROPERTY(bool canDeleteTransaction READ canDeleteTransaction NOTIFY changed)
   Q_PROPERTY(bool canSelectPreviousTransactionDraft READ
@@ -82,13 +83,13 @@ class ImportViewModel : public QObject {
   Q_PROPERTY(QString proofSource READ proofSource NOTIFY changed)
   Q_PROPERTY(bool effectiveAllocatable READ effectiveAllocatable NOTIFY changed)
   Q_PROPERTY(QVariantList actorOptions READ actorOptions NOTIFY changed)
-  Q_PROPERTY(int selectedActorOptionIndex READ selectedActorOptionIndex NOTIFY
-                 changed)
+  Q_PROPERTY(
+      int selectedActorOptionIndex READ selectedActorOptionIndex NOTIFY changed)
   Q_PROPERTY(QString actorName READ actorName WRITE setActorName NOTIFY changed)
   Q_PROPERTY(bool canAddActor READ canAddActor NOTIFY changed)
   Q_PROPERTY(QVariantList contractOptions READ contractOptions NOTIFY changed)
-  Q_PROPERTY(
-      int selectedContractOptionIndex READ selectedContractOptionIndex NOTIFY changed)
+  Q_PROPERTY(int selectedContractOptionIndex READ selectedContractOptionIndex
+                 NOTIFY changed)
   Q_PROPERTY(QString contractName READ contractName WRITE setContractName NOTIFY
                  changed)
   Q_PROPERTY(QString contractType READ contractType WRITE setContractType NOTIFY
@@ -152,19 +153,21 @@ public:
    * @brief Sets shell navigation used by import transitions.
    * @param value Navigation state or nullptr.
    */
-  void setNavigation(NavigationState* value);
+  void setNavigation(Navigation* value);
 
   /**
    * @brief Returns shell navigation used by import transitions.
    * @return Navigation state or nullptr.
    */
-  NavigationState* navigation() const noexcept { return navigation_; }
+  Navigation* navigation() const noexcept {
+    return navigation_;
+  }
 
   /**
    * @brief Sets shell status output used by import actions.
    * @param value Status state or nullptr.
    */
-  void setStatus(StatusState* value);
+  void setStatus(Status* value);
 
   /**
    * @brief Sets workspace roles used for import logs, catalog and selection.
@@ -173,9 +176,9 @@ public:
    * @param selection Workspace selection API or nullptr.
    * @param selectors Workspace selector API or nullptr.
    */
-  void setWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
-                         WorkspaceSelection *selection,
-                         WorkspaceSelectors *selectors);
+  void setWorkspaceRoles(WorkspaceStore* store, WorkspaceCommands* commands,
+                         WorkspaceSelection* selection,
+                         WorkspaceSelectors* selectors);
 
   /**
    * @brief Returns the active import content index.
@@ -265,7 +268,9 @@ public:
    * @brief Returns the manual import path field.
    * @return Manual path text.
    */
-  QString manualPathText() const { return manualPathText_; }
+  QString manualPathText() const {
+    return manualPathText_;
+  }
 
   /**
    * @brief Updates the manual import path field.
@@ -361,7 +366,9 @@ public:
    * @brief Returns the transaction name field.
    * @return Transaction name text.
    */
-  QString nameText() const { return nameText_; }
+  QString nameText() const {
+    return nameText_;
+  }
 
   /**
    * @brief Updates the transaction name field.
@@ -373,7 +380,9 @@ public:
    * @brief Returns the booking date field.
    * @return Booking date text.
    */
-  QString bookingDateText() const { return bookingDateText_; }
+  QString bookingDateText() const {
+    return bookingDateText_;
+  }
 
   /**
    * @brief Updates the booking date field.
@@ -385,7 +394,9 @@ public:
    * @brief Returns the valuta field.
    * @return Valuta text.
    */
-  QString valutaText() const { return valutaText_; }
+  QString valutaText() const {
+    return valutaText_;
+  }
 
   /**
    * @brief Updates the valuta field.
@@ -397,7 +408,9 @@ public:
    * @brief Returns the amount field.
    * @return Amount text.
    */
-  QString amountText() const { return amountText_; }
+  QString amountText() const {
+    return amountText_;
+  }
 
   /**
    * @brief Updates the amount field.
@@ -451,7 +464,9 @@ public:
    * @brief Returns the quick-create actor name field.
    * @return Actor name text.
    */
-  QString actorName() const { return actorName_; }
+  QString actorName() const {
+    return actorName_;
+  }
 
   /**
    * @brief Updates the quick-create actor name field.
@@ -481,7 +496,9 @@ public:
    * @brief Returns the quick-create contract name field.
    * @return Contract name text.
    */
-  QString contractName() const { return contractName_; }
+  QString contractName() const {
+    return contractName_;
+  }
 
   /**
    * @brief Updates the quick-create contract name field.
@@ -493,7 +510,9 @@ public:
    * @brief Returns the quick-create contract type field.
    * @return Contract type text.
    */
-  QString contractType() const { return contractType_; }
+  QString contractType() const {
+    return contractType_;
+  }
 
   /**
    * @brief Updates the quick-create contract type field.
@@ -547,7 +566,9 @@ public:
    * @brief Returns the quick-create property name field.
    * @return Property name text.
    */
-  QString propertyName() const { return propertyName_; }
+  QString propertyName() const {
+    return propertyName_;
+  }
 
   /**
    * @brief Updates the quick-create property name field.
@@ -738,7 +759,8 @@ public:
    * @param propertyId Property id.
    * @param selected True to select, false to remove.
    */
-  Q_INVOKABLE void setPropertySelected(const QString& propertyId, bool selected);
+  Q_INVOKABLE void setPropertySelected(const QString& propertyId,
+                                       bool selected);
 
   /**
    * @brief Creates and selects a property for the current draft.
@@ -823,9 +845,9 @@ private:
   /**
    * @brief Connects workspace role signals.
    */
-  void bindWorkspaceRoles(WorkspaceStore *store, WorkspaceCommands *commands,
-                          WorkspaceSelection *selection,
-                          WorkspaceSelectors *selectors);
+  void bindWorkspaceRoles(WorkspaceStore* store, WorkspaceCommands* commands,
+                          WorkspaceSelection* selection,
+                          WorkspaceSelectors* selectors);
   /**
    * @brief Applies the default import path when the import view is opened.
    */
@@ -904,12 +926,12 @@ private:
   ImportWorkflow* importWorkflow_ = nullptr;
   Settings* settings_ = nullptr;
   Actions* actions_ = nullptr;
-  NavigationState* navigation_ = nullptr;
-  StatusState* status_ = nullptr;
-  WorkspaceStore *store_ = nullptr;
-  WorkspaceCommands *commands_ = nullptr;
-  WorkspaceSelection *selection_ = nullptr;
-  WorkspaceSelectors *selectors_ = nullptr;
+  Navigation* navigation_ = nullptr;
+  Status* status_ = nullptr;
+  WorkspaceStore* store_ = nullptr;
+  WorkspaceCommands* commands_ = nullptr;
+  WorkspaceSelection* selection_ = nullptr;
+  WorkspaceSelectors* selectors_ = nullptr;
   QString manualPathText_;
   QStringList selectedImportFiles_;
   QString appliedDefaultImportPath_;

@@ -5,10 +5,10 @@
 
 #pragma once
 
+#include <QObject>
 #include <QString>
 #include <QVariantList>
 #include <QVariantMap>
-#include <QObject>
 
 namespace ui {
 
@@ -18,7 +18,8 @@ class WorkspaceSelectors;
 class WorkspaceStore;
 
 /**
- * @brief Owns editable contract UI state and delegates contract CRUD to workspace.
+ * @brief Owns editable contract UI state and delegates contract CRUD to
+ * workspace.
  */
 class ContractViewModel : public QObject {
   Q_OBJECT
@@ -48,10 +49,10 @@ public:
    * @brief Creates the contract view model bound to workspace roles.
    * @param parent Optional QObject parent.
    */
-  explicit ContractViewModel(WorkspaceStore *store, WorkspaceCommands *commands,
-                             WorkspaceSelection *selection,
-                             WorkspaceSelectors *selectors,
-                             QObject *parent = nullptr);
+  explicit ContractViewModel(WorkspaceStore* store, WorkspaceCommands* commands,
+                             WorkspaceSelection* selection,
+                             WorkspaceSelectors* selectors,
+                             QObject* parent = nullptr);
 
   /**
    * @brief Returns the currently selected contract id.
@@ -62,37 +63,45 @@ public:
    * @brief Returns the editable contract name.
    * @return Current form name.
    */
-  QString name() const { return name_; }
+  QString name() const {
+    return name_;
+  }
   /**
    * @brief Updates the editable contract name.
    * @param value New form name.
    */
-  void setName(const QString &value);
+  void setName(const QString& value);
   /**
    * @brief Returns editable contract aliases.
    * @return Current alias list.
    */
-  QVariantList aliases() const { return aliases_; }
+  QVariantList aliases() const {
+    return aliases_;
+  }
   /**
    * @brief Replaces editable contract aliases.
    * @param value New alias list.
    */
-  void setAliases(const QVariantList &value);
+  void setAliases(const QVariantList& value);
   /**
    * @brief Returns the current alias input text.
    * @return Current alias input text.
    */
-  QString aliasInputText() const { return aliasInputText_; }
+  QString aliasInputText() const {
+    return aliasInputText_;
+  }
   /**
    * @brief Updates the current alias input text.
    * @param value New alias input text.
    */
-  void setAliasInputText(const QString &value);
+  void setAliasInputText(const QString& value);
   /**
    * @brief Returns the selected alias index.
    * @return Selected alias index, or `-1` when no alias is selected.
    */
-  int aliasIndex() const { return aliasIndex_; }
+  int aliasIndex() const {
+    return aliasIndex_;
+  }
   /**
    * @brief Updates the selected alias index.
    * @param value New selected alias index.
@@ -109,7 +118,7 @@ public:
    * @brief Updates the editable contract type.
    * @param value New type text from QML.
    */
-  void setType(const QString &value);
+  void setType(const QString& value);
 
   /**
    * @brief Returns the editable allocatable mode.
@@ -121,7 +130,7 @@ public:
    * @brief Updates the editable allocatable mode.
    * @param value Mode text from QML.
    */
-  void setAllocatableMode(const QString &value);
+  void setAllocatableMode(const QString& value);
 
   /**
    * @brief Returns selected actor ids for this contract.
@@ -133,7 +142,7 @@ public:
    * @brief Replaces selected actor ids for this contract.
    * @param value Actor id list from QML.
    */
-  void setSelectedActorIds(const QVariantList &value);
+  void setSelectedActorIds(const QVariantList& value);
 
   /**
    * @brief Returns selected property ids for this contract.
@@ -145,7 +154,7 @@ public:
    * @brief Replaces selected property ids for this contract.
    * @param value Property id list from QML.
    */
-  void setSelectedPropertyIds(const QVariantList &value);
+  void setSelectedPropertyIds(const QVariantList& value);
 
   /**
    * @brief Returns actor rows with an empty entry for the primary actor combo.
@@ -193,12 +202,12 @@ public:
    * @param value Alias text to inspect.
    * @return `true` when the alias text is not blank.
    */
-  Q_INVOKABLE bool canAddAlias(const QString &value) const;
+  Q_INVOKABLE bool canAddAlias(const QString& value) const;
   /**
    * @brief Adds an alias to the contract form.
    * @param value Alias text to add.
    */
-  Q_INVOKABLE void addAlias(const QString &value);
+  Q_INVOKABLE void addAlias(const QString& value);
   /**
    * @brief Removes the currently selected alias when possible.
    */
@@ -218,20 +227,20 @@ public:
    * @brief Selects a contract for editing.
    * @param id Contract id selected by the QML sidebar.
    */
-  Q_INVOKABLE void selectContract(const QString &id);
+  Q_INVOKABLE void selectContract(const QString& id);
 
   /**
    * @brief Selects the primary actor for the contract.
    * @param actorId Actor id from the QML combo box, or empty.
    */
-  Q_INVOKABLE void selectPrimaryActor(const QString &actorId);
+  Q_INVOKABLE void selectPrimaryActor(const QString& actorId);
 
   /**
    * @brief Toggles a property link in the current form.
    * @param propertyId Property id toggled by QML.
    * @param selected Whether the property should be selected.
    */
-  Q_INVOKABLE void setPropertySelected(const QString &propertyId,
+  Q_INVOKABLE void setPropertySelected(const QString& propertyId,
                                        bool selected);
 
   /**
@@ -281,7 +290,7 @@ private:
    * @brief Applies a projected contract row to the editable form fields.
    * @param state Form state projected from the workspace row.
    */
-  void applyFormState(const QVariantMap &state);
+  void applyFormState(const QVariantMap& state);
 
   /** @brief Clears editable contract-specific form fields. */
   void clearFormState();
@@ -290,10 +299,10 @@ private:
    * @return `true` when the selected alias index points to an existing alias.
    */
   bool hasValidAliasSelection() const;
-  WorkspaceStore *store_ = nullptr;
-  WorkspaceCommands *commands_ = nullptr;
-  WorkspaceSelection *selection_ = nullptr;
-  WorkspaceSelectors *selectors_ = nullptr;
+  WorkspaceStore* store_ = nullptr;
+  WorkspaceCommands* commands_ = nullptr;
+  WorkspaceSelection* selection_ = nullptr;
+  WorkspaceSelectors* selectors_ = nullptr;
   QString currentOwnerId_;
   QString name_;
   QVariantList aliases_;

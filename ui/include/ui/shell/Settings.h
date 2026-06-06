@@ -25,8 +25,9 @@ class Settings : public QObject {
                  themeModeChanged)
   Q_PROPERTY(bool autosaveOnClose READ autosaveOnClose WRITE setAutosaveOnClose
                  NOTIFY autosaveOnCloseChanged)
-  Q_PROPERTY(int autosaveIntervalMinutes READ autosaveIntervalMinutes WRITE
-                 setAutosaveIntervalMinutes NOTIFY autosaveIntervalMinutesChanged)
+  Q_PROPERTY(
+      int autosaveIntervalMinutes READ autosaveIntervalMinutes WRITE
+          setAutosaveIntervalMinutes NOTIFY autosaveIntervalMinutesChanged)
   Q_PROPERTY(QString importDefaultPath READ importDefaultPath WRITE
                  setImportDefaultPath NOTIFY importDefaultPathChanged)
   Q_PROPERTY(QString importPoppler READ importPoppler WRITE setImportPoppler
@@ -70,20 +71,42 @@ class Settings : public QObject {
                  setToolbarShowSettings NOTIFY toolbarShowSettingsChanged)
 
 public:
-  explicit Settings(QObject *parent = nullptr);
+  /**
+   * @brief Creates the settings store exposed to QML.
+   * @param parent Optional QObject parent.
+   */
+  explicit Settings(QObject* parent = nullptr);
 
-  QString language() const { return values_.language; }
-  QString themeMode() const { return values_.themeMode; }
-  bool autosaveOnClose() const noexcept { return values_.autosaveOnClose; }
+  QString language() const {
+    return values_.language;
+  }
+  QString themeMode() const {
+    return values_.themeMode;
+  }
+  bool autosaveOnClose() const noexcept {
+    return values_.autosaveOnClose;
+  }
   int autosaveIntervalMinutes() const noexcept {
     return values_.autosaveIntervalMinutes;
   }
-  QString importDefaultPath() const { return values_.importDefaultPath; }
-  QString importPoppler() const { return values_.importPoppler; }
-  QString importOpenCv() const { return values_.importOpenCv; }
-  QString importTesseract() const { return values_.importTesseract; }
-  QString importParser() const { return values_.importParser; }
-  QString importMatcher() const { return values_.importMatcher; }
+  QString importDefaultPath() const {
+    return values_.importDefaultPath;
+  }
+  QString importPoppler() const {
+    return values_.importPoppler;
+  }
+  QString importOpenCv() const {
+    return values_.importOpenCv;
+  }
+  QString importTesseract() const {
+    return values_.importTesseract;
+  }
+  QString importParser() const {
+    return values_.importParser;
+  }
+  QString importMatcher() const {
+    return values_.importMatcher;
+  }
   QString exportDefaultDirectory() const {
     return values_.exportDefaultDirectory;
   }
@@ -111,30 +134,36 @@ public:
   bool toolbarShowContracts() const noexcept {
     return values_.toolbarShowContracts;
   }
-  bool toolbarShowImport() const noexcept { return values_.toolbarShowImport; }
-  bool toolbarShowExport() const noexcept { return values_.toolbarShowExport; }
+  bool toolbarShowImport() const noexcept {
+    return values_.toolbarShowImport;
+  }
+  bool toolbarShowExport() const noexcept {
+    return values_.toolbarShowExport;
+  }
   bool toolbarShowAnalysis() const noexcept {
     return values_.toolbarShowAnalysis;
   }
-  bool toolbarShowAnnual() const noexcept { return values_.toolbarShowAnnual; }
+  bool toolbarShowAnnual() const noexcept {
+    return values_.toolbarShowAnnual;
+  }
   bool toolbarShowSettings() const noexcept {
     return values_.toolbarShowSettings;
   }
 
-  void setLanguage(const QString &value);
-  void setThemeMode(const QString &value);
+  void setLanguage(const QString& value);
+  void setThemeMode(const QString& value);
   void setAutosaveOnClose(bool value);
   void setAutosaveIntervalMinutes(int value);
-  void setImportDefaultPath(const QString &value);
-  void setImportPoppler(const QString &value);
-  void setImportOpenCv(const QString &value);
-  void setImportTesseract(const QString &value);
-  void setImportParser(const QString &value);
-  void setImportMatcher(const QString &value);
-  void setExportDefaultDirectory(const QString &value);
+  void setImportDefaultPath(const QString& value);
+  void setImportPoppler(const QString& value);
+  void setImportOpenCv(const QString& value);
+  void setImportTesseract(const QString& value);
+  void setImportParser(const QString& value);
+  void setImportMatcher(const QString& value);
+  void setExportDefaultDirectory(const QString& value);
   void setExportArchiveFormat(int value);
   void setExportIncludeFormulas(bool value);
-  void setAnalysisDefaultDateMode(const QString &value);
+  void setAnalysisDefaultDateMode(const QString& value);
   void setAnalysisDefaultYear(int value);
   void setToolbarShowBooking(bool value);
   void setToolbarShowActors(bool value);
@@ -146,9 +175,25 @@ public:
   void setToolbarShowAnnual(bool value);
   void setToolbarShowSettings(bool value);
 
+  /**
+   * @brief Loads persisted settings from the platform settings store.
+   */
   void load();
+
+  /**
+   * @brief Saves current settings to the platform settings store.
+   */
   void save();
+
+  /**
+   * @brief Restores default settings values in memory.
+   */
   void resetToDefaults();
+
+  /**
+   * @brief Returns whether current values differ from the last saved state.
+   * @return True when unsaved settings changes exist.
+   */
   bool hasChanges() const noexcept;
 
 signals:
@@ -176,8 +221,20 @@ signals:
   void toolbarShowAnalysisChanged();
   void toolbarShowAnnualChanged();
   void toolbarShowSettingsChanged();
+
+  /**
+   * @brief Emitted when any settings value changes.
+   */
   void stateChanged();
+
+  /**
+   * @brief Emitted after settings have been persisted.
+   */
   void saved();
+
+  /**
+   * @brief Emitted after settings have been reset to defaults.
+   */
   void reset();
 
 private:
@@ -207,17 +264,17 @@ private:
     bool toolbarShowAnnual = true;
     bool toolbarShowSettings = true;
 
-    bool operator==(const Values &) const = default;
+    bool operator==(const Values& other) const;
   };
 
-  static QString normalizeText(const QString &value);
-  static QString normalizeThemeMode(const QString &value);
+  static QString normalizeText(const QString& value);
+  static QString normalizeThemeMode(const QString& value);
   static int normalizeArchiveFormat(int value) noexcept;
   static int normalizeAutosaveIntervalMinutes(int value) noexcept;
   static Values defaultValues();
 
-  template <typename TValue, typename TSignal>
-  void updateSetting(TValue &target, TValue value, TSignal signal) {
+  template<typename TValue, typename TSignal>
+  void updateSetting(TValue& target, TValue value, TSignal signal) {
     if (target == value) {
       return;
     }

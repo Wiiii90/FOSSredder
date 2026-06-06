@@ -23,7 +23,8 @@ TEST(WorkspaceSelectionTest,
   selection.setSelectedPropertyId(QStringLiteral("property-1"));
   selection.setSelectedContractId(QStringLiteral("contract-1"));
   selection.setSelectedStatementId(QStringLiteral("statement-1"));
-  selection.setSelectedTransactionId(QStringLiteral("tx-1"));
+  selection.selectTransaction(QStringLiteral("statement-1"),
+                              QStringLiteral("tx-1"));
   selection.setSelectedAnalysisId(QStringLiteral("analysis-1"));
   selection.setSelectedAnnualId(QStringLiteral("annual-1"));
 

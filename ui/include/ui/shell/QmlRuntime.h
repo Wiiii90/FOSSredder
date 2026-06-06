@@ -21,6 +21,6 @@ void registerTypes();
  * @brief Configure QQmlEngine import paths and plugin library paths.
  * @param engine QQmlEngine instance to configure (must not be null).
  */
-void configureRuntime(QQmlEngine *engine);
+void configureRuntime(QQmlEngine* engine);
 
 } // namespace ui::bootstrap

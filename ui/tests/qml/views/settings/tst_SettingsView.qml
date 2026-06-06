@@ -122,7 +122,7 @@ TestCase {
         compare(stack.currentIndex, 0)
     }
 
-    function test_SET_V_003_updateButtonDelegatesToSettingsState() {
+    function test_SET_V_003_updateButtonDelegatesToSettings() {
         const view = createView()
         TestSupport.findRequired(Lookup, view, "settingsUpdateButton").clicked()
 
