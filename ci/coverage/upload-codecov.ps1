@@ -47,6 +47,7 @@ if ($expectedHash -ne $actualHash) {
 $arguments = @(
     '-f', (Resolve-Path $coveragePath).Path,
     '-n', $UploadName,
+    '-F', 'windows',
     '-Q', 'github-action/self-hosted-windows',
     '-Z',
     '-v'

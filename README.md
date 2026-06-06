@@ -6,9 +6,9 @@
 
 <p align="center">
   <a href="https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Amaster"><img alt="Stable CI" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/fossredder/quality.yml?branch=master&label=stable%20ci&style=flat-square"></a>
-  <a href="https://codecov.io/gh/Wiiii90/fossredder/branch/master"><img alt="Stable coverage" src="https://img.shields.io/codecov/c/github/Wiiii90/fossredder/master?token=LGALNE53Z6&label=stable%20coverage&style=flat-square"></a>
+  <a href="https://codecov.io/gh/Wiiii90/fossredder/branch/master"><img alt="Stable coverage" src="https://codecov.io/gh/Wiiii90/fossredder/branch/master/graph/badge.svg?token=LGALNE53Z6"></a>
   <a href="https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Adevelop"><img alt="Nightly CI" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/fossredder/quality.yml?branch=develop&label=nightly%20ci&style=flat-square"></a>
-  <a href="https://codecov.io/gh/Wiiii90/fossredder/branch/develop"><img alt="Nightly coverage" src="https://img.shields.io/codecov/c/github/Wiiii90/fossredder/develop?token=LGALNE53Z6&label=nightly%20coverage&style=flat-square"></a>
+  <a href="https://codecov.io/gh/Wiiii90/fossredder/branch/develop"><img alt="Nightly coverage" src="https://codecov.io/gh/Wiiii90/fossredder/branch/develop/graph/badge.svg?token=LGALNE53Z6"></a>
 </p>
 
 **FOSSredder** is a deliberately overengineered Windows desktop application built for a concrete, real-world use case: extracting structured data from PDF bank statements issued by Commerzbank, a major German banking institution, in order to automate the annual allocation of recoverable costs to tenants.
