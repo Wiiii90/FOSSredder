@@ -1,4 +1,4 @@
-name: CI
+name: Pipeline
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}
+  group: pipeline-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -151,8 +151,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: .\ci\coverage\upload-codecov.ps1 -CoverageFile .\coverage\coverage.lcov
 
-  doxygen-pages:
-    if: github.event_name == 'push'
+  doxygen:
     runs-on:
       - self-hosted
       - Windows
@@ -179,10 +178,10 @@ jobs:
           New-Item -ItemType Directory -Path $iconTarget -Force | Out-Null
           Copy-Item -Path ".\app\assets\icons\fossredder.png" -Destination $iconTarget -Force
 
-      - name: Upload Doxygen Pages artifact
+      - name: Upload Doxygen artifact
         uses: actions/upload-artifact@v6
         with:
-          name: pages-doxygen-html
+          name: doxygen-html
           path: docs/html
           if-no-files-found: error
           retention-days: 7
@@ -191,7 +190,7 @@ jobs:
     if: github.event_name == 'push'
     needs:
       - coverage
-      - doxygen-pages
+      - doxygen
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -205,7 +204,7 @@ jobs:
       - name: Download Doxygen artifact
         uses: actions/download-artifact@v7
         with:
-          name: pages-doxygen-html
+          name: doxygen-html
           path: site/api
 
       - name: Download coverage artifact
@@ -215,34 +214,35 @@ jobs:
           path: coverage-artifact
 
       - name: Assemble GitHub Pages site
+        shell: bash
         run: |
-          New-Item -ItemType Directory -Path site\coverage -Force | Out-Null
-          Copy-Item -Path coverage-artifact\html\* -Destination site\coverage -Recurse -Force
+          mkdir -p site/coverage
+          cp -R coverage-artifact/html/. site/coverage/
 
-          @(
-            "<!DOCTYPE html>"
-            "<html lang=`"en`">"
-            "<head>"
-            "  <meta charset=`"utf-8`">"
-            "  <meta name=`"viewport`" content=`"width=device-width, initial-scale=1`">"
-            "  <title>FOSSredder Project Reports</title>"
-            "  <style>"
-            "    body { font-family: Segoe UI, sans-serif; max-width: 760px; margin: 4rem auto; padding: 0 1.5rem; line-height: 1.6; }"
-            "    h1 { margin-bottom: .25rem; }"
-            "    p { color: #4b5563; }"
-            "    a { color: #0f766e; font-weight: 600; }"
-            "  </style>"
-            "</head>"
-            "<body>"
-            "  <h1>FOSSredder Project Reports</h1>"
-            "  <p>Generated documentation and quality reports for the current branch.</p>"
-            "  <ul>"
-            "    <li><a href=`"./api/index.html`">Doxygen API Documentation</a></li>"
-            "    <li><a href=`"./coverage/index.html`">LLVM Coverage Report</a></li>"
-            "  </ul>"
-            "</body>"
-            "</html>"
-          ) | Set-Content -Path site\index.html
+          cat > site/index.html <<'HTML'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>FOSSredder Project Reports</title>
+            <style>
+              body { font-family: Segoe UI, sans-serif; max-width: 760px; margin: 4rem auto; padding: 0 1.5rem; line-height: 1.6; }
+              h1 { margin-bottom: .25rem; }
+              p { color: #4b5563; }
+              a { color: #0f766e; font-weight: 600; }
+            </style>
+          </head>
+          <body>
+            <h1>FOSSredder Project Reports</h1>
+            <p>Generated documentation and quality reports for the current branch.</p>
+            <ul>
+              <li><a href="./api/index.html">Doxygen API Documentation</a></li>
+              <li><a href="./coverage/index.html">LLVM Coverage Report</a></li>
+            </ul>
+          </body>
+          </html>
+          HTML
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6

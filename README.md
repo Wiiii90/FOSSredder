@@ -5,9 +5,9 @@
 <h1 align="center">FOSSredder</h1>
 
 <p align="center">
-  <a href="https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Amaster"><img alt="Stable CI" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/fossredder/quality.yml?branch=master&label=stable%20ci&style=flat-square"></a>
+  <a href="https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Amaster"><img alt="Stable pipeline" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/fossredder/quality.yml?branch=master&label=stable%20pipeline&style=flat-square"></a>
   <a href="https://codecov.io/gh/Wiiii90/fossredder/branch/master"><img alt="Stable coverage" src="https://codecov.io/gh/Wiiii90/fossredder/branch/master/graph/badge.svg?token=LGALNE53Z6"></a>
-  <a href="https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Adevelop"><img alt="Nightly CI" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/fossredder/quality.yml?branch=develop&label=nightly%20ci&style=flat-square"></a>
+  <a href="https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Adevelop"><img alt="Nightly pipeline" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/fossredder/quality.yml?branch=develop&label=nightly%20pipeline&style=flat-square"></a>
   <a href="https://codecov.io/gh/Wiiii90/fossredder/branch/develop"><img alt="Nightly coverage" src="https://codecov.io/gh/Wiiii90/fossredder/branch/develop/graph/badge.svg?token=LGALNE53Z6"></a>
 </p>
 
@@ -137,13 +137,13 @@ cmake --build --preset release-package
 
 Installer: `./.build/app/dist/FOSSredder-Setup-<version>-win-x64.exe`
 
-### Quality Workflow
+### Pipeline
 
-The project uses clang-tidy for static analysis, LLVM coverage for coverage reports, and Codecov for publishing coverage results from the GitHub Actions workflow in `.github/workflows/quality.yml`. The same tools can also be run locally.
+The project uses a single GitHub Actions pipeline in `.github/workflows/quality.yml` for build validation, tests, clang-tidy, LLVM coverage, Doxygen, GitHub Pages reports, and Windows installer packaging. The same quality tools can also be run locally.
 
 Notes: Coverage requires Clang/`clang-cl` and `clang-tidy` runs only if installed and the `tidy` preset is used.
 
-#### CI Workflow
+#### CI Preset
 
 Configure CI (ci preset):
 
@@ -201,9 +201,9 @@ Coverage output: `./coverage/` and `./coverage/coverage.lcov`.
 
 ## Docs
 
-- `docs/` contains design artifacts and requirements. The implementation (code) should be considered the authoritative source when documentation and code disagree.
+- `docs/` contains design and project reference documents. The implementation (code) should be considered the authoritative source when documentation and code disagree.
 - All source headers are documented using Doxygen-style comments (`@brief`, `@param`, etc.). You can generate the full HTML reference by running `doxygen Doxyfile` in the project root.
-- GitHub Actions publishes the generated Doxygen HTML as the `fossredder-doxygen-html` artifact from the docs workflow.
+- The pipeline publishes Doxygen and LLVM coverage reports to GitHub Pages under `/api/` and `/coverage/`.
 
 ## License
 
