@@ -1,29 +1,25 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Contract/ContractPropertiesPanel.qml
+ * @file ui/qml/FossRedder/Views/Contract/ContractPropertiesPanel.qml
  * @brief Provides the ContractPropertiesPanel component.
  */
 
-/*!
- * @file ui/qml/FossRedder/Views/Contract/ContractPropertiesPanel.qml
- * @brief Property selection panel used by the contract form with an internal scrollable list.
- */
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
     required property var theme
+    required property var contractViewModel
     property var propertyRows: []
-    property var selectedPropertyIds: []
-    signal selectionChanged(var ids)
+    readonly property var selectedPropertyIds: root.contractViewModel ? root.contractViewModel.selectedPropertyIds : []
 
     Layout.fillWidth: true
-    Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight
-    Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
+    Layout.fillHeight: false
+    Layout.preferredHeight: implicitHeight
     contentSpacing: root.theme.spacingSmall
 
     background: Rectangle {
@@ -34,66 +30,47 @@ Controls.Panel {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
+        Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+        Layout.preferredHeight: implicitHeight
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Properties")
             Layout.fillWidth: true
         }
 
-        Flickable {
-            id: propertyScroll
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            contentWidth: width
-            contentHeight: propertyColumn.implicitHeight
+        Controls.CheckListPanel {
+            Repeater {
+                model: root.propertyRows
 
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-            }
+                delegate: RowLayout {
+                    id: propertyRow
+                    required property var modelData
+                    readonly property string propertyId: propertyRow.modelData && propertyRow.modelData.id ? propertyRow.modelData.id : ""
 
-            Column {
-                id: propertyColumn
-                width: propertyScroll.width
-                spacing: root.theme.spacingSmall
+                    Layout.fillWidth: true
+                    spacing: root.theme.spacingSmall
 
-                Repeater {
-                    model: root.propertyRows
+                    Controls.CheckBox {
+                        objectName: "contractPropertyCheckBox"
+                        Layout.fillWidth: false
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                        checked: root.selectedPropertyIds.indexOf(propertyRow.propertyId) !== -1
+                        onToggled: if (root.contractViewModel)
+                            root.contractViewModel.setPropertySelected(propertyRow.propertyId, checked)
+                    }
 
-                    delegate: RowLayout {
-                        id: propertyRow
-                        required property var modelData
-                        readonly property string propertyId: propertyRow.modelData && propertyRow.modelData.id ? propertyRow.modelData.id : ""
+                    Label {
+                        color: root.theme.textPrimary
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                        text: propertyRow.modelData && propertyRow.modelData.name ? propertyRow.modelData.name : ""
+                        elide: Text.ElideRight
+                    }
 
-                        width: propertyColumn.width
-                        spacing: root.theme.spacingSmall
-
-                        Controls.CheckBox {
-                            Layout.fillWidth: false
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            checked: root.selectedPropertyIds.indexOf(propertyRow.propertyId) !== -1
-                            onClicked: {
-                                const next = root.selectedPropertyIds ? root.selectedPropertyIds.slice(0) : []
-                                const idx = next.indexOf(propertyRow.propertyId)
-                                if (checked && idx === -1)
-                                    next.push(propertyRow.propertyId)
-                                else if (!checked && idx !== -1)
-                                    next.splice(idx, 1)
-                                root.selectionChanged(next)
-                            }
-                        }
-
-                        Label {
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            text: propertyRow.modelData && propertyRow.modelData.name ? propertyRow.modelData.name : ""
-                            elide: Text.ElideRight
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
+                    Item {
+                        Layout.fillWidth: true
                     }
                 }
             }

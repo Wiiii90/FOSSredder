@@ -6,9 +6,29 @@ set(APP_COMMON_SRCS
     src/main.cpp
 )
 
+set(APP_HEADERS
+    include/app/Environment.h
+    include/app/pch.h
+)
+
 set(APP_QML_SRCS
     src/main_qml.cpp
 )
+
+set(APP_RESOURCE_SRCS
+    assets/fossredder_resources.qrc
+)
+
+if(WIN32)
+    set(APP_ICON_ICO "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/fossredder.ico")
+    set(APP_ICON_RC "${CMAKE_CURRENT_BINARY_DIR}/fossredder_icon.rc")
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/fossredder_icon.rc.in"
+        "${APP_ICON_RC}"
+        @ONLY
+    )
+    list(APPEND APP_RESOURCE_SRCS "${APP_ICON_RC}")
+endif()
 
 find_package(Qt6 COMPONENTS Quick Qml Widgets LinguistTools QUIET)
 if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
@@ -21,7 +41,7 @@ else()
     endif()
 endif()
 
-set(APP_SRCS ${APP_COMMON_SRCS})
+set(APP_SRCS ${APP_COMMON_SRCS} ${APP_HEADERS} ${APP_RESOURCE_SRCS})
 if(USE_QML)
     list(APPEND APP_SRCS ${APP_QML_SRCS})
 endif()
@@ -34,18 +54,25 @@ set_target_properties(fossredder PROPERTIES
     AUTOMOC ON
     AUTOUIC ON
     AUTORCC ON
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
 )
 
 target_compile_features(fossredder PUBLIC cxx_std_20)
+target_compile_definitions(fossredder PRIVATE
+    FOSSREDDER_VERSION="${PROJECT_VERSION}"
+)
 
 # Application dependencies.
 target_link_libraries(fossredder PRIVATE
     FossRedder::Core
     FossRedder::Debug
     FossRedder::Persistence
-    FossRedder::OpenCvService
-    FossRedder::PopplerService
-    FossRedder::TesseractService
+    FossRedder::InfraAnalysisImageRenderer
+    FossRedder::InfraImageProcessing
+    FossRedder::InfraArchive
+    FossRedder::InfraPdfRendering
+    FossRedder::InfraXlsxWriter
+    FossRedder::InfraTextRecognition
     FossRedder::Ui
 )
 
@@ -70,6 +97,7 @@ target_include_directories(fossredder PRIVATE
 # Translation sources.
 set(TRANSLATION_TS_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/i18n/fossredder_de.ts
+    ${CMAKE_CURRENT_SOURCE_DIR}/i18n/fossredder_fr.ts
 )
 
 set(TRANSLATION_SOURCE_DIRS
@@ -131,35 +159,12 @@ if(TARGET Qt6::Widgets)
     target_link_libraries(fossredder PRIVATE Qt6::Widgets)
 endif()
 
-fossredder_enable_target_pch(fossredder "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
+fossredder_enable_target_pch(fossredder "${CMAKE_CURRENT_SOURCE_DIR}/include/app/pch.h")
 
-# Visual Studio debugger environment and Qt deployment.
-if(WIN32 AND DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET)
-    set(_qt_bin_release "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin")
-    set(_qt_bin_debug "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin")
-
-    if(MSVC)
-        set(_target_dir_macro "$(TargetDir)")
-        set(_dbg_env "$<$<CONFIG:Debug>:PATH=${_qt_bin_debug}$<SEMICOLON>QT_DEBUG_PLUGINS=1$<SEMICOLON>VCPKG_INSTALLED_DIR=${VCPKG_INSTALLED_DIR}$<SEMICOLON>QT_QPA_PLATFORM_PLUGIN_PATH=${_target_dir_macro}platforms$<SEMICOLON>QT_PLUGIN_PATH=${_target_dir_macro}$<SEMICOLON>QML2_IMPORT_PATH=${_target_dir_macro}qml$<SEMICOLON>QML_IMPORT_PATH=${_target_dir_macro}qml>")
-        set(_rel_env "$<$<CONFIG:Release>:PATH=${_qt_bin_release}$<SEMICOLON>VCPKG_INSTALLED_DIR=${VCPKG_INSTALLED_DIR}$<SEMICOLON>QT_QPA_PLATFORM_PLUGIN_PATH=${_target_dir_macro}platforms$<SEMICOLON>QT_PLUGIN_PATH=${_target_dir_macro}$<SEMICOLON>QML2_IMPORT_PATH=${_target_dir_macro}qml$<SEMICOLON>QML_IMPORT_PATH=${_target_dir_macro}qml>")
-
-        set_target_properties(fossredder PROPERTIES
-            VS_DEBUGGER_ENVIRONMENT "${_dbg_env}${_rel_env}"
-        )
-    endif()
-
-    add_custom_command(TARGET fossredder POST_BUILD
-        COMMAND ${CMAKE_COMMAND}
-            -DTARGET_DIR="$<TARGET_FILE_DIR:fossredder>"
-            -DVCPKG_INSTALLED_DIR="${VCPKG_INSTALLED_DIR}"
-            -DVCPKG_TARGET_TRIPLET="${VCPKG_TARGET_TRIPLET}"
-            -DAPP_QML_SOURCE_DIR="${CMAKE_SOURCE_DIR}/ui/qml/FossRedder"
-            -DAPP_QML_TOOLING_DIR="${CMAKE_BINARY_DIR}/ui/qmltooling/FossRedder"
-            -DBUILD_CONFIG="$<CONFIG>"
-            -P "${CMAKE_SOURCE_DIR}/cmake/QtDeploy.cmake"
-        VERBATIM
-    )
-endif()
+fossredder_configure_qt_runtime(fossredder
+    QML_SOURCE_DIR "${CMAKE_SOURCE_DIR}/ui/qml/FossRedder"
+    QML_TOOLING_DIR "${CMAKE_BINARY_DIR}/ui/qmltooling/FossRedder"
+)
 
 # Install application runtime assets.
 install(TARGETS fossredder

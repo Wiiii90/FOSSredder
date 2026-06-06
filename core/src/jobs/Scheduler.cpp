@@ -11,9 +11,15 @@
 
 namespace core::jobs {
 
+namespace {
+
+constexpr std::size_t kMinimumWorkerCount = 1;
+
+} // namespace
+
 SlotLimiter::SlotLimiter(std::size_t slots)
-    : slots_(std::max<std::size_t>(1, slots))
-    , available_(std::max<std::size_t>(1, slots))
+    : slots_(std::max<std::size_t>(kMinimumWorkerCount, slots))
+    , available_(std::max<std::size_t>(kMinimumWorkerCount, slots))
 {
 }
 
@@ -34,9 +40,9 @@ void SlotLimiter::release()
 }
 
 Scheduler::Scheduler(std::size_t workers, std::size_t queueCapacity)
-    : cap_(std::max<std::size_t>(1, queueCapacity))
+    : cap_(std::max<std::size_t>(kMinimumWorkerCount, queueCapacity))
 {
-    workers = std::max<std::size_t>(1, workers);
+    workers = std::max<std::size_t>(kMinimumWorkerCount, workers);
     workers_.reserve(workers);
     for (std::size_t i = 0; i < workers; ++i) {
         workers_.emplace_back([this]() { workerLoop(); });

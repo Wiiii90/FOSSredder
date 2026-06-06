@@ -1,12 +1,9 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Booking/BookingTransactionActorPanel.qml
+ * @file ui/qml/FossRedder/Views/Booking/BookingTransactionActorPanel.qml
  * @brief Provides the BookingTransactionActorPanel component.
  */
 
-/*!
- * @file ui/qml/FossRedder/Views/Booking/BookingTransactionActorPanel.qml
- * @brief Actor selection panel for a transaction in the booking page.
- */
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
@@ -16,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var txRoot
+    required property var bookingViewModel
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -30,23 +27,24 @@ Controls.Panel {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Actor")
             Layout.fillWidth: true
         }
 
         Controls.DropdownMenu {
             id: actorCombo
+            objectName: "bookingTransactionActorComboBox"
             Layout.fillWidth: true
             textRole: "display"
-            model: root.txRoot.actorDisplayModel()
-            currentIndex: root.txRoot.selectedIndexFor(model, root.txRoot.actorIdValue())
-            onActivated: {
-                const row = model[currentIndex]
-                root.txRoot.updateField("actorId", row && row.id ? row.id : "")
+            model: root.bookingViewModel.actorDisplayRows
+            currentIndex: root.bookingViewModel.selectedActorIndex
+            onActivated: function (index) {
+                root.bookingViewModel.selectActorIndex(index);
             }
         }
     }

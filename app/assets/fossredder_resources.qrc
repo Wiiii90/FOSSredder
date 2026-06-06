@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/app">
+        <file alias="icons/fossredder.ico">icons/fossredder.ico</file>
+        <file alias="icons/fossredder.png">icons/fossredder.png</file>
+    </qresource>
+</RCC>

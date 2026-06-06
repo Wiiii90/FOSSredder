@@ -1,12 +1,9 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Booking/BookingTransactionContractPanel.qml
+ * @file ui/qml/FossRedder/Views/Booking/BookingTransactionContractPanel.qml
  * @brief Provides the BookingTransactionContractPanel component.
  */
 
-/*!
- * @file ui/qml/FossRedder/Views/Booking/BookingTransactionContractPanel.qml
- * @brief Contract selection panel for a transaction in the booking page.
- */
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
@@ -16,7 +13,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var txRoot
+    required property var bookingViewModel
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -30,23 +27,24 @@ Controls.Panel {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Contract")
             Layout.fillWidth: true
         }
 
         Controls.DropdownMenu {
             id: contractCombo
+            objectName: "bookingTransactionContractComboBox"
             Layout.fillWidth: true
             textRole: "display"
-            model: root.txRoot.contractDisplayModel()
-            currentIndex: root.txRoot.selectedIndexFor(model, root.txRoot.contractIdValue())
-            onActivated: {
-                const row = model[currentIndex]
-                root.txRoot.updateField("contractId", row && row.id ? row.id : "")
+            model: root.bookingViewModel.contractDisplayRows
+            currentIndex: root.bookingViewModel.selectedContractIndex
+            onActivated: function (index) {
+                root.bookingViewModel.selectContractIndex(index);
             }
         }
     }

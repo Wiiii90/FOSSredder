@@ -1,0 +1,6 @@
+add_subdirectory(archive)
+add_subdirectory(analysis-image-renderer)
+add_subdirectory(image-processing)
+add_subdirectory(xlsx-writer)
+add_subdirectory(pdf-rendering)
+add_subdirectory(text-recognition)

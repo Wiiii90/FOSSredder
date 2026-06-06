@@ -9,8 +9,11 @@
 #include <chrono>
 #include <string>
 
-namespace utils {
+namespace core::utils {
 
+/**
+ * @brief Generates a transient unique identifier for import and job artifacts.
+ */
 inline std::string makeUniqId()
 {
     static std::atomic<uint32_t> counter{0};
@@ -20,4 +23,4 @@ inline std::string makeUniqId()
     return std::to_string(us) + "_" + std::to_string(c);
 }
 
-} // namespace utils
+}

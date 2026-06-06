@@ -1,27 +1,43 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Analysis/AnalysisView.qml
- * @brief Provides the AnalysisView component.
+ * @file ui/qml/FossRedder/Views/Analysis/AnalysisView.qml
+ * @brief Provides the AnalysisView composition.
  */
 
 import QtQuick 2.15
-import FossRedder.Views 1.0 as Views
+import QtQuick.Layouts 1.3
+import FossRedder.Views.Analysis 1.0 as Analysis
+pragma ComponentBehavior: Bound
 
 Item {
     id: root
-    required property var appContext
+    required property var analysisViewModel
     required property var theme
 
-    readonly property var session: root.appContext ? root.appContext.session : null
-
     onVisibleChanged: {
-        if (visible && analysisForm)
-            analysisForm.refreshFromSelection()
+        if (visible)
+            root.analysisViewModel.refreshFromSelection()
     }
 
-    Views.AnalysisForm {
-        id: analysisForm
-        anchors.fill: parent
-        appContext: root.appContext
-        theme: root.theme
+    ColumnLayout {
+        anchors.fill: root
+        spacing: root.theme.spacingSmall
+
+        Analysis.AnalysisForm {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            theme: root.theme
+            analysisViewModel: root.analysisViewModel
+        }
+
+        Analysis.AnalysisBottomBar {
+            Layout.fillWidth: true
+            Layout.leftMargin: root.theme.pageContentMargin
+            Layout.rightMargin: root.theme.pageContentMargin
+            Layout.bottomMargin: root.theme.pageContentMargin
+            theme: root.theme
+            analysisViewModel: root.analysisViewModel
+        }
     }
+
+    Component.onCompleted: root.analysisViewModel.refreshFromSelection()
 }

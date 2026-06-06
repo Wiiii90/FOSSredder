@@ -1,13 +1,9 @@
-#pragma once
-
 /**
  * @file persistence/include/persistence/ISqlConnectionProvider.h
  * @brief SQLite connection handle provider used by persistence adapters.
- *
- * This header owns the dependency on <sqlite3.h> and is intended for use by
- * persistence-layer implementations only. Core code should not include this
- * header to avoid leaking sqlite types into the domain.
  */
+
+#pragma once
 
 #include <sqlite3.h>
 

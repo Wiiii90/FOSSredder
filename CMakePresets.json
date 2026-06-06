@@ -11,21 +11,56 @@
       "name": "vcpkg-base",
       "generator": "Visual Studio 18 2026",
       "architecture": {
-        "value": "x64"
+        "value": "x64",
+        "strategy": "set"
       },
       "cacheVariables": {
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "VCPKG_APPLOCAL_DEPS": "ON"
       },
-      "environment": {
-        "QT_DEBUG_PLUGINS": "1"
-      }
+      "environment": {}
+    },
+    {
+      "hidden": true,
+      "name": "vcpkg-ninja-base",
+      "generator": "Ninja Multi-Config",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_APPLOCAL_DEPS": "ON"
+      },
+      "environment": {}
     },
     {
       "name": "app",
       "displayName": "App",
       "inherits": "vcpkg-base",
-      "binaryDir": "${sourceDir}/.build/${presetName}"
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "app-fast",
+      "displayName": "App Fast QML",
+      "inherits": "app",
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "cacheVariables": {
+        "FOSSREDDER_FAST_QML_BUILD": "ON"
+      }
+    },
+    {
+      "name": "app-ninja-fast",
+      "displayName": "App Ninja Fast QML",
+      "inherits": "vcpkg-ninja-base",
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF",
+        "FOSSREDDER_FAST_QML_BUILD": "ON"
+      }
     },
     {
       "name": "tests",
@@ -38,7 +73,41 @@
         "BUILD_UI_TESTS": "ON",
         "BUILD_PERSISTENCE_TESTS": "ON",
         "BUILD_DEBUG_TESTS": "ON",
-        "BUILD_OPENCV_TESTS": "ON"
+        "BUILD_OPENCV_TESTS": "ON",
+        "BUILD_INFRA_ARCHIVE_TESTS": "ON",
+        "BUILD_INFRA_PDF_RENDERING_TESTS": "ON",
+        "BUILD_INFRA_TEXT_RECOGNITION_TESTS": "ON",
+        "BUILD_INFRA_ANALYSIS_IMAGE_RENDERER_TESTS": "ON",
+        "BUILD_INFRA_XLSX_WRITER_TESTS": "ON"
+      }
+    },
+    {
+      "name": "tests-fast",
+      "displayName": "Tests Fast QML",
+      "inherits": "tests",
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "cacheVariables": {
+        "FOSSREDDER_FAST_QML_BUILD": "ON"
+      }
+    },
+    {
+      "name": "tests-ninja-fast",
+      "displayName": "Tests Ninja Fast QML",
+      "inherits": "vcpkg-ninja-base",
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_CORE_TESTS": "ON",
+        "BUILD_UI_TESTS": "ON",
+        "BUILD_PERSISTENCE_TESTS": "ON",
+        "BUILD_DEBUG_TESTS": "ON",
+        "BUILD_OPENCV_TESTS": "ON",
+        "BUILD_INFRA_ARCHIVE_TESTS": "ON",
+        "BUILD_INFRA_PDF_RENDERING_TESTS": "ON",
+        "BUILD_INFRA_TEXT_RECOGNITION_TESTS": "ON",
+        "BUILD_INFRA_ANALYSIS_IMAGE_RENDERER_TESTS": "ON",
+        "BUILD_INFRA_XLSX_WRITER_TESTS": "ON",
+        "FOSSREDDER_FAST_QML_BUILD": "ON"
       }
     },
     {
@@ -79,6 +148,26 @@
       "configuration": "Release"
     },
     {
+      "name": "debug-app-fast",
+      "configurePreset": "app-fast",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-app-fast",
+      "configurePreset": "app-fast",
+      "configuration": "Release"
+    },
+    {
+      "name": "debug-app-ninja-fast",
+      "configurePreset": "app-ninja-fast",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-app-ninja-fast",
+      "configurePreset": "app-ninja-fast",
+      "configuration": "Release"
+    },
+    {
       "name": "debug-tests",
       "configurePreset": "tests",
       "configuration": "Debug"
@@ -86,6 +175,26 @@
     {
       "name": "release-tests",
       "configurePreset": "tests",
+      "configuration": "Release"
+    },
+    {
+      "name": "debug-tests-fast",
+      "configurePreset": "tests-fast",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-tests-fast",
+      "configurePreset": "tests-fast",
+      "configuration": "Release"
+    },
+    {
+      "name": "debug-tests-ninja-fast",
+      "configurePreset": "tests-ninja-fast",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-tests-ninja-fast",
+      "configurePreset": "tests-ninja-fast",
       "configuration": "Release"
     },
     {

@@ -2,3 +2,5 @@ module FossRedder
 depends QtQuick
 Main 1.0 Main.qml
 singleton Theme 1.0 Theme/Theme.qml
+internal LightPalette Theme/LightPalette.qml
+internal DarkPalette Theme/DarkPalette.qml

@@ -1,0 +1,12 @@
+module FossRedder.Views.Analysis
+AnalysisAllocatableFilter 1.0 AnalysisAllocatableFilter.qml
+AnalysisBottomBar 1.0 AnalysisBottomBar.qml
+AnalysisContractTypeFilter 1.0 AnalysisContractTypeFilter.qml
+AnalysisDateFilter 1.0 AnalysisDateFilter.qml
+AnalysisForm 1.0 AnalysisForm.qml
+AnalysisPlotView 1.0 AnalysisPlotView.qml
+AnalysisPropertyFilter 1.0 AnalysisPropertyFilter.qml
+AnalysisSidebar 1.0 AnalysisSidebar.qml
+AnalysisTableView 1.0 AnalysisTableView.qml
+AnalysisTransactionsPanel 1.0 AnalysisTransactionsPanel.qml
+AnalysisView 1.0 AnalysisView.qml

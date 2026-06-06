@@ -1,7 +1,9 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Export/ExportSidebar.qml
- * @brief Provides the ExportSidebar component.
+ * @file ui/qml/FossRedder/Views/Export/ExportSidebar.qml
+ * @brief Provides the Export sidebar.
  */
+
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
@@ -9,28 +11,32 @@ import FossRedder.Components 1.0 as Components
 
 Item {
     id: root
-    required property var appContext
+    required property var exportViewModel
     required property var theme
-
-    readonly property var exportController: root.appContext ? root.appContext.exportController : null
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: root.theme.spacingMedium
         spacing: root.theme.spacingSmall
 
         Components.RunLogList {
             theme: root.theme
             Layout.fillWidth: true
             Layout.fillHeight: true
-            model: root.exportController ? root.exportController.runs : null
-            onRunClicked: function(index, logId, draftAttached, statementId) {
-                if (!root.exportController) return
-                root.exportController.openRunLocationAt(index)
+            cardMinHeight: root.theme.viewSidebarRowHeight + root.theme.spacingSmall
+            cardRadius: root.theme.viewSidebarRowRadius
+            cardPadding: root.theme.spacingSmall
+            listTopMargin: 0
+            itemSpacing: root.theme.spacingSmall
+            baseBorderColor: root.theme.borderSoft
+            actionButtonSize: root.theme.viewCompactActionButtonSizeTiny
+            headerTopInset: root.theme.spacingSmall
+            model: root.exportViewModel.exportLogs
+            fileRowsClickable: true
+            onRunClicked: function (_index, logId, _draftAttached, _statementId) {
+                root.exportViewModel.openExportLogLocation(logId);
             }
-            onDeleteClicked: function(index, draftAttached, draftId) {
-                if (!root.exportController || !root.exportController.runs) return
-                root.exportController.removeRunAt(index)
+            onDeleteClicked: function (_index, logId, _draftAttached, _draftId) {
+                root.exportViewModel.deleteExportLog(logId);
             }
         }
     }

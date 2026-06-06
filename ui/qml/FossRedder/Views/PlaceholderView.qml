@@ -1,6 +1,6 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/PlaceholderView.qml
- * @brief Provides the PlaceholderView component.
+ * @file ui/qml/FossRedder/Views/PlaceholderView.qml
+ * @brief Displays placeholder page content for views that are not implemented yet.
  */
 
 import QtQuick 2.15
@@ -11,6 +11,10 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Theme.background
-        Label { anchors.centerIn: parent; text: qsTr("Not implemented") }
+        Label {
+            anchors.centerIn: parent
+            color: Theme.textPrimary
+            text: qsTr("Not implemented")
+        }
     }
 }

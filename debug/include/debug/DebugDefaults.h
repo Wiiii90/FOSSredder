@@ -11,8 +11,8 @@
 namespace debug::defaults {
 
 inline constexpr std::string_view kOutputDirectoryName = "debug_output";
-inline constexpr std::string_view kErrorLogPath = "errors/errors.log";
-inline constexpr std::string_view kErrorsProcessName = "errors";
+inline constexpr std::string_view kDiagnosticsLogPath = "diagnostics/diagnostics.log";
+inline constexpr std::string_view kDiagnosticsProcessName = "diagnostics";
 inline constexpr std::string_view kImportProcessName = "import";
 inline constexpr std::string_view kPopplerLogPrefix = "poppler/log";
 inline constexpr std::string_view kPopplerMetadataPrefix = "poppler/meta/";

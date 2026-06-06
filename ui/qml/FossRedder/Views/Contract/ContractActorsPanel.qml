@@ -1,11 +1,6 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Contract/ContractActorsPanel.qml
- * @brief Provides the ContractActorsPanel component.
- */
-
-/*!
  * @file ui/qml/FossRedder/Views/Contract/ContractActorsPanel.qml
- * @brief Actor selection panel for contracts with a single-select dropdown and a no-actor option.
+ * @brief Provides the ContractActorsPanel component.
  */
 
 import QtQuick 2.15
@@ -16,10 +11,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    required property var session
-    property var actorRows: []
-    property var selectedActorIds: []
-    signal selectionChanged(var ids)
+    required property var contractViewModel
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
@@ -33,31 +25,28 @@ Controls.Panel {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
+        Layout.fillHeight: true
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Actor")
             Layout.fillWidth: true
         }
 
         Controls.DropdownMenu {
             id: actorCombo
-            readonly property string selectedActorId: root.selectedActorIds && root.selectedActorIds.length > 0
-                                                     ? String(root.selectedActorIds[0])
-                                                     : ""
+            objectName: "contractActorComboBox"
+            readonly property string selectedActorId: root.contractViewModel && root.contractViewModel.selectedActorIds.length > 0 ? String(root.contractViewModel.selectedActorIds[0]) : ""
             Layout.fillWidth: true
             textRole: "display"
-            model: root.session
-                ? root.session.displayRowsWithEmpty(root.actorRows || [], qsTr("No actor"), "name")
-                : []
-            currentIndex: {
-                const idx = root.session ? root.session.indexOfId(model, selectedActorId) : -1
-                return idx >= 0 ? idx : 0
-            }
-            onActivated: {
-                const row = model[currentIndex]
-                root.selectionChanged(row && row.id ? [String(row.id)] : [])
+            model: root.contractViewModel.actorDisplayRows
+            currentIndex: root.contractViewModel.selectedActorIndex
+            onActivated: function (index) {
+                const row = model[index];
+                if (root.contractViewModel)
+                    root.contractViewModel.selectPrimaryActor(row && row.id ? String(row.id) : "");
             }
         }
     }

@@ -1,5 +1,5 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Controls/DropZone.qml
+ * @file ui/qml/FossRedder/Controls/DropZone.qml
  * @brief Provides the DropZone component.
  */
 
@@ -8,6 +8,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder 1.0 as FR
 import FossRedder.Controls 1.0 as Controls
+pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -23,33 +24,17 @@ Item {
     property bool clickToBrowse: true
 
     property var files: []
+    property string fileSummary: ""
     property int queuedCount: 0
 
     signal browseRequested()
-
-    function fileName(path) {
-        if (!path) return ""
-        const s = String(path).replace(/\\/g, "/")
-        const idx = s.lastIndexOf("/")
-        return idx >= 0 ? s.substring(idx + 1) : s
-    }
-
-    function fileSummary() {
-        if (!root.files || root.files.length === 0) return ""
-        const names = []
-        for (let i = 0; i < root.files.length; ++i) {
-            const n = root.fileName(root.files[i])
-            if (n) names.push(n)
-        }
-        return names.length > 0 ? qsTr("Selected: %1").arg(names.join(", ")) : ""
-    }
 
     Rectangle {
         id: dropZoneRect
         anchors.fill: parent
         radius: root.theme.radius
         color: root.theme.surfaceAlt
-        border.width: 1
+        border.width: root.theme.borderWidthThin
         border.color: root.theme.border
 
         ColumnLayout {
@@ -59,9 +44,9 @@ Item {
 
             Image {
                 Layout.alignment: Qt.AlignHCenter
-                source: "../Assets/import.svg"
-                width: root.theme.viewSectionIconSize
-                height: root.theme.viewSectionIconSize
+                source: "../assets/import.svg"
+                Layout.preferredWidth: root.theme.viewSectionIconSize
+                Layout.preferredHeight: root.theme.viewSectionIconSize
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 opacity: 0.85
@@ -88,7 +73,7 @@ Item {
             Label {
                 Layout.fillWidth: true
                 visible: root.files && root.files.length > 0
-                text: root.fileSummary()
+                text: root.fileSummary
                 color: root.theme.textMuted
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
@@ -114,6 +99,7 @@ Item {
     }
 
     MouseArea {
+        objectName: "dropZoneMouseArea"
         anchors.fill: parent
         enabled: root.clickToBrowse && root.enabled
         cursorShape: Qt.PointingHandCursor

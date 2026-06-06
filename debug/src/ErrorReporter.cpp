@@ -3,6 +3,7 @@
 #include "core/errors/ErrorReporting.h"
 #include "debug/DebugDefaults.h"
 #include "debug/FileDebugger.h"
+#include "debug/SpdlogDebugger.h"
 
 #include <sstream>
 #include <string>
@@ -36,13 +37,16 @@ void DebuggerErrorReporter::report(const core::errors::ErrorEvent& event)
     }
     if (!event.exceptionType.empty()) out << " (" << event.exceptionType << ")";
     out << "\n";
-    debugger_->writeText(std::string(debug::defaults::kErrorLogPath), out.str());
+    debugger_->writeText(std::string(debug::defaults::kDiagnosticsLogPath), out.str());
 }
 
 std::shared_ptr<core::errors::IErrorReporter> createDefaultErrorReporter()
 {
+    auto fileBackend = std::make_shared<FileDebugger>(
+        "", std::string(debug::defaults::kDiagnosticsProcessName));
     return std::make_shared<DebuggerErrorReporter>(
-        std::make_shared<FileDebugger>("", std::string(debug::defaults::kErrorsProcessName)));
+        std::make_shared<SpdlogDebugger>(
+            std::string(debug::defaults::kDiagnosticsProcessName), std::move(fileBackend)));
 }
 
 }

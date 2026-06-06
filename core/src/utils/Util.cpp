@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace utils {
+namespace core::utils {
 
 std::string trim(std::string s) {
     const auto notSpace = [](unsigned char c) { return !std::isspace(c); };
@@ -46,4 +46,4 @@ int rightEdgeFromWordSpans(const std::vector<std::pair<int, int>>& wordSpans) {
     return wordSpans.back().second;
 }
 
-} // namespace utils
+}

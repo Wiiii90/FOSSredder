@@ -19,18 +19,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+if(MSVC)
+    # MSVC needs /FS when multiple generated sources can write the same PDB in parallel.
+    add_compile_options(/FS)
+endif()
 
 # Generate Qt Creator/QML Language Server metadata for QML editing.
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
 # Module layout.
-add_subdirectory(api)
 add_subdirectory(core)
 add_subdirectory(debug)
+add_subdirectory(infra)
 add_subdirectory(persistence)
-add_subdirectory(services/poppler)
-add_subdirectory(services/opencv)
-add_subdirectory(services/tesseract)
 add_subdirectory(ui)
 add_subdirectory(app)
 

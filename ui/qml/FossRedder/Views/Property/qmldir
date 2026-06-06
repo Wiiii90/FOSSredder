@@ -1,0 +1,6 @@
+module FossRedder.Views.Property
+PropertyBottomBar 1.0 PropertyBottomBar.qml
+PropertyContractPanel 1.0 PropertyContractPanel.qml
+PropertyForm 1.0 PropertyForm.qml
+PropertySidebar 1.0 PropertySidebar.qml
+PropertyView 1.0 PropertyView.qml

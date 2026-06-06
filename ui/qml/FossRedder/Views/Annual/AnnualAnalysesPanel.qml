@@ -1,11 +1,6 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Annual/AnnualAnalysesPanel.qml
- * @brief Provides the AnnualAnalysesPanel component.
- */
-
-/*!
  * @file ui/qml/FossRedder/Views/Annual/AnnualAnalysesPanel.qml
- * @brief Read-only panel that previews assigned analyses for the selected annual.
+ * @brief Provides the Annual analyses assignment panel.
  */
 
 import QtQuick 2.15
@@ -16,14 +11,8 @@ pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
-    required property var appContext
     required property var theme
-    property var allAnalysisRows: []
-    property var analysisRows: []
-    property var selectedAnalysisIds: []
-    readonly property var analysisController: root.appContext ? root.appContext.analysisController : null
-
-    signal selectionChanged(var ids)
+    required property var annualViewModel
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -31,34 +20,16 @@ Controls.Panel {
     Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
     contentSpacing: root.theme.spacingSmall
 
-    function updateAnalysisExportFormat(row, exportFormat) {
-        const analysis = row || ({})
-        const analysisId = analysis.id ? String(analysis.id) : ""
-        if (!root.analysisController || analysisId.length === 0)
-            return
-
-        root.analysisController.updateAnalysis(
-            analysisId,
-            analysis.name ? String(analysis.name) : "",
-            analysis.type ? String(analysis.type) : "tab",
-            analysis.config ? String(analysis.config) : "{}",
-            analysis.filter ? String(analysis.filter) : "",
-            exportFormat ? String(exportFormat).toLowerCase() : "",
-            analysis.includeCalcAdjustments !== undefined ? !!analysis.includeCalcAdjustments : true,
-            analysis.exportState ? String(analysis.exportState) : "{}",
-            analysis.snapshotTransactions ? String(analysis.snapshotTransactions) : "{}")
-        root.selectionChanged(root.selectedAnalysisIds ? root.selectedAnalysisIds.slice() : [])
-    }
-
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
+        Layout.fillHeight: true
         spacing: root.theme.spacingSmall
 
         RowLayout {
             Layout.fillWidth: true
 
             Rectangle {
-                Layout.preferredWidth: 92
+                Layout.preferredWidth: root.theme.formLabelWidth
                 Layout.preferredHeight: root.theme.controlHeight
                 radius: root.theme.radius
                 color: root.theme.surface
@@ -77,87 +48,74 @@ Controls.Panel {
 
             Controls.DropdownMenu {
                 id: addAnalysisCombo
+                objectName: "annualAddAnalysisComboBox"
                 Layout.fillWidth: true
-                model: root.allAnalysisRows
+                model: root.annualViewModel.availableAnalysisRows
                 textRole: "display"
-                currentIndex: model && model.length > 0 ? 0 : -1
+                currentIndex: model.length > 0 ? 0 : -1
             }
 
-            Controls.SecondaryButton {
-                text: "+"
-                Layout.preferredWidth: root.theme.viewCompactActionButtonSize
-                Layout.minimumWidth: root.theme.viewCompactActionButtonSize
-                Layout.maximumWidth: root.theme.viewCompactActionButtonSize
-                Layout.preferredHeight: root.theme.viewCompactActionButtonSize
-                Layout.minimumHeight: root.theme.viewCompactActionButtonSize
-                Layout.maximumHeight: root.theme.viewCompactActionButtonSize
+            Controls.AddButton {
+                objectName: "annualAddAnalysisButton"
+                Layout.preferredWidth: root.theme.viewActionButtonWidth / 2
+                Layout.minimumWidth: root.theme.viewActionButtonWidth / 2
+                Layout.maximumWidth: root.theme.viewActionButtonWidth / 2
+                Layout.preferredHeight: root.theme.controlHeight
+                Layout.minimumHeight: root.theme.controlHeight
+                Layout.maximumHeight: root.theme.controlHeight
                 textColor: root.theme.textMuted
                 enabled: addAnalysisCombo.currentIndex >= 0
-                onClicked: {
-                    const row = addAnalysisCombo.currentIndex >= 0
-                                ? addAnalysisCombo.model[addAnalysisCombo.currentIndex]
-                                : null
-                    const analysisId = row && row.id ? String(row.id) : ""
-                    if (analysisId.length === 0)
-                        return
-
-                    const next = root.selectedAnalysisIds ? root.selectedAnalysisIds.slice() : []
-                    if (next.indexOf(analysisId) !== -1)
-                        return
-                    next.push(analysisId)
-                    root.selectionChanged(next)
-                }
+                onClicked: root.annualViewModel.addAvailableAnalysisAtIndex(addAnalysisCombo.currentIndex)
             }
         }
 
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.minimumHeight: 160
+            Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight
             radius: root.theme.radius
             color: root.theme.surfaceAlt
-            border.width: 1
+            border.width: root.theme.borderWidthThin
             border.color: root.theme.border
 
             Flickable {
                 id: analysisScroll
                 anchors.fill: parent
-                anchors.margins: root.theme.spacing
+                anchors.margins: root.theme.spacingSmall
                 clip: true
                 contentWidth: width
                 contentHeight: Math.max(analysisList.implicitHeight, analysisScroll.height)
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                }
+                ScrollBar.vertical: Controls.AppScrollBar {}
 
                 Column {
                     id: analysisList
                     width: analysisScroll.width
-                    spacing: root.theme.spacing
+                    spacing: root.theme.spacingSmall
 
                     Repeater {
-                        model: root.analysisRows
+                        model: root.annualViewModel.assignedAnalysisRows
 
                         delegate: Rectangle {
                             id: analysisRow
                             required property var modelData
                             width: analysisList.width
-                            implicitHeight: analysisContentRow.implicitHeight + (root.theme.spacing * 2)
+                            implicitHeight: analysisContentRow.implicitHeight + (root.theme.spacingSmall * 2)
                             height: implicitHeight
                             radius: root.theme.radius
-                            color: "transparent"
+                            color: root.theme.surface
                             border.width: root.theme.borderWidthThin
-                            border.color: root.theme.borderSoft
+                            border.color: root.theme.border
 
                             RowLayout {
                                 id: analysisContentRow
                                 anchors.fill: parent
-                                anchors.margins: root.theme.spacing
-                                spacing: root.theme.spacing
+                                anchors.margins: root.theme.spacingSmall
+                                spacing: root.theme.spacingSmall
 
                                 Rectangle {
-                                    Layout.preferredWidth: 92
+                                    Layout.fillWidth: true
+                                    Layout.minimumWidth: root.theme.formFieldWidth
                                     Layout.preferredHeight: root.theme.controlHeight
                                     radius: root.theme.radius
                                     color: root.theme.surface
@@ -166,7 +124,27 @@ Controls.Panel {
 
                                     Label {
                                         anchors.fill: parent
-                                        text: qsTr("Analysis")
+                                        anchors.leftMargin: root.theme.spacingSmall
+                                        anchors.rightMargin: root.theme.spacingSmall
+                                        text: analysisRow.modelData.display
+                                        color: root.theme.textPrimary
+                                        horizontalAlignment: Text.AlignLeft
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.preferredWidth: root.theme.formLabelWidth
+                                    Layout.preferredHeight: root.theme.controlHeight
+                                    radius: root.theme.radius
+                                    color: root.theme.surface
+                                    border.width: root.theme.borderWidthThin
+                                    border.color: root.theme.borderSoft
+
+                                    Label {
+                                        anchors.fill: parent
+                                        text: analysisRow.modelData.typeLabel
                                         color: root.theme.textPrimary
                                         horizontalAlignment: Text.AlignHCenter
                                         verticalAlignment: Text.AlignVCenter
@@ -174,80 +152,21 @@ Controls.Panel {
                                     }
                                 }
 
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: root.theme.controlHeight
-                                    radius: root.theme.radius
-                                    color: root.theme.surface
-                                    border.width: root.theme.borderWidthThin
-                                    border.color: root.theme.borderSoft
-
-                                    Label {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: root.theme.spacing
-                                        anchors.rightMargin: root.theme.spacing
-                                        text: analysisRow.modelData && analysisRow.modelData.display
-                                              ? analysisRow.modelData.display
-                                              : ""
-                                        color: root.theme.textPrimary
-                                        horizontalAlignment: Text.AlignHCenter
-                                        verticalAlignment: Text.AlignVCenter
-                                        elide: Text.ElideRight
-                                    }
-                                }
-
                                 Controls.DropdownMenu {
-                                    Layout.preferredWidth: 110
-                                    model: analysisRow.modelData && String(analysisRow.modelData.type).toLowerCase() === "plot"
-                                           ? ["PNG", "JPG"]
-                                           : ["XLSX", "CSV"]
-                                    currentIndex: Math.max(0, model.indexOf(String(analysisRow.modelData && analysisRow.modelData.exportFormat ? analysisRow.modelData.exportFormat : "").toUpperCase()))
-                                    onActivated: {
-                                        const selectedExportFormat = model && currentIndex >= 0 ? model[currentIndex] : ""
-                                        root.updateAnalysisExportFormat(analysisRow.modelData, selectedExportFormat)
-                                    }
+                                    objectName: "annualAnalysisExportFormatComboBox"
+                                    Layout.preferredWidth: root.theme.formLabelWidth
+                                    model: analysisRow.modelData.exportFormatOptions
+                                    currentIndex: analysisRow.modelData.exportFormatIndex
+                                    onActivated: root.annualViewModel.setAnalysisExportFormat(
+                                                     analysisRow.modelData.id,
+                                                     model[currentIndex])
                                 }
 
-                                Controls.SecondaryButton {
-                                    text: "×"
-                                    Layout.preferredWidth: root.theme.viewCompactActionButtonSize
-                                    Layout.minimumWidth: root.theme.viewCompactActionButtonSize
-                                    Layout.maximumWidth: root.theme.viewCompactActionButtonSize
-                                    Layout.preferredHeight: root.theme.viewCompactActionButtonSize
-                                    Layout.minimumHeight: root.theme.viewCompactActionButtonSize
-                                    Layout.maximumHeight: root.theme.viewCompactActionButtonSize
-                                    textColor: root.theme.textMuted
-                                    onClicked: {
-                                        const rowId = analysisRow.modelData && analysisRow.modelData.id
-                                                      ? String(analysisRow.modelData.id)
-                                                      : ""
-                                        if (rowId.length === 0)
-                                            return
-
-                                        const next = root.selectedAnalysisIds ? root.selectedAnalysisIds.slice() : []
-                                        const removeIndex = next.indexOf(rowId)
-                                        if (removeIndex === -1)
-                                            return
-                                        next.splice(removeIndex, 1)
-                                        root.selectionChanged(next)
-                                    }
+                                Controls.CompactRemoveButton {
+                                    objectName: "annualRemoveAnalysisButton"
+                                    onClicked: root.annualViewModel.removeAnalysis(analysisRow.modelData.id)
                                 }
                             }
-                        }
-                    }
-
-                    Item {
-                        width: parent.width
-                        height: (root.analysisRows ? root.analysisRows.length : 0) === 0 ? Math.max(analysisScroll.height, emptyContent.implicitHeight) : 0
-                        visible: (root.analysisRows ? root.analysisRows.length : 0) === 0
-
-                        ColumnLayout {
-                            id: emptyContent
-                            anchors.fill: parent
-                            anchors.margins: root.theme.spacing
-                            spacing: root.theme.spacingSmall
-
-                            Item { Layout.fillHeight: true }
                         }
                     }
                 }

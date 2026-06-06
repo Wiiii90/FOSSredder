@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include "core/constants/CoreDefaults.h"
+#include "core/constants/jobs.h"
 #include "core/jobs/ImportJobSpec.h"
 #include "core/jobs/JobTypes.h"
-#include "core/models/TransactionDraft.h"
+#include "core/application/import/draft/TransactionDraft.h"
 
 #include <atomic>
 #include <deque>
@@ -37,16 +37,19 @@ public:
     void unsubscribe(const JobId& id, SubscriptionId subId);
 
     void cancel(const JobId& id);
+    void pause(const JobId& id);
+    void resume(const JobId& id);
 
     std::optional<JobSnapshot> snapshot(const JobId& id) const;
 
     std::shared_ptr<std::atomic<bool>> cancelFlag(const JobId& id) const;
+    std::shared_ptr<std::atomic<bool>> pauseFlag(const JobId& id) const;
 
     void setStatementResult(const JobId& id, std::shared_ptr<core::domain::Statement> stmt);
     std::shared_ptr<core::domain::Statement> statementResult(const JobId& id) const;
 
-    void setStatementTransactions(const JobId& id, std::vector<core::domain::TransactionDraft> transactions);
-    std::vector<core::domain::TransactionDraft> statementTransactions(const JobId& id) const;
+    void setStatementTransactions(const JobId& id, std::vector<core::application::importing::draft::TransactionDraft> transactions);
+    std::vector<core::application::importing::draft::TransactionDraft> statementTransactions(const JobId& id) const;
 
     void setStatementArtifacts(const JobId& id, std::map<std::string, std::vector<uint8_t>> artifacts);
     std::map<std::string, std::vector<uint8_t>> statementArtifacts(const JobId& id) const;
@@ -63,8 +66,9 @@ private:
     struct JobData {
         JobSnapshot snap;
         std::shared_ptr<std::atomic<bool>> cancel;
+        std::shared_ptr<std::atomic<bool>> pause;
         std::shared_ptr<core::domain::Statement> statement;
-        std::vector<core::domain::TransactionDraft> transactions;
+        std::vector<core::application::importing::draft::TransactionDraft> transactions;
         std::map<std::string, std::vector<uint8_t>> artifacts;
         std::unordered_map<SubscriptionId, JobEventCallback> subs;
         SubscriptionId nextSub = 1;

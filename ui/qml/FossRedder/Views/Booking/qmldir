@@ -1,0 +1,12 @@
+module FossRedder.Views.Booking
+BookingBottomBar 1.0 BookingBottomBar.qml
+BookingSidebar 1.0 BookingSidebar.qml
+BookingStatementForm 1.0 BookingStatementForm.qml
+BookingStatementView 1.0 BookingStatementView.qml
+BookingTransactionActorPanel 1.0 BookingTransactionActorPanel.qml
+BookingTransactionAllocatablePanel 1.0 BookingTransactionAllocatablePanel.qml
+BookingTransactionContractPanel 1.0 BookingTransactionContractPanel.qml
+BookingTransactionForm 1.0 BookingTransactionForm.qml
+BookingTransactionPropertyPanel 1.0 BookingTransactionPropertyPanel.qml
+BookingTransactionView 1.0 BookingTransactionView.qml
+BookingView 1.0 BookingView.qml

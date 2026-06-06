@@ -333,16 +333,13 @@ provide:
 
 **Key Definitions & Contracts:**
 ```cpp
-using Repositories = RepositoryBundle;
-using RepoFactory = std::function<Repositories(const std::string& dbPath)>;
 using AtomicStoreSave = std::function<core::domain::DeletionImpact(const std::string& path, const core::domain::AppState& state)>;
 using AtomicStoreLoad = std::function<core::domain::AppState(const std::string& path)>;
 using DeletionImpactCallback = std::function<void(const core::domain::DeletionImpact&)>;
 ```
 
-* **`IStorageManager`**: Acts as the central orchestrator for persistence strategies. It manages file-level operations (`loadFrom`, `saveAs`, `createNew`) and bridges physical storage with core logic. It utilizes the `DeletionImpact` mechanism to notify the UI when store-level changes require synchronization of in-memory models.
+* **`IStorageManager`**: Acts as the central orchestrator for atomic persistence. It manages file-level operations (`loadFrom`, `saveAs`, `createNew`) and bridges physical storage with core logic. It utilizes the `DeletionImpact` mechanism to notify the UI when store-level changes require synchronization of in-memory models.
 * **`IRegistry`**: A lightweight abstraction used to persist and retrieve application environment settings, such as the most recently accessed project path.
-* **`RepositoryBundle`**: A composite structure that aggregates all repository interfaces defined in **Section 4.2.1**. It serves as a unified injection point for core services, ensuring consistent access to the entire persistence layer.
 
 ### 4.3 Core Logic & Processing
 #### 4.3.1 Ingestion & parsing
@@ -431,16 +428,41 @@ Contracts and invariants:
 ## 5. Infrastructure Layer <a id="5-infrastructure-layer"></a>
 ### 5.1 Persistence & Storage
 
-This project provides a SQLite‑backed persistence implementation and an optional atomic store wrapper. Key components and responsibilities:
+The application now uses **atomic application-state persistence** as the only supported persistence workflow. `AppStateStore` performs full `AppState` load/save operations through SQLite in one transactional unit, and `StorageManager` delegates file open/save behavior to that atomic contract.
 
-- `persistence::Factory` (`persistence/src/Factory.cpp`) — constructs repository bundles and low‑level `SqliteDb` instances used by repository adapters.
+Why this is the chosen approach:
+
+- It keeps the public persistence model simple and deterministic.
+- It preserves consistency across all aggregates in one save/load operation.
+- It avoids exposing lower-level persistence coordination to the UI or application layer.
+- It matches the local-first desktop workflow better than a fragmented entity-by-entity API.
+
+If we ever want an even cleaner end-state, the next step would be a dedicated `UnitOfWork` or `SnapshotStore` abstraction that keeps the same atomic behavior but makes the orchestration boundary even more explicit.
+
+Key components and responsibilities:
+
 - `persistence::SqliteDb` (`persistence/src/SqliteDb.cpp`, `persistence/include/persistence/SqliteDb.h`) — thin wrapper around `sqlite3` handles and connection lifecycle.
-- `persistence::AppStateStore` (`persistence/src/AppStateStore.cpp`, `persistence/include/persistence/AppStateStore.h`) — implements the atomic store save/load used by the application startup path (AppStateStore saves the complete `AppState` in a single operation and returns a `DeletionImpact`).
-- Repository implementations (`persistence/src/repositories/*.cpp`, headers in `persistence/include/persistence/repositories`) — concrete `Sqlite*Repository` classes that implement the `I*Repository` interfaces declared in `core/include/core/repositories` (actors, properties, contracts, statements, transactions, drafts, analyses, annuals).
+- `persistence::AppStateStore` (`persistence/src/AppStateStore.cpp`, `persistence/include/persistence/AppStateStore.h`) — owns the atomic save/load flow and persists the complete `AppState` in one operation while returning a `DeletionImpact`.
 - `persistence::SqliteRegistry` (`persistence/src/SqliteRegistry.cpp`) — small registry used to persist the latest workspace path.
 - `persistence::SqliteSchema` (`persistence/src/SqliteSchema.cpp`) — schema creation and migration helpers.
 
-Operational note: `app/src/main.cpp` configures both a `RepoFactory` (repository flow) and `AppStateStore` (atomic flow) and the runtime currently prefers the atomic callbacks when they are present. See `core/src/storage/StorageManager.cpp` for the selection logic.
+Operational note: `app/src/main.cpp` now wires only atomic load/save callbacks. The application no longer configures a repository factory at startup.
+
+#### Persistence schema truth and adapter audit
+
+The authoritative schema is `persistence/src/SqliteSchema.cpp`. The remaining non-repository persistence files are currently aligned as follows:
+
+- `SqliteDb.cpp` — consistent with the current connection lifecycle wrapper role.
+- `SqliteTransaction.cpp` — thin transactional guard around `BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`.
+- `SqliteRegistry.cpp` — matches the `configs` table and acts as a key/value registry.
+- `AppStateStore.cpp` — now owns the atomic save/load orchestration directly.
+- `StmtGuard.h` / `Uuid.h` — utility helpers; no schema coupling beyond the SQLite C API.
+
+Refactor notes:
+
+- `SqliteSchema.cpp` remains the schema truth source.
+- `SqliteRegistry.cpp` now surfaces registry-table creation failures instead of silently ignoring them.
+- `AppStateStore.cpp` still contains the core atomic orchestration logic; it is intentionally the central coordination point.
 
 ER diagram (final schema / baseline assumed — displays the post‑migration table names)
 
@@ -710,6 +732,8 @@ This project includes unit, integration and UI tests. The test layout and tools 
 
 ### 7.5 Adding tests
 - Add new tests under the appropriate `*/tests/*` folder and update the subproject `CMakeLists.txt` following the existing examples. Add mocks in `core/tests/include/mocks` when needed.
+- UI source-layer test planning is documented in `docs/design/uisrctesting.md`.
+- QML/UI test planning is documented in `docs/design/uiqmltesting.md`.
 
 ## 8. Deployment & Environment <a id="8-deployment--environment"></a>
 ### 8.1 Target Platform

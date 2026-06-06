@@ -1,26 +1,25 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Booking/BookingTransactionPropertyPanel.qml
+ * @file ui/qml/FossRedder/Views/Booking/BookingTransactionPropertyPanel.qml
  * @brief Provides the BookingTransactionPropertyPanel component.
  */
 
-/*!
- * @file ui/qml/FossRedder/Views/Booking/BookingTransactionPropertyPanel.qml
- * @brief Property multi-selection panel for a transaction in the booking page.
- */
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
     required property var theme
-    required property var txRoot
+    required property var bookingViewModel
+    readonly property var selectedPropertyIds: root.bookingViewModel.selectedPropertyIds
 
     Layout.fillWidth: true
+    Layout.fillHeight: false
     Layout.preferredWidth: 1
+    Layout.preferredHeight: implicitHeight
     contentSpacing: root.theme.spacingSmall
 
     background: Rectangle {
@@ -31,43 +30,55 @@ Controls.Panel {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
+        Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+        Layout.preferredHeight: implicitHeight
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Property")
             Layout.fillWidth: true
         }
 
-        Repeater {
-            model: root.txRoot.propertyRows || []
-
-            delegate: RowLayout {
-                id: propertyDelegate
-                required property var modelData
-                readonly property string propertyId: propertyDelegate.modelData && propertyDelegate.modelData.id ? propertyDelegate.modelData.id : ""
-                readonly property string propertyLabel: propertyDelegate.modelData && propertyDelegate.modelData.display
-                    ? propertyDelegate.modelData.display
-                    : (propertyDelegate.modelData && propertyDelegate.modelData.name ? propertyDelegate.modelData.name : "")
-
+        Controls.CheckListPanel {
+            ColumnLayout {
                 Layout.fillWidth: true
+                Layout.fillHeight: false
+                Layout.preferredHeight: implicitHeight
                 spacing: root.theme.spacingSmall
 
-                Controls.CheckBox {
-                    Layout.fillWidth: false
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                    checked: root.txRoot.hasProperty(propertyDelegate.propertyId)
-                    onClicked: root.txRoot.toggleProperty(propertyDelegate.propertyId, checked)
-                }
+                Repeater {
+                    model: root.bookingViewModel.propertyRows
 
-                Label {
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                    text: propertyDelegate.propertyLabel
-                    elide: Text.ElideRight
-                }
+                    delegate: RowLayout {
+                        id: propertyDelegate
+                        required property var modelData
+                        readonly property string propertyId: propertyDelegate.modelData.id
+                        readonly property string propertyLabel: propertyDelegate.modelData.display
 
-                Item {
-                    Layout.fillWidth: true
+                        Layout.fillWidth: true
+                        spacing: root.theme.spacingSmall
+
+                        Controls.CheckBox {
+                            objectName: "bookingTransactionPropertyCheckBox"
+                            Layout.fillWidth: false
+                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            checked: root.selectedPropertyIds.indexOf(propertyDelegate.propertyId) !== -1
+                            onToggled: root.bookingViewModel.setPropertySelected(propertyDelegate.propertyId, checked)
+                        }
+
+                        Label {
+                            color: root.theme.textPrimary
+                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                            text: propertyDelegate.propertyLabel
+                            elide: Text.ElideRight
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+                    }
                 }
             }
         }

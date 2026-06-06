@@ -1,7 +1,9 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Controls/Panel.qml
+ * @file ui/qml/FossRedder/Controls/Panel.qml
  * @brief Provides the Panel component.
  */
+
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
@@ -15,11 +17,22 @@ Frame {
 
     padding: Theme.panelPadding
 
-    background: Rectangle {
-        radius: Theme.radius
-        color: Theme.surface
-        border.width: 1
-        border.color: Theme.border
+    background: Item {
+        Rectangle {
+            anchors.fill: parent
+            anchors.topMargin: 1
+            radius: Theme.radius
+            color: Theme.shadow
+            opacity: Theme.panelShadowOpacity
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Theme.radius
+            color: Theme.surface
+            border.width: 1
+            border.color: Theme.border
+        }
     }
 
     contentItem: ColumnLayout {

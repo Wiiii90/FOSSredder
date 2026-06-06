@@ -5,13 +5,16 @@
 
 #pragma once
 
-#include "core/constants/CoreDefaults.h"
+#include "core/constants/ids.h"
 
 #include <random>
 #include <string>
 
 namespace core::utils {
 
+/**
+ * @brief Generates a stable hex identifier for persisted entities.
+ */
 inline std::string makeStableId()
 {
     static thread_local std::mt19937_64 rng(std::random_device{}());
@@ -25,4 +28,4 @@ inline std::string makeStableId()
     return out;
 }
 
-} // namespace core::utils
+}

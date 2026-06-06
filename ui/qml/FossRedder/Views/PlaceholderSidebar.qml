@@ -1,6 +1,6 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/PlaceholderSidebar.qml
- * @brief Provides the PlaceholderSidebar component.
+ * @file ui/qml/FossRedder/Views/PlaceholderSidebar.qml
+ * @brief Displays placeholder content for sidebar areas that are not implemented yet.
  */
 
 import QtQuick 2.15

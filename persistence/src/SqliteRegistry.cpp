@@ -3,9 +3,7 @@
  * @brief Implements the SQLite-backed latest-path registry factory.
  */
 
-#include "persistence/Factory.h"
-
-#include "core/storage/IRegistry.h"
+#include "core/ports/infra/storage/IRegistry.h"
 
 #include <optional>
 #include <sqlite3.h>
@@ -14,7 +12,7 @@
 
 namespace {
 
-class SqliteRegistry final : public core::storage::IRegistry {
+class SqliteRegistry final : public core::ports::storage::IRegistry {
 public:
     explicit SqliteRegistry(const std::string& dbPath)
         : db_(openDatabase(dbPath))
@@ -88,16 +86,18 @@ private:
     {
         char* err = nullptr;
         if (sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS configs (name TEXT PRIMARY KEY, value TEXT);", nullptr, nullptr, &err) != SQLITE_OK) {
+            const std::string message = err ? err : "failed to create registry table";
             if (err) {
                 sqlite3_free(err);
             }
+            throw std::runtime_error(message);
         }
     }
 };
 
 } // namespace
 
-std::shared_ptr<core::storage::IRegistry> createSqliteRegistry(const std::string& dbPath)
+std::shared_ptr<core::ports::storage::IRegistry> createSqliteRegistry(const std::string& dbPath)
 {
     return std::make_shared<SqliteRegistry>(dbPath);
 }

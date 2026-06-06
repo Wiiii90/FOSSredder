@@ -39,7 +39,7 @@ void applyEventToSnapshot(JobSnapshot& snapshot, const JobEvent& event)
 JobManager::JobManager() = default;
 
 JobId JobManager::makeJobId() {
-    return utils::makeUniqId();
+    return core::utils::makeUniqId();
 }
 
 JobId JobManager::submitImportStatement(const ImportStatementJobSpec& spec) {
@@ -51,6 +51,7 @@ JobId JobManager::submitImportStatement(const ImportStatementJobSpec& spec) {
     data->snap.progress = 0.0;
     data->snap.message = std::string(core::constants::jobs::messages::kQueued);
     data->cancel = std::make_shared<std::atomic<bool>>(false);
+    data->pause = std::make_shared<std::atomic<bool>>(false);
 
     (void)spec;
 
@@ -118,6 +119,54 @@ void JobManager::cancel(const JobId& id) {
     prune(kMaxJobs);
 }
 
+void JobManager::pause(const JobId& id) {
+    std::shared_ptr<JobData> job;
+    {
+        std::lock_guard<std::mutex> g(jobsMutex_);
+        auto it = jobs_.find(id);
+        if (it == jobs_.end()) return;
+        job = it->second;
+    }
+
+    if (job->pause) {
+        try { job->pause->store(true); } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::pause::store", std::current_exception()); }
+    }
+
+    JobEvent ev;
+    {
+        std::lock_guard<std::mutex> g(job->m);
+        if (job->snap.state != JobState::Running) return;
+        job->snap.state = JobState::Paused;
+        job->snap.message = "Paused";
+        ev = snapshotToEvent(job->snap);
+    }
+    publish(ev);
+}
+
+void JobManager::resume(const JobId& id) {
+    std::shared_ptr<JobData> job;
+    {
+        std::lock_guard<std::mutex> g(jobsMutex_);
+        auto it = jobs_.find(id);
+        if (it == jobs_.end()) return;
+        job = it->second;
+    }
+
+    if (job->pause) {
+        try { job->pause->store(false); } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::resume::store", std::current_exception()); }
+    }
+
+    JobEvent ev;
+    {
+        std::lock_guard<std::mutex> g(job->m);
+        if (job->snap.state != JobState::Paused) return;
+        job->snap.state = JobState::Running;
+        job->snap.message = std::string(core::constants::jobs::messages::kRunning);
+        ev = snapshotToEvent(job->snap);
+    }
+    publish(ev);
+}
+
 std::optional<JobSnapshot> JobManager::snapshot(const JobId& id) const {
     std::shared_ptr<JobData> job;
     {
@@ -136,6 +185,13 @@ std::shared_ptr<std::atomic<bool>> JobManager::cancelFlag(const JobId& id) const
     auto it = jobs_.find(id);
     if (it == jobs_.end()) return nullptr;
     return it->second->cancel;
+}
+
+std::shared_ptr<std::atomic<bool>> JobManager::pauseFlag(const JobId& id) const {
+    std::lock_guard<std::mutex> g(jobsMutex_);
+    auto it = jobs_.find(id);
+    if (it == jobs_.end()) return nullptr;
+    return it->second->pause;
 }
 
 void JobManager::setStatementResult(const JobId& id, std::shared_ptr<core::domain::Statement> stmt) {
@@ -164,7 +220,7 @@ std::shared_ptr<core::domain::Statement> JobManager::statementResult(const JobId
     return job->statement;
 }
 
-void JobManager::setStatementTransactions(const JobId& id, std::vector<core::domain::TransactionDraft> transactions) {
+void JobManager::setStatementTransactions(const JobId& id, std::vector<core::application::importing::draft::TransactionDraft> transactions) {
     std::shared_ptr<JobData> job;
     {
         std::lock_guard<std::mutex> g(jobsMutex_);
@@ -177,7 +233,7 @@ void JobManager::setStatementTransactions(const JobId& id, std::vector<core::dom
     job->transactions = std::move(transactions);
 }
 
-std::vector<core::domain::TransactionDraft> JobManager::statementTransactions(const JobId& id) const {
+std::vector<core::application::importing::draft::TransactionDraft> JobManager::statementTransactions(const JobId& id) const {
     std::shared_ptr<JobData> job;
     {
         std::lock_guard<std::mutex> g(jobsMutex_);

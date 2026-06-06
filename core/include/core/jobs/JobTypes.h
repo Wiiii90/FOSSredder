@@ -20,6 +20,7 @@ enum class JobKind {
 enum class JobState {
     Pending,
     Running,
+    Paused,
     Finished,
     Failed,
     Canceled,

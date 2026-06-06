@@ -1,6 +1,6 @@
 # Persistence implementation sources.
 set(PERSISTENCE_SRCS
-    src/AppStateStore.cpp
+    src/WorkspaceStateStore.cpp
     src/Factory.cpp
     src/SqliteDb.cpp
     src/SqliteRegistry.cpp
@@ -57,13 +57,27 @@ if (BUILD_PERSISTENCE_TESTS)
     include(GoogleTest)
 
     set(PERSISTENCE_TEST_SRCS
-        tests/unit/TestAppStateStore.cpp
-        tests/unit/TestSqliteRepository.cpp
+        tests/unit/TestSqliteDb.cpp
+        tests/unit/TestSqliteSchema.cpp
+        tests/unit/TestSqliteTransaction.cpp
         tests/unit/TestSqliteRegistry.cpp
+        tests/unit/TestFactory.cpp
+        tests/repositories/TestPropertyRepository.cpp
+        tests/repositories/TestContractRepository.cpp
+        tests/repositories/TestStatementRepository.cpp
+        tests/repositories/TestTransactionRepository.cpp
+        tests/repositories/TestAnalysisRepository.cpp
+        tests/repositories/TestAnnualRepository.cpp
+        tests/repositories/TestStatementDraftRepository.cpp
+        tests/repositories/TestTransactionDraftRepository.cpp
+        tests/repositories/TestImportLogRepository.cpp
+        tests/repositories/TestExportLogRepository.cpp
+        tests/repositories/TestActorRepository.cpp
+        tests/state/TestWorkspaceStateStore.cpp
     )
     add_executable(persistence_unit_tests ${PERSISTENCE_TEST_SRCS})
     target_include_directories(persistence_unit_tests PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/core/include
     )

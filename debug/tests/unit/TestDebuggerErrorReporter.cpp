@@ -65,7 +65,7 @@ TEST(DebuggerErrorReporterTests, ReportFormatsSeverityCodeContextAndExceptionTyp
 
     reporter.report(event);
 
-    EXPECT_EQ(debugger->lastPath, std::string(debug::defaults::kErrorLogPath));
+    EXPECT_EQ(debugger->lastPath, std::string(debug::defaults::kDiagnosticsLogPath));
     EXPECT_NE(debugger->lastText.find("[warning]"), std::string::npos);
     EXPECT_NE(debugger->lastText.find("[DBG_TEST]"), std::string::npos);
     EXPECT_NE(debugger->lastText.find("debug::tests - formatted message"), std::string::npos);
