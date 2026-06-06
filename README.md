@@ -1,6 +1,7 @@
 ﻿# FOSSredder
 
-[![CI](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml/badge.svg?branch=master)](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml)
+[![CI develop](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml/badge.svg?branch=develop)](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Adevelop)
+[![CI master](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml/badge.svg?branch=master)](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml?query=branch%3Amaster)
 [![codecov](https://codecov.io/gh/Wiiii90/fossredder/graph/badge.svg?token=LGALNE53Z6)](https://codecov.io/gh/Wiiii90/fossredder)
 
 **FOSSredder** is a deliberately overengineered Windows desktop application built for a concrete, real-world use case: extracting structured data from PDF bank statements issued by Commerzbank, a major German banking institution, in order to automate the annual allocation of recoverable costs to tenants.
