@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Analysis 1.0 as Analysis
 
 import "../../common/Lookup.js" as Lookup
@@ -25,15 +26,11 @@ TestCase {
     property int resetCalls: 0
     property int navigateCalls: 0
 
-    property var theme: QtObject {
-        property int spacing: 8
-        property int spacingSmall: 6
-        property int radius: 3
-        property int borderWidthThin: 1
-        property int viewActionButtonWidth: 96
-        property color surface: "#ffffff"
-        property color border: "#cccccc"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var analysisViewModel: QtObject {
         property bool isEdit: false

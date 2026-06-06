@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Settings 1.0 as Settings
 
 import "../../common/Lookup.js" as Lookup
@@ -31,12 +32,11 @@ TestCase {
         function browseImportPath() { browseCalls += 1 }
     }
 
-    property var theme: QtObject {
-        property int spacingSmall: 6
-        property int formLabelWidth: 120
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: settingsImportComponent

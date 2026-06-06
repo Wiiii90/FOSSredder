@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Annual 1.0 as Annual
 
 import "../../common/Lookup.js" as Lookup
@@ -29,19 +30,11 @@ TestCase {
         function selectAnnual(id) { selectedByClick = id; selectedAnnualId = id }
     }
 
-    property var theme: QtObject {
-        property int shellSidebarPreferredWidth: 320
-        property int spacingMedium: 8
-        property int spacingSmall: 6
-        property int viewSidebarRowHeight: 44
-        property int viewSidebarRowRadius: 6
-        property int viewSidebarRowSpacing: 2
-        property int borderWidthThin: 1
-        property color borderSoft: "#cccccc"
-        property color selectionHighlight: "#ffd39c"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: sidebarComponent

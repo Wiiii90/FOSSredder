@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Import 1.0 as Import
 
 import "../../common/Lookup.js" as Lookup
@@ -41,52 +42,11 @@ TestCase {
         }
     }
 
-    property var theme: QtObject {
-        property int spacingMedium: 8
-        property int spacingSmall: 6
-        property int borderWidthThin: 1
-        property int radius: 3
-        property int viewSidebarRowHeight: 64
-        property int viewSidebarRowRadius: 3
-        property int viewSidebarEntryInset: 6
-        property int viewSidebarScrollBarOuterInset: 6
-        property int viewSidebarEntryInsetTotal: 12
-        property int viewCompactActionButtonSize: 28
-        property int viewCompactActionButtonSizeTiny: 24
-        property int viewAliasChipHeight: 30
-        property int viewAliasChipRadius: 4
-        property int margins: 2
-        property int fontSizeSmall: 10
-        property int fontSize: 10
-        property string fontFamily: "Arial"
-        property color accent: "#3366ff"
-        property color selectionHighlight: "#aaccee"
-        property color selectionBorder: "#aaccee"
-        property color border: "#cccccc"
-        property color borderSoft: "#cccccc"
-        property color sidebarHoverFill: "#eeeeee"
-        property color sidebarHoverBorder: "#bbbbbb"
-        property color success: "#008800"
-        property color warning: "#aa8800"
-        property color danger: "#aa0000"
-        property color statusSuccessFill: "#e8f5e9"
-        property color statusSuccessText: "#008800"
-        property color statusSuccessBorder: "#008800"
-        property color statusWarningFill: "#fff8e1"
-        property color statusWarningText: "#aa8800"
-        property color statusWarningBorder: "#aa8800"
-        property color statusDangerFill: "#ffebee"
-        property color statusDangerText: "#aa0000"
-        property color statusDangerBorder: "#aa0000"
-        property color statusInfoFill: "#e3f2fd"
-        property color statusInfoText: "#3366ff"
-        property color statusInfoBorder: "#3366ff"
-        property color statusNeutralFill: "#eeeeee"
-        property color statusNeutralText: "#666666"
-        property color statusNeutralBorder: "#cccccc"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: importSidebarComponent

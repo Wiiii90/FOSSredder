@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../common" as Common
 import FossRedder.Components 1.0
 import FossRedder.Controls 1.0 as Controls
 
@@ -17,14 +18,11 @@ TestCase {
     width: 480
     height: 320
 
-    property var theme: QtObject {
-        property int spacing: 8
-        property int spacingSmall: 6
-        property int borderWidthThin: 1
-        property int radius: 3
-        property color surface: "#ffffff"
-        property color border: "#cccccc"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: bottomBarComponent

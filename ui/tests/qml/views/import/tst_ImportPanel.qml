@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Import 1.0 as Import
 
 import "../../common/Lookup.js" as Lookup
@@ -19,22 +20,11 @@ TestCase {
     width: 900
     height: 360
 
-    property var theme: QtObject {
-        property int spacingSmall: 6
-        property int spacingMedium: 8
-        property int formLabelWidth: 120
-        property int viewActionButtonWidth: 120
-        property int panelPadding: 12
-        property int radius: 3
-        property int borderWidthThin: 1
-        property int controlHeight: 32
-        property color border: "#cccccc"
-        property color borderSoft: "#cccccc"
-        property color surface: "#ffffff"
-        property color surfaceAlt: "#f5f5f5"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var importViewModel: QtObject {
         property bool hasImportWorkflow: true
@@ -42,6 +32,7 @@ TestCase {
         property string manualPathText: ""
         property int queuedCount: 0
         property var importFiles: []
+        property string importFileSummary: ""
         property int browseCalls: 0
         property int commitManualCalls: 0
         function browseImportPdf() { browseCalls += 1 }
@@ -72,6 +63,7 @@ TestCase {
         importViewModel.manualPathText = ""
         importViewModel.queuedCount = 0
         importViewModel.importFiles = []
+        importViewModel.importFileSummary = ""
         importViewModel.browseCalls = 0
         importViewModel.commitManualCalls = 0
     }

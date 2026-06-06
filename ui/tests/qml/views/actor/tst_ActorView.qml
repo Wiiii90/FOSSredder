@@ -7,7 +7,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import "../../common" as Common
+import FossRedder.Views.Actor 1.0
 
 import "../../common/Lookup.js" as Lookup
 import "../../common/TestSupport.js" as TestSupport
@@ -269,33 +270,11 @@ TestCase {
         function deleteActor(id) {}
     }
 
-    property var theme: QtObject {
-        property int pageContentMargin: 8
-        property int viewFormSpacing: 8
-        property int formLabelWidth: 120
-        property int spacing: 8
-        property int spacingSmall: 6
-        property int spacingLarge: 20
-        property int viewCompactActionButtonSize: 28
-        property int viewActionButtonWidth: 120
-        property int viewNavigationButtonWidth: 40
-        property int viewAliasGroupSpacing: 6
-        property int viewAliasPanelMinHeight: 60
-        property int viewAliasPanelPreferredHeight: 90
-        property int viewAliasChipHeight: 24
-        property int viewAliasChipRadius: 4
-        property int viewSelectionPanelMinHeight: 80
-        property int viewSelectionPanelPreferredHeight: 120
-        property int radius: 3
-        property int borderWidthThin: 1
-        property color selectionHighlight: "#aaccee"
-        property color surface: "#ffffff"
-        property color surfaceAlt: "#f5f5f5"
-        property color border: "#cccccc"
-        property color borderSoft: "#cccccc"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: actorViewComponent

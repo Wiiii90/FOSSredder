@@ -7,7 +7,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import "../../common" as Common
+import FossRedder.Views.Contract 1.0
 
 import "../../common/Lookup.js" as Lookup
 import "../../common/TestSupport.js" as TestSupport
@@ -399,31 +400,11 @@ TestCase {
         function deleteContract(id) { testCase.contractController.deleteContract(id) }
     }
 
-    property var theme: QtObject {
-        property int pageContentMargin: 8
-        property int viewFormSpacing: 8
-        property int formLabelWidth: 120
-        property int viewAliasGroupSpacing: 6
-        property int viewAliasPanelMinHeight: 140
-        property int viewAliasPanelPreferredHeight: 180
-        property int viewAliasChipHeight: 24
-        property int viewAliasChipRadius: 3
-        property int spacingSmall: 6
-        property int spacingLarge: 20
-        property int spacing: 8
-        property int borderWidthThin: 1
-        property color textMuted: "#666666"
-        property color selectionHighlight: "#dddddd"
-        property color surfaceAlt: "#f5f5f5"
-        property color surface: "#ffffff"
-        property color border: "#cccccc"
-        property color textPrimary: "#000000"
-        property int viewSelectionPanelMinHeight: 160
-        property int viewSelectionPanelPreferredHeight: 220
-        property int viewActionButtonWidth: 120
-        property int viewCompactActionButtonSize: 28
-        property int radius: 3
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: contractFormComponent
@@ -871,16 +852,6 @@ TestCase {
 
         previousButton.clicked()
         compare(session.selectedContractId, "contract-1")
-    }
-
-    function test_CON_F_015_createShortcutButtonClearsSelectionAndSwitchesToCreateMode() {
-        var form = createForm({ id: "contract-9", name: "Selected", type: "base", actorIds: [], propertyIds: [], aliases: [] })
-        var createModeButton = findRequired(form, "contractCreateModeButton")
-
-        createModeButton.clicked()
-
-        compare(session.selectedContractId, "")
-        compare(form.isEdit, false)
     }
 
     function test_CON_F_016_deleteButtonDeletesCurrentContract() {

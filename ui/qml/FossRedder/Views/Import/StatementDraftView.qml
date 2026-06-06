@@ -32,43 +32,56 @@ Item {
             Layout.fillWidth: true
         }
 
-        Import.StatementDraftForm {
-            visible: root.importViewModel.hasDraft
+        Loader {
+            active: root.importViewModel.hasDraft
             Layout.fillWidth: true
-            theme: root.theme
-            importViewModel: root.importViewModel
-        }
-
-        Controls.Panel {
-            visible: root.importViewModel.hasDraft
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            contentSpacing: 0
-
-            Flickable {
-                id: txScroll
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.minimumHeight: 0
-                clip: true
-                contentWidth: width
-                contentHeight: transactionDraftContent.implicitHeight
-
-                ScrollBar.vertical: Controls.AppScrollBar {}
-
-                Import.TransactionDraftView {
-                    id: transactionDraftContent
-                    width: Math.max(0, txScroll.width - root.theme.scrollBarGutterWidth)
+            sourceComponent: Component {
+                Import.StatementDraftForm {
                     theme: root.theme
                     importViewModel: root.importViewModel
                 }
             }
         }
 
-        Import.StatementDraftBottomBar {
+        Loader {
+            active: root.importViewModel.hasDraft
             Layout.fillWidth: true
-            theme: root.theme
-            importViewModel: root.importViewModel
+            Layout.fillHeight: true
+            sourceComponent: Component {
+                Controls.Panel {
+                    contentSpacing: 0
+
+                    Flickable {
+                        id: txScroll
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.minimumHeight: 0
+                        clip: true
+                        contentWidth: width
+                        contentHeight: transactionDraftContent.implicitHeight
+
+                        ScrollBar.vertical: Controls.AppScrollBar {}
+
+                        Import.TransactionDraftView {
+                            id: transactionDraftContent
+                            width: Math.max(0, txScroll.width - root.theme.scrollBarGutterWidth)
+                            theme: root.theme
+                            importViewModel: root.importViewModel
+                        }
+                    }
+                }
+            }
+        }
+
+        Loader {
+            active: root.importViewModel.hasDraft
+            Layout.fillWidth: true
+            sourceComponent: Component {
+                Import.StatementDraftBottomBar {
+                    theme: root.theme
+                    importViewModel: root.importViewModel
+                }
+            }
         }
     }
 }

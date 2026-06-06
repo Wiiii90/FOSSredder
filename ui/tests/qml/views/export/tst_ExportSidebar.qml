@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Export 1.0 as Export
 
 import "../../common/Lookup.js" as Lookup
@@ -27,25 +28,11 @@ TestCase {
         function deleteExportLog(logId) { removeCalls += 1 }
     }
 
-    property var theme: QtObject {
-        property int spacingMedium: 8
-        property int spacingSmall: 6
-        property int borderWidthThin: 1
-        property int radius: 3
-        property int viewSidebarRowHeight: 44
-        property int viewSidebarRowRadius: 3
-        property int viewCompactActionButtonSizeTiny: 20
-        property color accent: "#3366ff"
-        property color border: "#cccccc"
-        property color borderSoft: "#cccccc"
-        property color success: "#008800"
-        property color warning: "#aa8800"
-        property color danger: "#aa0000"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
-        property color surface: "#ffffff"
-        property color surfaceAlt: "#f5f5f5"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: exportSidebarComponent
@@ -69,6 +56,9 @@ TestCase {
                 status: "Success",
                 file: "/tmp/export.xlsx",
                 message: "done",
+                displayTime: "2026-05-16 10:00:00",
+                displayTitle: "export.xlsx",
+                displayStatusDetail: "done",
                 draftAttached: false,
                 draftId: "",
                 statementId: ""

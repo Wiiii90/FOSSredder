@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Booking 1.0 as Booking
 
 import "../../common/Lookup.js" as Lookup
@@ -18,25 +19,11 @@ TestCase {
     width: 320
     height: 240
 
-    property var theme: QtObject {
-        property int pageContentMargin: 8
-        property int spacingSmall: 6
-        property int spacingLarge: 16
-        property int margins: 4
-        property int radius: 3
-        property int viewSidebarRowHeight: 40
-        property int viewSidebarRowRadius: 4
-        property int borderWidthThin: 1
-        property color surfaceAlt: "#f5f5f5"
-        property color selectionHighlight: "#aaccee"
-        property color borderSoft: "#cccccc"
-        property color textPrimary: "#111111"
-        property color textMuted: "#777777"
-        property color button: "#eeeeee"
-        property color buttonHover: "#dddddd"
-        property color buttonPressed: "#cccccc"
-        property color buttonText: "#111111"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var bookingViewModel: QtObject {
         property string selectedStatementId: ""

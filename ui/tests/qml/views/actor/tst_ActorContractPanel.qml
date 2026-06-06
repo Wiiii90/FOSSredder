@@ -7,7 +7,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import "../../common" as Common
+import FossRedder.Views.Actor 1.0
 
 import "../../common/Lookup.js" as Lookup
 
@@ -33,16 +34,11 @@ TestCase {
         { id: "contract-2", name: "Rent" }
     ]
 
-    property var theme: QtObject {
-        property int viewSelectionPanelMinHeight: 80
-        property int viewSelectionPanelPreferredHeight: 120
-        property int spacingSmall: 6
-        property int radius: 3
-        property int borderWidthThin: 1
-        property color surfaceAlt: "#f5f5f5"
-        property color border: "#cccccc"
-        property color textPrimary: "#000000"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: panelComponent

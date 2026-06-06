@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Import 1.0 as Import
 
 import "../../common/Lookup.js" as Lookup
@@ -19,20 +20,11 @@ TestCase {
     width: 420
     height: 220
 
-    property var theme: QtObject {
-        property int spacingSmall: 6
-        property int radius: 3
-        property int viewCompactActionButtonSize: 28
-        property string fontFamily: "Arial"
-        property int fontSize: 10
-        property color border: "#cccccc"
-        property color surface: "#ffffff"
-        property color surfaceAlt: "#f5f5f5"
-        property color textPrimary: "#000000"
-        property color danger: "#aa0000"
-        property color successStrong: "#008800"
-        property color warning: "#aa8800"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var importViewModel: QtObject {
         property bool effectiveAllocatable: false
@@ -59,7 +51,7 @@ TestCase {
     function test_IMP_D_017_allocatableToggleDelegatesToTransactionState() {
         const panel = createTemporaryObject(panelComponent, testCase)
 
-        findRequired(panel, "transactionDraftAllocatableToggle").clicked(null)
+        findRequired(panel, "transactionDraftAllocatableToggle").clicked()
 
         compare(importViewModel.toggleCalls, 1)
         compare(importViewModel.effectiveAllocatable, true)

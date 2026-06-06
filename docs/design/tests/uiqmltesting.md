@@ -39,6 +39,7 @@ ui/
       common/
         Lookup.js
         TestSupport.js
+        TestTheme.qml
       controls/
         tst_AppScrollBar.qml
         tst_Button.qml
@@ -114,7 +115,6 @@ ui/
           tst_AnalysisForm.qml
         import/
           tst_ImportBottomBar.qml
-          tst_ImportForm.qml
           tst_ImportHomeView.qml
           tst_ImportPanel.qml
           tst_ImportProgressBar.qml
@@ -200,13 +200,6 @@ ui/
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
 | IMP-PB-001 | Progress binding | QML | Import progress state is populated | Open progress component | Progress value follows `ImportState.progressValue` |
-
-### ImportForm
-
-| ID | Scope | Layer | Setup | Action | Expected |
-|---|---|---|---|---|---|
-| IMP-F-001 | Source selection | QML | Form receives ImportState | Inspect source selector | Supported import source labels from ImportState are shown |
-| IMP-F-002 | Strategy selection | QML | Form receives ImportState | Inspect strategy selector | Supported statement strategy labels from ImportState are shown |
 
 ### ImportSidebar
 
@@ -381,7 +374,6 @@ ui/
 | ACT-F-009 | Data revision refresh | QML/State sync | Selected actor object does not emit changed | Trigger data revision | Form state refreshes from selected actor data |
 | ACT-F-010 | Contract selection | QML/Interaction | Selected actor with contract rows | Toggle contract checkboxes | Selected contract ids are updated in the form state |
 | ACT-F-011 | Actor navigation | QML/Interaction | Actor rows available | Click Prev or Next | Selected actor id moves to adjacent actor |
-| ACT-F-012 | Create-mode shortcut button | QML/Interaction | Edit mode with a selected actor | Click bottom-bar `+` button | Selection clears and form switches to create mode |
 | ACT-F-013 | Delete actor | QML/Interaction | Selected actor with valid id | Click Delete | `deleteActor(id)` is called and selection advances deterministically |
 
 ### ActorBottomBar
@@ -444,7 +436,6 @@ ui/
 | PROP-F-010 | Selection signal refresh | QML/State sync | Selected property object emits changed | Change selected aliases externally | Form state refreshes without replacing the selection object |
 | PROP-F-011 | Data revision refresh | QML/State sync | Selected property object does not emit changed | Trigger data revision | Form state refreshes from selected property data |
 | PROP-F-012 | Property navigation | QML/Interaction | Property rows available | Click Prev or Next | Selected property id moves to adjacent property |
-| PROP-F-013 | Create-mode shortcut button | QML/Interaction | Edit mode with a selected property | Click bottom-bar `+` button | Selection clears and form switches to create mode |
 | PROP-F-014 | Delete property | QML/Interaction | Selected property with valid id | Click Delete | `deleteProperty(id)` is called and selection advances deterministically |
 
 ### PropertyContractPanel
@@ -500,7 +491,6 @@ ui/
 | CON-F-012 | Property selection | QML/Interaction | Property rows available | Toggle contract property checkboxes | Selected property ids are updated in the form state |
 | CON-F-013 | Relation validation | QML/Interaction | Create mode with no relation selected | Enter name and type | Create remains disabled until an actor or property is selected |
 | CON-F-014 | Contract navigation | QML/Interaction | Contract rows available | Click Prev or Next | Selected contract id moves to adjacent contract |
-| CON-F-015 | Create-mode shortcut button | QML/Interaction | Edit mode with a selected contract | Click bottom-bar `+` button | Selection clears and form switches to create mode |
 | CON-F-016 | Delete contract | QML/Interaction | Selected contract with valid id | Click Delete | `deleteContract(id)` is called and selection advances deterministically |
 
 ### ContractActorsPanel
@@ -626,9 +616,6 @@ ui/
 | ID | Scope | Layer | Setup | Action | Expected |
 |---|---|---|---|---|---|
 | BKG-TV-001 | Transaction view composition | QML | BookingState loaded | Open the transaction view | Transaction form, actor, contract, property, and allocatable panels are mounted with the same state |
-| BKG-T-006 | Contract selection cascade | Unit | Covered by `BKG-ST-007` in the UI source matrix | Select contract in transaction | BookingState synchronizes related actor/property ids |
-| BKG-T-007 | Actor incompatibility cleanup | Unit | Covered by `BKG-ST-008` in the UI source matrix | Select incompatible actor | BookingState clears incompatible contract id |
-| BKG-T-008 | Property incompatibility cleanup | Unit | Covered by `BKG-ST-009` in the UI source matrix | Select incompatible property set | BookingState clears incompatible contract id |
 
 ### BookingTransactionForm
 
@@ -756,6 +743,7 @@ ui/
 | SET-G-002 | Unavailable language | QML/Interaction | General settings receives an unavailable option | Select the unavailable language | Settings keeps the active language unchanged |
 | SET-G-003 | Current language binding | QML/State | Settings exposes a selected language index | Mount general settings | The dropdown reflects the selected index |
 | SET-G-004 | Theme mode selection | QML/Interaction | General settings receives theme mode options | Select a theme mode | Selection is delegated to Settings |
+| SET-G-005 | Autosave controls | QML/Interaction | General settings exposes autosave-on-close and interval options | Toggle autosave and select an interval | Autosave values are delegated to Settings |
 
 ### SettingsImport
 

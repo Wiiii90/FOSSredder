@@ -7,7 +7,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import "../../common" as Common
+import FossRedder.Views.Actor 1.0
 
 import "../../common/Lookup.js" as Lookup
 
@@ -18,11 +19,11 @@ TestCase {
     width: 960
     height: 320
 
-    property var theme: QtObject {
-        property int viewActionButtonWidth: 120
-        property int viewCompactActionButtonSize: 28
-        property color textMuted: "#666666"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var actorViewModel: QtObject {
         property bool isEdit: false
@@ -91,11 +92,9 @@ TestCase {
         actorViewModel.isEdit = true
         actorViewModel.hasChanges = true
         actorViewModel.name = "Alice"
-        findRequired(bar, "actorCreateModeButton").clicked()
         findRequired(bar, "actorDeleteButton").clicked()
         actorViewModel.submitCalls = 0
         findRequired(bar, "actorUpdateButton").clicked()
-        compare(actorViewModel.enterCreateModeCalls, 1)
         compare(actorViewModel.deleteCurrentCalls, 1)
         compare(actorViewModel.submitCalls, 1)
     }

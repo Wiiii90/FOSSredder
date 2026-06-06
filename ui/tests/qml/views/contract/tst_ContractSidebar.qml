@@ -7,7 +7,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import "../../common" as Common
+import FossRedder.Views.Contract 1.0
 
 import "../../common/Lookup.js" as Lookup
 import "../../common/TestSupport.js" as TestSupport
@@ -33,23 +34,11 @@ TestCase {
         }
     }
 
-    property var theme: QtObject {
-        property int spacingMedium: 8
-        property int spacingSmall: 6
-        property int viewSidebarRowHeight: 40
-        property int viewSidebarRowRadius: 4
-        property int viewSidebarRowSpacing: 4
-        property int viewSidebarEntryInset: 6
-        property int viewSidebarScrollBarOuterInset: 6
-        property int viewSidebarEntryInsetTotal: 12
-        property int borderWidthThin: 1
-        property color selectionHighlight: "#aaccee"
-        property color selectionBorder: "#aaccee"
-        property color borderSoft: "#cccccc"
-        property color sidebarHoverFill: "#eeeeee"
-        property color sidebarHoverBorder: "#bbbbbb"
-        property color textPrimary: "#000000"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: sidebarComponent

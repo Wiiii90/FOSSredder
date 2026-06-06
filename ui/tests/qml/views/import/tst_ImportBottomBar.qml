@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Import 1.0 as Import
 
 import "../../common/Lookup.js" as Lookup
@@ -19,10 +20,11 @@ TestCase {
     width: 900
     height: 120
 
-    property var theme: QtObject {
-        property int viewActionButtonWidth: 120
-        property int viewNavigationButtonWidth: 42
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var importViewModel: QtObject {
         property bool hasDraftNavigation: false

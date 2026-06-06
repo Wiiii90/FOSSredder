@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Annual 1.0 as Annual
 
 import "../../common/Lookup.js" as Lookup
@@ -35,24 +36,11 @@ TestCase {
         function setAnalysisExportFormat(id, exportFormat) { formatId = id; formatValue = exportFormat }
     }
 
-    property var theme: QtObject {
-        property int formLabelWidth: 120
-        property int formFieldWidth: 200
-        property int spacingSmall: 6
-        property int viewSelectionPanelMinHeight: 160
-        property int viewSelectionPanelPreferredHeight: 220
-        property int controlHeight: 32
-        property int viewCompactActionButtonSize: 28
-        property int viewActionButtonWidth: 120
-        property int radius: 3
-        property int borderWidthThin: 1
-        property color borderSoft: "#cccccc"
-        property color surfaceAlt: "#f5f5f5"
-        property color surface: "#ffffff"
-        property color border: "#cccccc"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: panelComponent

@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Settings 1.0 as Settings
 
 import "../../common/Lookup.js" as Lookup
@@ -22,12 +23,23 @@ TestCase {
     property var settingsViewModel: QtObject {
         property int currentCategory: 0
         property bool canNavigateCategories: true
+        property var themeModeOptions: [
+            { label: "Light", value: "light" },
+            { label: "Dark", value: "dark" }
+        ]
+        property int themeModeIndex: 0
         property var languageOptions: [
             { code: "en", label: "English", available: true },
             { code: "de", label: "Deutsch", available: true },
             { code: "fr", label: "Français", available: true }
         ]
         property int languageIndex: 0
+        property bool autosaveOnClose: true
+        property var autosaveIntervalOptions: [
+            { label: "Off", value: 0 },
+            { label: "15 min", value: 15 }
+        ]
+        property int autosaveIntervalIndex: 0
         property string importDefaultPath: ""
         property string importPoppler: ""
         property string importOpenCv: ""
@@ -55,28 +67,18 @@ TestCase {
         }
         function saveSettings() { saveCalls += 1 }
         function resetSettings() { resetCalls += 1; currentCategory = 0 }
+        function selectThemeModeAt(index) { themeModeIndex = index }
         function selectLanguageAt(index) { languageIndex = index }
+        function selectAutosaveIntervalAt(index) { autosaveIntervalIndex = index }
         function browseImportPath() {}
         function browseExportDirectory() {}
     }
 
-    property var theme: QtObject {
-        property int pageContentMargin: 8
-        property int spacingSmall: 6
-        property int spacingLarge: 20
-        property int formLabelWidth: 120
-        property int viewActionButtonWidth: 120
-        property int controlHeight: 32
-        property int borderWidthThin: 1
-        property int radius: 3
-        property color subtlePrimaryFill: "#eef3ff"
-        property color surface: "#ffffff"
-        property color surfaceAlt: "#f5f5f5"
-        property color border: "#cccccc"
-        property color borderSoft: "#cccccc"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: settingsViewComponent

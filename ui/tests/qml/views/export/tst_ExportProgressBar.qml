@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Export 1.0 as Export
 
 import "../../common/Lookup.js" as Lookup
@@ -19,14 +20,11 @@ TestCase {
     width: 960
     height: 640
 
-    property var theme: QtObject {
-        property int spacingSmall: 6
-        property color danger: "#aa0000"
-        property color textPrimary: "#000000"
-        property color surfaceAlt: "#f5f5f5"
-        property color border: "#cccccc"
-        property int radius: 3
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var exportViewModel: QtObject {
         property real progress: 0.0

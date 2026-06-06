@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Analysis 1.0 as Analysis
 
 import "../../common/Lookup.js" as Lookup
@@ -21,15 +22,11 @@ TestCase {
 
     property int lastAllocatableIndex: -1
 
-    property var theme: QtObject {
-        property int formLabelWidth: 120
-        property int formFieldWidth: 220
-        property int spacingSmall: 6
-        property int panelPadding: 8
-        property int radius: 3
-        property color surfaceAlt: "#f5f5f5"
-        property color border: "#cccccc"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var analysisViewModel: QtObject {
         function setAllocatableModeIndex(index) {

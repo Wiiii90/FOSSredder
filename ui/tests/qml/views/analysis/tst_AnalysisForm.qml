@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Analysis 1.0 as Analysis
 
 import "../../common/Lookup.js" as Lookup
@@ -26,57 +27,11 @@ TestCase {
         visible: true
     }
 
-    property var theme: QtObject {
-        property int viewFormSpacing: 8
-        property int formLabelWidth: 120
-        property int spacingSmall: 6
-        property int spacing: 8
-        property int panelPadding: 8
-        property int panelContentSafeWidthOffset: 40
-        property int controlHeight: 32
-        property int formFieldWidth: 220
-        property int viewSelectionPanelMinHeight: 160
-        property int viewSelectionPanelPreferredHeight: 220
-        property int radius: 3
-        property int borderWidthThin: 1
-        property color borderSoft: "#cccccc"
-        property color surfaceAlt: "#f5f5f5"
-        property color surface: "#ffffff"
-        property color border: "#cccccc"
-        property color borderLight: "#d7d7d7"
-        property color borderStrong: "#888888"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
-        property int chartPlotMinimumHeight: 180
-        property int chartPlotPreferredHeight: 260
-        property var analysis: QtObject {
-            property var table: QtObject {
-                property int propertyColumnWidth: 180
-                property int amountColumnWidth: 120
-                property int totalColumnWidth: 140
-                property int rowHeight: 30
-            }
-            property var transactions: QtObject {
-                property int applyColumnWidth: 44
-                property int statementColumnWidth: 130
-                property int transactionColumnWidth: 150
-                property int dateColumnWidth: 110
-                property int actorColumnWidth: 120
-                property int contractColumnWidth: 120
-                property int typeColumnWidth: 90
-                property int propertiesColumnWidth: 220
-                property int amountColumnWidth: 160
-                property int columnSpacingCount: 9
-                property int horizontalPaddingCount: 2
-                property int headerHeight: 32
-                property int rowHeight: 30
-                property int adjustmentPercentFieldWidth: 90
-                property int metricsStatementWidth: 160
-                property int metricsTransactionWidth: 170
-                property int metricsAmountWidth: 180
-            }
-        }
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var analysisViewModel: QtObject {
         property bool isEdit: false

@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Analysis 1.0 as Analysis
 
 import "../../common/Lookup.js" as Lookup
@@ -19,19 +20,11 @@ TestCase {
     width: 360
     height: 220
 
-    property var theme: QtObject {
-        property int viewSelectionPanelMinHeight: 120
-        property int viewSelectionPanelPreferredHeight: 180
-        property int viewCompactActionButtonSize: 28
-        property int controlHeight: 32
-        property int spacingSmall: 6
-        property int panelPadding: 8
-        property int radius: 3
-        property color surfaceAlt: "#f5f5f5"
-        property color surface: "#ffffff"
-        property color border: "#cccccc"
-        property color textPrimary: "#000000"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var analysisViewModel: QtObject {
         property var propertyFilterRows: [{ id: "property-1", name: "Lot" }, { id: "unassigned", name: "Unassigned" }]

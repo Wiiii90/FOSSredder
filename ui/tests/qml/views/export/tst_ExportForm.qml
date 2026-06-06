@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Export 1.0 as Export
 
 import "../../common/Lookup.js" as Lookup
@@ -26,10 +27,11 @@ TestCase {
         function browseDirectory() { browseCalls += 1 }
     }
 
-    property var theme: QtObject {
-        property int spacingSmall: 6
-        property int formLabelWidth: 120
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: exportFormComponent

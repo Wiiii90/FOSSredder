@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Annual 1.0 as Annual
 
 import "../../common/Lookup.js" as Lookup
@@ -39,21 +40,11 @@ TestCase {
         function deleteCurrent() { deleteCalls += 1 }
     }
 
-    property var theme: QtObject {
-        property int viewNavigationButtonWidth: 42
-        property int viewActionButtonWidth: 120
-        property int spacing: 8
-        property int spacingSmall: 6
-        property int controlHeight: 32
-        property int radius: 3
-        property int borderWidthThin: 1
-        property color surface: "#ffffff"
-        property color border: "#cccccc"
-        property color textPrimary: "#000000"
-        property color textMuted: "#666666"
-        property color danger: "#b0302f"
-        property color success: "#0a7f2e"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: bottomBarComponent

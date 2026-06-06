@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Settings 1.0 as Settings
 
 import "../../common/Lookup.js" as Lookup
@@ -31,16 +32,11 @@ TestCase {
         function selectCategory(category) { selectedCategory = category }
     }
 
-    property var theme: QtObject {
-        property int spacingMedium: 8
-        property int spacingSmall: 6
-        property int viewSidebarRowHeight: 34
-        property int viewSidebarRowRadius: 3
-        property int borderWidthThin: 1
-        property color selectionHighlight: "#d8e7ff"
-        property color borderSoft: "#dddddd"
-        property color textPrimary: "#000000"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: settingsSidebarComponent

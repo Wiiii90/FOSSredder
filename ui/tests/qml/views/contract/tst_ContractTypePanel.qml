@@ -7,7 +7,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import "../../common" as Common
+import FossRedder.Views.Contract 1.0
 
 import "../../common/Lookup.js" as Lookup
 import "../../common/TestSupport.js" as TestSupport
@@ -23,14 +24,11 @@ TestCase {
         property string type: ""
     }
 
-    property var theme: QtObject {
-        property int spacingSmall: 6
-        property int radius: 3
-        property int borderWidthThin: 1
-        property color surfaceAlt: "#f5f5f5"
-        property color border: "#cccccc"
-        property color textPrimary: "#000000"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: panelComponent

@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Import 1.0 as Import
 
 import "../../common/Lookup.js" as Lookup
@@ -19,19 +20,11 @@ TestCase {
     width: 900
     height: 260
 
-    property var theme: QtObject {
-        property int spacingSmall: 6
-        property int spacingMedium: 8
-        property int radius: 3
-        property int controlHeight: 32
-        property color border: "#cccccc"
-        property color surface: "#ffffff"
-        property color surfaceAlt: "#f5f5f5"
-        property color textPrimary: "#000000"
-        property color danger: "#aa0000"
-        property color successStrong: "#008800"
-        property color warning: "#aa8800"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var importViewModel: QtObject {
         property var actorOptions: [{ id: "", display: "" }, { id: "actor-1", display: "Alice" }]

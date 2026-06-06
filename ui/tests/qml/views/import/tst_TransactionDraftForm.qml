@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../../common" as Common
 import FossRedder.Views.Import 1.0 as Import
 
 import "../../common/Lookup.js" as Lookup
@@ -19,11 +20,11 @@ TestCase {
     width: 900
     height: 320
 
-    property var theme: QtObject {
-        property int spacingSmall: 6
-        property int spacingMedium: 8
-        property int controlHeight: 32
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     property var importViewModel: QtObject {
         property string nameText: "Tx 1"

@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
+import "../common" as Common
 import FossRedder.Components 1.0
 
 TestCase {
@@ -97,29 +98,11 @@ TestCase {
         function resetCreateState() { resetCreateStateCalls += 1 }
     }
 
-    property var theme: QtObject {
-        property int toolbarHeight: 96
-        property int toolbarIconButtonWidth: 64
-        property int toolbarSectionSpacing: 2
-        property int toolbarGroupSpacing: 4
-        property int spacing: 8
-        property int spacingSmall: 6
-        property int margins: 4
-        property int borderWidthThin: 1
-        property int radius: 3
-        property int fontSizeSmall: 8
-        property int toolbarLabelFontSize: 8
-        property string fontFamily: "Segoe UI"
-        property color toolbarBackground: "#ffffff"
-        property color toolbarBorder: "#cccccc"
-        property color divider: "#dddddd"
-        property color textMuted: "#666666"
-        property color textPrimary: "#000000"
-        property color surface: "#ffffff"
-        property color surfaceAlt: "#f5f5f5"
-        property color border: "#cccccc"
-        property color accent: "#3366ff"
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: toolbarComponent

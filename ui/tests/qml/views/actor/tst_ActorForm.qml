@@ -7,7 +7,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtTest 1.3
-import FossRedder.Views 1.0
+import "../../common" as Common
+import FossRedder.Views.Actor 1.0
 
 import "../../common/Lookup.js" as Lookup
 import "../../common/TestSupport.js" as TestSupport
@@ -392,30 +393,11 @@ TestCase {
         function deleteActor(id) { testCase.actorController.deleteActor(id) }
     }
 
-    property var theme: QtObject {
-        property int pageContentMargin: 8
-        property int viewFormSpacing: 8
-        property int formLabelWidth: 120
-        property int viewAliasGroupSpacing: 6
-        property int viewAliasPanelMinHeight: 140
-        property int viewAliasPanelPreferredHeight: 180
-        property int spacingSmall: 6
-        property int spacingLarge: 20
-        property color textMuted: "#666666"
-        property color selectionHighlight: "#dddddd"
-        property color surfaceAlt: "#f5f5f5"
-        property color surface: "#ffffff"
-        property color border: "#cccccc"
-        property color textPrimary: "#000000"
-        property int viewSelectionPanelMinHeight: 160
-        property int viewSelectionPanelPreferredHeight: 220
-        property int viewActionButtonWidth: 120
-        property int viewCompactActionButtonSize: 28
-        property int viewAliasChipHeight: 24
-        property int viewAliasChipRadius: 3
-        property int borderWidthThin: 1
-        property int radius: 3
+    Common.TestTheme {
+        id: testTheme
     }
+
+    property var theme: testTheme
 
     Component {
         id: actorFormComponent
@@ -728,16 +710,6 @@ TestCase {
 
         previousButton.clicked()
         compare(session.selectedActorId, "actor-1")
-    }
-
-    function test_ACT_F_012_createShortcutButtonClearsSelectionAndSwitchesToCreateMode() {
-        var form = createForm({ id: "actor-9", name: "Selected", aliases: [] })
-        var createModeButton = findRequired(form, "actorCreateModeButton")
-
-        createModeButton.clicked()
-
-        compare(session.selectedActorId, "")
-        compare(form.isEdit, false)
     }
 
     function test_ACT_F_013_deleteButtonDeletesCurrentActor() {
