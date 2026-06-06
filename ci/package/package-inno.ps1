@@ -13,8 +13,8 @@ param(
 )
 
 if (-not $Version) {
-    Write-Host "Version not provided via env PACKAGE_VERSION or -Version parameter. Using default 0.1.0" -ForegroundColor Yellow
-    $Version = "0.1.0"
+    Write-Host "Version not provided via env PACKAGE_VERSION or -Version parameter. Using default 0.5.0" -ForegroundColor Yellow
+    $Version = "0.5.0"
 }
 
 # Repo root is two levels above this script's directory (ci/package/../..)

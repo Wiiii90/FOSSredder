@@ -7,7 +7,7 @@ function(fossredder_configure_packaging)
 
     set(_package_version "${PROJECT_VERSION}")
     if(_package_version STREQUAL "")
-        set(_package_version "0.1.0")
+        set(_package_version "0.5.0")
     endif()
 
     set(_staging_dir "${CMAKE_BINARY_DIR}/staging")

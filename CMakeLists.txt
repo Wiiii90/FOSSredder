@@ -3,7 +3,7 @@
 include(cmake/modules/FossredderVcpkg.cmake)
 fossredder_configure_vcpkg()
 
-project(FossRedder VERSION 0.1.0 LANGUAGES CXX)
+project(FossRedder VERSION 0.5.0 LANGUAGES CXX)
 
 include(CMakePackageConfigHelpers)
 include(CTest)

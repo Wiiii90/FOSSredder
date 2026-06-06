@@ -30,7 +30,7 @@ cmake --preset app
 cmake --build --preset release-app
 
 # Create staging and package
-.\ci\package\package-inno.ps1 -BuildDir .build\app -Config Release -StagingDir .build\app\staging -OutputDir .build\app\dist -Version 0.1.0 -RunWindeployQt
+.\ci\package\package-inno.ps1 -BuildDir .build\app -Config Release -StagingDir .build\app\staging -OutputDir .build\app\dist -Version 0.5.0 -RunWindeployQt
 ```
 
 Troubleshooting

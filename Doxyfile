@@ -48,7 +48,7 @@ PROJECT_NAME           = FOSSredder
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.0
+PROJECT_NUMBER         = 0.5.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewers a
@@ -558,7 +558,7 @@ EXTRACT_PACKAGE        = NO
 # included in the documentation.
 # The default value is: NO.
 
-EXTRACT_STATIC         = NO
+EXTRACT_STATIC         = YES
 
 # If the EXTRACT_LOCAL_CLASSES tag is set to YES, classes (and structs) defined
 # locally in source files will be included in the documentation. If set to NO,
@@ -991,12 +991,18 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ui/src \
-                         ui/include \
-                         core/src \
+INPUT                  = app/include \
+                         app/src \
                          core/include \
+                         core/src \
+                         persistence/include \
                          persistence/src \
-                         persistence/include
+                         ui/include \
+                         ui/src \
+                         infra \
+                         docs/DESIGN.md \
+                         docs/REQUIREMENTS_DE.md \
+                         README.md
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1085,7 +1091,8 @@ FILE_PATTERNS          = *.c \
                          *.vhdl \
                          *.ucf \
                          *.qsf \
-                         *.ice
+                         *.ice \
+                         *.qml
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -1116,7 +1123,15 @@ EXCLUDE_SYMLINKS       = NO
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories for example use the pattern */test/*
 
-EXCLUDE_PATTERNS       =
+EXCLUDE_PATTERNS       = */tests/* \
+                         */test/* \
+                         */.build/* \
+                         */build/* \
+                         */out/* \
+                         */cmake-build-*/* \
+                         */vcpkg_installed/* \
+                         */docs/html/* \
+                         */debug_output/*
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -1211,7 +1226,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the Doxygen output.
 
-USE_MDFILE_AS_MAINPAGE =
+USE_MDFILE_AS_MAINPAGE = README.md
 
 # If the IMPLICIT_DIR_DOCS tag is set to YES, any README.md file found in sub-
 # directories of the project's root, is used as the documentation for that sub-
@@ -2695,7 +2710,7 @@ CLASS_GRAPH            = YES
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-COLLABORATION_GRAPH    = YES
+COLLABORATION_GRAPH    = NO
 
 # If the GROUP_GRAPHS tag is set to YES then Doxygen will generate a graph for
 # groups, showing the direct groups dependencies. Explicit enabling a group
@@ -2777,7 +2792,7 @@ TEMPLATE_RELATIONS     = NO
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-INCLUDE_GRAPH          = YES
+INCLUDE_GRAPH          = NO
 
 # If the INCLUDED_BY_GRAPH, ENABLE_PREPROCESSING and SEARCH_INCLUDES tags are
 # set to YES then Doxygen will generate a graph for each documented file showing
@@ -2789,7 +2804,7 @@ INCLUDE_GRAPH          = YES
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-INCLUDED_BY_GRAPH      = YES
+INCLUDED_BY_GRAPH      = NO
 
 # If the CALL_GRAPH tag is set to YES then Doxygen will generate a call
 # dependency graph for every global function or class method.
@@ -2801,7 +2816,7 @@ INCLUDED_BY_GRAPH      = YES
 # The default value is: NO.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-CALL_GRAPH             = YES
+CALL_GRAPH             = NO
 
 # If the CALLER_GRAPH tag is set to YES then Doxygen will generate a caller
 # dependency graph for every global function or class method.
@@ -2813,7 +2828,7 @@ CALL_GRAPH             = YES
 # The default value is: NO.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-CALLER_GRAPH           = YES
+CALLER_GRAPH           = NO
 
 # If the GRAPHICAL_HIERARCHY tag is set to YES then Doxygen will graphical
 # hierarchy of all classes instead of a textual one.
@@ -2832,7 +2847,7 @@ GRAPHICAL_HIERARCHY    = YES
 # The default value is: YES.
 # This tag requires that the tag HAVE_DOT is set to YES.
 
-DIRECTORY_GRAPH        = YES
+DIRECTORY_GRAPH        = NO
 
 # The DIR_GRAPH_MAX_DEPTH tag can be used to limit the maximum number of levels
 # of child directories generated in directory dependency graphs by dot.

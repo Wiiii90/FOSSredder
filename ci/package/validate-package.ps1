@@ -15,7 +15,7 @@ function Get-AbsPath([string]$PathValue, [string]$BaseDir) {
 }
 
 if (-not $Version) {
-    $Version = "0.1.0"
+    $Version = "0.5.0"
 }
 
 $DistDirAbs = Get-AbsPath $DistDir $RepoRoot
