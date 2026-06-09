@@ -5,6 +5,9 @@ This document describes how to create a Windows `setup.exe` locally using the re
 The canonical installer contract lives in `installer/README.md`. Keep this file
 as a short CI/local command reference.
 
+The runtime layout contract used by Installer QA lives in
+`ci/package/package-layout-contract.json`.
+
 Prerequisites
 - Visual Studio 2026 (VS18) with "Desktop development with C++" workload.
 - Inno Setup (`ISCC.exe`) installed (we recommend installing via Chocolatey).
@@ -26,13 +29,18 @@ What happens
 Steps (Command line)
 
 ```powershell
-# Configure + build with presets
-cmake --preset app
-cmake --build --preset release-app
+# Configure + build the same fast QML package path used by CI
+cmake -DFOSSREDDER_FAST_QML_BUILD=ON --preset app
+.\ci\package\build-installer.ps1
 
-# Create staging and package
-.\ci\package\package-inno.ps1 -BuildDir .build\app -Config Release -StagingDir .build\app\staging -OutputDir .build\app\dist -Version 0.5.0 -RunWindeployQt
+# Validate staged runtime layout
+.\ci\package\test-package-layout.ps1 -StagingDir .build\app\staging -DistDir .build\app\dist
 ```
+
+Manual GitHub Actions loop
+- Use the `Installer` workflow from the Actions tab when you only need to test
+  installer packaging and layout validation.
+- Use the main `Pipeline` workflow for full release-readiness validation.
 
 Troubleshooting
 - If ISCC is not found, ensure Inno Setup is installed and `C:\Program Files (x86)\Inno Setup 6\ISCC.exe` exists.

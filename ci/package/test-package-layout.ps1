@@ -3,7 +3,7 @@ param(
     [string]$DistDir = ".build\app\dist",
     [string]$Version = $env:PACKAGE_VERSION,
     [string]$LocalizationContract = "ci\localization\localization-contract.json",
-    [string]$SourceQmlDir = "ui\qml",
+    [string]$PackageLayoutContract = "ci\package\package-layout-contract.json",
     [string]$SourceTessdataDir = "infra\text-recognition\res\tessdata"
 )
 
@@ -29,54 +29,37 @@ if (-not $Version) {
 $stagingPath = Get-AbsPath $StagingDir
 $distPath = Get-AbsPath $DistDir
 $contractPath = Get-AbsPath $LocalizationContract
-$sourceQmlPath = Get-AbsPath $SourceQmlDir
+$packageLayoutContractPath = Get-AbsPath $PackageLayoutContract
 $sourceTessdataPath = Get-AbsPath $SourceTessdataDir
 
 Assert-Path $stagingPath "Package staging directory not found: $stagingPath"
 Assert-Path $distPath "Package output directory not found: $distPath"
 Assert-Path $contractPath "Localization contract not found: $contractPath"
-Assert-Path $sourceQmlPath "Source QML directory not found: $sourceQmlPath"
+Assert-Path $packageLayoutContractPath "Package layout contract not found: $packageLayoutContractPath"
 Assert-Path $sourceTessdataPath "Source tessdata directory not found: $sourceTessdataPath"
 
 $contract = Get-Content -Path $contractPath -Raw | ConvertFrom-Json
+$packageLayoutContractData = Get-Content -Path $packageLayoutContractPath -Raw | ConvertFrom-Json
 $binPath = Join-Path $stagingPath "bin"
-$exePath = Join-Path $binPath "fossredder.exe"
 $installerPath = Join-Path $distPath ("FOSSredder-Setup-{0}-win-x64.exe" -f $Version)
 
-Assert-Path $exePath "Staged executable missing: $exePath"
 Assert-Path $installerPath "Installer artifact missing: $installerPath"
-Assert-Path (Join-Path $binPath "qt.conf") "qt.conf missing from staged bin directory."
-Assert-Path (Join-Path $binPath "platforms\qwindows.dll") "Qt Windows platform plugin missing from staged package."
-Assert-Path (Join-Path $binPath "qml\QtQuick\qmldir") "QtQuick QML import missing from staged package."
-Assert-Path (Join-Path $binPath "qml\QtQuick\Controls\qmldir") "QtQuick Controls QML import missing from staged package."
-Assert-Path (Join-Path $binPath "qml\QtQuick\Layouts\qmldir") "QtQuick Layouts QML import missing from staged package."
-Assert-Path (Join-Path $binPath "qml\QtQuick\Effects\qmldir") "QtQuick Effects QML import missing from staged package."
 
-$sourceQmldirs = @(Get-ChildItem -Path $sourceQmlPath -Recurse -Filter "qmldir" -File)
-if ($sourceQmldirs.Count -eq 0) {
-    throw "No source QML module descriptors found under: $sourceQmlPath"
+foreach ($runtimeFile in $packageLayoutContractData.requiredRuntimeFiles) {
+    $runtimePath = Join-Path $stagingPath $runtimeFile
+    Assert-Path $runtimePath "Required runtime file missing from staged package: $runtimePath"
 }
 
-$sourceQmlRoot = [System.IO.Path]::GetFullPath($sourceQmlPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
-$sourceQmlRootWithSeparator = $sourceQmlRoot + [System.IO.Path]::DirectorySeparatorChar
+foreach ($qtQmlImport in $packageLayoutContractData.qtQmlImports) {
+    $relativeImportPath = $qtQmlImport -replace '\.', '\'
+    $qmldirPath = Join-Path $binPath (Join-Path "qml" (Join-Path $relativeImportPath "qmldir"))
+    Assert-Path $qmldirPath "Qt QML import missing from staged package: $qmldirPath"
+}
 
-foreach ($sourceQmldir in $sourceQmldirs) {
-    $sourceQmldirParent = Split-Path -Path $sourceQmldir.FullName -Parent
-    if ([string]::IsNullOrWhiteSpace($sourceQmldirParent)) {
-        throw "Could not resolve parent directory for QML module descriptor: $($sourceQmldir.FullName)"
-    }
-
-    $sourceQmldirParent = [System.IO.Path]::GetFullPath($sourceQmldirParent).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
-    if ($sourceQmldirParent -eq $sourceQmlRoot) {
-        $relativeModuleDir = "."
-    } elseif ($sourceQmldirParent.StartsWith($sourceQmlRootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
-        $relativeModuleDir = $sourceQmldirParent.Substring($sourceQmlRootWithSeparator.Length)
-    } else {
-        throw "QML module descriptor is outside source QML directory: $($sourceQmldir.FullName)"
-    }
-
-    $stagedQmldirPath = Join-Path $binPath (Join-Path "qml" (Join-Path $relativeModuleDir "qmldir"))
-    Assert-Path $stagedQmldirPath "FOSSredder QML module descriptor missing from staged package: $stagedQmldirPath"
+foreach ($appQmlModule in $packageLayoutContractData.appQmlModules) {
+    $relativeModulePath = $appQmlModule -replace '\.', '\'
+    $qmldirPath = Join-Path $binPath (Join-Path "qml" (Join-Path $relativeModulePath "qmldir"))
+    Assert-Path $qmldirPath "FOSSredder QML module descriptor missing from staged package: $qmldirPath"
 }
 
 $deployedQmlFiles = @(Get-ChildItem -Path (Join-Path $binPath "qml") -Recurse -Filter "*.qml" -File -ErrorAction SilentlyContinue)
@@ -128,9 +111,9 @@ $installer = Get-Item -Path $installerPath
 $rows = @(
     "| Check | Result |",
     "| --- | --- |",
-    "| Executable | `bin/fossredder.exe` |",
+    "| Runtime files | $($packageLayoutContractData.requiredRuntimeFiles.Count) required file(s) staged |",
     "| Qt runtime | $($qtDlls.Count) Qt DLL(s), platform plugin and QML imports |",
-    "| App QML | $($deployedQmlFiles.Count) QML file(s), $($sourceQmldirs.Count) module descriptor(s) staged |",
+    "| App QML | $($deployedQmlFiles.Count) QML file(s), $($packageLayoutContractData.appQmlModules.Count) module descriptor(s) staged |",
     "| UI translations | compiled `.qm` catalogs for non-English UI languages |",
     "| OCR models | $($sourceTessdataFiles.Count) Tesseract model file(s) bundled |",
     "| Installer | `$($installer.Name)`, $($installer.Length) bytes |"

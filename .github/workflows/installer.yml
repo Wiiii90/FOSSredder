@@ -1,0 +1,81 @@
+name: Installer
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: installer-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  installer:
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Resolve package version
+        run: |
+          $cmake = Get-Content CMakeLists.txt -Raw
+          if ($cmake -notmatch 'project\s*\(\s*FossRedder\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)') {
+            throw "Could not resolve project version from CMakeLists.txt"
+          }
+          echo "PACKAGE_VERSION=$($Matches[1])" >> $env:GITHUB_ENV
+
+      - name: Prepare staging dir
+        run: |
+          $staging = Join-Path $env:RUNNER_TEMP "fossredder-staging-${{ github.job }}-${{ github.run_id }}"
+          if (Test-Path $staging) { Remove-Item -Path $staging -Recurse -Force }
+          New-Item -ItemType Directory -Path $staging | Out-Null
+          icacls $staging /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T | Out-Null
+          echo "TARGET_DIR=$staging" >> $env:GITHUB_ENV
+
+      - name: Clean previous build
+        run: |
+          if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
+
+      - name: Validate runner prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireInnoSetup
+
+      - name: Configure package preset
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" -DFOSSREDDER_FAST_QML_BUILD=ON --preset app
+
+      - name: Build app and installer
+        run: .\ci\package\build-installer.ps1
+
+      - name: Validate installer artifact
+        run: .\ci\package\validate-package.ps1 -DistDir .build\app\dist
+
+      - name: Run installer QA
+        run: .\ci\package\test-package-layout.ps1 -StagingDir .build\app\staging -DistDir .build\app\dist
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-installer
+          path: .build/app/dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload package logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-package-logs
+          path: .build/logs/package/*
+          if-no-files-found: warn
+          retention-days: 7
