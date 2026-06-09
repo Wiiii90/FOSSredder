@@ -21,6 +21,7 @@ The installer should provide:
 - Start Menu shortcut
 - optional desktop shortcut
 - application icon in setup and uninstall metadata
+- bundled Tesseract OCR models required for local statement import
 - GitHub project, support, and release URLs
 - Windows installer version metadata
 - explicit close-application behavior during install/update
@@ -34,7 +35,8 @@ The packaging flow is intentionally split by responsibility:
 - `ci/package/validate-package.ps1` verifies that the expected installer artifact was produced.
 - `installer/inno/fossredder.iss` defines the user-facing installer entry point.
 - `installer/inno/includes/*.iss` split setup metadata, tasks, files, icons, and run behavior.
-- `installer/assets/` owns future installer-specific branding assets.
+- `infra/text-recognition/res/tessdata` provides the bundled OCR models installed to `bin/res/tessdata`.
+- `installer/assets/` owns installer-specific branding assets if setup artwork diverges from the application icon.
 
 Local package build:
 
@@ -51,11 +53,15 @@ pre-release with the latest validated installer. This nightly release is for
 testing only; stable installers should be published from promoted `master`
 builds as versioned releases.
 
-## Future Professionalization
+## Release Hardening
 
-Next steps for a fully branded installer:
+The v0.5.0 installer is expected to install a self-contained Windows runtime for
+the application. Release validation should confirm:
 
-- add custom wizard banner and small wizard image under `installer/assets`
-- extend package validation with installer metadata and optional signature checks
-- add optional silent-install validation on the self-hosted runner
-- publish promoted `master` installers through GitHub Releases
+- the installer contains `bin/fossredder.exe`
+- Qt runtime DLLs, plugins, and QML imports are present under `bin`
+- Tesseract model files are present under `bin/res/tessdata`
+- the installed application launches from the Start Menu shortcut
+- PDF import can run without requiring a manually configured external
+  Tesseract data path
+- promoted `master` installers are published through GitHub Releases

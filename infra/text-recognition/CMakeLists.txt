@@ -31,6 +31,13 @@ fossredder_set_library_output_dirs(fossredder_infra_text_recognition)
 fossredder_install_library_target(fossredder_infra_text_recognition)
 fossredder_install_headers("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/res/tessdata")
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/res/tessdata/"
+        DESTINATION "bin/res/tessdata"
+        FILES_MATCHING PATTERN "*.traineddata"
+    )
+endif()
+
 option(BUILD_INFRA_TEXT_RECOGNITION_TESTS "Build tests for infra text-recognition module" OFF)
 if(BUILD_INFRA_TEXT_RECOGNITION_TESTS)
     find_package(GTest CONFIG REQUIRED)

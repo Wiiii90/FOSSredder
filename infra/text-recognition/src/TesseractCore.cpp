@@ -12,9 +12,14 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <cstdlib>
 #include <system_error>
+#if defined(_WIN32)
+#define NOMINMAX
+#include <Windows.h>
+#endif
 
 using namespace std;
 namespace ports = core::ports::text_recognition;
@@ -45,6 +50,20 @@ static std::string readEnvironmentVariable(const char* name) {
 #endif
 }
 
+static std::filesystem::path executableDirectory() {
+#if defined(_WIN32)
+    std::array<wchar_t, MAX_PATH> buffer{};
+    const DWORD length = GetModuleFileNameW(nullptr, buffer.data(), static_cast<DWORD>(buffer.size()));
+    if (length == 0 || length >= buffer.size()) {
+        return {};
+    }
+
+    return std::filesystem::path(buffer.data()).parent_path();
+#else
+    return {};
+#endif
+}
+
 static std::string resolveTessdataPath(const std::string& provided) {
     auto existsNoThrow = [](const std::filesystem::path& p) {
         std::error_code ec;
@@ -62,6 +81,13 @@ static std::string resolveTessdataPath(const std::string& provided) {
     }
 
     std::vector<std::filesystem::path> candidates;
+    const auto exeDir = executableDirectory();
+    if (!exeDir.empty()) {
+        candidates.push_back(exeDir / "res" / "tessdata");
+        candidates.push_back(exeDir / "tessdata");
+        candidates.push_back(exeDir.parent_path() / "res" / "tessdata");
+        candidates.push_back(exeDir.parent_path() / "tessdata");
+    }
     candidates.push_back(std::filesystem::current_path() / "res" / "tessdata");
     candidates.push_back(std::filesystem::current_path() / "tessdata");
     candidates.push_back(std::filesystem::path(__FILE__).parent_path().parent_path() / "res" / "tessdata");

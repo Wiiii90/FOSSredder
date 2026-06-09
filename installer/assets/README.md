@@ -1,12 +1,28 @@
 # Installer Assets
 
-This directory is reserved for installer-owned visual assets.
+This directory owns installer-specific branding assets when they differ from
+the application assets.
 
-Planned assets:
+The v0.5.0 installer uses the canonical application icon from
+`app/assets/icons/fossredder.ico` for setup metadata, uninstall metadata, and
+Windows shell presentation. It also uses installer-specific wizard artwork from
+this directory:
 
-- `fossredder-setup.ico` for setup-specific icon branding if it should diverge from the app icon
-- `wizard-banner.bmp` for the Inno Setup welcome/finish page
-- `wizard-small.bmp` for the compact wizard header image
+- `wizard-banner.bmp`
+- `wizard-small.bmp`
 
-The current installer intentionally reuses `app/assets/icons/fossredder.ico`
-until custom setup artwork is available.
+`ci/package/package-inno.ps1` normalizes these source images into Inno Setup
+BMP assets with the required dimensions before invoking ISCC.
+
+Runtime assets are installed from their owning project modules instead of being
+duplicated here.
+
+Important runtime assets:
+
+- Tesseract OCR models are installed from `infra/text-recognition/res/tessdata`
+  to `bin/res/tessdata`.
+- QML runtime sources are installed from `ui/qml` to `bin/qml`.
+- Qt plugins and runtime DLLs are deployed by `ci/package/package-inno.ps1`.
+
+Keep this directory for installer-only artwork when setup branding differs from
+the application branding.

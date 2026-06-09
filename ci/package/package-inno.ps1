@@ -5,6 +5,8 @@ param(
     [string]$InstallerScript = "installer\\inno\\fossredder.iss",
     [string]$ISCCPath = "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
     [string]$OutputDir = ".build\\app\\dist",
+    [string]$WizardBannerFile = "installer\\assets\\wizard-banner.bmp",
+    [string]$WizardSmallFile = "installer\\assets\\wizard-small.bmp",
     [string]$Version = $env:PACKAGE_VERSION,
     [switch]$RunWindeployQt,
     [switch]$RunQtDeployFallback = $true,
@@ -44,17 +46,67 @@ function Get-CMakeCacheValue([string]$CachePath, [string]$Key) {
     return $null
 }
 
+function Assert-Path([string]$PathValue, [string]$Message) {
+    if (!(Test-Path $PathValue)) {
+        throw $Message
+    }
+}
+
+function Convert-InstallerBitmap {
+    param(
+        [Parameter(Mandatory)][string]$SourcePath,
+        [Parameter(Mandatory)][string]$OutputPath,
+        [Parameter(Mandatory)][int]$Width,
+        [Parameter(Mandatory)][int]$Height
+    )
+
+    Add-Type -AssemblyName System.Drawing
+
+    $sourceImage = [System.Drawing.Image]::FromFile($SourcePath)
+    try {
+        $bitmap = New-Object System.Drawing.Bitmap $Width, $Height, ([System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+        try {
+            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+            try {
+                $graphics.Clear([System.Drawing.Color]::White)
+                $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+                $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+
+                $scale = [Math]::Max($Width / $sourceImage.Width, $Height / $sourceImage.Height)
+                $drawWidth = [int][Math]::Ceiling($sourceImage.Width * $scale)
+                $drawHeight = [int][Math]::Ceiling($sourceImage.Height * $scale)
+                $drawX = [int][Math]::Floor(($Width - $drawWidth) / 2)
+                $drawY = [int][Math]::Floor(($Height - $drawHeight) / 2)
+                $graphics.DrawImage($sourceImage, $drawX, $drawY, $drawWidth, $drawHeight)
+            } finally {
+                $graphics.Dispose()
+            }
+
+            $bitmap.Save($OutputPath, [System.Drawing.Imaging.ImageFormat]::Bmp)
+        } finally {
+            $bitmap.Dispose()
+        }
+    } finally {
+        $sourceImage.Dispose()
+    }
+}
+
 $BuildDirAbs = Get-AbsPath $BuildDir $RepoRoot
 $StagingDirAbs = Get-AbsPath $StagingDir $RepoRoot
 $OutputDirAbs = Get-AbsPath $OutputDir $RepoRoot
 $InstallerAbs = Get-AbsPath $InstallerScript $RepoRoot
 $LicenseFileAbs = Get-AbsPath "LICENSE" $RepoRoot
 $IconFileAbs = Get-AbsPath "app\\assets\\icons\\fossredder.ico" $RepoRoot
+$WizardBannerSourceAbs = Get-AbsPath $WizardBannerFile $RepoRoot
+$WizardSmallSourceAbs = Get-AbsPath $WizardSmallFile $RepoRoot
 
 if (-not (Test-Path $BuildDirAbs)) { throw "BuildDir not found: $BuildDirAbs" }
 if (-not (Test-Path $InstallerAbs)) { throw "Installer script not found: $InstallerAbs" }
 if (-not (Test-Path $LicenseFileAbs)) { throw "License file not found: $LicenseFileAbs" }
 if (-not (Test-Path $IconFileAbs)) { throw "Installer icon file not found: $IconFileAbs" }
+if (-not (Test-Path $WizardBannerSourceAbs)) { throw "Wizard banner image not found: $WizardBannerSourceAbs" }
+if (-not (Test-Path $WizardSmallSourceAbs)) { throw "Wizard small image not found: $WizardSmallSourceAbs" }
 
 # Clean staging to avoid leftovers (optional; CMake 'package' target might already manage staging)
 if ($CleanStaging -and (Test-Path $StagingDirAbs)) {
@@ -164,6 +216,16 @@ if (!(Test-Path $logsDir)) {
     New-Item -ItemType Directory -Path $logsDir | Out-Null
 }
 
+$installerAssetBuildDir = Join-Path $RepoRoot ".build\installer-assets"
+if (!(Test-Path $installerAssetBuildDir)) {
+    New-Item -ItemType Directory -Path $installerAssetBuildDir | Out-Null
+}
+
+$WizardBannerBuildAbs = Join-Path $installerAssetBuildDir "wizard-banner.bmp"
+$WizardSmallBuildAbs = Join-Path $installerAssetBuildDir "wizard-small.bmp"
+Convert-InstallerBitmap -SourcePath $WizardBannerSourceAbs -OutputPath $WizardBannerBuildAbs -Width 493 -Height 58
+Convert-InstallerBitmap -SourcePath $WizardSmallSourceAbs -OutputPath $WizardSmallBuildAbs -Width 55 -Height 55
+
 if ($RunQtDeployFallback) {
     $qtdeploy = Join-Path $RepoRoot "cmake\modules\FossredderQtDeploy.cmake"
     if (!(Test-Path $qtdeploy)) { throw "FossredderQtDeploy.cmake not found at $qtdeploy" }
@@ -269,6 +331,11 @@ if ($RunQtDeployFallback -or $RunWindeployQt) {
     Assert-Path (Join-Path $DeployDir 'qml\\QtQuick\\qmldir') "QML QtQuick qmldir missing in staging/bin/qml after Qt deploy"
 }
 
+$tessdataDir = Join-Path $DeployDir 'res\tessdata'
+Assert-Path $tessdataDir "Tesseract tessdata directory missing in staging/bin/res/tessdata"
+Assert-Path (Join-Path $tessdataDir 'deu.traineddata') "German Tesseract model missing in staging/bin/res/tessdata"
+Assert-Path (Join-Path $tessdataDir 'osd.traineddata') "Tesseract OSD model missing in staging/bin/res/tessdata"
+
 if (!(Test-Path $ISCCPath)) { throw "ISCC not found at $ISCCPath. Ensure Inno Setup is installed." }
 if (!(Test-Path $OutputDirAbs)) { New-Item -ItemType Directory -Path $OutputDirAbs | Out-Null }
 
@@ -292,7 +359,9 @@ $arguments = @(
     "/DVersion=`"$Version`"",
     "/DStaging=`"$StagingDirAbs`"",
     "/DLicenseFile=`"$LicenseFileAbs`"",
-    "/DIconFile=`"$IconFileAbs`""
+    "/DIconFile=`"$IconFileAbs`"",
+    "/DWizardBannerFile=`"$WizardBannerBuildAbs`"",
+    "/DWizardSmallFile=`"$WizardSmallBuildAbs`""
 )
 $proc = Start-Process -FilePath $ISCCPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $isccOut -RedirectStandardError $isccErr
 Get-Content $isccOut, $isccErr | Out-File -FilePath $isccLog -Encoding utf8
