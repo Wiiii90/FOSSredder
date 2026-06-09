@@ -143,7 +143,7 @@ $commonCoverageArgs = @(
 )
 
 $summarySections = New-Object System.Collections.Generic.List[string]
-$htmlCards = New-Object System.Collections.Generic.List[string]
+$detailLinks = New-Object System.Collections.Generic.List[string]
 $htmlRows = New-Object System.Collections.Generic.List[string]
 $coverageRows = New-Object System.Collections.Generic.List[object]
 Set-Content -Path $lcovFile -Value $null
@@ -253,6 +253,39 @@ function Get-CoverageMetrics {
     )
 }
 
+function Get-LcovLineCoverage {
+    param([string]$Path)
+
+    if (!(Test-Path $Path)) {
+        return $null
+    }
+
+    $linesHit = 0.0
+    $linesFound = 0.0
+
+    foreach ($line in Get-Content -Path $Path) {
+        if ($line -match '^LH:(\d+)$') {
+            $linesHit += [double]$Matches[1]
+            continue
+        }
+
+        if ($line -match '^LF:(\d+)$') {
+            $linesFound += [double]$Matches[1]
+        }
+    }
+
+    if ($linesFound -le 0) {
+        return $null
+    }
+
+    $percent = Get-CoveragePercentFromCounts -Covered $linesHit -Total $linesFound
+    return [pscustomobject]@{
+        Hit = $linesHit
+        Found = $linesFound
+        Percent = $percent
+    }
+}
+
 foreach ($binary in $testBinaries) {
     $binaryName = $binary.BaseName
     $binarySummaryFile = Join-Path $summaryDir "$binaryName.txt"
@@ -270,23 +303,6 @@ foreach ($binary in $testBinaries) {
     $summarySections.Add("### $binaryName`r`n$reportText") | Out-Null
 
     $metrics = @(Get-CoverageMetrics -ReportText $reportText)
-    $metricMarkup = if ($metrics.Count -gt 0) {
-        ($metrics | ForEach-Object {
-            $metricClass = Get-CoverageTone -Value $_.PercentValue
-            $barWidth = [Math]::Max(0, [Math]::Min(100, $_.PercentValue))
-            @"
-<div class="metric $metricClass">
-  <span>$($_.Name)</span>
-  <strong>$($_.Percent)</strong>
-  <div class="coverage-bar"><i style="width: $barWidth%"></i></div>
-  <small>$($_.Covered) / $($_.Total) covered</small>
-</div>
-"@
-        }) -join [Environment]::NewLine
-    } else {
-        "<p class='muted'>No TOTAL coverage row was found for this executable.</p>"
-    }
-
     if ($metrics.Count -gt 0) {
         $regionsMetric = $metrics | Where-Object { $_.Name -eq "Regions" } | Select-Object -First 1
         $functionsMetric = $metrics | Where-Object { $_.Name -eq "Functions" } | Select-Object -First 1
@@ -320,6 +336,10 @@ foreach ($binary in $testBinaries) {
 "@) | Out-Null
     }
 
+    $detailLinks.Add(@"
+<li><a href="./$(ConvertTo-HtmlText $binaryName)/index.html">$(ConvertTo-HtmlText $binaryName)</a></li>
+"@) | Out-Null
+
     Write-Host "Writing LCOV report for $binaryName"
     $lcovOutput = & $llvmCovPath export -format=lcov $binary.FullName @commonCoverageArgs 2>&1
     if ($LASTEXITCODE -ne 0) {
@@ -341,20 +361,22 @@ foreach ($binary in $testBinaries) {
         Write-Host ($showOutput -join [Environment]::NewLine)
     }
 
-    $htmlCards.Add(@"
-<article class="card">
-  <div>
-    <h2>$(ConvertTo-HtmlText $binaryName)</h2>
-    <a href="./$(ConvertTo-HtmlText $binaryName)/index.html">Open detailed report</a>
-  </div>
-  <div class="metrics">
-    $metricMarkup
-  </div>
-</article>
-"@) | Out-Null
 }
 
 Set-Content -Path $summaryFile -Value ($summarySections -join "`r`n`r`n")
+
+$lcovLineCoverage = Get-LcovLineCoverage -Path $lcovFile
+$lcovHeroCard = ""
+if ($lcovLineCoverage) {
+    $lcovHeroCard = @"
+<aside class="hero-card">
+  <span>LCOV line coverage</span>
+  <strong>$(Format-CoveragePercent -Value $lcovLineCoverage.Percent)</strong>
+  <div class="coverage-bar"><span style="width: $([Math]::Max(0, [Math]::Min(100, $lcovLineCoverage.Percent)))%"></span></div>
+  <small>$([int]$lcovLineCoverage.Hit) / $([int]$lcovLineCoverage.Found) lines hit. This is the closest local counterpart to the Codecov badge.</small>
+</aside>
+"@
+}
 
 $summaryTable = "<p class='muted'>No summary metrics were found.</p>"
 if ($coverageRows.Count -gt 0) {
@@ -377,8 +399,13 @@ if ($coverageRows.Count -gt 0) {
 
     $summaryTable = @"
 <section class="summary">
-  <h2>Coverage Matrix</h2>
-  <p class="summary-note">Weighted total uses summed covered/total counts across all reports. The weighted Lines value is the closest local counterpart to the Codecov badge.</p>
+  <div class="section-heading">
+    <div>
+      <span class="section-kicker">Overview</span>
+      <h2>Coverage Matrix</h2>
+    </div>
+    <p>Matrix values come from LLVM report totals per test executable. The LCOV line coverage above is the closest local counterpart to the Codecov badge.</p>
+  </div>
   <div class="table-wrap">
     <table>
       <thead>
@@ -427,29 +454,34 @@ $htmlIndex = @(
     '* { box-sizing: border-box; }',
     'body { margin: 0; font-family: "Segoe UI", "Aptos", sans-serif; color: var(--ink); background: radial-gradient(circle at top left, #e2f5f1, transparent 34rem), linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%); }',
     'main { width: min(1240px, calc(100% - 2rem)); margin: 0 auto; padding: 4rem 0; }',
-    '.hero { margin-bottom: 2rem; }',
+    '.hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem; align-items: end; margin-bottom: 2rem; }',
     '.eyebrow { color: var(--accent); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }',
     'h1 { margin: .25rem 0 .5rem; font-size: clamp(2.2rem, 5vw, 4rem); line-height: 1; }',
     'h2 { margin: 0 0 1rem; }',
     '.lead { max-width: 48rem; color: var(--muted); font-size: 1.05rem; }',
-    '.summary-note { max-width: 56rem; margin: -.25rem 0 1rem; color: var(--muted); }',
-    '.grid { display: grid; gap: 1rem; }',
-    '.summary { margin: 2rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: 1.25rem; background: rgba(255,255,255,.82); box-shadow: 0 16px 44px rgba(15, 23, 42, .08); backdrop-filter: blur(8px); }',
+    '.hero-card { min-width: 18rem; padding: 1rem; border: 1px solid rgba(15, 118, 110, .18); border-radius: 1.15rem; background: rgba(255,255,255,.78); box-shadow: 0 16px 44px rgba(15, 23, 42, .08); }',
+    '.hero-card span, .hero-card small { display: block; color: var(--muted); }',
+    '.hero-card span { font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }',
+    '.hero-card strong { display: block; margin: .25rem 0 .45rem; color: var(--accent); font-size: 2.25rem; line-height: 1; }',
+    '.hero-card small { margin-top: .55rem; line-height: 1.45; }',
+    '.summary { margin: 2rem 0; padding: 1.25rem; border: 1px solid var(--line); border-radius: 1.35rem; background: rgba(255,255,255,.86); box-shadow: 0 16px 44px rgba(15, 23, 42, .08); backdrop-filter: blur(8px); }',
+    '.section-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 1rem; }',
+    '.section-heading h2 { margin: .1rem 0 0; }',
+    '.section-heading p { max-width: 34rem; margin: 0; color: var(--muted); font-size: .95rem; }',
+    '.section-kicker { color: var(--accent); font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }',
     '.table-wrap { overflow-x: auto; }',
     'table { width: 100%; border-collapse: collapse; min-width: 820px; }',
     'th, td { padding: .7rem; border-bottom: 1px solid var(--line); vertical-align: middle; text-align: left; }',
     'thead th, tfoot th, tfoot td { background: rgba(241, 245, 249, .8); }',
     '.weighted-total th, .weighted-total td { background: rgba(220, 252, 231, .65); }',
     'tbody th { font-size: .9rem; }',
-    '.card { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: 1rem; align-items: center; padding: 1.1rem; border: 1px solid var(--line); border-radius: 1.25rem; background: rgba(255,255,255,.82); box-shadow: 0 16px 44px rgba(15, 23, 42, .08); backdrop-filter: blur(8px); }',
-    '.card h2 { margin: 0 0 .35rem; font-size: 1.05rem; }',
     'a { color: var(--accent); font-weight: 700; text-decoration: none; }',
     'a:hover { text-decoration: underline; }',
-    '.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }',
-    '.metric { border-radius: .9rem; padding: .75rem; background: var(--wash); border: 1px solid transparent; }',
-    '.metric span, .metric small { display: block; color: var(--muted); }',
-    '.metric span { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }',
-    '.metric strong { display: block; margin: .25rem 0; font-size: 1.45rem; }',
+    '.details { margin-top: 1.5rem; padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: 1.15rem; background: rgba(255,255,255,.68); }',
+    '.details h2 { margin: 0 0 .35rem; font-size: 1.1rem; }',
+    '.details p { margin: 0 0 .85rem; color: var(--muted); }',
+    '.detail-list { display: flex; flex-wrap: wrap; gap: .55rem; padding: 0; margin: 0; list-style: none; }',
+    '.detail-list a { display: inline-flex; padding: .45rem .7rem; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); box-shadow: 0 8px 18px rgba(15, 23, 42, .06); }',
     '.coverage-pill { min-width: 10rem; }',
     '.coverage-pill__top { display: flex; justify-content: space-between; gap: .75rem; margin-bottom: .35rem; }',
     '.coverage-pill__top span { color: var(--muted); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }',
@@ -461,30 +493,32 @@ $htmlIndex = @(
     '.fair { --bar: linear-gradient(90deg, #84cc16, #d9f99d); }',
     '.warn { --bar: linear-gradient(90deg, #f59e0b, #fde68a); }',
     '.low { --bar: linear-gradient(90deg, #ef4444, #fecaca); }',
-    '.metric.excellent { border-color: rgba(4,120,87,.22); }',
-    '.metric.good { border-color: rgba(22,163,74,.22); }',
-    '.metric.fair { border-color: rgba(132,204,22,.25); }',
-    '.metric.warn { border-color: rgba(245,158,11,.25); }',
-    '.metric.low { border-color: rgba(239,68,68,.25); }',
-    '.metric.excellent strong, .coverage-pill.excellent strong { color: var(--excellent); }',
-    '.metric.good strong, .coverage-pill.good strong { color: var(--good); }',
-    '.metric.fair strong, .coverage-pill.fair strong { color: #4d7c0f; }',
-    '.metric.warn strong, .coverage-pill.warn strong { color: #b45309; }',
-    '.metric.low strong, .coverage-pill.low strong { color: #b91c1c; }',
+    '.coverage-pill.excellent strong { color: var(--excellent); }',
+    '.coverage-pill.good strong { color: var(--good); }',
+    '.coverage-pill.fair strong { color: #4d7c0f; }',
+    '.coverage-pill.warn strong { color: #b45309; }',
+    '.coverage-pill.low strong { color: #b91c1c; }',
     '.muted { color: var(--muted); }',
-    '@media (max-width: 760px) { .card, .metrics { grid-template-columns: 1fr; } main { padding: 2rem 0; } }',
+    '@media (max-width: 760px) { .hero, .section-heading { display: block; } main { padding: 2rem 0; } }',
     '</style>',
     '</head>',
     '<body>',
     '<main>',
     '<section class="hero">',
+    '<div>',
     '<div class="eyebrow">LLVM source coverage</div>',
-    '<h1>FOSSredder Coverage Reports</h1>',
-    '<p class="lead">Per-test-executable coverage generated from LLVM instrumentation. The README badge is calculated by Codecov from the combined LCOV upload, while this page links to the detailed HTML reports produced during CI.</p>',
+    '<h1>FOSSredder Coverage</h1>',
+    '<p class="lead">Coverage generated from LLVM instrumentation across the Windows CI test executables. The LCOV line coverage is calculated from the combined report uploaded to Codecov.</p>',
+    '</div>',
+    $lcovHeroCard,
     '</section>',
     $summaryTable,
-    '<section class="grid">',
-    $htmlCards,
+    '<section class="details">',
+    '<h2>Detailed Reports</h2>',
+    '<p>Open the generated LLVM HTML report for a specific test executable.</p>',
+    '<ul class="detail-list">',
+    $detailLinks,
+    '</ul>',
     '</section>',
     '</main>',
     '</body>',

@@ -150,9 +150,6 @@ jobs:
       - name: Collect LLVM coverage
         run: .\ci\coverage\coverage-windows.ps1 -BuildDir .build\coverage -Config Release -OutDir coverage
 
-      - name: Publish coverage summary
-        run: Get-Content .\coverage\coverage-summary.txt | Out-String | Add-Content -Path $env:GITHUB_STEP_SUMMARY
-
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v6
         with:

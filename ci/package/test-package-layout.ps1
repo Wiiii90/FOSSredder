@@ -57,8 +57,24 @@ if ($sourceQmldirs.Count -eq 0) {
     throw "No source QML module descriptors found under: $sourceQmlPath"
 }
 
+$sourceQmlRoot = [System.IO.Path]::GetFullPath($sourceQmlPath).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+$sourceQmlRootWithSeparator = $sourceQmlRoot + [System.IO.Path]::DirectorySeparatorChar
+
 foreach ($sourceQmldir in $sourceQmldirs) {
-    $relativeModuleDir = [System.IO.Path]::GetRelativePath($sourceQmlPath, $sourceQmldir.DirectoryName)
+    $sourceQmldirParent = Split-Path -Path $sourceQmldir.FullName -Parent
+    if ([string]::IsNullOrWhiteSpace($sourceQmldirParent)) {
+        throw "Could not resolve parent directory for QML module descriptor: $($sourceQmldir.FullName)"
+    }
+
+    $sourceQmldirParent = [System.IO.Path]::GetFullPath($sourceQmldirParent).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+    if ($sourceQmldirParent -eq $sourceQmlRoot) {
+        $relativeModuleDir = "."
+    } elseif ($sourceQmldirParent.StartsWith($sourceQmlRootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $relativeModuleDir = $sourceQmldirParent.Substring($sourceQmlRootWithSeparator.Length)
+    } else {
+        throw "QML module descriptor is outside source QML directory: $($sourceQmldir.FullName)"
+    }
+
     $stagedQmldirPath = Join-Path $binPath (Join-Path "qml" (Join-Path $relativeModuleDir "qmldir"))
     Assert-Path $stagedQmldirPath "FOSSredder QML module descriptor missing from staged package: $stagedQmldirPath"
 }

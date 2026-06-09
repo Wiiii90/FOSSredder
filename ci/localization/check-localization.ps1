@@ -78,7 +78,3 @@ foreach ($model in $optionalModels) {
 
 Write-Host "Localization contract validation ok."
 $summaryRows | ForEach-Object { Write-Host $_ }
-
-if ($env:GITHUB_STEP_SUMMARY) {
-    @("## Localization", "") + $summaryRows | Add-Content -Path $env:GITHUB_STEP_SUMMARY
-}
