@@ -767,7 +767,7 @@ This section documents how the codebase enforces the project's local-first priva
 ### 9.2 Persistent state and registry
 - The single canonical workspace is stored in a SQLite file. Low‑level DB handling is implemented in `persistence/src/SqliteDb.cpp` and the application schema and migrations are defined in `persistence/src/SqliteSchema.cpp`.
 - The small registry that stores the "latest" workspace path is implemented in `persistence/src/SqliteRegistry.cpp` and is used by `app/src/main.cpp` and `core/src/storage/StorageManager.cpp` to remember recent workspaces.
-- Users can directly manage their workspace file(s) on disk; the application treats the SQLite file as the primary export/import artefact.
+- Users can directly manage their `.fossredder` workspace file(s) on disk; the application treats each workspace as a SQLite-backed single-file artefact.
 
 ### 9.3 Transient artefacts and import hygiene
 - Import code attempts to avoid long‑lived raw image caches: `core/src/import/ImportPipelineHelpers.cpp` reads images, produces `ImportResult` artifacts (TSV, parser logs, small proof images) and stores them in memory or as in‑result byte buffers. The helper `readImportBytes` reads input files; temporary files used by external adapters should be cleaned up by the adapter implementations.

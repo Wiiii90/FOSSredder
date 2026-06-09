@@ -104,7 +104,8 @@ inline constexpr auto kOpenFileTitleSource =
 inline constexpr auto kSaveFileAsTitleSource =
     QT_TRANSLATE_NOOP("FileDialogs", "Save File As");
 inline constexpr auto kDatabaseFilterSource =
-    QT_TRANSLATE_NOOP("FileDialogs", "Database (*.db)");
+    QT_TRANSLATE_NOOP("FileDialogs",
+                      "FOSSredder Workspace (*.fossredder);;Legacy Database (*.db);;All Files (*.*)");
 inline constexpr auto kImportPdfFilterSource =
     QT_TRANSLATE_NOOP("FileDialogs", "PDF Files (*.pdf)");
 inline constexpr auto kExportFileFilterSource =

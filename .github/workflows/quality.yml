@@ -5,6 +5,8 @@ on:
     branches:
       - develop
       - master
+    tags:
+      - 'v*'
   pull_request:
     branches:
       - develop
@@ -26,6 +28,19 @@ defaults:
     shell: pwsh
 
 jobs:
+  localization:
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate localization contract
+        run: .\ci\localization\check-localization.ps1
+
   build-and-test:
     runs-on:
       - self-hosted
@@ -187,7 +202,7 @@ jobs:
           retention-days: 7
 
   pages:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
     needs:
       - coverage
       - doxygen
@@ -201,6 +216,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
       - name: Download Doxygen artifact
         uses: actions/download-artifact@v7
         with:
@@ -240,8 +258,10 @@ jobs:
       - self-hosted
       - Windows
       - X64
-    needs: build-and-test
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+    needs:
+      - build-and-test
+      - localization
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
     steps:
@@ -279,6 +299,12 @@ jobs:
 
       - name: Validate installer artifact
         run: .\ci\package\validate-package.ps1 -DistDir .build\app\dist
+
+      - name: Run installer QA
+        run: .\ci\package\test-package-layout.ps1 -StagingDir .build\app\staging -DistDir .build\app\dist
+
+      - name: Create release metadata
+        run: .\ci\release\create-release-metadata.ps1 -DistDir .build\app\dist
 
       - name: Publish develop nightly pre-release
         if: github.ref == 'refs/heads/develop'
@@ -320,10 +346,48 @@ jobs:
 
           gh release upload $tag $installer --clobber
 
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $installer = ".build\app\dist\FOSSredder-Setup-$env:PACKAGE_VERSION-win-x64.exe"
+          $checksums = ".build\app\release\SHA256SUMS.txt"
+          $manifest = ".build\app\release\release-manifest.json"
+          $notes = ".build\app\release\release-notes.md"
+
+          foreach ($path in @($installer, $checksums, $manifest, $notes)) {
+            if (!(Test-Path $path)) {
+              throw "Release file not found: $path"
+            }
+          }
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag `
+              --title "FOSSredder $tag" `
+              --notes-file $notes `
+              $installer $checksums $manifest
+          } else {
+            gh release edit $tag `
+              --title "FOSSredder $tag" `
+              --notes-file $notes
+            gh release upload $tag $installer $checksums $manifest --clobber
+          }
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v6
         with:
           name: fossredder-installer
           path: .build/app/dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload release metadata artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-release-metadata
+          path: .build/app/release/*
           if-no-files-found: error
           retention-days: 7

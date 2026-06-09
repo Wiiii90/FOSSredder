@@ -1,2 +1,2 @@
 [Run]
-Filename: "{app}\bin\{#AppExeName}"; Description: "Launch {#AppDisplayName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\bin\{#AppExeName}"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent

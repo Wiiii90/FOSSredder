@@ -1,0 +1,32 @@
+{
+  "uiLanguages": [
+    {
+      "code": "en",
+      "qtLanguage": "en_US"
+    },
+    {
+      "code": "de",
+      "qtLanguage": "de_DE"
+    },
+    {
+      "code": "fr",
+      "qtLanguage": "fr_FR"
+    }
+  ],
+  "ocrModels": {
+    "required": [
+      "deu",
+      "eng",
+      "fra",
+      "osd"
+    ],
+    "optional": [
+      "deu-fast",
+      "deu-best",
+      "eng-fast",
+      "eng-best",
+      "fra-fast",
+      "fra-best"
+    ]
+  }
+}

@@ -1,0 +1,84 @@
+param(
+    [string]$StagingDir = ".build\app\staging",
+    [string]$DistDir = ".build\app\dist",
+    [string]$Version = $env:PACKAGE_VERSION,
+    [string]$LocalizationContract = "ci\localization\localization-contract.json"
+)
+
+$RepoRoot = (Resolve-Path -Path (Join-Path $PSScriptRoot "..\..")).ProviderPath
+
+function Get-AbsPath([string]$PathValue) {
+    if ([System.IO.Path]::IsPathRooted($PathValue)) {
+        return [System.IO.Path]::GetFullPath($PathValue)
+    }
+    return [System.IO.Path]::GetFullPath((Join-Path -Path $RepoRoot -ChildPath $PathValue))
+}
+
+function Assert-Path([string]$PathValue, [string]$Message) {
+    if (!(Test-Path $PathValue)) {
+        throw $Message
+    }
+}
+
+if (-not $Version) {
+    $Version = "0.5.0"
+}
+
+$stagingPath = Get-AbsPath $StagingDir
+$distPath = Get-AbsPath $DistDir
+$contractPath = Get-AbsPath $LocalizationContract
+
+Assert-Path $stagingPath "Package staging directory not found: $stagingPath"
+Assert-Path $distPath "Package output directory not found: $distPath"
+Assert-Path $contractPath "Localization contract not found: $contractPath"
+
+$contract = Get-Content -Path $contractPath -Raw | ConvertFrom-Json
+$binPath = Join-Path $stagingPath "bin"
+$exePath = Join-Path $binPath "fossredder.exe"
+$installerPath = Join-Path $distPath ("FOSSredder-Setup-{0}-win-x64.exe" -f $Version)
+
+Assert-Path $exePath "Staged executable missing: $exePath"
+Assert-Path $installerPath "Installer artifact missing: $installerPath"
+Assert-Path (Join-Path $binPath "qt.conf") "qt.conf missing from staged bin directory."
+Assert-Path (Join-Path $binPath "platforms\qwindows.dll") "Qt Windows platform plugin missing from staged package."
+Assert-Path (Join-Path $binPath "qml\QtQuick\qmldir") "QtQuick QML import missing from staged package."
+Assert-Path (Join-Path $binPath "qml\FossRedder\qmldir") "FOSSredder QML module missing from staged package."
+
+$qtDlls = @(Get-ChildItem -Path $binPath -Filter "Qt6*.dll" -File -ErrorAction SilentlyContinue)
+if ($qtDlls.Count -eq 0) {
+    throw "No Qt6 runtime DLLs found in staged bin directory."
+}
+
+foreach ($language in $contract.uiLanguages) {
+    if ($language.code -eq "en") {
+        continue
+    }
+    $qmPath = Join-Path $binPath ("i18n\fossredder_{0}.qm" -f $language.code)
+    Assert-Path $qmPath "Compiled Qt translation catalog missing: $qmPath"
+}
+
+foreach ($model in $contract.ocrModels.required) {
+    $modelPath = Join-Path $binPath ("res\tessdata\{0}.traineddata" -f $model)
+    Assert-Path $modelPath "Required Tesseract OCR model missing from staged package: $modelPath"
+}
+
+Assert-Path (Join-Path $RepoRoot "installer\assets\wizard-banner.bmp") "Installer wizard banner asset missing."
+Assert-Path (Join-Path $RepoRoot "installer\assets\wizard-small.bmp") "Installer wizard small image asset missing."
+
+$installer = Get-Item -Path $installerPath
+$rows = @(
+    "| Check | Result |",
+    "| --- | --- |",
+    "| Executable | `bin/fossredder.exe` |",
+    "| Qt runtime | $($qtDlls.Count) Qt DLL(s), platform plugin and QML imports |",
+    "| UI translations | compiled `.qm` catalogs for non-English UI languages |",
+    "| OCR models | required Tesseract models bundled |",
+    "| Installer | `$($installer.Name)`, $($installer.Length) bytes |"
+)
+
+Write-Host "Installer QA layout validation ok."
+$rows | ForEach-Object { Write-Host $_ }
+
+if ($env:GITHUB_STEP_SUMMARY) {
+    @("## Installer QA", "") + $rows | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+}

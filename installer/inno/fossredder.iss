@@ -2,6 +2,8 @@
 #define AppDisplayName "FOSSredder"
 
 #include "includes\setup.iss"
+#include "includes\languages.iss"
+#include "includes\messages.iss"
 #include "includes\tasks.iss"
 #include "includes\files.iss"
 #include "includes\icons.iss"

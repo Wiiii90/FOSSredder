@@ -969,8 +969,8 @@
     </message>
     <message>
         <location filename="../../ui/include/ui/i18n/Text.h" line="99"/>
-        <source>Database (*.db)</source>
-        <translation>Base de données (*.db)</translation>
+        <source>FOSSredder Workspace (*.fossredder);;Legacy Database (*.db);;All Files (*.*)</source>
+        <translation>Espace de travail FOSSredder (*.fossredder);;Ancienne base de données (*.db);;Tous les fichiers (*.*)</translation>
     </message>
     <message>
         <location filename="../../ui/include/ui/i18n/Text.h" line="101"/>

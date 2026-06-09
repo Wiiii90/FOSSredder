@@ -1286,8 +1286,8 @@
     </message>
     <message>
         <location line="-4"/>
-        <source>Database (*.db)</source>
-        <translation>Datenbank (*.db)</translation>
+        <source>FOSSredder Workspace (*.fossredder);;Legacy Database (*.db);;All Files (*.*)</source>
+        <translation>FOSSredder-Arbeitsbereich (*.fossredder);;Alte Datenbank (*.db);;Alle Dateien (*.*)</translation>
     </message>
     <message>
         <location line="-10"/>

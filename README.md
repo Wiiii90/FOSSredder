@@ -32,6 +32,7 @@ While the core problem could be addressed with simple scripts or well-known LLMs
 | Testing & Quality | GoogleTest, clang-tidy, LLVM coverage, Codecov |
 | Build & Packaging | CMake, vcpkg, Inno Setup, GitHub Actions |
 | Documentation | Doxygen, GitHub Pages |
+| Localization | Qt Linguist catalogs, bundled Tesseract OCR models |
 | Platform | Windows 10+ |
 
 ## Project Status
@@ -139,7 +140,15 @@ Installer: `./.build/app/dist/FOSSredder-Setup-<version>-win-x64.exe`
 
 ### Pipeline
 
-The project uses a single GitHub Actions pipeline in `.github/workflows/quality.yml` for build validation, tests, clang-tidy, LLVM coverage, Doxygen, GitHub Pages reports, and Windows installer packaging. The same quality tools can also be run locally.
+The project uses a single GitHub Actions pipeline in `.github/workflows/quality.yml` for CI, Docs, Localization, Installer QA, and Release packaging. The same quality tools can also be run locally.
+
+| Category | Scope |
+| --- | --- |
+| CI | Build validation, tests, clang-tidy, LLVM coverage, Codecov |
+| Docs | Doxygen API docs, coverage HTML, GitHub Pages deployment |
+| Localization | Qt translation catalog checks and bundled OCR model contract |
+| Installer QA | Staged runtime layout, Qt/QML deployment, translations, Tesseract data, installer artifact |
+| Release | Develop nightly pre-release, tagged release metadata, checksums, installer artifacts |
 
 Notes: Coverage requires Clang/`clang-cl` and `clang-tidy` runs only if installed and the `tidy` preset is used.
 

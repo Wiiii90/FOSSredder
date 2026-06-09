@@ -21,6 +21,7 @@ What happens
 - The `package` target installs the chosen config into `${binaryDir}/staging`.
 - The packaging script deploys runtime dependencies and then calls Inno Setup to produce an installer under `${binaryDir}/dist`.
 - The expected installer name is `FOSSredder-Setup-<version>-win-x64.exe`.
+- CI also runs `ci/package/test-package-layout.ps1` after packaging to verify the staged runtime layout.
 
 Steps (Command line)
 

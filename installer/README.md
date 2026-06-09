@@ -33,6 +33,8 @@ The packaging flow is intentionally split by responsibility:
 - `cmake/modules/FossredderPackaging.cmake` exposes the `package` target.
 - `ci/package/package-inno.ps1` prepares staging, deploys runtime dependencies, and calls Inno Setup.
 - `ci/package/validate-package.ps1` verifies that the expected installer artifact was produced.
+- `ci/package/test-package-layout.ps1` verifies the staged runtime contract used by the installer.
+- `ci/localization/localization-contract.json` defines supported UI languages and bundled OCR model expectations.
 - `installer/inno/fossredder.iss` defines the user-facing installer entry point.
 - `installer/inno/includes/*.iss` split setup metadata, tasks, files, icons, and run behavior.
 - `infra/text-recognition/res/tessdata` provides the bundled OCR models installed to `bin/res/tessdata`.
@@ -61,6 +63,7 @@ the application. Release validation should confirm:
 - the installer contains `bin/fossredder.exe`
 - Qt runtime DLLs, plugins, and QML imports are present under `bin`
 - Tesseract model files are present under `bin/res/tessdata`
+- compiled Qt translation catalogs are present under `bin/i18n`
 - the installed application launches from the Start Menu shortcut
 - PDF import can run without requiring a manually configured external
   Tesseract data path
