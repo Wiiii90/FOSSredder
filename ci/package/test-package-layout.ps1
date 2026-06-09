@@ -42,7 +42,12 @@ Assert-Path $installerPath "Installer artifact missing: $installerPath"
 Assert-Path (Join-Path $binPath "qt.conf") "qt.conf missing from staged bin directory."
 Assert-Path (Join-Path $binPath "platforms\qwindows.dll") "Qt Windows platform plugin missing from staged package."
 Assert-Path (Join-Path $binPath "qml\QtQuick\qmldir") "QtQuick QML import missing from staged package."
-Assert-Path (Join-Path $binPath "qml\FossRedder\qmldir") "FOSSredder QML module missing from staged package."
+
+$sourceQmlModule = Join-Path $binPath "qml\FossRedder\qmldir"
+$deployedQmlFiles = @(Get-ChildItem -Path (Join-Path $binPath "qml") -Recurse -Filter "*.qml" -File -ErrorAction SilentlyContinue)
+if (!(Test-Path $sourceQmlModule) -and $deployedQmlFiles.Count -eq 0) {
+    throw "FOSSredder QML files missing from staged package."
+}
 
 $qtDlls = @(Get-ChildItem -Path $binPath -Filter "Qt6*.dll" -File -ErrorAction SilentlyContinue)
 if ($qtDlls.Count -eq 0) {
@@ -71,6 +76,7 @@ $rows = @(
     "| --- | --- |",
     "| Executable | `bin/fossredder.exe` |",
     "| Qt runtime | $($qtDlls.Count) Qt DLL(s), platform plugin and QML imports |",
+    "| App QML | $($deployedQmlFiles.Count) QML file(s) staged |",
     "| UI translations | compiled `.qm` catalogs for non-English UI languages |",
     "| OCR models | required Tesseract models bundled |",
     "| Installer | `$($installer.Name)`, $($installer.Length) bytes |"

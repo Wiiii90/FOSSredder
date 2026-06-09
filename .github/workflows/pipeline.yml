@@ -80,7 +80,7 @@ jobs:
       - name: Run test preset
         run: ctest --preset release-ci
 
-  clang-tidy:
+  static-analysis:
     runs-on:
       - self-hosted
       - Windows
@@ -166,7 +166,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: .\ci\coverage\upload-codecov.ps1 -CoverageFile .\coverage\coverage.lcov
 
-  doxygen:
+  documentation:
     runs-on:
       - self-hosted
       - Windows
@@ -201,11 +201,11 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  pages:
+  publish-pages:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
     needs:
       - coverage
-      - doxygen
+      - documentation
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -253,7 +253,7 @@ jobs:
         with:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
 
-  package:
+  package-installer:
     runs-on:
       - self-hosted
       - Windows
@@ -292,10 +292,10 @@ jobs:
         run: .\ci\runner\assert-quality-runner.ps1 -RequireInnoSetup -RequireGitHubCli
 
       - name: Configure package preset
-        run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset app
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" -DFOSSREDDER_FAST_QML_BUILD=ON --preset app
 
-      - name: Build package preset
-        run: cmake --build --preset release-package --parallel
+      - name: Build app and installer
+        run: .\ci\package\build-installer.ps1
 
       - name: Validate installer artifact
         run: .\ci\package\validate-package.ps1 -DistDir .build\app\dist
@@ -390,4 +390,13 @@ jobs:
           name: fossredder-release-metadata
           path: .build/app/release/*
           if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload package logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-package-logs
+          path: .build/logs/package/*
+          if-no-files-found: warn
           retention-days: 7

@@ -48,7 +48,7 @@ cmake --build --preset release-package
 ```
 
 CI package builds are uploaded as the `fossredder-installer` artifact from the
-quality workflow.
+pipeline workflow.
 
 Develop package builds also update the mutable `develop-nightly` GitHub
 pre-release with the latest validated installer. This nightly release is for
