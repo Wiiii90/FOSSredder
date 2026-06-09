@@ -91,6 +91,11 @@ void configureRuntime(QQmlEngine* engine) {
     engine->addImportPath(appQmlDir);
   }
 
+  const QString appDir = QCoreApplication::applicationDirPath();
+  if (QDir(appDir).exists()) {
+    engine->addImportPath(appDir);
+  }
+
   const QString imageFormatsDir = QCoreApplication::applicationDirPath() +
                                   QLatin1Char('/') +
                                   ui::config::kImageFormatsDirName;

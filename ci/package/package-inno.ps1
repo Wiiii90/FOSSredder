@@ -7,6 +7,7 @@ param(
     [string]$OutputDir = ".build\\app\\dist",
     [string]$WizardBannerFile = "installer\\assets\\wizard-banner.bmp",
     [string]$WizardSmallFile = "installer\\assets\\wizard-small.bmp",
+    [string]$LocalizationContract = "ci\\localization\\localization-contract.json",
     [string]$Version = $env:PACKAGE_VERSION,
     [switch]$RunWindeployQt,
     [switch]$RunQtDeployFallback = $true,
@@ -100,6 +101,7 @@ $LicenseFileAbs = Get-AbsPath "LICENSE" $RepoRoot
 $IconFileAbs = Get-AbsPath "app\\assets\\icons\\fossredder.ico" $RepoRoot
 $WizardBannerSourceAbs = Get-AbsPath $WizardBannerFile $RepoRoot
 $WizardSmallSourceAbs = Get-AbsPath $WizardSmallFile $RepoRoot
+$LocalizationContractAbs = Get-AbsPath $LocalizationContract $RepoRoot
 
 if (-not (Test-Path $BuildDirAbs)) { throw "BuildDir not found: $BuildDirAbs" }
 if (-not (Test-Path $InstallerAbs)) { throw "Installer script not found: $InstallerAbs" }
@@ -107,6 +109,7 @@ if (-not (Test-Path $LicenseFileAbs)) { throw "License file not found: $LicenseF
 if (-not (Test-Path $IconFileAbs)) { throw "Installer icon file not found: $IconFileAbs" }
 if (-not (Test-Path $WizardBannerSourceAbs)) { throw "Wizard banner image not found: $WizardBannerSourceAbs" }
 if (-not (Test-Path $WizardSmallSourceAbs)) { throw "Wizard small image not found: $WizardSmallSourceAbs" }
+if (-not (Test-Path $LocalizationContractAbs)) { throw "Localization contract not found: $LocalizationContractAbs" }
 
 # Clean staging to avoid leftovers (optional; CMake 'package' target might already manage staging)
 if ($CleanStaging -and (Test-Path $StagingDirAbs)) {
@@ -312,8 +315,20 @@ if ($RunQtDeployFallback -or $RunWindeployQt) {
 
 $tessdataDir = Join-Path $DeployDir 'res\tessdata'
 Assert-Path $tessdataDir "Tesseract tessdata directory missing in staging/bin/res/tessdata"
-Assert-Path (Join-Path $tessdataDir 'deu.traineddata') "German Tesseract model missing in staging/bin/res/tessdata"
-Assert-Path (Join-Path $tessdataDir 'osd.traineddata') "Tesseract OSD model missing in staging/bin/res/tessdata"
+
+$localizationContractData = Get-Content -Path $LocalizationContractAbs -Raw | ConvertFrom-Json
+$expectedTessdataModels = @()
+if ($localizationContractData.ocrModels.required) {
+    $expectedTessdataModels += @($localizationContractData.ocrModels.required)
+}
+if ($localizationContractData.ocrModels.optional) {
+    $expectedTessdataModels += @($localizationContractData.ocrModels.optional)
+}
+$expectedTessdataModels = @($expectedTessdataModels | Select-Object -Unique)
+
+foreach ($model in $expectedTessdataModels) {
+    Assert-Path (Join-Path $tessdataDir ("{0}.traineddata" -f $model)) "Tesseract model '$model' missing in staging/bin/res/tessdata"
+}
 
 if (!(Test-Path $ISCCPath)) { throw "ISCC not found at $ISCCPath. Ensure Inno Setup is installed." }
 if (!(Test-Path $OutputDirAbs)) { New-Item -ItemType Directory -Path $OutputDirAbs | Out-Null }
