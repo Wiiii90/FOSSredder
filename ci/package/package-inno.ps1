@@ -132,27 +132,6 @@ $DeployDir = $BinDir
 if (!(Test-Path $ExePath)) { throw "Executable not found at $ExePath. Build/install likely failed." }
 if (!(Test-Path $BinDir)) { New-Item -ItemType Directory -Path $BinDir | Out-Null }
 
-# --- New: ensure staging/bin mirrors build's bin/CONFIG output ---
-$buildBinCandidate = Join-Path $BuildDirAbs (Join-Path 'bin' $Config)
-if (!(Test-Path $buildBinCandidate)) {
-    $buildBinCandidate = Join-Path $BuildDirAbs 'bin'
-}
-
-if (Test-Path $buildBinCandidate) {
-    Write-Host "Syncing staging bin from build output: $buildBinCandidate -> $DeployDir" -ForegroundColor Cyan
-
-    # Remove everything under DeployDir except leave directory itself
-    Get-ChildItem -Path $DeployDir -Force -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-        try { Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction Stop } catch { }
-    }
-
-    # Copy build output into deploy dir
-    Copy-Item -Path (Join-Path $buildBinCandidate '*') -Destination $DeployDir -Recurse -Force
-} else {
-    Write-Host "Warning: build bin output not found at $buildBinCandidate; skipping sync" -ForegroundColor Yellow
-}
-# --- end sync ---
-
 # vcpkg installed root
 $cmakeCachePath = Join-Path $BuildDirAbs "CMakeCache.txt"
 $vcpkgInstalled = Get-CMakeCacheValue $cmakeCachePath "VCPKG_INSTALLED_DIR"
