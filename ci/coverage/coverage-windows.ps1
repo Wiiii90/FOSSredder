@@ -144,7 +144,65 @@ $commonCoverageArgs = @(
 
 $summarySections = New-Object System.Collections.Generic.List[string]
 $htmlIndexEntries = New-Object System.Collections.Generic.List[string]
+$htmlCards = New-Object System.Collections.Generic.List[string]
 Set-Content -Path $lcovFile -Value $null
+
+function ConvertTo-HtmlText {
+    param([string]$Text)
+
+    return [System.Net.WebUtility]::HtmlEncode($Text)
+}
+
+function ConvertTo-CoverageMetric {
+    param(
+        [string]$Name,
+        [string]$Missed,
+        [string]$Total,
+        [string]$Percent
+    )
+
+    $percentValue = if ($Percent -match '^\s*([0-9]+(?:\.[0-9]+)?)%?\s*$') {
+        [double]::Parse($Matches[1], [System.Globalization.CultureInfo]::InvariantCulture)
+    } else {
+        0.0
+    }
+
+    $covered = if ($Total -match '^\d+$' -and $Missed -match '^\d+$') {
+        ([int]$Total - [int]$Missed).ToString([System.Globalization.CultureInfo]::InvariantCulture)
+    } else {
+        "n/a"
+    }
+
+    return [pscustomobject]@{
+        Name = $Name
+        Covered = $covered
+        Missed = $Missed
+        Total = $Total
+        Percent = $Percent
+        PercentValue = $percentValue
+    }
+}
+
+function Get-CoverageMetrics {
+    param([string]$ReportText)
+
+    $lines = @($ReportText -split "\r?\n")
+    $totalLine = $lines | Where-Object { $_ -match '^\s*TOTAL\s+' } | Select-Object -Last 1
+    if (!$totalLine) {
+        return @()
+    }
+
+    $columns = @($totalLine.Trim() -split '\s+')
+    if ($columns.Count -lt 10) {
+        return @()
+    }
+
+    return @(
+        ConvertTo-CoverageMetric -Name "Regions" -Missed $columns[2] -Total $columns[1] -Percent $columns[3]
+        ConvertTo-CoverageMetric -Name "Functions" -Missed $columns[5] -Total $columns[4] -Percent $columns[6]
+        ConvertTo-CoverageMetric -Name "Lines" -Missed $columns[8] -Total $columns[7] -Percent $columns[9]
+    )
+}
 
 foreach ($binary in $testBinaries) {
     $binaryName = $binary.BaseName
@@ -161,6 +219,16 @@ foreach ($binary in $testBinaries) {
     $reportText = ($reportOutput | Out-String).Trim()
     Set-Content -Path $binarySummaryFile -Value $reportText
     $summarySections.Add("### $binaryName`r`n$reportText") | Out-Null
+
+    $metrics = @(Get-CoverageMetrics -ReportText $reportText)
+    $metricMarkup = if ($metrics.Count -gt 0) {
+        ($metrics | ForEach-Object {
+            $metricClass = if ($_.PercentValue -ge 80) { "good" } elseif ($_.PercentValue -ge 50) { "warn" } else { "low" }
+            "<div class='metric $metricClass'><span>$($_.Name)</span><strong>$($_.Percent)</strong><small>$($_.Covered) / $($_.Total) covered</small></div>"
+        }) -join [Environment]::NewLine
+    } else {
+        "<p class='muted'>No TOTAL coverage row was found for this executable.</p>"
+    }
 
     Write-Host "Writing LCOV report for $binaryName"
     $lcovOutput = & $llvmCovPath export -format=lcov $binary.FullName @commonCoverageArgs 2>&1
@@ -184,6 +252,17 @@ foreach ($binary in $testBinaries) {
     }
 
     $htmlIndexEntries.Add(("<li><a href='./{0}/index.html'>{0}</a></li>" -f $binaryName)) | Out-Null
+    $htmlCards.Add(@"
+<article class="card">
+  <div>
+    <h2>$(ConvertTo-HtmlText $binaryName)</h2>
+    <a href="./$(ConvertTo-HtmlText $binaryName)/index.html">Open detailed report</a>
+  </div>
+  <div class="metrics">
+    $metricMarkup
+  </div>
+</article>
+"@) | Out-Null
 }
 
 Set-Content -Path $summaryFile -Value ($summarySections -join "`r`n`r`n")
@@ -191,13 +270,50 @@ Set-Content -Path $summaryFile -Value ($summarySections -join "`r`n`r`n")
 $htmlIndex = @(
     '<!DOCTYPE html>',
     '<html lang="en">',
-    '<head><meta charset="utf-8"><title>FOSSredder Coverage Reports</title></head>',
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<title>FOSSredder Coverage Reports</title>',
+    '<style>',
+    ':root { color-scheme: light; --ink: #14213d; --muted: #5f6b7a; --line: #d9e2ec; --paper: #ffffff; --wash: #f5f7fb; --accent: #0f766e; --good: #15803d; --warn: #b45309; --low: #b91c1c; }',
+    '* { box-sizing: border-box; }',
+    'body { margin: 0; font-family: "Segoe UI", "Aptos", sans-serif; color: var(--ink); background: radial-gradient(circle at top left, #e2f5f1, transparent 34rem), linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%); }',
+    'main { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding: 4rem 0; }',
+    '.hero { margin-bottom: 2rem; }',
+    '.eyebrow { color: var(--accent); font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }',
+    'h1 { margin: .25rem 0 .5rem; font-size: clamp(2.2rem, 5vw, 4rem); line-height: 1; }',
+    '.lead { max-width: 48rem; color: var(--muted); font-size: 1.05rem; }',
+    '.grid { display: grid; gap: 1rem; }',
+    '.card { display: grid; grid-template-columns: minmax(12rem, 1fr) 2fr; gap: 1rem; align-items: center; padding: 1.1rem; border: 1px solid var(--line); border-radius: 1.25rem; background: rgba(255,255,255,.82); box-shadow: 0 16px 44px rgba(15, 23, 42, .08); backdrop-filter: blur(8px); }',
+    '.card h2 { margin: 0 0 .35rem; font-size: 1.05rem; }',
+    'a { color: var(--accent); font-weight: 700; text-decoration: none; }',
+    'a:hover { text-decoration: underline; }',
+    '.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }',
+    '.metric { border-radius: .9rem; padding: .75rem; background: var(--wash); border: 1px solid transparent; }',
+    '.metric span, .metric small { display: block; color: var(--muted); }',
+    '.metric span { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }',
+    '.metric strong { display: block; margin: .25rem 0; font-size: 1.45rem; }',
+    '.metric.good { border-color: rgba(21,128,61,.22); }',
+    '.metric.warn { border-color: rgba(180,83,9,.25); }',
+    '.metric.low { border-color: rgba(185,28,28,.25); }',
+    '.metric.good strong { color: var(--good); }',
+    '.metric.warn strong { color: var(--warn); }',
+    '.metric.low strong { color: var(--low); }',
+    '.muted { color: var(--muted); }',
+    '@media (max-width: 760px) { .card, .metrics { grid-template-columns: 1fr; } main { padding: 2rem 0; } }',
+    '</style>',
+    '</head>',
     '<body>',
+    '<main>',
+    '<section class="hero">',
+    '<div class="eyebrow">LLVM source coverage</div>',
     '<h1>FOSSredder Coverage Reports</h1>',
-    '<p>Per-test-executable LLVM coverage reports.</p>',
-    '<ul>',
-    $htmlIndexEntries,
-    '</ul>',
+    '<p class="lead">Per-test-executable coverage generated from LLVM instrumentation. The README badge is calculated by Codecov from the combined LCOV upload, while this page links to the detailed HTML reports produced during CI.</p>',
+    '</section>',
+    '<section class="grid">',
+    $htmlCards,
+    '</section>',
+    '</main>',
     '</body>',
     '</html>'
 )
