@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FOSSredder Project Reports</title>
+  <style>
+    :root {
+      --ink: #14213d;
+      --muted: #5f6b7a;
+      --line: #d9e2ec;
+      --paper: rgba(255, 255, 255, .86);
+      --accent: #0f766e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Segoe UI", "Aptos", sans-serif;
+      background:
+        radial-gradient(circle at top left, #dff7f1, transparent 34rem),
+        linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+    }
+
+    main {
+      width: min(920px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 4rem 0;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: .25rem 0 .75rem;
+      font-size: clamp(2.35rem, 6vw, 4.6rem);
+      line-height: 1;
+    }
+
+    p {
+      max-width: 48rem;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.65;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .card {
+      min-height: 12rem;
+      padding: 1.35rem;
+      border: 1px solid var(--line);
+      border-radius: 1.4rem;
+      background: var(--paper);
+      box-shadow: 0 18px 52px rgba(15, 23, 42, .08);
+      backdrop-filter: blur(8px);
+    }
+
+    .card h2 {
+      margin: 0 0 .45rem;
+      font-size: 1.25rem;
+    }
+
+    .card p {
+      margin: 0 0 1.25rem;
+      font-size: .98rem;
+    }
+
+    a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        padding: 2rem 0;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Project reports</div>
+    <h1>FOSSredder</h1>
+    <p>
+      Generated documentation and quality reports for the current pipeline
+      branch. These pages are published from the same GitHub Actions pipeline
+      that validates builds, tests, coverage, documentation, and packaging.
+    </p>
+
+    <section class="cards" aria-label="Published reports">
+      <article class="card">
+        <h2>Doxygen API Documentation</h2>
+        <p>Generated C++ API reference, architecture notes, and project design documentation.</p>
+        <a href="./api/index.html">Open API documentation</a>
+      </article>
+
+      <article class="card">
+        <h2>LLVM Coverage Report</h2>
+        <p>HTML coverage report generated from LLVM source-based coverage instrumentation.</p>
+        <a href="./coverage/index.html">Open coverage report</a>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

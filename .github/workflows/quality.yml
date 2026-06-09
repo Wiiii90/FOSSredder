@@ -218,31 +218,7 @@ jobs:
         run: |
           mkdir -p site/coverage
           cp -R coverage-artifact/html/. site/coverage/
-
-          cat > site/index.html <<'HTML'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>FOSSredder Project Reports</title>
-            <style>
-              body { font-family: Segoe UI, sans-serif; max-width: 760px; margin: 4rem auto; padding: 0 1.5rem; line-height: 1.6; }
-              h1 { margin-bottom: .25rem; }
-              p { color: #4b5563; }
-              a { color: #0f766e; font-weight: 600; }
-            </style>
-          </head>
-          <body>
-            <h1>FOSSredder Project Reports</h1>
-            <p>Generated documentation and quality reports for the current branch.</p>
-            <ul>
-              <li><a href="./api/index.html">Doxygen API Documentation</a></li>
-              <li><a href="./coverage/index.html">LLVM Coverage Report</a></li>
-            </ul>
-          </body>
-          </html>
-          HTML
+          cp ci/pages/index.html site/index.html
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
