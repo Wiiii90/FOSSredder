@@ -62,7 +62,7 @@ jobs:
         run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset tests
 
       - name: Build tests preset
-        run: cmake --build --preset release-tests --parallel
+        run: cmake --build --preset release-tests --parallel 2
 
       - name: Run test preset
         run: ctest --preset release-tests
@@ -97,7 +97,7 @@ jobs:
         run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset clang-tidy
 
       - name: Build clang-tidy preset
-        run: cmake --build --preset release-clang-tidy --parallel
+        run: cmake --build --preset release-clang-tidy --parallel 2
 
   coverage:
     runs-on:
@@ -132,7 +132,7 @@ jobs:
         run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset coverage
 
       - name: Build coverage preset
-        run: cmake --build --preset release-coverage --parallel
+        run: cmake --build --preset release-coverage --parallel 2
 
       - name: Collect LLVM coverage
         run: .\ci\coverage\coverage-windows.ps1 -BuildDir .build\coverage -Config Release -OutDir coverage
