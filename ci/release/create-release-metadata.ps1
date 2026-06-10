@@ -17,6 +17,16 @@ if (-not $Version) {
     $Version = "0.5.0"
 }
 
+$releaseRef = $env:RELEASE_REF_NAME
+if ([string]::IsNullOrWhiteSpace($releaseRef)) {
+    $releaseRef = $env:GITHUB_REF_NAME
+}
+
+$releaseCommit = $env:RELEASE_COMMIT_SHA
+if ([string]::IsNullOrWhiteSpace($releaseCommit)) {
+    $releaseCommit = $env:GITHUB_SHA
+}
+
 $distPath = Get-AbsPath $DistDir
 $outPath = Get-AbsPath $OutDir
 if (!(Test-Path $distPath)) {
@@ -46,8 +56,8 @@ foreach ($artifact in $artifacts) {
 $manifest = [ordered]@{
     product = "FOSSredder"
     version = $Version
-    branch = $env:GITHUB_REF_NAME
-    commit = $env:GITHUB_SHA
+    branch = $releaseRef
+    commit = $releaseCommit
     run = $env:GITHUB_RUN_ID
     generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
     artifacts = $manifestArtifacts
@@ -65,7 +75,7 @@ $manifest | ConvertTo-Json -Depth 8 | Set-Content -Path $manifestPath -Encoding 
     "",
     "Windows x64 installer release candidate.",
     "",
-    "- Commit: $env:GITHUB_SHA",
+    "- Commit: $releaseCommit",
     "- Workflow run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID",
     "- Checksums: see ``SHA256SUMS.txt``"
 ) | Set-Content -Path $notesPath -Encoding utf8

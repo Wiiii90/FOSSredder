@@ -44,16 +44,16 @@ Local package build:
 
 ```powershell
 cmake --preset app
-cmake --build --preset release-package
+cmake --build --preset release-installer
 ```
 
-CI package builds are uploaded as the `fossredder-installer` artifact from the
-pipeline workflow.
+Manual installer runs are uploaded as the `fossredder-installer` artifact from
+the `Installer` workflow.
 
-Develop package builds also update the mutable `develop-nightly` GitHub
-pre-release with the latest validated installer. This nightly release is for
-testing only; stable installers should be published from promoted `master`
-builds as versioned releases.
+Successful `develop` pipeline runs trigger the `Installer` workflow and update
+the mutable `develop-nightly` GitHub pre-release with the latest validated
+installer. This nightly release is for testing only; stable installers are
+published by the `Release` workflow from version tags.
 
 ## Release Hardening
 
@@ -67,4 +67,5 @@ the application. Release validation should confirm:
 - the installed application launches from the Start Menu shortcut
 - PDF import can run without requiring a manually configured external
   Tesseract data path
-- promoted `master` installers are published through GitHub Releases
+- promoted `master` installers are published through GitHub Releases from `v*`
+  tags

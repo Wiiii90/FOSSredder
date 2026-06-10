@@ -24,7 +24,7 @@ What happens
 - The `package` target installs the chosen config into `${binaryDir}/staging`.
 - The packaging script deploys runtime dependencies and then calls Inno Setup to produce an installer under `${binaryDir}/dist`.
 - The expected installer name is `FOSSredder-Setup-<version>-win-x64.exe`.
-- CI also runs `ci/package/test-package-layout.ps1` after packaging to verify the staged runtime layout.
+- Installer and release workflows run `ci/package/test-package-layout.ps1` after packaging to verify the staged runtime layout.
 
 Steps (Command line)
 
@@ -41,6 +41,8 @@ Manual GitHub Actions loop
 - Use the `Installer` workflow from the Actions tab when you only need to test
   installer packaging and layout validation.
 - Use the main `Pipeline` workflow for full release-readiness validation.
+- Successful `develop` pipeline runs trigger the `Installer` workflow to update
+  the mutable `develop-nightly` pre-release.
 
 Troubleshooting
 - If ISCC is not found, ensure Inno Setup is installed and `C:\Program Files (x86)\Inno Setup 6\ISCC.exe` exists.

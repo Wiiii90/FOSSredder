@@ -82,44 +82,9 @@
       }
     },
     {
-      "name": "tests-fast",
-      "displayName": "Tests Fast QML",
+      "name": "clang-tidy",
+      "displayName": "clang-tidy",
       "inherits": "tests",
-      "binaryDir": "${sourceDir}/.build/${presetName}",
-      "cacheVariables": {
-        "FOSSREDDER_FAST_QML_BUILD": "ON"
-      }
-    },
-    {
-      "name": "tests-ninja-fast",
-      "displayName": "Tests Ninja Fast QML",
-      "inherits": "vcpkg-ninja-base",
-      "binaryDir": "${sourceDir}/.build/${presetName}",
-      "cacheVariables": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "BUILD_CORE_TESTS": "ON",
-        "BUILD_UI_TESTS": "ON",
-        "BUILD_PERSISTENCE_TESTS": "ON",
-        "BUILD_DEBUG_TESTS": "ON",
-        "BUILD_OPENCV_TESTS": "ON",
-        "BUILD_INFRA_ARCHIVE_TESTS": "ON",
-        "BUILD_INFRA_PDF_RENDERING_TESTS": "ON",
-        "BUILD_INFRA_TEXT_RECOGNITION_TESTS": "ON",
-        "BUILD_INFRA_ANALYSIS_IMAGE_RENDERER_TESTS": "ON",
-        "BUILD_INFRA_XLSX_WRITER_TESTS": "ON",
-        "FOSSREDDER_FAST_QML_BUILD": "ON"
-      }
-    },
-    {
-      "name": "ci",
-      "displayName": "CI",
-      "inherits": "tests",
-      "binaryDir": "${sourceDir}/.build/${presetName}"
-    },
-    {
-      "name": "tidy",
-      "displayName": "Tidy",
-      "inherits": "ci",
       "binaryDir": "${sourceDir}/.build/${presetName}",
       "cacheVariables": {
         "FOSSREDDER_ENABLE_CLANG_TIDY": "ON"
@@ -128,7 +93,7 @@
     {
       "name": "coverage",
       "displayName": "Coverage",
-      "inherits": "ci",
+      "inherits": "tests",
       "binaryDir": "${sourceDir}/.build/${presetName}",
       "toolset": "ClangCL",
       "cacheVariables": {
@@ -178,33 +143,8 @@
       "configuration": "Release"
     },
     {
-      "name": "debug-tests-fast",
-      "configurePreset": "tests-fast",
-      "configuration": "Debug"
-    },
-    {
-      "name": "release-tests-fast",
-      "configurePreset": "tests-fast",
-      "configuration": "Release"
-    },
-    {
-      "name": "debug-tests-ninja-fast",
-      "configurePreset": "tests-ninja-fast",
-      "configuration": "Debug"
-    },
-    {
-      "name": "release-tests-ninja-fast",
-      "configurePreset": "tests-ninja-fast",
-      "configuration": "Release"
-    },
-    {
-      "name": "release-ci",
-      "configurePreset": "ci",
-      "configuration": "Release"
-    },
-    {
-      "name": "release-tidy",
-      "configurePreset": "tidy",
+      "name": "release-clang-tidy",
+      "configurePreset": "clang-tidy",
       "configuration": "Release"
     },
     {
@@ -213,7 +153,7 @@
       "configuration": "Release"
     },
     {
-      "name": "release-package",
+      "name": "release-installer",
       "configurePreset": "app",
       "configuration": "Release",
       "targets": [
@@ -233,14 +173,6 @@
     {
       "name": "release-tests",
       "configurePreset": "tests",
-      "configuration": "Release",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "release-ci",
-      "configurePreset": "ci",
       "configuration": "Release",
       "output": {
         "outputOnFailure": true

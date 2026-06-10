@@ -34,7 +34,7 @@ Prerequisites:
 
 - CMake 4.0.1 or newer
 - vcpkg in manifest mode, exposed through the VCPKG_ROOT environment variable
-- A Windows C++ toolchain. The standard presets use Visual Studio 18 2026. Separate fast presets use Ninja Multi-Config for app and test builds.
+- A Windows C++ toolchain. The standard presets use Visual Studio 18 2026. Separate fast presets use Ninja Multi-Config for app builds.
 - Inno Setup 6 when building the Windows installer
 
 Minimal setup:
@@ -67,17 +67,10 @@ cmake --build --preset release-tests
 ctest --preset release-tests --output-on-failure
 ```
 
-Fast Ninja test build:
-
-```powershell
-cmake --preset tests-ninja-fast
-cmake --build --preset release-tests-ninja-fast
-```
-
 Build the Windows installer:
 
 ```powershell
-cmake --build --preset release-package
+cmake --build --preset release-installer
 ```
 
 Installer output:
