@@ -37,12 +37,10 @@ cmake -DFOSSREDDER_FAST_QML_BUILD=ON --preset app
 .\ci\package\test-package-layout.ps1 -StagingDir .build\app\staging -DistDir .build\app\dist
 ```
 
-Manual GitHub Actions loop
-- Use the `Installer` workflow from the Actions tab when you only need to test
-  installer packaging and layout validation.
-- Use the main `Pipeline` workflow for full release-readiness validation.
-- Successful `develop` pipeline runs trigger the `Installer` workflow to update
-  the mutable `develop-nightly` pre-release.
+GitHub Actions loop
+- Use the main `Pipeline` workflow for release-readiness validation.
+- Successful `develop` pipeline runs build and validate the installer, then
+  update the mutable `develop-nightly` pre-release.
 
 Troubleshooting
 - If ISCC is not found, ensure Inno Setup is installed and `C:\Program Files (x86)\Inno Setup 6\ISCC.exe` exists.

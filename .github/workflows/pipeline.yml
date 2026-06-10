@@ -236,3 +236,132 @@ jobs:
         uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+
+  installer:
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/develop'
+    needs:
+      - build-and-test
+      - static-analysis
+      - coverage
+      - documentation
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate localization contract
+        run: .\ci\localization\check-localization.ps1
+
+      - name: Resolve package version
+        run: |
+          $cmake = Get-Content CMakeLists.txt -Raw
+          if ($cmake -notmatch 'project\s*\(\s*FossRedder\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)') {
+            throw "Could not resolve project version from CMakeLists.txt"
+          }
+          echo "PACKAGE_VERSION=$($Matches[1])" >> $env:GITHUB_ENV
+
+      - name: Prepare staging dir
+        run: |
+          $staging = Join-Path $env:RUNNER_TEMP "fossredder-staging-${{ github.job }}-${{ github.run_id }}"
+          if (Test-Path $staging) { Remove-Item -Path $staging -Recurse -Force }
+          New-Item -ItemType Directory -Path $staging | Out-Null
+          icacls $staging /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T | Out-Null
+          echo "TARGET_DIR=$staging" >> $env:GITHUB_ENV
+
+      - name: Clean previous build
+        run: |
+          if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
+
+      - name: Validate runner prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireInnoSetup
+
+      - name: Configure installer preset
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" -DFOSSREDDER_FAST_QML_BUILD=ON --preset app
+
+      - name: Build app and installer
+        run: .\ci\package\build-installer.ps1
+
+      - name: Validate installer artifact
+        run: .\ci\package\validate-package.ps1 -DistDir .build\app\dist
+
+      - name: Run installer QA
+        run: .\ci\package\test-package-layout.ps1 -StagingDir .build\app\staging -DistDir .build\app\dist
+
+      - name: Create release metadata
+        env:
+          RELEASE_REF_NAME: ${{ github.ref_name }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: .\ci\release\create-release-metadata.ps1 -DistDir .build\app\dist
+
+      - name: Validate GitHub release prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireGitHubCli -SkipBuildPrerequisites
+
+      - name: Publish develop nightly pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "develop-nightly"
+          $installer = ".build\app\dist\FOSSredder-Setup-$env:PACKAGE_VERSION-win-x64.exe"
+          if (!(Test-Path $installer)) {
+            throw "Nightly installer not found: $installer"
+          }
+
+          git tag -f $tag $env:GITHUB_SHA
+          git push --force origin "refs/tags/$tag"
+
+          $notes = @(
+            "Latest validated develop installer.",
+            "",
+            "Branch: develop",
+            "Commit: $env:GITHUB_SHA",
+            "Pipeline run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID",
+            "",
+            "This pre-release is mutable and intended for testing only."
+          ) -join [Environment]::NewLine
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag `
+              --title "Develop Nightly" `
+              --notes "$notes" `
+              --prerelease `
+              --target $env:GITHUB_SHA
+          } else {
+            gh release edit $tag `
+              --title "Develop Nightly" `
+              --notes "$notes" `
+              --prerelease
+          }
+
+          gh release upload $tag $installer --clobber
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-installer
+          path: .build/app/dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload release metadata artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-release-metadata
+          path: .build/app/release/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload package logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-package-logs
+          path: .build/logs/package/*
+          if-no-files-found: warn
+          retention-days: 7
