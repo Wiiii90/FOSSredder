@@ -1,6 +1,6 @@
 param(
     [string]$BuildPreset = "release-app",
-    [string]$PackagePreset = "release-package",
+    [string]$InstallerPreset = "release-installer",
     [string]$LogDir = ".build\\logs\\package"
 )
 
@@ -35,7 +35,7 @@ function Invoke-LoggedNativeCommand {
 }
 
 $appBuildLog = Join-Path $LogDir "app-build-output.txt"
-$packageBuildLog = Join-Path $LogDir "package-build-output.txt"
+$installerBuildLog = Join-Path $LogDir "installer-build-output.txt"
 
 Invoke-LoggedNativeCommand `
     -Name "app build preset '$BuildPreset'" `
@@ -45,6 +45,6 @@ Invoke-LoggedNativeCommand `
 # Build the packaging target without MSBuild parallelism. The app is already built above,
 # so this keeps the custom installer step serialized and its failures easier to diagnose.
 Invoke-LoggedNativeCommand `
-    -Name "package preset '$PackagePreset'" `
-    -LogPath $packageBuildLog `
-    -Command { cmake --build --preset $PackagePreset }
+    -Name "installer preset '$InstallerPreset'" `
+    -LogPath $installerBuildLog `
+    -Command { cmake --build --preset $InstallerPreset }

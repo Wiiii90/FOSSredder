@@ -15,7 +15,7 @@ on:
 
 concurrency:
   group: pipeline-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -71,14 +71,14 @@ jobs:
       - name: Validate runner prerequisites
         run: .\ci\runner\assert-quality-runner.ps1
 
-      - name: Configure CI preset
-        run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset ci
+      - name: Configure tests preset
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset tests
 
-      - name: Build CI preset
-        run: cmake --build --preset release-ci --parallel
+      - name: Build tests preset
+        run: cmake --build --preset release-tests --parallel
 
       - name: Run test preset
-        run: ctest --preset release-ci
+        run: ctest --preset release-tests
 
   static-analysis:
     runs-on:
@@ -106,11 +106,11 @@ jobs:
       - name: Validate runner prerequisites
         run: .\ci\runner\assert-quality-runner.ps1 -RequireClangTidy
 
-      - name: Configure tidy preset
-        run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset tidy
+      - name: Configure clang-tidy preset
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset clang-tidy
 
-      - name: Build tidy preset
-        run: cmake --build --preset release-tidy --parallel
+      - name: Build clang-tidy preset
+        run: cmake --build --preset release-clang-tidy --parallel
 
   coverage:
     runs-on:
@@ -249,151 +249,3 @@ jobs:
         uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
-
-  package-installer:
-    runs-on:
-      - self-hosted
-      - Windows
-      - X64
-    needs:
-      - build-and-test
-      - localization
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Resolve package version
-        run: |
-          $cmake = Get-Content CMakeLists.txt -Raw
-          if ($cmake -notmatch 'project\s*\(\s*FossRedder\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)') {
-            throw "Could not resolve project version from CMakeLists.txt"
-          }
-          echo "PACKAGE_VERSION=$($Matches[1])" >> $env:GITHUB_ENV
-
-      - name: Prepare staging dir
-        run: |
-          $staging = Join-Path $env:RUNNER_TEMP "fossredder-staging-${{ github.job }}-${{ github.run_id }}"
-          if (Test-Path $staging) { Remove-Item -Path $staging -Recurse -Force }
-          New-Item -ItemType Directory -Path $staging | Out-Null
-          icacls $staging /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T | Out-Null
-          echo "TARGET_DIR=$staging" >> $env:GITHUB_ENV
-
-      - name: Clean previous build
-        run: |
-          if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
-
-      - name: Validate runner prerequisites
-        run: .\ci\runner\assert-quality-runner.ps1 -RequireInnoSetup -RequireGitHubCli
-
-      - name: Configure package preset
-        run: cmake -DTARGET_DIR="$env:TARGET_DIR" -DFOSSREDDER_FAST_QML_BUILD=ON --preset app
-
-      - name: Build app and installer
-        run: .\ci\package\build-installer.ps1
-
-      - name: Validate installer artifact
-        run: .\ci\package\validate-package.ps1 -DistDir .build\app\dist
-
-      - name: Run installer QA
-        run: .\ci\package\test-package-layout.ps1 -StagingDir .build\app\staging -DistDir .build\app\dist
-
-      - name: Create release metadata
-        run: .\ci\release\create-release-metadata.ps1 -DistDir .build\app\dist
-
-      - name: Publish develop nightly pre-release
-        if: github.ref == 'refs/heads/develop'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $tag = "develop-nightly"
-          $installer = ".build\app\dist\FOSSredder-Setup-$env:PACKAGE_VERSION-win-x64.exe"
-          if (!(Test-Path $installer)) {
-            throw "Nightly installer not found: $installer"
-          }
-
-          git tag -f $tag $env:GITHUB_SHA
-          git push --force origin "refs/tags/$tag"
-
-          $notes = @(
-            "Latest develop validation build.",
-            "",
-            "Branch: develop",
-            "Commit: $env:GITHUB_SHA",
-            "Workflow run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID",
-            "",
-            "This pre-release is mutable and intended for testing only."
-          ) -join [Environment]::NewLine
-
-          gh release view $tag *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag `
-              --title "Develop Nightly" `
-              --notes "$notes" `
-              --prerelease `
-              --target $env:GITHUB_SHA
-          } else {
-            gh release edit $tag `
-              --title "Develop Nightly" `
-              --notes "$notes" `
-              --prerelease
-          }
-
-          gh release upload $tag $installer --clobber
-
-      - name: Publish tagged release
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $tag = $env:GITHUB_REF_NAME
-          $installer = ".build\app\dist\FOSSredder-Setup-$env:PACKAGE_VERSION-win-x64.exe"
-          $checksums = ".build\app\release\SHA256SUMS.txt"
-          $manifest = ".build\app\release\release-manifest.json"
-          $notes = ".build\app\release\release-notes.md"
-
-          foreach ($path in @($installer, $checksums, $manifest, $notes)) {
-            if (!(Test-Path $path)) {
-              throw "Release file not found: $path"
-            }
-          }
-
-          gh release view $tag *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag `
-              --title "FOSSredder $tag" `
-              --notes-file $notes `
-              $installer $checksums $manifest
-          } else {
-            gh release edit $tag `
-              --title "FOSSredder $tag" `
-              --notes-file $notes
-            gh release upload $tag $installer $checksums $manifest --clobber
-          }
-
-      - name: Upload installer artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: fossredder-installer
-          path: .build/app/dist/*
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload release metadata artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: fossredder-release-metadata
-          path: .build/app/release/*
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload package logs
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: fossredder-package-logs
-          path: .build/logs/package/*
-          if-no-files-found: warn
-          retention-days: 7
