@@ -8,6 +8,8 @@ param(
     [string]$WizardBannerFile = "installer\\assets\\wizard-banner.bmp",
     [string]$WizardSmallFile = "installer\\assets\\wizard-small.bmp",
     [string]$LocalizationContract = "ci\\localization\\localization-contract.json",
+    [string]$AppQmlSourceDir = "ui\\qml\\FossRedder",
+    [string]$AppQmlToolingDir = "",
     [string]$Version = $env:PACKAGE_VERSION,
     [switch]$RunWindeployQt,
     [switch]$RunQtDeployFallback = $true,
@@ -102,6 +104,7 @@ $IconFileAbs = Get-AbsPath "app\\assets\\icons\\fossredder.ico" $RepoRoot
 $WizardBannerSourceAbs = Get-AbsPath $WizardBannerFile $RepoRoot
 $WizardSmallSourceAbs = Get-AbsPath $WizardSmallFile $RepoRoot
 $LocalizationContractAbs = Get-AbsPath $LocalizationContract $RepoRoot
+$AppQmlSourceDirAbs = Get-AbsPath $AppQmlSourceDir $RepoRoot
 
 if (-not (Test-Path $BuildDirAbs)) { throw "BuildDir not found: $BuildDirAbs" }
 if (-not (Test-Path $InstallerAbs)) { throw "Installer script not found: $InstallerAbs" }
@@ -110,6 +113,13 @@ if (-not (Test-Path $IconFileAbs)) { throw "Installer icon file not found: $Icon
 if (-not (Test-Path $WizardBannerSourceAbs)) { throw "Wizard banner image not found: $WizardBannerSourceAbs" }
 if (-not (Test-Path $WizardSmallSourceAbs)) { throw "Wizard small image not found: $WizardSmallSourceAbs" }
 if (-not (Test-Path $LocalizationContractAbs)) { throw "Localization contract not found: $LocalizationContractAbs" }
+if (-not (Test-Path $AppQmlSourceDirAbs)) { throw "App QML source directory not found: $AppQmlSourceDirAbs" }
+
+if ([string]::IsNullOrWhiteSpace($AppQmlToolingDir)) {
+    $AppQmlToolingDirAbs = Join-Path $BuildDirAbs "ui\qmltooling\FossRedder"
+} else {
+    $AppQmlToolingDirAbs = Get-AbsPath $AppQmlToolingDir $RepoRoot
+}
 
 # Clean staging to avoid leftovers (optional; CMake 'package' target might already manage staging)
 if ($CleanStaging -and (Test-Path $StagingDirAbs)) {
@@ -216,7 +226,22 @@ if ($RunQtDeployFallback) {
     if (Test-Path $vcpkgInstalled) { $vcpkgInstalledAbsForCmake = (Resolve-Path $vcpkgInstalled).ProviderPath }
 
     Write-Host "Running deterministic FossredderQtDeploy.cmake" -ForegroundColor Cyan
-    cmake -D TARGET_DIR="$DeployDir" -D VCPKG_INSTALLED_DIR="$vcpkgInstalledAbsForCmake" -D VCPKG_TARGET_TRIPLET="$vcpkgTriplet" -D BUILD_CONFIG="$Config" -P "$qtdeploy"
+    $qtDeployArgs = @(
+        "-D", "TARGET_DIR=$DeployDir",
+        "-D", "VCPKG_INSTALLED_DIR=$vcpkgInstalledAbsForCmake",
+        "-D", "VCPKG_TARGET_TRIPLET=$vcpkgTriplet",
+        "-D", "BUILD_CONFIG=$Config",
+        "-D", "APP_QML_SOURCE_DIR=$AppQmlSourceDirAbs"
+    )
+
+    if (Test-Path $AppQmlToolingDirAbs) {
+        $qtDeployArgs += @("-D", "APP_QML_TOOLING_DIR=$AppQmlToolingDirAbs")
+    } else {
+        Write-Host "[WARN] App QML tooling directory not found; continuing without qmltypes metadata: $AppQmlToolingDirAbs" -ForegroundColor Yellow
+    }
+
+    $qtDeployArgs += @("-P", $qtdeploy)
+    & cmake @qtDeployArgs
     if ($LASTEXITCODE -ne 0) { throw "FossredderQtDeploy.cmake failed" }
 }
 
@@ -311,6 +336,7 @@ if ($RunQtDeployFallback -or $RunWindeployQt) {
     Assert-Path (Join-Path $DeployDir 'qt.conf') "qt.conf missing in staging/bin after Qt deploy"
     Assert-Path (Join-Path $DeployDir 'platforms\\qwindows.dll') "qwindows.dll missing in staging/bin/platforms after Qt deploy"
     Assert-Path (Join-Path $DeployDir 'qml\\QtQuick\\qmldir') "QML QtQuick qmldir missing in staging/bin/qml after Qt deploy"
+    Assert-Path (Join-Path $DeployDir 'qml\\FossRedder\\qmldir') "App QML root qmldir missing in staging/bin/qml after Qt deploy"
 }
 
 $tessdataDir = Join-Path $DeployDir 'res\tessdata'
