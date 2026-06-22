@@ -1,3 +1,8 @@
+/**
+ * @file core/include/core/constants/preferences.h
+ * @brief Defines shared preference keys and application metadata constants.
+ */
+
 #pragma once
 
 #include <string_view>

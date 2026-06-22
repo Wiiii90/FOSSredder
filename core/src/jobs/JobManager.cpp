@@ -1,3 +1,8 @@
+/**
+ * @file core/src/jobs/JobManager.cpp
+ * @brief Implements private job state tracking and event delivery.
+ */
+
 #include "JobManager.h"
 
 #include "core/errors/ErrorReporting.h"

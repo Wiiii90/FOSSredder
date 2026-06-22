@@ -15,6 +15,11 @@
 
 namespace core::errors {
 
+/**
+ * @brief Convert an error severity to a stable lowercase label.
+ * @param severity Severity value to convert.
+ * @return String label for the severity.
+ */
 inline const char *severityToString(ErrorSeverity severity) noexcept {
   switch (severity) {
   case ErrorSeverity::Info:
@@ -30,6 +35,15 @@ inline const char *severityToString(ErrorSeverity severity) noexcept {
   return "error";
 }
 
+/**
+ * @brief Build a structured event from an exception pointer.
+ * @param severity Severity to store on the event.
+ * @param code Optional structured error code.
+ * @param origin Optional origin string describing the reporting site.
+ * @param exception Exception pointer to inspect.
+ * @param context Additional event context.
+ * @return Structured error event describing the exception.
+ */
 inline ErrorEvent makeExceptionEvent(ErrorSeverity severity, const char *code,
                                      const char *origin,
                                      std::exception_ptr exception,

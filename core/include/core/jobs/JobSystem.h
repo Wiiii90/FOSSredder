@@ -37,19 +37,86 @@ public:
      */
     ~JobSystem();
 
+    /**
+     * @brief Copying a job system is disabled.
+     */
     JobSystem(const JobSystem&) = delete;
-    JobSystem& operator=(const JobSystem&) = delete;
-    JobSystem(JobSystem&&) noexcept;
-    JobSystem& operator=(JobSystem&&) noexcept;
 
+    /**
+     * @brief Copy-assigning a job system is disabled.
+     * @return Reference to this job system.
+     */
+    JobSystem& operator=(const JobSystem&) = delete;
+
+    /**
+     * @brief Move a job system facade.
+     * @param other Job system to move from.
+     */
+    JobSystem(JobSystem&& other) noexcept;
+
+    /**
+     * @brief Move-assign a job system facade.
+     * @param other Job system to move from.
+     * @return Reference to this job system.
+     */
+    JobSystem& operator=(JobSystem&& other) noexcept;
+
+    /**
+     * @brief Create a new tracked job.
+     * @param kind Kind of job to submit.
+     * @return Identifier of the created job.
+     */
     [[nodiscard]] JobId submit(JobKind kind = JobKind::Generic);
+
+    /**
+     * @brief Mark a job as running.
+     * @param id Job identifier.
+     */
     void start(const JobId& id);
+
+    /**
+     * @brief Publish a job event to subscribers and update its snapshot.
+     * @param event Event to publish.
+     */
     void publish(const JobEvent& event);
+
+    /**
+     * @brief Mark a job as failed.
+     * @param id Job identifier.
+     * @param error Error message to store and publish.
+     */
     void fail(const JobId& id, const std::string& error);
+
+    /**
+     * @brief Mark a job as finished.
+     * @param id Job identifier.
+     */
     void finish(const JobId& id);
+
+    /**
+     * @brief Retrieve a job cancellation flag.
+     * @param id Job identifier.
+     * @return Shared cancellation flag, or null when the job is unknown.
+     */
     [[nodiscard]] std::shared_ptr<std::atomic<bool>> cancelFlag(const JobId& id) const;
+
+    /**
+     * @brief Retrieve a job pause flag.
+     * @param id Job identifier.
+     * @return Shared pause flag, or null when the job is unknown.
+     */
     [[nodiscard]] std::shared_ptr<std::atomic<bool>> pauseFlag(const JobId& id) const;
+
+    /**
+     * @brief Access the shared worker scheduler.
+     * @return Scheduler used for background job work.
+     */
     [[nodiscard]] Scheduler& scheduler();
+
+    /**
+     * @brief Access the shared slot limiter.
+     * @return Slot limiter for scarce external resources.
+     */
     [[nodiscard]] SlotLimiter& slotLimiter();
 
     /**
@@ -72,7 +139,17 @@ public:
      * @param id Job identifier.
      */
     void cancel(const JobId& id);
+
+    /**
+     * @brief Pause a running job.
+     * @param id Job identifier.
+     */
     void pause(const JobId& id);
+
+    /**
+     * @brief Resume a paused job.
+     * @param id Job identifier.
+     */
     void resume(const JobId& id);
 
     /**

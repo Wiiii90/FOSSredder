@@ -1,3 +1,8 @@
+/**
+ * @file core/src/application/export/ObjectExportExecutor.cpp
+ * @brief Implements object export execution helpers.
+ */
+
 #include "ObjectExportExecutor.h"
 
 #include "core/application/analysis/AnalysisService.h"

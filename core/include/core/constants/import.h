@@ -1,3 +1,8 @@
+/**
+ * @file core/include/core/constants/import.h
+ * @brief Defines shared constants for import workflow orchestration.
+ */
+
 #pragma once
 
 #include <cstddef>
