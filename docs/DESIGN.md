@@ -152,42 +152,34 @@ domain/application core so use cases can be tested without linking concrete
 adapters.
 
 ```mermaid
-flowchart TD
+flowchart LR
   App["app<br/>fossredder executable<br/>composition root"]
-  UI["ui<br/>QML modules<br/>view models workflows adapters"]
-  Core["core<br/>domain application services ports jobs"]
-  Persistence["persistence<br/>SQLite repositories workspace store registry"]
-  Debug["debug<br/>error reporting diagnostic sinks"]
-  InfraPdf["infra/pdf-rendering<br/>Poppler"]
-  InfraImage["infra/image-processing<br/>OpenCV"]
-  InfraText["infra/text-recognition<br/>Tesseract"]
-  InfraXlsx["infra/xlsx-writer<br/>xlnt"]
-  InfraArchive["infra/archive<br/>libzip"]
-  InfraAnalysis["infra/analysis-image-renderer<br/>OpenCV"]
 
-  App --> UI
+  subgraph Outer["outer targets"]
+    direction TB
+    UI["ui<br/>QML modules<br/>view models workflows adapters"]
+    Persistence["persistence<br/>SQLite repositories workspace store registry"]
+    Infra["infra/* adapters<br/>pdf-rendering<br/>image-processing<br/>text-recognition<br/>xlsx-writer<br/>archive<br/>analysis-image-renderer"]
+  end
+
+  subgraph Inner["inner contracts and diagnostics"]
+    direction TB
+    Core["core<br/>domain application services ports jobs"]
+    Debug["debug<br/>error reporting diagnostic sinks"]
+  end
+
   App --> Core
-  App --> Persistence
   App --> Debug
-  App --> InfraPdf
-  App --> InfraImage
-  App --> InfraText
-  App --> InfraXlsx
-  App --> InfraArchive
-  App --> InfraAnalysis
+  App --> UI
+  App --> Persistence
+  App --> Infra
 
   UI --> Core
-  UI --> Debug
   Persistence --> Core
-  InfraPdf --> Core
-  InfraImage --> Core
-  InfraText --> Core
-  InfraXlsx --> Core
-  InfraArchive --> Core
-  InfraAnalysis --> Core
-  InfraPdf --> Debug
-  InfraImage --> Debug
-  InfraText --> Debug
+  Infra --> Core
+
+  UI -. diagnostics .-> Debug
+  Infra -. pdf/image/text diagnostics .-> Debug
 ```
 
 The same target structure maps to a [Clean Architecture](appendix/reference.md#glossary-clean-architecture) boundary model:
