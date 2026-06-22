@@ -1,5 +1,5 @@
 /**
- * @file core/src/import/DefaultImportStatementStrategy.cpp
+ * @file core/src/application/import/DefaultImportStatementStrategy.cpp
  * @brief Implements the default import strategy orchestration for statement extraction.
  */
 

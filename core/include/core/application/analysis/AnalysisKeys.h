@@ -1,3 +1,8 @@
+/**
+ * @file core/include/core/application/analysis/AnalysisKeys.h
+ * @brief Defines stable analysis type, configuration, filter, and result keys.
+ */
+
 #pragma once
 
 #include <string_view>

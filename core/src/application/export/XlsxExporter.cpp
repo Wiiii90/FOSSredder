@@ -1,5 +1,5 @@
 /**
- * @file core/src/export/XlsxExporter.cpp
+ * @file core/src/application/export/XlsxExporter.cpp
  * @brief Implements XLSX export for the property/contract-type matrix.
  */
 

@@ -1,5 +1,5 @@
 /**
- * @file core/src/import/ImportPipelineHelpers.cpp
+ * @file core/src/application/import/ImportPipelineHelpers.cpp
  * @brief Implements private helper functions used by the import pipeline.
  */
 

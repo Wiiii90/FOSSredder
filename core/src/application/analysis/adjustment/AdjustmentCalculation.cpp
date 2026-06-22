@@ -1,3 +1,8 @@
+/**
+ * @file core/src/application/analysis/adjustment/AdjustmentCalculation.cpp
+ * @brief Implements adjusted-amount analysis calculations.
+ */
+
 #include "AdjustmentCalculation.h"
 #include "../internal/AnalysisFilter.h"
 #include "core/ports/usecases/analysis/AnalysisResult.h"

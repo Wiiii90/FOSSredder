@@ -1,3 +1,8 @@
+/**
+ * @file core/src/application/import/ImportConstants.h
+ * @brief Defines private constants shared by core import orchestration.
+ */
+
 #pragma once
 
 #include <cstddef>

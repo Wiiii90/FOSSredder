@@ -1,5 +1,5 @@
 /**
- * @file core/src/import/ImportStrategySupport.cpp
+ * @file core/src/application/import/ImportStrategySupport.cpp
  * @brief Implements private support types and helpers for the default import strategy.
  */
 

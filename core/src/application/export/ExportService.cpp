@@ -1,5 +1,5 @@
 /**
- * @file core/src/export/ExportService.cpp
+ * @file core/src/application/export/ExportService.cpp
  * @brief Dispatches export requests to format-specific exporters.
  */
 

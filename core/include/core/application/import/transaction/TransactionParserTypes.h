@@ -1,5 +1,5 @@
 /**
- * @file core/include/core/application/import/transaction/ParserTypes.h
+ * @file core/include/core/application/import/transaction/TransactionParserTypes.h
  * @brief Declares the OCR transaction parser model types.
  */
 

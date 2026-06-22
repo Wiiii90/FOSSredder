@@ -1,3 +1,8 @@
+/**
+ * @file core/src/application/analysis/presentation/PlotAnalysis.cpp
+ * @brief Implements plot-oriented analysis aggregation.
+ */
+
 #include "PlotAnalysis.h"
 #include "../internal/AnalysisFilter.h"
 #include "core/application/analysis/AnalysisKeys.h"

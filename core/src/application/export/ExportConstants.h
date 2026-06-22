@@ -1,3 +1,8 @@
+/**
+ * @file core/src/application/export/ExportConstants.h
+ * @brief Defines private constants shared by core export implementations.
+ */
+
 #pragma once
 
 #include <string_view>

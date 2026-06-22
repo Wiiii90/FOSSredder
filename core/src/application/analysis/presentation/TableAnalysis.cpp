@@ -1,3 +1,8 @@
+/**
+ * @file core/src/application/analysis/presentation/TableAnalysis.cpp
+ * @brief Implements tabular analysis result projection.
+ */
+
 #include "TableAnalysis.h"
 #include "../internal/AnalysisFilter.h"
 #include "core/application/analysis/AnalysisKeys.h"

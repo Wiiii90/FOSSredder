@@ -1,3 +1,8 @@
+/**
+ * @file core/src/application/analysis/internal/AnalysisFilter.cpp
+ * @brief Implements analysis filter parsing and transaction collection helpers.
+ */
+
 #include "AnalysisFilter.h"
 
 #include "core/application/analysis/AnalysisKeys.h"

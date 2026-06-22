@@ -1,3 +1,8 @@
+/**
+ * @file core/include/core/pch.h
+ * @brief Collects common core includes and aliases for precompiled-header builds.
+ */
+
 #pragma once
 
 #define NOMINMAX
