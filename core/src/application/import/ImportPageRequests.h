@@ -9,7 +9,7 @@
 #include "core/ports/infra/document-image-processing/DocumentImageProcessingResult.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
-#include "core/constants/import.h"
+#include "ImportConstants.h"
 #include "core/application/import/ImportRequest.h"
 #include "../../utils/UniqId.h"
 
@@ -34,7 +34,7 @@ inline core::ports::document_image_processing::MaskRequest buildMaskRequest(cons
     core::ports::document_image_processing::MaskRequest request;
     request.imageBytes = pageBytes;
     request.uniqIdPrefix = core::utils::makeUniqId();
-    request.filePrefix = std::string(core::constants::importing::kDocumentImageProcessingMaskPrefix) + std::to_string(pageIndex + 1);
+    request.filePrefix = std::string(constants::kDocumentImageProcessingMaskPrefix) + std::to_string(pageIndex + 1);
     request.usePoppler = true;
     request.useMorphology = true;
     request.useTesseract = false;
@@ -74,7 +74,7 @@ inline core::ports::document_image_processing::DetectRequest buildDetectRequest(
     core::ports::document_image_processing::DetectRequest request;
     request.imageBytes = maskedBytes;
     request.uniqIdPrefix = core::utils::makeUniqId();
-    request.filePrefix = std::string(core::constants::importing::kDocumentImageProcessingDetectPrefix) + std::to_string(pageIndex + 1);
+    request.filePrefix = std::string(constants::kDocumentImageProcessingDetectPrefix) + std::to_string(pageIndex + 1);
     request.kind = core::ports::document_image_processing::DetectRequest::DetectKind::Tables;
     request.cancelFlag = req.cancelFlag;
     return request;
@@ -88,7 +88,7 @@ inline core::ports::document_image_processing::CropRequest buildCropRequest(cons
     core::ports::document_image_processing::CropRequest request;
     request.imageBytes = pageBytes;
     request.uniqIdPrefix = core::utils::makeUniqId();
-    request.filePrefix = std::string(core::constants::importing::kDocumentImageProcessingCropPrefix) + std::to_string(pageIndex + 1);
+    request.filePrefix = std::string(constants::kDocumentImageProcessingCropPrefix) + std::to_string(pageIndex + 1);
     request.bbox = detectResponse.table.bbox;
     request.cancelFlag = req.cancelFlag;
     return request;

@@ -41,18 +41,7 @@ set(CORE_PUBLIC_HEADERS
     include/core/ports/usecases/import/ImportResult.h
     include/core/ports/infra/xlsx-writer/IXlsxWriter.h
     include/core/constants/analysis.h
-    include/core/constants/app.h
-    include/core/constants/app_state.h
     include/core/constants/export.h
-    include/core/constants/filters.h
-    include/core/constants/ids.h
-    include/core/constants/import.h
-    include/core/constants/json.h
-    include/core/constants/jobs.h
-    include/core/constants/localization.h
-    include/core/constants/parser.h
-    include/core/constants/preferences.h
-    include/core/constants/runtime.h
     include/core/domain/entities/Actor.h
     include/core/domain/entities/Analysis.h
     include/core/domain/entities/Annual.h
@@ -112,6 +101,7 @@ set(CORE_PRIVATE_HEADERS
     src/application/analysis/presentation/TableAnalysis.h
     src/application/analysis/adjustment/AdjustmentCalculation.h
     src/application/export/PropertyContractMatrix.h
+    src/application/import/ImportConstants.h
     src/application/import/ImportPageRequests.h
     src/application/import/ImportPipelineHelpers.h
     src/application/import/ImportStatementStrategy.h

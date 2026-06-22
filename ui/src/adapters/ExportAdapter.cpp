@@ -6,6 +6,7 @@
 #include "ui/adapters/ExportAdapter.h"
 
 #include "ui/observability/Trace.h"
+#include "ui/presentation/PayloadKeys.h"
 #include "ui/shell/QmlContracts.h"
 
 #include <QVariantList>
@@ -13,6 +14,8 @@
 #include <utility>
 
 namespace ui::adapters {
+namespace exportKeys = ui::payload::keys::exportSelection;
+
 namespace {
 
 inline constexpr auto kRunnerUnavailableCode = "runnerUnavailable";
@@ -75,13 +78,13 @@ void ExportAdapter::applySelectionPayload(
   }
 
   const int packageFormatIndex =
-      selectionPayload.value(QStringLiteral("packageFormatIndex")).toInt();
+      selectionPayload.value(exportKeys::kPackageFormatIndex).toInt();
   request.packageFormat = packageFormatIndex == 1
                               ? core::ports::exporting::PackageFormat::Zip
                               : core::ports::exporting::PackageFormat::None;
 
   const QVariantList items =
-      selectionPayload.value(QStringLiteral("items")).toList();
+      selectionPayload.value(exportKeys::kItems).toList();
   request.objectRequests.clear();
   request.objectRequests.reserve(static_cast<std::size_t>(items.size()));
   for (const QVariant& value : items) {
@@ -89,7 +92,7 @@ void ExportAdapter::applySelectionPayload(
     if (item.isEmpty()) {
       continue;
     }
-    const QString objectId = item.value(QStringLiteral("objectId")).toString();
+    const QString objectId = item.value(exportKeys::kObjectId).toString();
     if (objectId.isEmpty()) {
       continue;
     }
@@ -97,18 +100,18 @@ void ExportAdapter::applySelectionPayload(
     core::ports::exporting::ExportObjectRequest objectRequest;
     objectRequest.objectId = objectId.toStdString();
     objectRequest.name =
-        item.value(QStringLiteral("objectName")).toString().toStdString();
+        item.value(exportKeys::kObjectName).toString().toStdString();
     objectRequest.annualId =
-        item.value(QStringLiteral("annualId")).toString().toStdString();
+        item.value(exportKeys::kAnnualId).toString().toStdString();
 
     const QString objectType =
-        item.value(QStringLiteral("objectType")).toString().trimmed().toLower();
+        item.value(exportKeys::kObjectType).toString().trimmed().toLower();
     objectRequest.type =
-        objectType == QStringLiteral("annual")
+        objectType == exportKeys::kAnnual
             ? core::ports::exporting::ExportObjectType::Annual
             : core::ports::exporting::ExportObjectType::Analysis;
     objectRequest.format = analysisExportFormatFromString(
-        item.value(QStringLiteral("exportType")).toString());
+        item.value(exportKeys::kExportType).toString());
     request.objectRequests.push_back(std::move(objectRequest));
   }
 }

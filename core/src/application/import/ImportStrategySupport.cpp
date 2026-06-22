@@ -5,7 +5,7 @@
 
 #include "ImportStrategySupport.h"
 
-#include "core/constants/import.h"
+#include "ImportConstants.h"
 #include "core/errors/ErrorReporting.h"
 #include "core/jobs/Scheduler.h"
 #include "../../utils/UniqId.h"
@@ -35,10 +35,10 @@ void waitWhilePaused(const ImportRequest& req)
 SchedulerResources::SchedulerResources(
     const ImportRequest& req,
     std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
-    : localScheduler(core::constants::importing::kLocalSchedulerWorkers,
-                     core::constants::importing::kLocalSchedulerQueueCapacity,
+    : localScheduler(constants::kLocalSchedulerWorkers,
+                     constants::kLocalSchedulerQueueCapacity,
                      std::move(errorReporter))
-    , localOcrLimiter(core::constants::importing::kLocalOcrSlots)
+    , localOcrLimiter(constants::kLocalOcrSlots)
     , scheduler(req.scheduler ? req.scheduler : &localScheduler)
     , ocrLimiter(req.ocrLimiter ? req.ocrLimiter : &localOcrLimiter)
 {
@@ -77,10 +77,10 @@ core::ports::pdf_rendering::RenderRequest makeRenderRequest(const ImportRequest&
 {
     core::ports::pdf_rendering::RenderRequest request;
     request.pdfPath = std::filesystem::path(req.sourcePath);
-    request.dpi = core::constants::importing::kRenderDpi;
+    request.dpi = constants::kRenderDpi;
     request.outputDir = std::filesystem::path();
     request.uniqIdPrefix = core::utils::makeUniqId();
-    request.filePrefix = std::string(core::constants::importing::kPopplerRenderPrefix);
+    request.filePrefix = std::string(constants::kPopplerRenderPrefix);
     request.cancelFlag = req.cancelFlag;
     return request;
 }
@@ -93,7 +93,7 @@ core::ports::pdf_rendering::ExtractRequest makeExtractRequest(const core::ports:
     request.dpi = renderRequest.dpi;
     request.outputDir = std::filesystem::path();
     request.uniqIdPrefix = core::utils::makeUniqId();
-    request.filePrefix = std::string(core::constants::importing::kPopplerExtractPrefix);
+    request.filePrefix = std::string(constants::kPopplerExtractPrefix);
     request.cancelFlag = req.cancelFlag;
     return request;
 }
@@ -110,7 +110,7 @@ std::vector<internal::PageWork> collectPageWork(const ImportRequest& req,
                                               std::mutex& artifactsMutex)
 {
     const size_t totalPages = std::max(renderResult.images.size(), renderResult.imageBytes.size());
-    static constexpr size_t unitsPerPage = core::constants::importing::kUnitsPerPage;
+    static constexpr size_t unitsPerPage = constants::kUnitsPerPage;
     const size_t totalUnits = std::max<size_t>(1, totalPages * unitsPerPage);
 
     std::atomic<size_t> doneUnits{0};
@@ -168,33 +168,33 @@ void attachMetricsArtifact(ImportResult& out,
 {
     try {
         nlohmann::json metrics;
-        metrics[core::constants::importing::metrics::kJobId] = req.jobId;
-        metrics[core::constants::importing::metrics::kSourcePath] = req.sourcePath;
-        metrics[core::constants::importing::metrics::kPagesTotal] = totalPages;
-        metrics[core::constants::importing::metrics::kPagesWithTable] = finalizeStats.pagesWithTable;
-        metrics[core::constants::importing::metrics::kRenderSeconds] = timings.renderSec;
-        metrics[core::constants::importing::metrics::kExtractSeconds] = timings.extractSec;
-        metrics[core::constants::importing::metrics::kFinalizeSeconds] = timings.finalizeSec;
-        metrics[core::constants::importing::metrics::kPageWorkSecondsMax] = finalizeStats.maxPageSec;
-        metrics[core::constants::importing::metrics::kPageWorkSecondsSum] = finalizeStats.sumPageSec;
-        metrics[core::constants::importing::metrics::kOcrSecondsSum] = finalizeStats.sumOcrSec;
-        metrics[core::constants::importing::metrics::kOcrWordsTotal] = finalizeStats.totalOcrWords;
-        metrics[core::constants::importing::metrics::kTotalSeconds] = std::chrono::duration<double>(ImportClock::now() - timings.startedAt).count();
+        metrics[constants::metrics::kJobId] = req.jobId;
+        metrics[constants::metrics::kSourcePath] = req.sourcePath;
+        metrics[constants::metrics::kPagesTotal] = totalPages;
+        metrics[constants::metrics::kPagesWithTable] = finalizeStats.pagesWithTable;
+        metrics[constants::metrics::kRenderSeconds] = timings.renderSec;
+        metrics[constants::metrics::kExtractSeconds] = timings.extractSec;
+        metrics[constants::metrics::kFinalizeSeconds] = timings.finalizeSec;
+        metrics[constants::metrics::kPageWorkSecondsMax] = finalizeStats.maxPageSec;
+        metrics[constants::metrics::kPageWorkSecondsSum] = finalizeStats.sumPageSec;
+        metrics[constants::metrics::kOcrSecondsSum] = finalizeStats.sumOcrSec;
+        metrics[constants::metrics::kOcrWordsTotal] = finalizeStats.totalOcrWords;
+        metrics[constants::metrics::kTotalSeconds] = std::chrono::duration<double>(ImportClock::now() - timings.startedAt).count();
 
-        auto& pageArray = metrics[core::constants::importing::metrics::kPages];
+        auto& pageArray = metrics[constants::metrics::kPages];
         pageArray = nlohmann::json::array();
         for (const auto& page : pages) {
             nlohmann::json pageJson;
-            pageJson[core::constants::importing::metrics::kIndex] = page.pageIndex;
-            pageJson[core::constants::importing::metrics::kHasTable] = page.hasTable;
-            pageJson[core::constants::importing::metrics::kTotalSeconds] = page.totalSec;
-            pageJson[core::constants::importing::metrics::kOcrSecondsSum] = page.ocrSec;
-            pageJson[core::constants::importing::metrics::kOcrWords] = page.ocrWords;
+            pageJson[constants::metrics::kIndex] = page.pageIndex;
+            pageJson[constants::metrics::kHasTable] = page.hasTable;
+            pageJson[constants::metrics::kTotalSeconds] = page.totalSec;
+            pageJson[constants::metrics::kOcrSecondsSum] = page.ocrSec;
+            pageJson[constants::metrics::kOcrWords] = page.ocrWords;
             pageArray.push_back(std::move(pageJson));
         }
 
         const auto serialized = metrics.dump(2);
-        out.artifacts[std::string(core::constants::importing::kMetricsArtifactName)] =
+        out.artifacts[std::string(constants::kMetricsArtifactName)] =
             std::vector<uint8_t>(serialized.begin(), serialized.end());
     } catch (...) {
         core::errors::reportException(errorReporter,

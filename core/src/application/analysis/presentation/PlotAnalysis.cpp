@@ -1,7 +1,6 @@
 #include "PlotAnalysis.h"
 #include "../internal/AnalysisFilter.h"
 #include "core/constants/analysis.h"
-#include "core/constants/filters.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Property.h"

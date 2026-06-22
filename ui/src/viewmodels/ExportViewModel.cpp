@@ -12,6 +12,7 @@
 
 #include "ui/observability/Trace.h"
 #include "ui/platform/FileSystemBrowser.h"
+#include "ui/presentation/PayloadKeys.h"
 #include "ui/shell/AppActions.h"
 #include "ui/shell/Settings.h"
 #include "ui/workflows/ExportWorkflow.h"
@@ -20,13 +21,10 @@
 #include "ui/workspace/WorkspaceStore.h"
 
 namespace ui {
+namespace exportKeys = ui::payload::keys::exportSelection;
 
 namespace {
 
-inline constexpr auto kAnnual = "annual";
-inline constexpr auto kAnalysis = "analysis";
-inline constexpr auto kAnnualObject = "Annual";
-inline constexpr auto kAnalysisObject = "Analysis";
 inline constexpr auto kPlot = "plot";
 inline constexpr auto kTab = "tab";
 inline constexpr auto kCsv = "CSV";
@@ -199,7 +197,7 @@ void ExportViewModel::configureExportLogSink() {
 }
 
 bool ExportViewModel::isAnnualMode() const {
-  return addMode_ == qstr(kAnnual);
+  return addMode_ == exportKeys::kAnnual;
 }
 
 QVariantList ExportViewModel::annualRows() const {
@@ -262,9 +260,9 @@ void ExportViewModel::setPackageFormatIndex(int value) {
 }
 
 void ExportViewModel::setAddMode(const QString& value) {
-  const QString normalized = value.trimmed().toLower() == qstr(kAnalysis)
-                                 ? qstr(kAnalysis)
-                                 : qstr(kAnnual);
+  const QString normalized = value.trimmed().toLower() == exportKeys::kAnalysis
+                                 ? exportKeys::kAnalysis
+                                 : exportKeys::kAnnual;
   if (addMode_ == normalized) {
     return;
   }
@@ -329,7 +327,7 @@ void ExportViewModel::refreshEntriesFromWorkspace() {
   refreshed.reserve(exportEntries_.size());
   for (const QVariant& value : exportEntries_) {
     QVariantMap entry = value.toMap();
-    if (entry.value(QStringLiteral("kind")).toString() == qstr(kAnnual)) {
+    if (entry.value(QStringLiteral("kind")).toString() == exportKeys::kAnnual) {
       const QString id = entry.value(QStringLiteral("objectId")).toString();
       const QVariantMap annual = annualRowById(id);
       entry.insert(
@@ -358,7 +356,7 @@ void ExportViewModel::refreshEntriesFromWorkspace() {
 QVariantMap
 ExportViewModel::createAnnualEntry(const QString& id, const QString& name,
                                    const QVariantList& analyses) const {
-  return {{QStringLiteral("kind"), qstr(kAnnual)},
+  return {{QStringLiteral("kind"), exportKeys::kAnnual},
           {QStringLiteral("isAnnual"), true},
           {QStringLiteral("objectId"), id},
           {QStringLiteral("objectName"), name},
@@ -378,7 +376,7 @@ ExportViewModel::createAnalysisEntry(const QString& id, const QString& name,
   const QString selectedExportType =
       normalizedExportType(exportType, normalizedType);
   return {
-      {QStringLiteral("kind"), qstr(kAnalysis)},
+      {QStringLiteral("kind"), exportKeys::kAnalysis},
       {QStringLiteral("isAnnual"), false},
       {QStringLiteral("objectId"), id},
       {QStringLiteral("objectName"), name},
@@ -579,38 +577,38 @@ QVariantList ExportViewModel::exportItems() const {
   for (const QVariant& value : exportEntries_) {
     const QVariantMap entry = value.toMap();
     const QString kind = entry.value(QStringLiteral("kind")).toString();
-    if (kind == qstr(kAnnual)) {
+    if (kind == exportKeys::kAnnual) {
       const QString annualId =
           entry.value(QStringLiteral("objectId")).toString();
       out.push_back(
-          QVariantMap{{QStringLiteral("objectType"), qstr(kAnnualObject)},
-                      {QStringLiteral("objectId"), annualId},
-                      {QStringLiteral("objectName"),
+          QVariantMap{{exportKeys::kObjectType, exportKeys::kAnnual},
+                      {exportKeys::kObjectId, annualId},
+                      {exportKeys::kObjectName,
                        entry.value(QStringLiteral("objectName")).toString()},
-                      {QStringLiteral("exportType"), QString()}});
+                      {exportKeys::kExportType, QString()}});
       for (const QVariant& analysisValue :
            entry.value(QStringLiteral("analyses")).toList()) {
         const QVariantMap analysis = analysisValue.toMap();
         out.push_back(QVariantMap{
-            {QStringLiteral("objectType"), qstr(kAnalysisObject)},
-            {QStringLiteral("annualId"), annualId},
-            {QStringLiteral("objectId"),
+            {exportKeys::kObjectType, exportKeys::kAnalysis},
+            {exportKeys::kAnnualId, annualId},
+            {exportKeys::kObjectId,
              analysis.value(QStringLiteral("objectId")).toString()},
-            {QStringLiteral("objectName"),
+            {exportKeys::kObjectName,
              analysis.value(QStringLiteral("objectName")).toString()},
-            {QStringLiteral("exportType"),
+            {exportKeys::kExportType,
              analysis.value(QStringLiteral("exportType")).toString()}});
       }
       continue;
     }
     out.push_back(
-        QVariantMap{{QStringLiteral("objectType"), qstr(kAnalysisObject)},
-                    {QStringLiteral("annualId"), QString()},
-                    {QStringLiteral("objectId"),
+        QVariantMap{{exportKeys::kObjectType, exportKeys::kAnalysis},
+                    {exportKeys::kAnnualId, QString()},
+                    {exportKeys::kObjectId,
                      entry.value(QStringLiteral("objectId")).toString()},
-                    {QStringLiteral("objectName"),
+                    {exportKeys::kObjectName,
                      entry.value(QStringLiteral("objectName")).toString()},
-                    {QStringLiteral("exportType"),
+                    {exportKeys::kExportType,
                      entry.value(QStringLiteral("exportType")).toString()}});
   }
   return out;
@@ -734,9 +732,9 @@ void ExportViewModel::deleteExportLog(const QString& logId) {
 }
 
 QVariantMap ExportViewModel::payload() const {
-  return {{QStringLiteral("targetDirectory"), targetDirectory_},
-          {QStringLiteral("packageFormatIndex"), packageFormatIndex_},
-          {QStringLiteral("items"), exportItems()}};
+  return {{exportKeys::kTargetDirectory, targetDirectory_},
+          {exportKeys::kPackageFormatIndex, packageFormatIndex_},
+          {exportKeys::kItems, exportItems()}};
 }
 
 QString ExportViewModel::defaultLocale() const {

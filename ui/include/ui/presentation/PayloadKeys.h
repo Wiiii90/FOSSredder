@@ -59,6 +59,19 @@ inline const auto kFile = QStringLiteral("file");
 inline const auto kMessage = QStringLiteral("message");
 } // namespace exportLog
 
+namespace exportSelection {
+inline const auto kTargetDirectory = QStringLiteral("targetDirectory");
+inline const auto kPackageFormatIndex = QStringLiteral("packageFormatIndex");
+inline const auto kItems = QStringLiteral("items");
+inline const auto kObjectType = QStringLiteral("objectType");
+inline const auto kObjectId = QStringLiteral("objectId");
+inline const auto kObjectName = QStringLiteral("objectName");
+inline const auto kAnnualId = QStringLiteral("annualId");
+inline const auto kExportType = QStringLiteral("exportType");
+inline const auto kAnnual = QStringLiteral("annual");
+inline const auto kAnalysis = QStringLiteral("analysis");
+} // namespace exportSelection
+
 namespace transaction {
 inline const auto kBookingDate = QStringLiteral("bookingDate");
 inline const auto kValuta = QStringLiteral("valuta");

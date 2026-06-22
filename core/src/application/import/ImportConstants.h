@@ -1,14 +1,9 @@
-/**
- * @file core/include/core/constants/import.h
- * @brief Defines shared constants for import workflow orchestration.
- */
-
 #pragma once
 
 #include <cstddef>
 #include <string_view>
 
-namespace core::constants::importing {
+namespace core::application::importing::constants {
 
 inline constexpr double kRenderDpi = 300.0;
 inline constexpr double kProgressPreparing = 0.02;
@@ -25,18 +20,14 @@ inline constexpr std::size_t kLocalSchedulerQueueCapacity = 128;
 inline constexpr std::size_t kLocalOcrSlots = 2;
 inline constexpr std::size_t kUnitsPerPage = 4;
 inline constexpr std::string_view kRunNameImport = "import";
-
-namespace runs {
-inline constexpr int kKeepCount = 20;
-inline constexpr std::string_view kTimestampFormat = "yyyyMMddHHmmsszzz";
-inline constexpr int kFirstSuffix = 1;
-} // namespace runs
-
 inline constexpr std::string_view kPopplerRenderPrefix = "poppler_render";
 inline constexpr std::string_view kPopplerExtractPrefix = "poppler_extract";
-inline constexpr std::string_view kDocumentImageProcessingMaskPrefix = "document_image_processing_mask_page";
-inline constexpr std::string_view kDocumentImageProcessingDetectPrefix = "document_image_processing_detect_tables_page";
-inline constexpr std::string_view kDocumentImageProcessingCropPrefix = "document_image_processing_crop_table_page";
+inline constexpr std::string_view kDocumentImageProcessingMaskPrefix =
+    "document_image_processing_mask_page";
+inline constexpr std::string_view kDocumentImageProcessingDetectPrefix =
+    "document_image_processing_detect_tables_page";
+inline constexpr std::string_view kDocumentImageProcessingCropPrefix =
+    "document_image_processing_crop_table_page";
 inline constexpr std::string_view kProgressCanceled = "Canceled";
 inline constexpr std::string_view kProgressPreparingMessage = "Preparing import";
 inline constexpr std::string_view kProgressRenderingMessage = "Rendering pages";
@@ -44,9 +35,12 @@ inline constexpr std::string_view kProgressRenderedMessage = "Rendered pages";
 inline constexpr std::string_view kProgressExtractingMessage = "Extracting text";
 inline constexpr std::string_view kProgressExtractedMessage = "Extracted text";
 inline constexpr std::string_view kProgressDoneMessage = "Done";
-inline constexpr std::string_view kErrorSourceMissing = "Source statement file does not exist";
-inline constexpr std::string_view kErrorRunRootMissing = "Import run root is not configured";
-inline constexpr std::string_view kErrorExtractionFailed = "core::domain::Statement extraction failed";
+inline constexpr std::string_view kErrorSourceMissing =
+    "Source statement file does not exist";
+inline constexpr std::string_view kErrorRunRootMissing =
+    "Import run root is not configured";
+inline constexpr std::string_view kErrorExtractionFailed =
+    "core::domain::Statement extraction failed";
 inline constexpr std::string_view kMetricsArtifactName = "metrics.json";
 
 namespace pageSteps {
@@ -81,4 +75,4 @@ inline constexpr std::string_view kHasTable = "hasTable";
 inline constexpr std::string_view kOcrWords = "ocrWords";
 } // namespace metrics
 
-} // namespace core::constants::importing
+} // namespace core::application::importing::constants

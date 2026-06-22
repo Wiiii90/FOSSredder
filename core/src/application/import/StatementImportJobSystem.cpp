@@ -8,18 +8,26 @@
 #include "core/application/import/IImportStatement.h"
 #include "core/application/import/ImportRequest.h"
 #include "core/application/import/ImportResult.h"
-#include "core/constants/import.h"
-#include "core/constants/jobs.h"
+#include "ImportConstants.h"
 #include "core/jobs/JobSystem.h"
 #include "core/jobs/Scheduler.h"
 
 #include <exception>
 #include <filesystem>
 #include <mutex>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 
 namespace core::application::importing {
+
+namespace {
+
+inline constexpr std::string_view kImportServiceUnavailable =
+    "core::domain::Statement import service not available";
+inline constexpr std::string_view kUnknownError = "Unknown error";
+
+} // namespace
 
 class StatementImportJobSystem::Impl {
 public:
@@ -87,17 +95,17 @@ core::jobs::JobId StatementImportJobSystem::startImportStatement(const ImportSta
 
         try {
             if (!impl_->importService) {
-                impl_->jobSystem->fail(id, std::string(core::constants::jobs::messages::kImportServiceUnavailable));
+                impl_->jobSystem->fail(id, std::string(kImportServiceUnavailable));
                 return;
             }
 
             if (spec.sourcePath.empty() || !std::filesystem::exists(spec.sourcePath)) {
-                impl_->jobSystem->fail(id, std::string(core::constants::importing::kErrorSourceMissing));
+                impl_->jobSystem->fail(id, std::string(constants::kErrorSourceMissing));
                 return;
             }
 
             if (spec.runRoot.empty()) {
-                impl_->jobSystem->fail(id, std::string(core::constants::importing::kErrorRunRootMissing));
+                impl_->jobSystem->fail(id, std::string(constants::kErrorRunRootMissing));
                 return;
             }
 
@@ -127,7 +135,7 @@ core::jobs::JobId StatementImportJobSystem::startImportStatement(const ImportSta
 
             auto result = impl_->importService->importStatement(importRequest);
             if (!result.data) {
-                impl_->jobSystem->fail(id, std::string(core::constants::importing::kErrorExtractionFailed));
+                impl_->jobSystem->fail(id, std::string(constants::kErrorExtractionFailed));
                 return;
             }
 
@@ -142,7 +150,7 @@ core::jobs::JobId StatementImportJobSystem::startImportStatement(const ImportSta
         } catch (const std::exception& ex) {
             impl_->jobSystem->fail(id, ex.what());
         } catch (...) {
-            impl_->jobSystem->fail(id, std::string(core::constants::jobs::messages::kUnknownError));
+            impl_->jobSystem->fail(id, std::string(kUnknownError));
         }
     });
 

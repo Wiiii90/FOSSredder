@@ -14,6 +14,12 @@ namespace core::jobs {
 
 namespace {
 
+inline constexpr auto kQueued = "Queued";
+inline constexpr auto kRunning = "Running";
+inline constexpr auto kFinished = "Finished";
+inline constexpr auto kFailed = "Failed";
+inline constexpr auto kCanceled = "Canceled";
+
 JobEvent snapshotToEvent(const JobSnapshot& snapshot, std::string message = {})
 {
     JobEvent event;
@@ -56,7 +62,7 @@ JobId JobManager::submit(JobKind kind) {
     data->snap.state = JobState::Pending;
     data->snap.stage = JobStage::None;
     data->snap.progress = 0.0;
-    data->snap.message = std::string(core::constants::jobs::messages::kQueued);
+    data->snap.message = std::string(kQueued);
     data->cancel = std::make_shared<std::atomic<bool>>(false);
     data->pause = std::make_shared<std::atomic<bool>>(false);
 
@@ -116,7 +122,7 @@ void JobManager::cancel(const JobId& id) {
     {
         std::lock_guard<std::mutex> g(job->m);
         job->snap.state = JobState::Canceled;
-        job->snap.message = std::string(core::constants::jobs::messages::kCanceled);
+        job->snap.message = std::string(kCanceled);
         ev = snapshotToEvent(job->snap);
     }
     publish(ev);
@@ -166,7 +172,7 @@ void JobManager::resume(const JobId& id) {
         std::lock_guard<std::mutex> g(job->m);
         if (job->snap.state != JobState::Paused) return;
         job->snap.state = JobState::Running;
-        job->snap.message = std::string(core::constants::jobs::messages::kRunning);
+        job->snap.message = std::string(kRunning);
         ev = snapshotToEvent(job->snap);
     }
     publish(ev);
@@ -235,7 +241,7 @@ void JobManager::start(const JobId& id) {
     {
         std::lock_guard<std::mutex> g(job->m);
         job->snap.state = JobState::Running;
-        job->snap.message = std::string(core::constants::jobs::messages::kRunning);
+        job->snap.message = std::string(kRunning);
         ev = snapshotToEvent(job->snap);
     }
 
@@ -258,7 +264,7 @@ void JobManager::finish(const JobId& id) {
         std::lock_guard<std::mutex> g(job->m);
         job->snap.state = JobState::Finished;
         job->snap.progress = 1.0;
-        job->snap.message = std::string(core::constants::jobs::messages::kFinished);
+        job->snap.message = std::string(kFinished);
         ev = snapshotToEvent(job->snap);
     }
 
@@ -322,7 +328,7 @@ void JobManager::fail(const JobId& id, const std::string& error) {
         std::lock_guard<std::mutex> g(job->m);
         job->snap.state = JobState::Failed;
         job->snap.error = error;
-        job->snap.message = std::string(core::constants::jobs::messages::kFailed);
+        job->snap.message = std::string(kFailed);
         ev = snapshotToEvent(job->snap, error);
     }
 

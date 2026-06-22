@@ -6,7 +6,6 @@
 #include "core/jobs/JobSystem.h"
 
 #include "JobManager.h"
-#include "core/constants/jobs.h"
 #include "core/jobs/Scheduler.h"
 
 #include <algorithm>
@@ -17,11 +16,14 @@ namespace {
 
 constexpr unsigned int kSingleCpuFallbackThreshold = 2;
 constexpr std::size_t kSingleWorkerFallback = 1;
+constexpr std::size_t kFallbackWorkerCount = 4;
+constexpr std::size_t kQueueCapacity = 128;
+constexpr std::size_t kSlotLimiterWorkerDivisor = 2;
 
 std::size_t defaultWorkers()
 {
     const auto hc = std::thread::hardware_concurrency();
-    if (hc == 0) return core::constants::jobs::kFallbackWorkerCount;
+    if (hc == 0) return kFallbackWorkerCount;
     if (hc <= kSingleCpuFallbackThreshold) return kSingleWorkerFallback;
     return static_cast<std::size_t>(hc - 1);
 }
@@ -40,8 +42,8 @@ public:
     Impl(std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
          std::size_t workers)
         : manager(errorReporter)
-        , scheduler(resolveWorkerCount(workers), core::constants::jobs::kQueueCapacity, std::move(errorReporter))
-        , slotLimiter(std::max<std::size_t>(std::size_t{1}, resolveWorkerCount(workers) / core::constants::jobs::kSlotLimiterWorkerDivisor))
+        , scheduler(resolveWorkerCount(workers), kQueueCapacity, std::move(errorReporter))
+        , slotLimiter(std::max<std::size_t>(std::size_t{1}, resolveWorkerCount(workers) / kSlotLimiterWorkerDivisor))
     {
     }
 

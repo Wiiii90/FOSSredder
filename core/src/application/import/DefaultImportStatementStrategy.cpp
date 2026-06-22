@@ -7,17 +7,12 @@
 
 #include "ImportStatementStrategy.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingRequest.h"
-#include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "core/ports/infra/pdf-rendering/IPdfRenderer.h"
-#include "core/ports/infra/document-image-processing/DocumentImageProcessingRequest.h"
-#include "core/ports/infra/document-image-processing/DocumentImageProcessingResult.h"
 #include "core/ports/infra/document-image-processing/IDocumentImageProcessor.h"
-#include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
-#include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/ports/infra/text-recognition/ITextRecognizer.h"
-#include "core/constants/import.h"
 #include "core/errors/ErrorReporting.h"
 #include "core/application/import/IImportStatement.h"
+#include "ImportConstants.h"
 #include "ImportPipelineHelpers.h"
 #include "ImportStrategySupport.h"
 #include "core/domain/entities/Statement.h"
@@ -74,8 +69,8 @@ public:
 
         auto report = core::application::importing::makeProgressReporter(req, errorReporter_.get());
 
-        report(core::constants::importing::kProgressPreparing, std::string(core::constants::importing::kProgressPreparingMessage));
-        if (!waitWhilePaused(req)) { report(0.0, std::string(core::constants::importing::kProgressCanceled)); return out; }
+        report(constants::kProgressPreparing, std::string(constants::kProgressPreparingMessage));
+        if (!waitWhilePaused(req)) { report(0.0, std::string(constants::kProgressCanceled)); return out; }
 
         std::vector<core::application::importing::draft::TransactionDraft> all;
 
@@ -87,23 +82,23 @@ public:
             std::string("poppler render start: ") + renderRequest.pdfPath.string() + " dpi=" + std::to_string(renderRequest.dpi),
             {}
         });
-        if (!waitWhilePaused(req)) { report(0.0, std::string(core::constants::importing::kProgressCanceled)); return out; }
-        report(core::constants::importing::kProgressRendering, std::string(core::constants::importing::kProgressRenderingMessage));
+        if (!waitWhilePaused(req)) { report(0.0, std::string(constants::kProgressCanceled)); return out; }
+        report(constants::kProgressRendering, std::string(constants::kProgressRenderingMessage));
         const auto renderStart = core::application::importing::ImportClock::now();
         auto renderRes = poppler_->render(renderRequest);
         timings.renderSec = std::chrono::duration<double>(core::application::importing::ImportClock::now() - renderStart).count();
-        report(core::constants::importing::kProgressRendered, std::string(core::constants::importing::kProgressRenderedMessage));
+        report(constants::kProgressRendered, std::string(constants::kProgressRenderedMessage));
 
-        if (req.cancelFlag && req.cancelFlag->load()) { report(0.0, std::string(core::constants::importing::kProgressCanceled)); return out; }
-        if (!waitWhilePaused(req)) { report(0.0, std::string(core::constants::importing::kProgressCanceled)); return out; }
+        if (req.cancelFlag && req.cancelFlag->load()) { report(0.0, std::string(constants::kProgressCanceled)); return out; }
+        if (!waitWhilePaused(req)) { report(0.0, std::string(constants::kProgressCanceled)); return out; }
 
         const auto extractRequest = core::application::importing::makeExtractRequest(renderRequest, req);
-        report(core::constants::importing::kProgressExtracting, std::string(core::constants::importing::kProgressExtractingMessage));
+        report(constants::kProgressExtracting, std::string(constants::kProgressExtractingMessage));
         const auto extractStart = core::application::importing::ImportClock::now();
         auto extractRes = poppler_->extract(extractRequest);
         timings.extractSec = std::chrono::duration<double>(core::application::importing::ImportClock::now() - extractStart).count();
-        report(core::constants::importing::kProgressExtracted, std::string(core::constants::importing::kProgressExtractedMessage));
-        if (!waitWhilePaused(req)) { report(0.0, std::string(core::constants::importing::kProgressCanceled)); return out; }
+        report(constants::kProgressExtracted, std::string(constants::kProgressExtractedMessage));
+        if (!waitWhilePaused(req)) { report(0.0, std::string(constants::kProgressCanceled)); return out; }
 
         std::string carriedBookingDate;
         int nextTxIndex = 1;
@@ -160,7 +155,7 @@ public:
 
         core::application::importing::attachMetricsArtifact(out, req, pages, totalPages, finalizeStats, timings, errorReporter_.get());
 
-        report(1.0, std::string(core::constants::importing::kProgressDoneMessage));
+        report(1.0, std::string(constants::kProgressDoneMessage));
         return out;
     }
 

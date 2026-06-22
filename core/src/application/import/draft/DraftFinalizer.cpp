@@ -5,7 +5,6 @@
 
 #include "core/application/import/draft/DraftFinalizer.h"
 
-#include "core/constants/app_state.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Statement.h"
 #include "core/domain/entities/Transaction.h"
@@ -14,13 +13,17 @@
 #include "../../../utils/Util.h"
 
 #include <charconv>
+#include <string_view>
 
 namespace {
+
+inline constexpr std::string_view kDefaultImportedStatementName = "Imported";
+inline constexpr std::string_view kGeneratedContractPrefix = "Vertrag ";
 
 int nextGeneratedContractIndex(const std::vector<std::shared_ptr<Contract>>& contracts)
 {
     int maxIdx = 0;
-    constexpr auto prefix = core::constants::appState::kGeneratedContractPrefix;
+    constexpr auto prefix = kGeneratedContractPrefix;
     for (const auto& contractPtr : contracts) {
         if (!contractPtr) continue;
         const std::string& contractName = contractPtr->name();
@@ -49,7 +52,7 @@ std::string DraftFinalizer::finalize(core::domain::catalog::WorkspaceCatalog& st
     auto statement = std::make_shared<Statement>();
     statement->setId(core::utils::makeStableId());
     statement->rename(::core::utils::trim(draft.name).empty()
-        ? std::string(core::constants::appState::kDefaultImportedStatementName)
+        ? std::string(kDefaultImportedStatementName)
         : draft.name);
 
     std::size_t addedTransactions = 0;
@@ -78,7 +81,7 @@ std::string DraftFinalizer::finalize(core::domain::catalog::WorkspaceCatalog& st
         } else {
             const std::string normalizedType = core::domain::policies::transaction::trimCopy(item.type);
             if (!normalizedType.empty()) {
-                constexpr auto prefix = core::constants::appState::kGeneratedContractPrefix;
+                constexpr auto prefix = kGeneratedContractPrefix;
                 auto contract = std::make_shared<Contract>();
                 contract->setId(core::utils::makeStableId());
                 contract->rename(std::string(prefix) + std::to_string(nextGeneratedContractIndex(contracts)));

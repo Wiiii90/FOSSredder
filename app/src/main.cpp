@@ -27,9 +27,6 @@
 #include <QObject>
 #include <QQuickStyle>
 
-#include "core/constants/app.h"
-#include "core/constants/preferences.h"
-#include "core/constants/runtime.h"
 #include "persistence/Factory.h"
 #include "persistence/WorkspaceStateStore.h"
 
@@ -61,6 +58,10 @@ std::shared_ptr<core::ports::text_recognition::ITextRecognizer>
 createTextRecognizerAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg);
 
 namespace {
+
+inline constexpr std::string_view kAppDataDirectoryName = ".fossredder";
+inline constexpr std::string_view kDatabaseFileName = "workspace.fossredder";
+inline constexpr std::string_view kRegistryFileName = "registry.db";
 
 std::weak_ptr<core::ports::diagnostics::IErrorReporter> g_qtMessageReporter;
 std::mutex g_qtMessageReporterMutex;
@@ -334,14 +335,12 @@ int main(int argc, char* argv[]) {
   const auto previousQtMessageHandler =
       qInstallMessageHandler(qtMessageHandler);
 
-  QQuickStyle::setStyle(core::constants::runtime::kQtStyle.data());
+  QQuickStyle::setStyle(ui::config::kQtStyle);
 
   QApplication app(argc, argv);
-  app.setStyle(core::constants::runtime::kQtStyle.data());
-  app.setOrganizationName(QString::fromLatin1(
-      core::constants::preferences::kOrganizationName.data()));
-  app.setApplicationName(QString::fromLatin1(
-      core::constants::preferences::kApplicationName.data()));
+  app.setStyle(ui::config::kQtStyle);
+  app.setOrganizationName(ui::config::kSettingsOrganizationName);
+  app.setApplicationName(ui::config::kSettingsApplicationName);
   app.setWindowIcon(QIcon(ui::config::kAppIconResource));
 
   const QString appDataLocation =
@@ -349,13 +348,13 @@ int main(int argc, char* argv[]) {
   const std::filesystem::path appDataRoot =
       appDataLocation.isEmpty()
           ? std::filesystem::path(QDir::homePath().toStdString()) /
-                std::string(core::constants::runtime::kAppDataDirectoryName)
+                std::string(kAppDataDirectoryName)
           : std::filesystem::path(appDataLocation.toStdString());
 
   const std::filesystem::path defaultDbPath =
-      appDataRoot / std::string(core::constants::runtime::kDatabaseFileName);
+      appDataRoot / std::string(kDatabaseFileName);
   const std::filesystem::path registryDbPath =
-      appDataRoot / std::string(core::constants::runtime::kRegistryFileName);
+      appDataRoot / std::string(kRegistryFileName);
   ensureParentDirectoryExists(defaultDbPath, errorReporter,
                               "app::main::createConfigDirectory");
   ensureParentDirectoryExists(registryDbPath, errorReporter,

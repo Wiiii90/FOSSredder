@@ -7,13 +7,14 @@
 
 #include "PropertyContractMatrix.h"
 #include "core/constants/export.h"
-#include "core/constants/localization.h"
 
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 
 namespace {
+
+inline constexpr auto kGermanLocalePrefix = "de";
 
 std::string escapeCsv(const std::string &value, char separator) {
   bool requiresQuoting = false;
@@ -89,8 +90,7 @@ CsvExporter::exportData(
   const auto matrix = internal::buildPropertyContractMatrix(state);
 
   char decimalSeparator = '.';
-  if (request.locale.starts_with(
-          core::constants::localization::languages::kGerman)) {
+  if (request.locale.starts_with(kGermanLocalePrefix)) {
     decimalSeparator = ',';
   }
   constexpr char separator = ';';

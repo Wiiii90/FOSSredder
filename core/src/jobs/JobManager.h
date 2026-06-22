@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "core/constants/jobs.h"
 #include "core/jobs/JobTypes.h"
 
 #include <atomic>
@@ -140,7 +139,7 @@ private:
      */
     static JobId makeJobId();
 
-    static constexpr std::size_t kMaxJobs = core::constants::jobs::kJobHistoryLimit;
+    static constexpr std::size_t kMaxJobs = 64;
 
     std::unordered_map<JobId, std::shared_ptr<JobData>> jobs_;
     std::deque<JobId> order_;

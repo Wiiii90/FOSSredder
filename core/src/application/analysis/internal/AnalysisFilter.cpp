@@ -1,6 +1,6 @@
 #include "AnalysisFilter.h"
 
-#include "core/constants/filters.h"
+#include "core/constants/analysis.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Transaction.h"
 
@@ -10,7 +10,6 @@
 #include <optional>
 #include <sstream>
 #include <string_view>
-#include <unordered_map>
 
 namespace core::application::analysis {
 

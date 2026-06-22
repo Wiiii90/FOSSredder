@@ -5,11 +5,10 @@
 
 #include "core/ports/usecases/analysis/AnalysisRequest.h"
 
-#include "core/constants/filters.h"
+#include "core/constants/analysis.h"
 #include "core/domain/values/FilterSpec.h"
 
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <ctime>
 #include <sstream>

@@ -6,7 +6,7 @@
 #include "ImportPipelineHelpers.h"
 #include "ImportPageRequests.h"
 
-#include "core/constants/import.h"
+#include "ImportConstants.h"
 #include "core/errors/ErrorReporting.h"
 #include "core/application/import/statement/DefaultStatementParser.h"
 
@@ -128,13 +128,13 @@ PageWork processImportPage(size_t pageIndex,
     PageWork page;
     page.pageIndex = pageIndex;
 
-    static constexpr size_t unitsPerPage = core::constants::importing::kUnitsPerPage;
+    static constexpr size_t unitsPerPage = constants::kUnitsPerPage;
     size_t localUnitsDone = 0;
     auto unitDone = [&](size_t inc, const std::string& label) {
         localUnitsDone += inc;
         const size_t d = doneUnits.fetch_add(inc) + inc;
         const double frac = std::min(1.0, static_cast<double>(d) / static_cast<double>(totalUnits));
-        const double progress = core::constants::importing::kProgressPageWorkBase + core::constants::importing::kProgressPageWorkSpan * frac;
+        const double progress = constants::kProgressPageWorkBase + constants::kProgressPageWorkSpan * frac;
         report(progress, std::string("[") + std::to_string(pageIndex + 1) + "/" + std::to_string(totalPages) + "] " + label);
     };
     auto finishUnits = [&](const std::string& label) {
@@ -143,11 +143,11 @@ PageWork processImportPage(size_t pageIndex,
     };
 
     if (req.cancelFlag && req.cancelFlag->load()) {
-        finishUnits(std::string(core::constants::importing::kProgressCanceled));
+        finishUnits(std::string(constants::kProgressCanceled));
         return page;
     }
     if (!waitWhilePaused(req)) {
-        finishUnits(std::string(core::constants::importing::kProgressCanceled));
+        finishUnits(std::string(constants::kProgressCanceled));
         return page;
     }
 
@@ -158,11 +158,11 @@ PageWork processImportPage(size_t pageIndex,
         pageBytes = readImportBytes(renderRes.images[pageIndex]);
     }
     if (pageBytes.empty()) {
-        finishUnits(std::string(core::constants::importing::pageSteps::kNoImage));
+        finishUnits(std::string(constants::pageSteps::kNoImage));
         return page;
     }
     if (!waitWhilePaused(req)) {
-        finishUnits(std::string(core::constants::importing::kProgressCanceled));
+        finishUnits(std::string(constants::kProgressCanceled));
         return page;
     }
 
@@ -170,7 +170,7 @@ PageWork processImportPage(size_t pageIndex,
 
     if (maskRequest.useTesseract) {
         if (!waitWhilePaused(req)) {
-            finishUnits(std::string(core::constants::importing::kProgressCanceled));
+            finishUnits(std::string(constants::kProgressCanceled));
             return page;
         }
         try {
@@ -185,43 +185,43 @@ PageWork processImportPage(size_t pageIndex,
     }
 
     if (!waitWhilePaused(req)) {
-        finishUnits(std::string(core::constants::importing::kProgressCanceled));
+        finishUnits(std::string(constants::kProgressCanceled));
         return page;
     }
     auto maskResponse = documentImageProcessor->mask(maskRequest);
     std::vector<uint8_t> maskedBytes = !maskResponse.maskedImageBytes.empty() ? maskResponse.maskedImageBytes : pageBytes;
-    unitDone(1, std::string(core::constants::importing::pageSteps::kMask));
+    unitDone(1, std::string(constants::pageSteps::kMask));
 
     if (!waitWhilePaused(req)) {
-        finishUnits(std::string(core::constants::importing::kProgressCanceled));
+        finishUnits(std::string(constants::kProgressCanceled));
         return page;
     }
     const auto detectRequest = buildDetectRequest(maskedBytes, pageIndex, req);
     auto detectResponse = documentImageProcessor->detect(detectRequest);
-    unitDone(1, std::string(core::constants::importing::pageSteps::kDetect));
+    unitDone(1, std::string(constants::pageSteps::kDetect));
 
     if (!detectResponse.detected) {
-        finishUnits(std::string(core::constants::importing::pageSteps::kNoTable));
+        finishUnits(std::string(constants::pageSteps::kNoTable));
         return page;
     }
 
     if (!waitWhilePaused(req)) {
-        finishUnits(std::string(core::constants::importing::kProgressCanceled));
+        finishUnits(std::string(constants::kProgressCanceled));
         return page;
     }
     const auto cropRequest = buildCropRequest(pageBytes, pageIndex, req, detectResponse);
     auto cropResponse = documentImageProcessor->crop(cropRequest);
-    unitDone(1, std::string(core::constants::importing::pageSteps::kCrop));
+    unitDone(1, std::string(constants::pageSteps::kCrop));
 
     if (cropResponse.croppedImageBytes.empty() || cropResponse.croppedImageBytes.front().empty()) {
-        finishUnits(std::string(core::constants::importing::pageSteps::kNoCrop));
+        finishUnits(std::string(constants::pageSteps::kNoCrop));
         return page;
     }
 
     const auto tableRequest = buildTableOcrRequest(cropResponse.croppedImageBytes.front(), pageIndex, req, detectResponse);
 
     if (!waitWhilePaused(req)) {
-        finishUnits(std::string(core::constants::importing::kProgressCanceled));
+        finishUnits(std::string(constants::kProgressCanceled));
         return page;
     }
     try {
@@ -229,11 +229,11 @@ PageWork processImportPage(size_t pageIndex,
     } catch (...) {
         safeReleaseLimiter(ocrLimiter, errorReporter, "core::import::DefaultImportStatementStrategy::ocrLimiterReleaseTable");
         core::errors::reportException(errorReporter, core::errors::ErrorSeverity::Warning, "core::import::DefaultImportStatementStrategy::tesseractTableExtract", std::current_exception());
-        finishUnits(std::string(core::constants::importing::pageSteps::kOcrFailed));
+        finishUnits(std::string(constants::pageSteps::kOcrFailed));
         return page;
     }
 
-    unitDone(1, std::string(core::constants::importing::pageSteps::kOcr));
+    unitDone(1, std::string(constants::pageSteps::kOcr));
 
     page.hasTable = true;
     page.table = detectResponse.table;
@@ -242,7 +242,7 @@ PageWork processImportPage(size_t pageIndex,
 
     storeTsvArtifact(out, pageIndex, page.ocr, artifactsMutex, errorReporter);
 
-    finishUnits(std::string(core::constants::importing::pageSteps::kDone));
+    finishUnits(std::string(constants::pageSteps::kDone));
     page.totalSec = std::chrono::duration<double>(std::chrono::steady_clock::now() - pageStart).count();
     return page;
 }
@@ -262,11 +262,11 @@ FinalizeStats finalizeParsedPages(const ImportRequest& req,
     const size_t finalizePageCount = std::max<size_t>(1, pages.size());
     for (size_t pageIndex = 0; pageIndex < pages.size(); ++pageIndex) {
         if (!waitWhilePaused(req)) {
-            report(0.0, std::string(core::constants::importing::kProgressCanceled));
+            report(0.0, std::string(constants::kProgressCanceled));
             break;
         }
         if (req.cancelFlag && req.cancelFlag->load()) {
-            report(0.0, std::string(core::constants::importing::kProgressCanceled));
+            report(0.0, std::string(constants::kProgressCanceled));
             break;
         }
 
@@ -274,8 +274,8 @@ FinalizeStats finalizeParsedPages(const ImportRequest& req,
         if (!page.hasTable) continue;
 
         const double fraction = static_cast<double>(pageIndex + 1) / static_cast<double>(finalizePageCount);
-        const double progress = core::constants::importing::kProgressFinalizeBase + core::constants::importing::kProgressFinalizeSpan * fraction;
-        report(progress, std::string("[") + std::to_string(pageIndex + 1) + "/" + std::to_string(finalizePageCount) + "] " + std::string(core::constants::importing::pageSteps::kFinalize));
+        const double progress = constants::kProgressFinalizeBase + constants::kProgressFinalizeSpan * fraction;
+        report(progress, std::string("[") + std::to_string(pageIndex + 1) + "/" + std::to_string(finalizePageCount) + "] " + std::string(constants::pageSteps::kFinalize));
 
         ++stats.pagesWithTable;
         stats.totalOcrWords += page.ocrWords;

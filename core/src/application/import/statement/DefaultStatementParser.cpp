@@ -7,22 +7,16 @@
 
 #include "core/application/import/statement/DefaultStatementParser.h"
 
-#include "core/constants/parser.h"
-
+#include "core/application/import/internal/ParserConfig.h"
 #include "core/application/import/transaction/DefaultTransactionParser.h"
 #include "core/application/import/internal/ParserHeuristics.h"
 #include "core/application/import/internal/ParserHelpers.h"
 #include "core/application/import/statement/StatementParseHelpers.h"
-#include "../../../utils/UniqId.h"
 #include "../../../utils/Util.h"
 
 #include <algorithm>
-#include <cctype>
-#include <filesystem>
-#include <limits>
 #include <optional>
 #include <regex>
-#include <sstream>
 
 namespace core::application::importing::statement {
 
@@ -431,7 +425,7 @@ DefaultStatementParser::ParseResult DefaultStatementParser::parse([[maybe_unused
 
     core::application::importing::statement::internal::attachOrphansToBlocks(blocks,
                           orphanLines,
-                          core::constants::parser::kAttachOrphanMaxDistance,
+                          helpers::parserConfig.orphanAttachMaxGapPx,
                           cols.valutaX,
                           &out.debugLines);
 

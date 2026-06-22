@@ -70,7 +70,7 @@ source for third-party dependency names; product versioning is owned by
 
 | File or directory | Meaning |
 |---|---|
-| `core/include/core/constants/runtime.h` | Canonical runtime filenames such as workspace and registry names. |
+| `app/src/main.cpp` | Composition root for app-local runtime filenames such as workspace and registry names. |
 | `app/i18n` | Translation sources and generated catalogs. |
 | `infra/text-recognition/res/tessdata` | OCR models bundled into the installed runtime. |
 | `ui/qml/FossRedder` | Application QML module tree. |
