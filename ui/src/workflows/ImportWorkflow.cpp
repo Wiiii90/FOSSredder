@@ -18,7 +18,7 @@
 #include "ui/observability/Origins.h"
 #include "ui/observability/Trace.h"
 #include "ui/shell/Defaults.h"
-#include "ui/util/StringConversions.h"
+#include "ui/utils/StringConversions.h"
 #include "ui/workspace/WorkspaceCommands.h"
 #include "ui/workspace/WorkspaceSelectors.h"
 #include <QMetaObject>

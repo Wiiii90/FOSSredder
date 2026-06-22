@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "ui/observability/Trace.h"
-#include "ui/util/StringConversions.h"
+#include "ui/utils/StringConversions.h"
 #include "ui/workflows/ImportWorkflow.h"
 
 namespace ui::adapters {

@@ -1,5 +1,5 @@
 /**
- * @file ui/include/ui/util/StringConversions.h
+ * @file ui/include/ui/utils/StringConversions.h
  * @brief Declares lightweight conversions between common Qt string types and
  * standard strings.
  */

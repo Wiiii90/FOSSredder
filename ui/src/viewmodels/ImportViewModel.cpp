@@ -15,7 +15,7 @@
 #include "ui/shell/Navigation.h"
 #include "ui/shell/Settings.h"
 #include "ui/shell/Status.h"
-#include "ui/util/StringConversions.h"
+#include "ui/utils/StringConversions.h"
 #include "ui/workflows/ImportWorkflow.h"
 #include "ui/workspace/WorkspaceCommands.h"
 #include "ui/workspace/WorkspaceSelection.h"

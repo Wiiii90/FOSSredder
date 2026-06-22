@@ -81,7 +81,7 @@ set(UI_HEADERS
     include/ui/presentation/PayloadMapper.h
     include/ui/observability/ErrorCodes.h
     include/ui/i18n/Text.h
-    include/ui/util/StringConversions.h
+    include/ui/utils/StringConversions.h
     include/ui/workspace/WorkspaceCommands.h
     include/ui/workspace/WorkspacePayloads.h
     include/ui/workspace/WorkspaceSelectors.h
@@ -133,7 +133,7 @@ target_include_directories(fossredder_ui PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/presentation
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shell
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/shell/window
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/util
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/viewmodels
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workflows
     ${CMAKE_CURRENT_SOURCE_DIR}/include/ui/workspace

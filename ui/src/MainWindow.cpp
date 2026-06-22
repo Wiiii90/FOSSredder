@@ -35,7 +35,7 @@
 #include "ui/shell/QmlRuntime.h"
 #include "ui/shell/window/MainWindowContext.h"
 #include "ui/shell/window/MainWindowTrace.h"
-#include "ui/util/StringConversions.h"
+#include "ui/utils/StringConversions.h"
 
 namespace {
 

@@ -13,7 +13,7 @@
 #include "ui/i18n/Text.h"
 #include "ui/observability/Origins.h"
 #include "ui/observability/Trace.h"
-#include "ui/util/StringConversions.h"
+#include "ui/utils/StringConversions.h"
 
 #include <QDateTime>
 #include <QMetaObject>

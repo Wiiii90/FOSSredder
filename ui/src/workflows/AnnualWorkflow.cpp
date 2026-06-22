@@ -9,7 +9,7 @@
 #include "ui/adapters/AnnualAdapter.h"
 #include "ui/observability/Origins.h"
 #include "ui/observability/Trace.h"
-#include "ui/util/StringConversions.h"
+#include "ui/utils/StringConversions.h"
 
 #include <utility>
 
