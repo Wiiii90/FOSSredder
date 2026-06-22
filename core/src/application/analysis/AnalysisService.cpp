@@ -8,7 +8,7 @@
 #include "adjustment/AdjustmentCalculation.h"
 #include "core/application/analysis/AnalysisWorkflowSupport.h"
 #include "core/application/workspace/WorkspaceSnapshotCatalogMapper.h"
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
 #include "core/domain/entities/Analysis.h"
 #include "core/domain/entities/Contract.h"
@@ -200,15 +200,15 @@ analysisConfigFromJson(const std::string &raw, const std::string &type) {
   if (!config.is_object()) {
     return out;
   }
-  out.plotType = jsonString(config, core::constants::analysis::kPlotTypeKey.data());
+  out.plotType = jsonString(config, core::application::analysis::keys::kPlotTypeKey.data());
   out.plotMeasure =
-      jsonString(config, core::constants::analysis::kPlotMeasureKey.data());
+      jsonString(config, core::application::analysis::keys::kPlotMeasureKey.data());
   out.propertyIds =
-      jsonStringList(config, core::constants::analysis::kPropertiesKey.data());
+      jsonStringList(config, core::application::analysis::keys::kPropertiesKey.data());
   out.contractTypes = jsonStringList(
-      config, core::constants::analysis::kContractTypesKey.data());
+      config, core::application::analysis::keys::kContractTypesKey.data());
   out.taxPercent =
-      jsonDouble(config, core::constants::analysis::calculation::kPercentKey.data());
+      jsonDouble(config, core::application::analysis::keys::calculation::kPercentKey.data());
   return out;
 }
 
@@ -410,13 +410,13 @@ core::ports::analysis::AnalysisResult AnalysisService::computeAnalysis(
 
   const std::string key = analysis.executionType();
 
-  if (key == core::constants::analysis::kTypePlot) {
+  if (key == core::application::analysis::keys::kTypePlot) {
     out = core::application::analysis::computePlotAnalysis(analysis,
                                                            sourceState, filter);
-  } else if (key == core::constants::analysis::kTypeTab) {
+  } else if (key == core::application::analysis::keys::kTypeTab) {
     out = core::application::analysis::computeTableAnalysis(
         analysis, sourceState, filter);
-  } else if (key == core::constants::analysis::kTypeCalculation) {
+  } else if (key == core::application::analysis::keys::kTypeCalculation) {
     out = core::application::analysis::computeAdjustmentAnalysis(
         analysis, sourceState, filter);
   } else {

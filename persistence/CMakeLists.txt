@@ -53,42 +53,5 @@ fossredder_install_headers("${CMAKE_CURRENT_SOURCE_DIR}/include")
 # Optional module-local tests.
 option(BUILD_PERSISTENCE_TESTS "Build tests for persistence module" OFF)
 if (BUILD_PERSISTENCE_TESTS)
-    find_package(GTest CONFIG REQUIRED)
-    include(GoogleTest)
-
-    set(PERSISTENCE_TEST_SRCS
-        tests/unit/TestSqliteDb.cpp
-        tests/unit/TestSqliteSchema.cpp
-        tests/unit/TestSqliteTransaction.cpp
-        tests/unit/TestSqliteRegistry.cpp
-        tests/unit/TestFactory.cpp
-        tests/repositories/TestPropertyRepository.cpp
-        tests/repositories/TestContractRepository.cpp
-        tests/repositories/TestStatementRepository.cpp
-        tests/repositories/TestTransactionRepository.cpp
-        tests/repositories/TestAnalysisRepository.cpp
-        tests/repositories/TestAnnualRepository.cpp
-        tests/repositories/TestStatementDraftRepository.cpp
-        tests/repositories/TestTransactionDraftRepository.cpp
-        tests/repositories/TestImportLogRepository.cpp
-        tests/repositories/TestExportLogRepository.cpp
-        tests/repositories/TestActorRepository.cpp
-        tests/state/TestWorkspaceStateStore.cpp
-    )
-    add_executable(persistence_unit_tests ${PERSISTENCE_TEST_SRCS})
-    target_include_directories(persistence_unit_tests PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/core/include
-    )
-    target_link_libraries(persistence_unit_tests PRIVATE
-        GTest::gtest_main
-        FossRedder::Persistence
-    )
-    target_compile_features(persistence_unit_tests PRIVATE cxx_std_20)
-
-    fossredder_set_runtime_output_dirs(persistence_unit_tests)
-    fossredder_enable_target_quality(persistence_unit_tests)
-
-    gtest_discover_tests(persistence_unit_tests PROPERTIES LABELS "PERSISTENCE_UNIT")
+    add_subdirectory(tests)
 endif()

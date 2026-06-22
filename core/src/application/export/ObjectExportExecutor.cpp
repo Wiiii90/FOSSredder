@@ -6,8 +6,8 @@
 #include "ObjectExportExecutor.h"
 
 #include "core/application/analysis/AnalysisService.h"
-#include "core/constants/analysis.h"
-#include "core/constants/export.h"
+#include "core/application/analysis/AnalysisKeys.h"
+#include "ExportConstants.h"
 #include "core/ports/infra/analysis-rendering/IAnalysisRenderer.h"
 #include "core/ports/infra/archive/IArchive.h"
 #include "core/ports/infra/xlsx-writer/IXlsxWriter.h"
@@ -75,7 +75,7 @@ bool writeCsvTable(const std::filesystem::path &outputPath,
 std::vector<std::vector<std::string>>
 normalizedRowsForExport(const core::ports::analysis::AnalysisResult &result) {
   std::vector<std::vector<std::string>> rows;
-  if (result.type == core::constants::analysis::plotTypes::kPie) {
+  if (result.type == core::application::analysis::keys::plotTypes::kPie) {
     rows.push_back({"Category", "Value"});
     for (const auto &row : result.table) {
       if (row.empty())
@@ -86,7 +86,7 @@ normalizedRowsForExport(const core::ports::analysis::AnalysisResult &result) {
     }
     return rows;
   }
-  if (result.type == core::constants::analysis::plotTypes::kHistogram) {
+  if (result.type == core::application::analysis::keys::plotTypes::kHistogram) {
     rows.push_back({"Month", "Total"});
     for (const auto &row : result.table) {
       if (row.empty())
@@ -116,11 +116,11 @@ propertyNameById(const core::domain::catalog::WorkspaceCatalog &state) {
 std::vector<std::vector<std::string>>
 normalizedRowsForExport(const core::ports::analysis::AnalysisResult &result,
                         const core::domain::catalog::WorkspaceCatalog &state) {
-  if (result.type != core::constants::analysis::kTypeTab) {
+  if (result.type != core::application::analysis::keys::kTypeTab) {
     return normalizedRowsForExport(result);
   }
   const std::string unassigned =
-      std::string(core::constants::exportFlow::labels::kUnassigned);
+      std::string(core::application::exporting::constants::labels::kUnassigned);
   std::set<std::string> contractTypes;
   std::map<std::string, std::map<std::string, double>> amountsByProperty;
   const auto nameById = propertyNameById(state);
@@ -185,10 +185,10 @@ normalizedRowsForExport(const core::ports::analysis::AnalysisResult &result,
   std::vector<std::vector<std::string>> rows;
   std::vector<std::string> header;
   header.push_back(
-      std::string(core::constants::exportFlow::labels::kPropertyHeader));
+      std::string(core::application::exporting::constants::labels::kPropertyHeader));
   for (const auto &contractType : orderedContractTypes)
     header.push_back(contractType);
-  header.push_back(std::string(core::constants::exportFlow::labels::kTotal));
+  header.push_back(std::string(core::application::exporting::constants::labels::kTotal));
   rows.push_back(std::move(header));
 
   std::vector<double> totalsByContract(orderedContractTypes.size(), 0.0);
@@ -210,7 +210,7 @@ normalizedRowsForExport(const core::ports::analysis::AnalysisResult &result,
     grandTotal += rowTotal;
   }
   std::vector<std::string> totalRow;
-  totalRow.push_back(std::string(core::constants::exportFlow::labels::kTotal));
+  totalRow.push_back(std::string(core::application::exporting::constants::labels::kTotal));
   for (const double value : totalsByContract)
     totalRow.push_back(formatAmount(value));
   totalRow.push_back(formatAmount(grandTotal));
@@ -293,9 +293,9 @@ core::ports::exporting::ExportResult exportObjectRequests(
   if (request.outputPath.empty()) {
     result.status = ExportStatus::InvalidInput;
     result.errorCode =
-        std::string(core::constants::exportFlow::errors::kOutputPathEmpty);
+        std::string(core::application::exporting::constants::errors::kOutputPathEmpty);
     result.message =
-        std::string(core::constants::exportFlow::messages::kOutputPathEmpty);
+        std::string(core::application::exporting::constants::messages::kOutputPathEmpty);
     return result;
   }
 
@@ -365,9 +365,9 @@ core::ports::exporting::ExportResult exportObjectRequests(
       if (!ok) {
         result.status = ExportStatus::WriteFailed;
         result.errorCode =
-            std::string(core::constants::exportFlow::errors::kFileWriteFailed);
+            std::string(core::application::exporting::constants::errors::kFileWriteFailed);
         result.message = std::string(
-            core::constants::exportFlow::messages::kFileWriteFailed);
+            core::application::exporting::constants::messages::kFileWriteFailed);
         return result;
       }
     }
@@ -380,14 +380,14 @@ core::ports::exporting::ExportResult exportObjectRequests(
         request.progressCallback(0.88, "Packaging export");
       const std::filesystem::path archivePath =
           baseOutput.string() +
-          std::string(core::constants::exportFlow::packaging::kZipExtension);
+          std::string(core::application::exporting::constants::packaging::kZipExtension);
       if (!archive ||
           !archive->create(baseOutput, archivePath, request.packageFormat)) {
         result.status = ExportStatus::ArchiveFailed;
         result.errorCode =
-            std::string(core::constants::exportFlow::errors::kArchiveFailed);
+            std::string(core::application::exporting::constants::errors::kArchiveFailed);
         result.message =
-            std::string(core::constants::exportFlow::messages::kArchiveFailed);
+            std::string(core::application::exporting::constants::messages::kArchiveFailed);
         return result;
       }
       result.resolvedOutputPath = archivePath.string();
@@ -404,9 +404,9 @@ core::ports::exporting::ExportResult exportObjectRequests(
   } catch (...) {
     result.status = ExportStatus::InternalError;
     result.errorCode =
-        std::string(core::constants::exportFlow::errors::kInternalError);
+        std::string(core::application::exporting::constants::errors::kInternalError);
     result.message =
-        std::string(core::constants::exportFlow::messages::kInternalError);
+        std::string(core::application::exporting::constants::messages::kInternalError);
     return result;
   }
 }
