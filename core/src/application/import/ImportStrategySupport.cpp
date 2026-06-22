@@ -8,7 +8,7 @@
 #include "ImportConstants.h"
 #include "core/errors/ErrorReporting.h"
 #include "core/jobs/Scheduler.h"
-#include "../../utils/UniqId.h"
+#include "../../utils/TransientId.h"
 
 #include <chrono>
 #include <future>
@@ -79,7 +79,7 @@ core::ports::pdf_rendering::RenderRequest makeRenderRequest(const ImportRequest&
     request.pdfPath = std::filesystem::path(req.sourcePath);
     request.dpi = constants::kRenderDpi;
     request.outputDir = std::filesystem::path();
-    request.uniqIdPrefix = core::utils::makeUniqId();
+    request.uniqIdPrefix = core::utils::makeTransientId();
     request.filePrefix = std::string(constants::kPopplerRenderPrefix);
     request.cancelFlag = req.cancelFlag;
     return request;
@@ -92,7 +92,7 @@ core::ports::pdf_rendering::ExtractRequest makeExtractRequest(const core::ports:
     request.pdfPath = renderRequest.pdfPath;
     request.dpi = renderRequest.dpi;
     request.outputDir = std::filesystem::path();
-    request.uniqIdPrefix = core::utils::makeUniqId();
+    request.uniqIdPrefix = core::utils::makeTransientId();
     request.filePrefix = std::string(constants::kPopplerExtractPrefix);
     request.cancelFlag = req.cancelFlag;
     return request;

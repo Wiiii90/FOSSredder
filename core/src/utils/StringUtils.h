@@ -1,12 +1,12 @@
 /**
- * @file core/src/utils/Util.h
- * @brief Declares private string helpers shared across `core` implementation files.
+ * @file core/src/utils/StringUtils.h
+ * @brief Declares private string helpers shared across `core` implementation
+ * files.
  */
 
 #pragma once
 
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace core::utils {
@@ -22,7 +22,8 @@ std::string trim(std::string s);
 std::string lowerAscii(std::string s);
 
 /**
- * @brief Collapses consecutive whitespace to single spaces and trims the result.
+ * @brief Collapses consecutive whitespace to single spaces and trims the
+ * result.
  */
 std::string collapseWhitespace(std::string s);
 
@@ -31,9 +32,4 @@ std::string collapseWhitespace(std::string s);
  */
 std::vector<std::string> splitWhitespace(const std::string& s);
 
-/**
- * @brief Returns the rightmost x-coordinate from a set of word spans.
- */
-int rightEdgeFromWordSpans(const std::vector<std::pair<int, int>>& wordSpans);
-
-}
+} // namespace core::utils

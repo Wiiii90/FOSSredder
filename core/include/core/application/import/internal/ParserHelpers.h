@@ -12,7 +12,6 @@
 #include "core/application/import/internal/ParserHeuristics.h"
 
 #include "core/ports/infra/text-recognition/TextRecognitionResult.h"
-#include "../../../utils/Util.h"
 
 #include <initializer_list>
 #include <optional>

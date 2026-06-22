@@ -5,7 +5,7 @@
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Property.h"
 #include "core/domain/entities/Transaction.h"
-#include "../../../utils/Util.h"
+#include "../../../utils/StringUtils.h"
 
 #include <algorithm>
 #include <cmath>

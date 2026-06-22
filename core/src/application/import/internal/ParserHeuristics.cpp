@@ -4,7 +4,7 @@
  */
 
 #include "core/application/import/internal/ParserHeuristics.h"
-#include "../../../utils/Util.h"
+#include "../../../utils/StringUtils.h"
 
 #include <array>
 #include <vector>

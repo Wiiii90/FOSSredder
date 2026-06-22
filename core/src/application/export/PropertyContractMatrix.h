@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../../utils/Util.h"
+#include "../../utils/StringUtils.h"
 #include "ExportConstants.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
 

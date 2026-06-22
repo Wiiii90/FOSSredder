@@ -12,7 +12,7 @@
 #include "core/application/import/internal/ParserHeuristics.h"
 #include "core/application/import/internal/ParserHelpers.h"
 #include "core/application/import/statement/StatementParseHelpers.h"
-#include "../../../utils/Util.h"
+#include "../../../utils/StringUtils.h"
 
 #include <algorithm>
 #include <optional>

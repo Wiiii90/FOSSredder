@@ -5,24 +5,16 @@
 
 #include "core/domain/policies/StatementPolicy.h"
 
+#include "../../utils/StringUtils.h"
+
 #include <algorithm>
-#include <cctype>
 #include <iterator>
 #include <utility>
 
 namespace core::domain::policies::statement {
 
 std::string trimCopy(std::string value) {
-    const auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char c) {
-        return std::isspace(c) != 0;
-    });
-    const auto end = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char c) {
-        return std::isspace(c) != 0;
-    }).base();
-    if (begin >= end) {
-        return {};
-    }
-    return std::string(begin, end);
+    return core::utils::trim(std::move(value));
 }
 
 std::string normalizeId(std::string value) {

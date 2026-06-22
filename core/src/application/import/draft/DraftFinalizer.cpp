@@ -10,7 +10,7 @@
 #include "core/domain/entities/Transaction.h"
 #include "core/domain/policies/TransactionPolicy.h"
 #include "../../../utils/StableId.h"
-#include "../../../utils/Util.h"
+#include "../../../utils/StringUtils.h"
 
 #include <charconv>
 #include <string_view>

@@ -11,21 +11,19 @@
 
 #include "core/domain/policies/DraftMatchingPolicy.h"
 
+#include "../../utils/StringUtils.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <limits>
 #include <regex>
 #include <sstream>
+#include <utility>
 
 namespace core::domain::policies::matching {
 
 namespace {
-
-char lowerAscii(char c)
-{
-    return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
-}
 
 template <typename TEntity>
 std::vector<core::domain::Alias> aliasUsages(const TEntity& entity)
@@ -55,10 +53,7 @@ bool appendUnique(std::vector<std::string>& values, const std::string& value)
 
 std::string trim(std::string value)
 {
-    const auto first = value.find_first_not_of(" \t\r\n");
-    if (first == std::string::npos) return {};
-    const auto last = value.find_last_not_of(" \t\r\n");
-    return value.substr(first, last - first + 1);
+    return core::utils::trim(std::move(value));
 }
 
 bool matchesDraftText(const std::string& left, const std::string& right)

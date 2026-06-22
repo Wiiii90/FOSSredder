@@ -4,7 +4,7 @@
  */
 
 #include "core/application/import/transaction/DefaultTransactionParser.h"
-#include "../../../utils/Util.h"
+#include "../../../utils/StringUtils.h"
 #include "core/application/import/internal/ParserHelpers.h"
 
 #include <algorithm>
@@ -68,7 +68,7 @@ std::optional<std::string> parseValutaToken(const std::string& line) {
 }
 
 int textRightEdge(const OcrLine& l) {
-    if (!l.wordSpans.empty()) return core::utils::rightEdgeFromWordSpans(l.wordSpans);
+    if (!l.wordSpans.empty()) return l.wordSpans.back().second;
     return l.maxX;
 }
 

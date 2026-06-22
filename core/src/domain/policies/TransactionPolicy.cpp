@@ -5,23 +5,15 @@
 
 #include "core/domain/policies/TransactionPolicy.h"
 
+#include "../../utils/StringUtils.h"
+
 #include <algorithm>
-#include <cctype>
 #include <utility>
 
 namespace core::domain::policies::transaction {
 
 std::string trimCopy(std::string value) {
-    const auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char c) {
-        return std::isspace(c) != 0;
-    });
-    const auto end = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char c) {
-        return std::isspace(c) != 0;
-    }).base();
-    if (begin >= end) {
-        return {};
-    }
-    return std::string(begin, end);
+    return core::utils::trim(std::move(value));
 }
 
 bool hasValidBookingDate(const std::string& value) {

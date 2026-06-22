@@ -8,7 +8,8 @@
 #include "core/application/import/transaction/AmountParser.h"
 #include "core/application/import/transaction/DefaultTransactionParser.h"
 #include "core/application/import/internal/ParserHelpers.h"
-#include "../../../utils/UniqId.h"
+#include "../../../utils/StringUtils.h"
+#include "../../../utils/TransientId.h"
 
 #include <algorithm>
 #include <cmath>
@@ -749,7 +750,7 @@ static void attachProofCrop(core::application::importing::draft::TransactionDraf
         core::ports::document_image_processing::CropRequest request;
         if (!pageCropImagePath.empty()) request.imagePath = std::filesystem::path(pageCropImagePath);
         request.imageBytes = pageCropImageBytes;
-        request.uniqIdPrefix = std::string(core::utils::makeUniqId());
+        request.uniqIdPrefix = std::string(core::utils::makeTransientId());
         request.filePrefix = std::string("document_image_processing_proof_tx") + std::to_string(txIndex);
         request.outputFormat = core::ports::document_image_processing::CropRequest::OutputFormat::Jpg;
         request.jpegQuality = 92;

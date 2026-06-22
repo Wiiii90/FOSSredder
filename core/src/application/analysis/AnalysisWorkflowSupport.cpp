@@ -7,11 +7,11 @@
 
 #include "core/application/analysis/AnalysisKeys.h"
 #include "core/ports/usecases/analysis/AnalysisRequest.h"
+#include "../../utils/StringUtils.h"
 
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 #include <unordered_set>
 
@@ -19,22 +19,8 @@ namespace core::application::analysis {
 
 namespace {
 
-std::string trim(std::string value) {
-    const auto notSpace = [](unsigned char ch) { return !std::isspace(ch); };
-    value.erase(value.begin(),
-                std::find_if(value.begin(), value.end(), notSpace));
-    value.erase(std::find_if(value.rbegin(), value.rend(), notSpace).base(),
-                value.end());
-    return value;
-}
-
-std::string toLower(std::string value) {
-    std::transform(value.begin(), value.end(), value.begin(),
-                   [](unsigned char ch) {
-                       return static_cast<char>(std::tolower(ch));
-                   });
-    return value;
-}
+using core::utils::lowerAscii;
+using core::utils::trim;
 
 void eraseAll(std::string& value, char ch) {
     value.erase(std::remove(value.begin(), value.end(), ch), value.end());
@@ -45,7 +31,7 @@ void eraseAll(std::string& value, char ch) {
 std::string buildAnalysisConfigJson(
     const core::ports::analysis::AnalysisConfigInput& input) {
     nlohmann::json config;
-    const std::string normalizedType = toLower(trim(input.type));
+    const std::string normalizedType = lowerAscii(trim(input.type));
 
     if (normalizedType == core::application::analysis::keys::kTypeCalculation) {
         config[std::string(core::application::analysis::keys::calculation::kStrategyKey)] =
@@ -78,7 +64,7 @@ std::string buildAnalysisConfigJson(
 
     nlohmann::json contractTypes = nlohmann::json::array();
     for (auto contractType : input.contractTypes) {
-        contractType = toLower(trim(contractType));
+        contractType = lowerAscii(trim(contractType));
         if (!contractType.empty()) {
             contractTypes.push_back(contractType);
         }
@@ -96,16 +82,16 @@ core::ports::analysis::AnalysisFilterSelection filterSelectionFromFields(
     const std::vector<std::string>& contractTypes,
     const std::string& allocatableMode) {
     core::ports::analysis::AnalysisFilterSelection selection;
-    selection.dateField = toLower(trim(dateField));
-    selection.dateMode = toLower(trim(dateMode));
+    selection.dateField = lowerAscii(trim(dateField));
+    selection.dateMode = lowerAscii(trim(dateMode));
     selection.year = trim(year);
     selection.dateFrom = trim(dateFrom);
     selection.dateTo = trim(dateTo);
-    selection.allocatableMode = toLower(trim(allocatableMode));
+    selection.allocatableMode = lowerAscii(trim(allocatableMode));
     selection.propertyIds = propertyIds;
     selection.contractTypes = contractTypes;
     for (auto& contractType : selection.contractTypes) {
-        contractType = toLower(trim(contractType));
+        contractType = lowerAscii(trim(contractType));
     }
     selection.propertyIds.erase(
         std::remove_if(selection.propertyIds.begin(), selection.propertyIds.end(),

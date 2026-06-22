@@ -7,9 +7,9 @@
 
 #include "core/application/analysis/AnalysisKeys.h"
 #include "core/domain/values/FilterSpec.h"
+#include "../../utils/StringUtils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <ctime>
 #include <sstream>
 #include <unordered_set>
@@ -18,28 +18,8 @@ namespace core::ports::analysis {
 
 namespace {
 
-std::string trim(const std::string &value) {
-  std::size_t first = 0;
-  while (first < value.size() &&
-         std::isspace(static_cast<unsigned char>(value[first])) != 0) {
-    ++first;
-  }
-
-  std::size_t last = value.size();
-  while (last > first &&
-         std::isspace(static_cast<unsigned char>(value[last - 1])) != 0) {
-    --last;
-  }
-
-  return value.substr(first, last - first);
-}
-
-std::string toLower(std::string value) {
-  std::transform(
-      value.begin(), value.end(), value.begin(),
-      [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-  return value;
-}
+using core::utils::lowerAscii;
+using core::utils::trim;
 
 int defaultAnalysisYear() {
   const std::time_t now = std::time(nullptr);
@@ -105,7 +85,7 @@ parseAnalysisFilterSelection(const std::string &filterSpec) {
             std::string(core::application::analysis::filterKeys::kDateField) +
                 std::string(core::application::analysis::filterKeys::operators::kEqual),
             0) == 0) {
-      const std::string value = toLower(trim(clause.substr(10)));
+      const std::string value = lowerAscii(trim(clause.substr(10)));
       out.dateField = value == "valuta" ? "valuta" : "bookingDate";
       continue;
     }
@@ -137,7 +117,7 @@ parseAnalysisFilterSelection(const std::string &filterSpec) {
           values.end();
       out.contractTypes.clear();
       for (auto value : values) {
-        value = toLower(value);
+        value = lowerAscii(value);
         if (value != core::application::analysis::filterKeys::kUnassigned) {
           out.contractTypes.push_back(std::move(value));
         }
@@ -148,7 +128,7 @@ parseAnalysisFilterSelection(const std::string &filterSpec) {
             std::string(core::application::analysis::filterKeys::kAllocatable) +
                 std::string(core::application::analysis::filterKeys::operators::kEqual),
             0) == 0) {
-      const std::string mode = toLower(trim(clause.substr(12)));
+      const std::string mode = lowerAscii(trim(clause.substr(12)));
       if (mode == "allocatable" || mode == "non-allocatable") {
         out.allocatableMode = mode;
       } else {
@@ -172,12 +152,12 @@ parseAnalysisFilterSelection(const std::string &filterSpec) {
 
 std::string buildAnalysisFilterSpec(const AnalysisFilterSelection &selection) {
   std::vector<std::string> clauses;
-  const std::string normalizedDateField = toLower(trim(selection.dateField));
+  const std::string normalizedDateField = lowerAscii(trim(selection.dateField));
   if (normalizedDateField == "valuta") {
     clauses.emplace_back("dateField=valuta");
   }
 
-  const std::string normalizedDateMode = toLower(trim(selection.dateMode));
+  const std::string normalizedDateMode = lowerAscii(trim(selection.dateMode));
   const std::string year = trim(selection.year);
   if (normalizedDateMode == "range") {
     const std::string from = trim(selection.dateFrom);
@@ -234,7 +214,7 @@ std::string buildAnalysisFilterSpec(const AnalysisFilterSelection &selection) {
   std::unordered_set<std::string> contractSeen;
   std::vector<std::string> contractValues;
   for (auto raw : selection.contractTypes) {
-    raw = toLower(trim(raw));
+    raw = lowerAscii(trim(raw));
     if (raw.empty() || contractSeen.contains(raw)) {
       continue;
     }
@@ -259,7 +239,7 @@ std::string buildAnalysisFilterSpec(const AnalysisFilterSelection &selection) {
     clauses.push_back(contractClause.str());
   }
 
-  const std::string allocatable = toLower(trim(selection.allocatableMode));
+  const std::string allocatable = lowerAscii(trim(selection.allocatableMode));
   if (allocatable == "allocatable" || allocatable == "non-allocatable") {
     clauses.push_back("allocatable=" + allocatable);
   }

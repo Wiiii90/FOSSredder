@@ -29,7 +29,7 @@
 #include "core/domain/values/FilterSpec.h"
 #include "core/domain/values/MoneyAmount.h"
 #include "core/domain/values/Year.h"
-#include "core/utils/Time.h"
+#include "../../utils/Time.h"
 
 #include <nlohmann/json.hpp>
 

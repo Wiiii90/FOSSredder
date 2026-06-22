@@ -3,9 +3,9 @@
 #include "core/application/analysis/AnalysisKeys.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Transaction.h"
+#include "../../../utils/StringUtils.h"
 
 #include <algorithm>
-#include <cctype>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -17,6 +17,8 @@ namespace {
 
 using core::domain::Transaction;
 using core::domain::catalog::WorkspaceCatalog;
+using core::utils::lowerAscii;
+using core::utils::trim;
 
 enum class AnalysisFilterOperator {
   GreaterEqual,
@@ -34,20 +36,6 @@ struct AnalysisFilterClause {
   std::string value;
   AnalysisFilterOperator op;
 };
-
-std::string trim(const std::string &value) {
-  std::size_t first = 0;
-  while (first < value.size() &&
-         std::isspace(static_cast<unsigned char>(value[first])))
-    ++first;
-
-  std::size_t last = value.size();
-  while (last > first &&
-         std::isspace(static_cast<unsigned char>(value[last - 1])))
-    --last;
-
-  return value.substr(first, last - first);
-}
 
 std::string cleanValue(const std::string &value);
 
@@ -81,16 +69,6 @@ std::string cleanValue(const std::string &value) {
     cleaned = cleaned.substr(1, cleaned.size() - 2);
   }
   return trim(cleaned);
-}
-
-std::string toLowerStr(const std::string &value) {
-  std::string lowered;
-  lowered.reserve(value.size());
-  for (const char ch : value) {
-    lowered.push_back(
-        static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
-  }
-  return lowered;
 }
 
 int dateToInt(const std::string &value) {
@@ -231,7 +209,7 @@ std::optional<AnalysisFilterClause> parseClause(const std::string &token) {
 std::vector<std::string> splitContractTypes(const std::string &value) {
   std::vector<std::string> wanted;
   std::string current;
-  for (const char ch : toLowerStr(cleanValue(value))) {
+  for (const char ch : lowerAscii(cleanValue(value))) {
     if (ch == core::application::analysis::filterKeys::separators::kAlternatives ||
         ch == core::application::analysis::filterKeys::separators::kList) {
       const auto token = trim(current);
@@ -251,7 +229,7 @@ std::vector<std::string> splitContractTypes(const std::string &value) {
 }
 
 AnalysisDateField parseDateField(const std::string &value) {
-  return toLowerStr(cleanValue(value)) == "valuta"
+  return lowerAscii(cleanValue(value)) == "valuta"
              ? AnalysisDateField::Valuta
              : AnalysisDateField::BookingDate;
 }
@@ -308,14 +286,14 @@ void addContractTypePredicate(
       return allowUnassigned;
 
     const std::string contractId =
-        toLowerStr(cleanValue(transaction->contractId()));
+        lowerAscii(cleanValue(transaction->contractId()));
     for (const auto &contract : state.contracts()) {
       if (!contract)
         continue;
-      if (toLowerStr(cleanValue(contract->id())) != contractId)
+      if (lowerAscii(cleanValue(contract->id())) != contractId)
         continue;
 
-      const std::string contractType = toLowerStr(cleanValue(contract->type()));
+      const std::string contractType = lowerAscii(cleanValue(contract->type()));
       return std::find(wanted.begin(), wanted.end(), contractType) !=
              wanted.end();
     }
@@ -380,7 +358,7 @@ void addPropertyPredicate(core::application::analysis::AnalysisFilter &filter,
 void addAllocatablePredicate(
     core::application::analysis::AnalysisFilter &filter,
     const AnalysisFilterClause &clause) {
-  const std::string mode = toLowerStr(cleanValue(clause.value));
+  const std::string mode = lowerAscii(cleanValue(clause.value));
   if (mode != "allocatable" && mode != "non-allocatable")
     return;
 

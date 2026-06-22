@@ -89,7 +89,6 @@ set(CORE_PUBLIC_HEADERS
     include/core/ports/infra/text-recognition/TextRecognitionTypes.h
     include/core/ports/infra/storage/IRegistry.h
     include/core/ports/infra/storage/IStorageManager.h
-    include/core/utils/Time.h
 )
 
 option(BUILD_CORE_TESTS "Build core tests" OFF)
@@ -108,8 +107,9 @@ set(CORE_PRIVATE_HEADERS
     src/application/import/ImportStrategySupport.h
     src/jobs/JobManager.h
     src/utils/StableId.h
-    src/utils/UniqId.h
-    src/utils/Util.h
+    src/utils/StringUtils.h
+    src/utils/Time.h
+    src/utils/TransientId.h
 )
 
 # Core implementation sources.
@@ -179,7 +179,7 @@ set(CORE_SRCS
     src/domain/values/MoneyAmount.cpp
     src/domain/values/Year.cpp
     src/domain/policies/DraftMatchingPolicy.cpp
-    src/utils/Util.cpp
+    src/utils/StringUtils.cpp
     ${CORE_PUBLIC_HEADERS}
     ${CORE_PRIVATE_HEADERS}
 )

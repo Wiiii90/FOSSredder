@@ -6,7 +6,7 @@
 #include "JobManager.h"
 
 #include "core/errors/ErrorReporting.h"
-#include "../utils/UniqId.h"
+#include "../utils/TransientId.h"
 
 #include <utility>
 
@@ -52,7 +52,7 @@ JobManager::JobManager(
     : errorReporter_(std::move(errorReporter)) {}
 
 JobId JobManager::makeJobId() {
-    return core::utils::makeUniqId();
+    return core::utils::makeTransientId();
 }
 
 JobId JobManager::submit(JobKind kind) {

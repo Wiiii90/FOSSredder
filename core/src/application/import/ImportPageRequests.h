@@ -11,7 +11,7 @@
 #include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
 #include "ImportConstants.h"
 #include "core/application/import/ImportRequest.h"
-#include "../../utils/UniqId.h"
+#include "../../utils/TransientId.h"
 
 #include <cmath>
 #include <string>
@@ -33,7 +33,7 @@ inline core::ports::document_image_processing::MaskRequest buildMaskRequest(cons
 {
     core::ports::document_image_processing::MaskRequest request;
     request.imageBytes = pageBytes;
-    request.uniqIdPrefix = core::utils::makeUniqId();
+    request.uniqIdPrefix = core::utils::makeTransientId();
     request.filePrefix = std::string(constants::kDocumentImageProcessingMaskPrefix) + std::to_string(pageIndex + 1);
     request.usePoppler = true;
     request.useMorphology = true;
@@ -73,7 +73,7 @@ inline core::ports::document_image_processing::DetectRequest buildDetectRequest(
 {
     core::ports::document_image_processing::DetectRequest request;
     request.imageBytes = maskedBytes;
-    request.uniqIdPrefix = core::utils::makeUniqId();
+    request.uniqIdPrefix = core::utils::makeTransientId();
     request.filePrefix = std::string(constants::kDocumentImageProcessingDetectPrefix) + std::to_string(pageIndex + 1);
     request.kind = core::ports::document_image_processing::DetectRequest::DetectKind::Tables;
     request.cancelFlag = req.cancelFlag;
@@ -87,7 +87,7 @@ inline core::ports::document_image_processing::CropRequest buildCropRequest(cons
 {
     core::ports::document_image_processing::CropRequest request;
     request.imageBytes = pageBytes;
-    request.uniqIdPrefix = core::utils::makeUniqId();
+    request.uniqIdPrefix = core::utils::makeTransientId();
     request.filePrefix = std::string(constants::kDocumentImageProcessingCropPrefix) + std::to_string(pageIndex + 1);
     request.bbox = detectResponse.table.bbox;
     request.cancelFlag = req.cancelFlag;

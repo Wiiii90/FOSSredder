@@ -5,17 +5,16 @@
 
 #include "core/domain/policies/AliasPolicy.h"
 
+#include "../../utils/StringUtils.h"
+#include "../../utils/Time.h"
+
 #include <algorithm>
-#include <cctype>
 #include <utility>
 
 namespace core::domain::policies::alias {
 
 std::string trimCopy(std::string value) {
-    const auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char c) { return std::isspace(c) != 0; });
-    const auto end = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char c) { return std::isspace(c) != 0; }).base();
-    if (begin >= end) return {};
-    return std::string(begin, end);
+    return core::utils::trim(std::move(value));
 }
 
 std::string canonicalAliasValue(std::string value) { return trimCopy(std::move(value)); }
