@@ -11,6 +11,7 @@
 #include <QVariantList>
 #include <QVariantMap>
 
+#include "support/ViewModelTestHarness.h"
 #include "support/WorkspacePortFakes.h"
 #include "support/WorkspaceTestData.h"
 #include "ui/adapters/AnalysisAdapter.h"
@@ -30,7 +31,7 @@ TEST(
       [state]() {
         return state;
       },
-      analysisAdapter);
+      analysisAdapter, tests::support::noopErrorReporter());
 
   const QVariantMap preview = workflow.previewTransactions(QStringLiteral(""));
   const QVariantList transactions =
@@ -60,7 +61,7 @@ TEST(AnalysisWorkflowTest,
       [state]() {
         return state;
       },
-      analysisAdapter);
+      analysisAdapter, tests::support::noopErrorReporter());
 
   const QVariantMap preview =
       workflow.previewTransactions(QStringLiteral("allocatable=allocatable"));
@@ -84,7 +85,7 @@ TEST(AnalysisWorkflowTest,
       [state]() {
         return state;
       },
-      analysisAdapter);
+      analysisAdapter, tests::support::noopErrorReporter());
 
   const int defaultYear = QDate::currentDate().year() - 1;
   const QString filterSpec = workflow.analysisFilterSpec(
@@ -106,7 +107,7 @@ TEST(AnalysisWorkflowTest,
       [state]() {
         return state;
       },
-      analysisAdapter);
+      analysisAdapter, tests::support::noopErrorReporter());
 
   const QString filterSpec = workflow.analysisFilterSpec(
       QStringLiteral("bookingDate"), QStringLiteral("range"),
@@ -129,7 +130,7 @@ TEST(AnalysisWorkflowTest,
       [state]() {
         return state;
       },
-      analysisAdapter);
+      analysisAdapter, tests::support::noopErrorReporter());
 
   QVariantMap selected;
   selected.insert(QStringLiteral("id"), QStringLiteral("tx-1"));
@@ -198,7 +199,7 @@ TEST(AnalysisWorkflowTest,
       [state]() {
         return state;
       },
-      analysisAdapter);
+      analysisAdapter, tests::support::noopErrorReporter());
 
   const QVariantMap withAdjustments = workflow.computeAnalysisPreview(
       QStringLiteral("analysis-plot"), QStringLiteral(""), true, QVariantMap{});
@@ -245,7 +246,7 @@ TEST(AnalysisWorkflowTest,
       [state]() {
         return state;
       },
-      analysisAdapter);
+      analysisAdapter, tests::support::noopErrorReporter());
 
   const QVariantMap preview = workflow.computeAnalysisPreview(
       QStringLiteral("analysis-1"), QStringLiteral(""), false, QVariantMap{});

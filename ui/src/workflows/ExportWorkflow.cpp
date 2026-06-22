@@ -7,7 +7,7 @@
 #include "ui/workflows/ExportWorkflow.h"
 
 #include "core/errors/ErrorCodes.h"
-#include "core/errors/ErrorReporterRegistry.h"
+#include "core/errors/ErrorReporting.h"
 #include "core/ports/usecases/export/ExportRequest.h"
 #include "ui/adapters/ExportAdapter.h"
 #include "ui/i18n/Text.h"
@@ -25,6 +25,7 @@
 #include <condition_variable>
 #include <exception>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 
 namespace ui {
@@ -83,9 +84,16 @@ struct ExportWorkflow::ExportControlState {
 
 ExportWorkflow::ExportWorkflow(
     StateSnapshotProvider stateSnapshotProvider,
-    std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter, QObject* parent)
+    std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+    QObject* parent)
     : QObject(parent), stateSnapshotProvider_(std::move(stateSnapshotProvider)),
-      exportAdapter_(std::move(exportAdapter)) {
+      exportAdapter_(std::move(exportAdapter)),
+      errorReporter_(std::move(errorReporter)) {
+  if (!errorReporter_) {
+    throw std::invalid_argument("ExportWorkflow requires an error reporter");
+  }
+
   connect(&exportWatcher_,
           &QFutureWatcher<core::ports::exporting::ExportResult>::finished, this,
           &ExportWorkflow::onExportFinished);
@@ -152,7 +160,8 @@ void ExportWorkflow::publishExportLog(
     exportLogSink_(row);
   } catch (...) {
     core::errors::reportException(
-        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionError,
+        errorReporter_.get(), core::errors::ErrorSeverity::Error,
+        core::errors::codes::ExceptionError,
         observability::origins::workflow::exportFlow::kFinish,
         std::current_exception());
   }
@@ -214,6 +223,7 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString& path,
                                            int totalSteps) {
   if (isRunning_) {
     observability::reportFlow(
+        errorReporter_.get(),
         core::errors::ErrorSeverity::Info,
         observability::codes::FlowExportStarted,
         observability::origins::workflow::exportFlow::kStart,
@@ -268,6 +278,7 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString& path,
     if (!stateSnapshotProvider_) {
       lastError_ = ui::text::workflowErrors::exportStateUnavailable();
       observability::reportFlow(
+          errorReporter_.get(),
           core::errors::ErrorSeverity::Warning,
           observability::codes::FlowExportFailed,
           observability::origins::workflow::exportFlow::kStart,
@@ -284,6 +295,7 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString& path,
     if (!exportAdapter_) {
       lastError_ = ui::text::exporting::runnerUnavailable();
       observability::reportFlow(
+          errorReporter_.get(),
           core::errors::ErrorSeverity::Warning,
           observability::codes::FlowExportFailed,
           observability::origins::workflow::exportFlow::kStart,
@@ -310,6 +322,7 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString& path,
           includeFormulas ? "true" : "false"},
          {observability::context::kLocale, strings::toStdString(locale)}});
     observability::reportFlow(
+        errorReporter_.get(),
         core::errors::ErrorSeverity::Info,
         observability::codes::FlowExportStarted,
         observability::origins::workflow::exportFlow::kStart, "Export started",
@@ -327,10 +340,12 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString& path,
     exportWatcher_.setFuture(exportFuture_);
   } catch (const std::exception& ex) {
     core::errors::report(
-        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionStd,
+        errorReporter_.get(), core::errors::ErrorSeverity::Error,
+        core::errors::codes::ExceptionStd,
         observability::origins::workflow::exportFlow::kStart, ex.what());
     lastError_ = ui::text::workflowErrors::exportFailed();
     observability::reportFlow(
+        errorReporter_.get(),
         core::errors::ErrorSeverity::Error,
         observability::codes::FlowExportFailed,
         observability::origins::workflow::exportFlow::kStart,
@@ -340,11 +355,13 @@ void ExportWorkflow::exportDataWithPayload(int format, const QString& path,
     finishExport(false);
   } catch (...) {
     core::errors::reportException(
-        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionError,
+        errorReporter_.get(), core::errors::ErrorSeverity::Error,
+        core::errors::codes::ExceptionError,
         observability::origins::workflow::exportFlow::kStart,
         std::current_exception());
     lastError_ = ui::text::workflowErrors::exportFailed();
     observability::reportFlow(
+        errorReporter_.get(),
         core::errors::ErrorSeverity::Error,
         observability::codes::FlowExportFailed,
         observability::origins::workflow::exportFlow::kStart,
@@ -410,12 +427,13 @@ void ExportWorkflow::onExportFinished() {
                        ? ui::text::workflowErrors::exportFailed()
                        : QString::fromStdString(result.message);
       core::errors::report(
-          core::errors::ErrorSeverity::Warning,
+          errorReporter_.get(), core::errors::ErrorSeverity::Warning,
           result.errorCode.empty() ? core::errors::codes::GenericError
                                    : result.errorCode.c_str(),
           observability::origins::workflow::exportFlow::kFinish,
           strings::toStdString(lastError_));
       observability::reportFlow(
+          errorReporter_.get(),
           core::errors::ErrorSeverity::Warning,
           observability::codes::FlowExportFailed,
           observability::origins::workflow::exportFlow::kFinish,
@@ -424,6 +442,7 @@ void ExportWorkflow::onExportFinished() {
     } else {
       lastError_.clear();
       observability::reportFlow(
+          errorReporter_.get(),
           core::errors::ErrorSeverity::Info,
           observability::codes::FlowExportFinished,
           observability::origins::workflow::exportFlow::kFinish,
@@ -431,10 +450,12 @@ void ExportWorkflow::onExportFinished() {
     }
   } catch (const std::exception& ex) {
     core::errors::report(
-        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionStd,
+        errorReporter_.get(), core::errors::ErrorSeverity::Error,
+        core::errors::codes::ExceptionStd,
         observability::origins::workflow::exportFlow::kFinish, ex.what());
     lastError_ = ui::text::workflowErrors::exportFailed();
     observability::reportFlow(
+        errorReporter_.get(),
         core::errors::ErrorSeverity::Error,
         observability::codes::FlowExportFailed,
         observability::origins::workflow::exportFlow::kFinish,
@@ -443,11 +464,13 @@ void ExportWorkflow::onExportFinished() {
     success = false;
   } catch (...) {
     core::errors::reportException(
-        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionError,
+        errorReporter_.get(), core::errors::ErrorSeverity::Error,
+        core::errors::codes::ExceptionError,
         observability::origins::workflow::exportFlow::kFinish,
         std::current_exception());
     lastError_ = ui::text::workflowErrors::exportFailed();
     observability::reportFlow(
+        errorReporter_.get(),
         core::errors::ErrorSeverity::Error,
         observability::codes::FlowExportFailed,
         observability::origins::workflow::exportFlow::kFinish,

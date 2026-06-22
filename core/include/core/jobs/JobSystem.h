@@ -22,6 +22,10 @@ namespace core::application::importing {
 class IImportStatement;
 }
 
+namespace core::ports::diagnostics {
+class IErrorReporter;
+}
+
 namespace core::jobs {
 
 class JobSystem {
@@ -29,9 +33,12 @@ public:
     /**
      * @brief Create a job system over an import service.
      * @param importService Import service used for import jobs.
+     * @param errorReporter Reporter used for background job diagnostics.
      * @param workers Worker count for the scheduler.
      */
-    JobSystem(std::shared_ptr<core::application::importing::IImportStatement> importService, std::size_t workers = 0);
+    JobSystem(std::shared_ptr<core::application::importing::IImportStatement> importService,
+              std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+              std::size_t workers = 0);
 
     /**
      * @brief Destroy the job system.

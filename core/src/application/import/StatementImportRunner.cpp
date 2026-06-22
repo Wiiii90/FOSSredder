@@ -532,7 +532,8 @@ StatementImportRunner::StatementImportRunner(
     std::shared_ptr<IImportStatement> importService, std::string runBasePath,
     std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
     : StatementImportRunner(
-          std::make_shared<core::jobs::JobSystem>(std::move(importService)),
+          std::make_shared<core::jobs::JobSystem>(std::move(importService),
+                                                  errorReporter),
           std::move(runBasePath), std::move(errorReporter)) {}
 
 StatementImportRunner::StatementImportRunner(

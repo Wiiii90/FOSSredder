@@ -14,6 +14,7 @@
 #include <QVariantList>
 #include <QVariantMap>
 
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 namespace ui::adapters {
@@ -35,11 +36,13 @@ public:
    * @brief Creates an analysis workflow.
    * @param stateSnapshotProvider Provider for the current workspace snapshot.
    * @param analysisAdapter Adapter used to invoke the core analysis runner.
+   * @param errorReporter Error reporter used for workflow diagnostics.
    * @param parent Optional Qt parent.
    */
   explicit AnalysisWorkflow(
       StateSnapshotProvider stateSnapshotProvider,
       std::shared_ptr<ui::adapters::AnalysisAdapter> analysisAdapter,
+      std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
       QObject* parent = nullptr);
 
   /**
@@ -107,6 +110,7 @@ private:
 
   StateSnapshotProvider stateSnapshotProvider_;
   std::shared_ptr<ui::adapters::AnalysisAdapter> analysisAdapter_;
+  std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
 };
 
 } // namespace ui

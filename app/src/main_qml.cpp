@@ -41,7 +41,7 @@ int startQmlApp(
     std::shared_ptr<core::ports::annual::IAnnualRunner> annualRunner,
     std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner,
     std::shared_ptr<core::ports::importing::IImportRunner> importRunner) {
-  MainWindow w;
+  MainWindow w(errorReporter);
 
   ui::shell::createComposition(app, w, workspaceReader, workspaceWriter,
                                errorReporter, std::move(analysisRunner),
@@ -49,7 +49,7 @@ int startQmlApp(
                                std::move(importRunner));
 
   ui::shell::wireWorkspaceCallbacks(w, workspaceWriter, errorReporter);
-  ui::bootstrap::wireQmlWarnings(w.qmlEngine(), &w);
+  ui::bootstrap::wireQmlWarnings(w.qmlEngine(), &w, errorReporter);
 
   w.loadQml();
 

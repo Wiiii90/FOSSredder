@@ -47,10 +47,11 @@ makeFileListContext(const QStringList& files) {
  * @param context Optional structured diagnostic context.
  */
 inline void reportMainWindowFlow(
+    core::ports::diagnostics::IErrorReporter* reporter,
     const char* origin, std::string message,
     core::errors::ErrorSeverity severity = core::errors::ErrorSeverity::Info,
     core::errors::ErrorContext context = {}) {
-  ui::observability::reportFlow(severity,
+  ui::observability::reportFlow(reporter, severity,
                                 ui::observability::codes::FlowMainWindowAction,
                                 origin, std::move(message), std::move(context));
 }

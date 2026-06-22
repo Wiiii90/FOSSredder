@@ -16,6 +16,7 @@
 #include <QVariantMap>
 
 #include "core/ports/workspace/WorkspaceSnapshot.h"
+#include "support/ViewModelTestHarness.h"
 #include "support/WorkspacePortFakes.h"
 #include "ui/adapters/ExportAdapter.h"
 #include "ui/workflows/ExportWorkflow.h"
@@ -88,7 +89,7 @@ TEST(ExportWorkflowTest, WF_EXPORT_001_PublishesLogsThroughWorkspaceSink) {
       []() {
         return core::ports::workspace::WorkspaceSnapshot{};
       },
-      nullptr, nullptr);
+      nullptr, tests::support::noopErrorReporter(), nullptr);
   workflow.setExportLogSink(
       [&logs](const core::ports::workspace::ExportLogSnapshot& log) {
         logs.push_back(log);
@@ -113,7 +114,7 @@ TEST(ExportWorkflowTest,
       []() {
         return core::ports::workspace::WorkspaceSnapshot{};
       },
-      adapter, nullptr);
+      adapter, tests::support::noopErrorReporter(), nullptr);
   workflow.setExportLogSink(
       [&logs](const core::ports::workspace::ExportLogSnapshot& log) {
         logs.push_back(log);
@@ -141,7 +142,7 @@ TEST(ExportWorkflowTest,
       []() {
         return core::ports::workspace::WorkspaceSnapshot{};
       },
-      adapter, nullptr);
+      adapter, tests::support::noopErrorReporter(), nullptr);
   workflow.setExportLogSink(
       [&logs](const core::ports::workspace::ExportLogSnapshot& log) {
         logs.push_back(log);
@@ -170,7 +171,7 @@ TEST(ExportWorkflowTest, WF_EXPORT_004_PauseAndResumeUpdateWorkflowState) {
       []() {
         return core::ports::workspace::WorkspaceSnapshot{};
       },
-      adapter, nullptr);
+      adapter, tests::support::noopErrorReporter(), nullptr);
 
   workflow.exportDataWithPayload(0, QStringLiteral("P:/exports/pause.xlsx"),
                                  true, QStringLiteral("de-DE"), QVariantMap{},

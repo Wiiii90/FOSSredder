@@ -194,6 +194,8 @@ Read the diagram from left to right: `app` composes concrete targets, outer
 targets depend inward on `core` ports, and `diagnostics` is just another outer
 implementation target. `IErrorReporter` and `IDiagnostics` live in
 `core/ports/diagnostics`; concrete file and spdlog sinks live outside the core.
+Error reporting is passed explicitly through those ports; the core has no
+process-wide error-reporter registry.
 
 ### 3.2 Dependency Direction
 
@@ -1956,7 +1958,7 @@ Current enforcement points:
 
 - Startup composition in `app/src/main.cpp` does not register cloud clients or telemetry clients.
 - Core use cases run against local workspace snapshots and local infrastructure adapters.
-- Error reporting is routed through `core::ports::diagnostics::IErrorReporter`; no external reporter is wired by default.
+- Error reporting is routed explicitly through `core::ports::diagnostics::IErrorReporter`; there is no process-wide core reporter registry and no external telemetry reporter is wired by default.
 - GitHub, Codecov and Pages integrations exist only in CI workflows, not in the installed desktop runtime.
 
 If a future feature introduces network access, it must be documented as a new

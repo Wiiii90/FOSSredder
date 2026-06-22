@@ -11,8 +11,13 @@
 #include <deque>
 #include <functional>
 #include <mutex>
+#include <memory>
 #include <thread>
 #include <vector>
+
+namespace core::ports::diagnostics {
+class IErrorReporter;
+}
 
 namespace core::jobs {
 
@@ -40,7 +45,9 @@ class Scheduler {
 public:
     using Task = std::function<void()>;
 
-    Scheduler(std::size_t workers, std::size_t queueCapacity);
+    Scheduler(std::size_t workers,
+              std::size_t queueCapacity,
+              std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
     ~Scheduler();
 
     Scheduler(const Scheduler&) = delete;
@@ -60,6 +67,7 @@ private:
 
     bool stopping_ = false;
     std::vector<std::thread> workers_;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
 };
 
 }

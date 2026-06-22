@@ -109,7 +109,8 @@ public:
         std::string carriedBookingDate;
         int nextTxIndex = 1;
 
-        core::application::importing::SchedulerResources schedulerResources(req);
+        core::application::importing::SchedulerResources schedulerResources(
+            req, errorReporter_);
         std::mutex artifactsMutex;
         auto pages = core::application::importing::collectPageWork(req,
                                                       renderRes,

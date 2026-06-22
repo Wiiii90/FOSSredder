@@ -8,6 +8,8 @@
 #include <QMainWindow>
 #include <QUrl>
 
+#include <memory>
+
 #include "ui/shell/AppActions.h"
 #include "ui/shell/Defaults.h"
 #include "ui/shell/Status.h"
@@ -30,11 +32,16 @@ class AppContext;
 namespace ui {
 class Settings;
 }
+namespace core::ports::diagnostics {
+class IErrorReporter;
+}
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
 public:
-  explicit MainWindow(QWidget* parent = nullptr);
+  explicit MainWindow(
+      std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+      QWidget* parent = nullptr);
   ~MainWindow();
 
   void addImageProvider(const QString& id, QQmlImageProviderBase* provider);
@@ -98,6 +105,7 @@ private:
   ui::Actions* actions_ = nullptr;
   ui::Status* status_ = nullptr;
   ui::bootstrap::AppContext* appContext_ = nullptr;
+  std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
   bool qmlShutdownPrepared_ = false;
   ui::window::CloseWorkflow closeWorkflow_;
   ui::window::DropHandler dropHandler_;

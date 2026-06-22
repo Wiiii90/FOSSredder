@@ -54,47 +54,56 @@ MainWindowServices installMainWindowContext(QQmlEngine* qmlEngine,
 
 void wireMainWindowActions(MainWindow& window,
                            const MainWindowServices& services,
+                           const std::shared_ptr<
+                               core::ports::diagnostics::IErrorReporter>&
+                               errorReporter,
                            const std::function<void()>& showAbout) {
   if (!services.actions)
     return;
 
   auto* actions = services.actions;
   QObject::connect(
-      actions->newFileAction(), &QAction::triggered, &window, [&window](bool) {
+      actions->newFileAction(), &QAction::triggered, &window,
+      [&window, errorReporter](bool) {
         const QString file = ui::dialogs::pickNewStorageFile(&window);
         if (file.isEmpty())
           return;
         ui::window::reportMainWindowFlow(
+            errorReporter.get(),
             ui::observability::origins::mainWindow::kActionRouting,
             "UI requested new file", core::errors::ErrorSeverity::Info,
             ui::window::makePathContext(file));
         emit window.newFileRequested(file);
       });
   QObject::connect(
-      actions->openFileAction(), &QAction::triggered, &window, [&window](bool) {
+      actions->openFileAction(), &QAction::triggered, &window,
+      [&window, errorReporter](bool) {
         const QString file = ui::dialogs::pickOpenStorageFile(&window);
         if (file.isEmpty())
           return;
         ui::window::reportMainWindowFlow(
+            errorReporter.get(),
             ui::observability::origins::mainWindow::kActionRouting,
             "UI requested open file", core::errors::ErrorSeverity::Info,
             ui::window::makePathContext(file));
         emit window.openFileRequested(file);
       });
   QObject::connect(actions->saveFileAction(), &QAction::triggered, &window,
-                   [&window](bool) {
+                   [&window, errorReporter](bool) {
                      ui::window::reportMainWindowFlow(
+                         errorReporter.get(),
                          ui::observability::origins::mainWindow::kActionRouting,
                          "UI requested save file");
                      emit window.saveFileRequested();
                    });
   QObject::connect(
       actions->saveFileAsAction(), &QAction::triggered, &window,
-      [&window](bool) {
+      [&window, errorReporter](bool) {
         const QString file = ui::dialogs::pickSaveStorageFileAs(&window);
         if (file.isEmpty())
           return;
         ui::window::reportMainWindowFlow(
+            errorReporter.get(),
             ui::observability::origins::mainWindow::kActionRouting,
             "UI requested save file as", core::errors::ErrorSeverity::Info,
             ui::window::makePathContext(file));
@@ -111,10 +120,12 @@ void wireMainWindowActions(MainWindow& window,
 
   QObject::connect(
       actions, &ui::Actions::importBrowseRequested, &window,
-      [&window, actions, status = services.status](const QString& filter) {
+      [&window, actions, status = services.status,
+       errorReporter](const QString& filter) {
         const QStringList files = ui::dialogs::pickImportFiles(&window, filter);
         if (!files.isEmpty()) {
           ui::window::reportMainWindowFlow(
+              errorReporter.get(),
               ui::observability::origins::mainWindow::kActionRouting,
               "UI selected import files", core::errors::ErrorSeverity::Info,
               ui::window::makeFileListContext(files));
@@ -129,10 +140,12 @@ void wireMainWindowActions(MainWindow& window,
 
   QObject::connect(
       actions, &ui::Actions::exportBrowseRequested, &window,
-      [&window, actions, status = services.status](const QString& filter) {
+      [&window, actions, status = services.status,
+       errorReporter](const QString& filter) {
         const QString file = ui::dialogs::pickExportFile(&window, filter);
         if (!file.isEmpty()) {
           ui::window::reportMainWindowFlow(
+              errorReporter.get(),
               ui::observability::origins::mainWindow::kActionRouting,
               "UI selected export path", core::errors::ErrorSeverity::Info,
               ui::window::makePathContext(file));
@@ -145,11 +158,13 @@ void wireMainWindowActions(MainWindow& window,
 
   QObject::connect(
       actions, &ui::Actions::exportDirectoryBrowseRequested, &window,
-      [&window, actions, status = services.status](const QString& title) {
+      [&window, actions, status = services.status,
+       errorReporter](const QString& title) {
         const QString directory =
             ui::dialogs::pickExportDirectory(&window, title);
         if (!directory.isEmpty()) {
           ui::window::reportMainWindowFlow(
+              errorReporter.get(),
               ui::observability::origins::mainWindow::kActionRouting,
               "UI selected export directory", core::errors::ErrorSeverity::Info,
               ui::window::makePathContext(directory));

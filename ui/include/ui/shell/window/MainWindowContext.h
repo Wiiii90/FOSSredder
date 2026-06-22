@@ -6,10 +6,15 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 
 class MainWindow;
 class QObject;
 class QQmlEngine;
+
+namespace core::ports::diagnostics {
+class IErrorReporter;
+}
 
 namespace ui {
 class Actions;
@@ -59,6 +64,9 @@ MainWindowServices installMainWindowContext(QQmlEngine* qmlEngine,
  */
 void wireMainWindowActions(MainWindow& window,
                            const MainWindowServices& services,
+                           const std::shared_ptr<
+                               core::ports::diagnostics::IErrorReporter>&
+                               errorReporter,
                            const std::function<void()>& showAbout);
 
 } // namespace ui::window

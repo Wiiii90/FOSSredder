@@ -6,7 +6,6 @@
 #include "core/application/import/statement/StatementParseHelpers.h"
 
 #include "core/application/import/transaction/AmountParser.h"
-#include "core/errors/ErrorReporterRegistry.h"
 #include "core/application/import/transaction/DefaultTransactionParser.h"
 #include "core/application/import/internal/ParserHelpers.h"
 #include "../../../utils/UniqId.h"
@@ -15,6 +14,7 @@
 #include <cmath>
 #include <limits>
 #include <regex>
+#include <utility>
 
 namespace core::application::importing::statement::internal {
 using core::application::importing::statement::DefaultStatementParser;
@@ -30,13 +30,12 @@ namespace heuristics = core::application::importing::internal;
 namespace {
 
 template <typename Action>
-bool tryReportParserWarning(const char* origin, Action&& action)
+bool tryParserAction(Action&& action)
 {
     try {
         std::forward<Action>(action)();
         return true;
     } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, origin, std::current_exception());
         return false;
     }
 }
@@ -210,7 +209,7 @@ bool isLikelyTransactionMainRowGeom(const RawLine& line, const ColumnModel& cols
     bool hasCredit = cols.hasCredit() ? helpers::hasTokenNearX(rawToOcrLine(line), cols.creditX, band) : false;
 
     if (!hasDebit && !hasCredit) {
-        tryReportParserWarning("core::parser::DefaultStatementParser::isLikelyTransactionMainRowGeom", [&] {
+        tryParserAction([&] {
             auto amountIndices = helpers::findAmountTokenIndices(rawToOcrLine(line), cols.valutaX, helpers::parserConfig.amountNearValutaBandPx);
             if (!amountIndices.empty()) hasDebit = true;
         });
@@ -252,9 +251,7 @@ std::pair<int, bool> detectHeaderRegion(const std::vector<OcrLine>& lines, size_
             if (heuristics::isDebitCreditHeaderLine(text)) isStrongHeaderLike = true;
             if (helpers::findFirstFullDate(text).has_value()) isStrongHeaderLike = true;
             if (heuristics::isHeaderNoiseLine(text)) isNoise = true;
-        } catch (...) {
-            core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::detectHeaderRegion", std::current_exception());
-        }
+        } catch (...) {}
 
         if (isStrongHeaderLike) {
             lastBlockY = std::max(lastBlockY, line.maxY);
@@ -288,9 +285,7 @@ std::optional<std::string> findDefaultBookingDate(const std::vector<OcrLine>& li
                 return match.str(1);
             }
         }
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::findDefaultBookingDate", std::current_exception());
-    }
+    } catch (...) {}
     return std::nullopt;
 }
 
@@ -308,9 +303,7 @@ std::optional<std::string> findBookingDateInHeader(const std::string& line) noex
             return !(std::isdigit(static_cast<unsigned char>(c)) || c == '.' || std::isspace(static_cast<unsigned char>(c)));
         }), compact.end());
         return helpers::findFirstFullDate(compact);
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::findBookingDateInHeader", std::current_exception());
-    }
+    } catch (...) {}
     return std::nullopt;
 }
 
@@ -338,9 +331,7 @@ bool detectEarlyEmptyPage(const std::vector<OcrLine>& lines, std::string& outDeb
         summary << "page.earlyEmptyCheckBottom\tfootLike=" << footLike << "\tamts=" << amountLikeCount;
         outDebug = summary.str();
         return footLike >= static_cast<int>(checkLines * 2 / 3) && amountLikeCount == 0;
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::detectEarlyEmptyPage", std::current_exception());
-    }
+    } catch (...) {}
     return false;
 }
 
@@ -373,9 +364,7 @@ std::vector<helpers::RawLineLite> selectiveGroupMergeLinesRaw(const std::vector<
                 }
                 if (!evidence && !currentStandaloneMetadata && !nextStandaloneMetadata && helpers::isLooseTransactionLine(currentLine, seedCols.valutaX) && nextNearValuta && nextHasAmount) evidence = true;
                 if (!evidence && !currentStandaloneMetadata && !nextStandaloneMetadata && helpers::isLooseTransactionLine(nextLine, seedCols.valutaX) && currentNearValuta && currentHasAmount) evidence = true;
-            } catch (...) {
-                core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::selectiveGroupMergeLinesRaw", std::current_exception());
-            }
+            } catch (...) {}
 
             if (evidence) {
                 current.maxX = std::max(current.maxX, next.maxX);
@@ -422,15 +411,15 @@ HeaderAnalysis analyzeHeaderWindow(const std::vector<OcrLine>& ocrLines,
                 const bool hasFullDate = helpers::findFirstFullDate(text).has_value();
                 bool hasAmount = helpers::hasAmountLikeTokenInLine(line, seedCols.valutaX);
                 bool hasValutaTokenNear = false;
-                tryReportParserWarning("core::parser::DefaultStatementParser::headerCandidateValutaNear", [&] {
+                tryParserAction([&] {
                     if (seedCols.valutaX >= 0) hasValutaTokenNear = helpers::hasTokenNearX(line, seedCols.valutaX, helpers::parserConfig.tokenNearBandForMainRow);
                 });
                 std::ostringstream summary;
                 summary << "header.candidate\tline=" << headerIndex << "\ttext=" << text << "\ttxSection=" << (isTxSection ? "1" : "0") << "\tdebitcredit=" << (isDebitCredit ? "1" : "0") << "\tnoise=" << (isNoise ? "1" : "0") << "\tfullDate=" << (hasFullDate ? "1" : "0") << "\thasAmt=" << (hasAmount ? "1" : "0") << "\tvalutaNear=" << (hasValutaTokenNear ? "1" : "0");
                 out.debugLines.push_back(summary.str());
-            } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::hasHeaderSignal::txt", std::current_exception()); }
+            } catch (...) {  }
         }
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::headerCandidates", std::current_exception()); }
+    } catch (...) {  }
 
     try {
         int earliestAmountY = std::numeric_limits<int>::max();
@@ -443,13 +432,13 @@ HeaderAnalysis analyzeHeaderWindow(const std::vector<OcrLine>& ocrLines,
                 if (!hasAmount && !dateLeft) continue;
                 earliestAmountY = std::min(earliestAmountY, line.maxY);
                 foundAmountLine = true;
-            } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::hasHeaderSignal::combined", std::current_exception()); }
+            } catch (...) {  }
         }
         if (foundAmountLine && earliestAmountY != std::numeric_limits<int>::max()) {
             result.headerBottomY = std::min(result.headerBottomY, earliestAmountY - 2);
             out.debugLines.push_back(std::string("header.adjustedForEarliestAmount\t") + std::to_string(result.headerBottomY));
         }
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::headerAdjustEarliestAmount", std::current_exception()); }
+    } catch (...) {  }
 
     try {
         for (const auto& line : lines) result.pageMaxY = std::max(result.pageMaxY, line.maxY);
@@ -461,9 +450,9 @@ HeaderAnalysis analyzeHeaderWindow(const std::vector<OcrLine>& ocrLines,
 static bool looksLikeRescuedMainLine(const OcrLine& line, const ColumnModel& cols)
 {
     bool looksMain = false;
-    try { if (helpers::hasAmountLikeTokenInLine(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::hasAmount", std::current_exception()); }
-    try { if (!looksMain && helpers::isLooseTransactionLine(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::isLoose", std::current_exception()); }
-    try { if (!looksMain && helpers::hasShortDateToken(line.text) && helpers::hasLeftDescriptiveText(line, cols.valutaX)) looksMain = true; } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::dateAndLeft", std::current_exception()); }
+    try { if (helpers::hasAmountLikeTokenInLine(line, cols.valutaX)) looksMain = true; } catch (...) {  }
+    try { if (!looksMain && helpers::isLooseTransactionLine(line, cols.valutaX)) looksMain = true; } catch (...) {  }
+    try { if (!looksMain && helpers::hasShortDateToken(line.text) && helpers::hasLeftDescriptiveText(line, cols.valutaX)) looksMain = true; } catch (...) {  }
     return looksMain;
 }
 
@@ -483,9 +472,9 @@ void rescueOrphanBlocks(std::vector<TransactionBlock>& blocks,
                 block.main = handleMainRow(orphanLine, guess, false, out.debugLines);
                 blocks.push_back(std::move(block));
                 out.debugLines.push_back(std::string("tx.start.rescued\ttext=") + orphanLine.text);
-            } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue::loop", std::current_exception()); }
+            } catch (...) {  }
         }
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::rescue", std::current_exception()); }
+    } catch (...) {  }
 }
 
 std::optional<std::pair<TransactionMainRow, int>> tryVerticalStart(const std::vector<OcrLine>& lines,
@@ -517,9 +506,7 @@ std::optional<std::pair<TransactionMainRow, int>> tryVerticalStart(const std::ve
                 return std::make_optional(std::make_pair(splitMergedMainRow(current, next, cols), 1));
             }
         }
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::tryVerticalStart", std::current_exception());
-    }
+    } catch (...) {}
     return std::nullopt;
 }
 
@@ -540,9 +527,7 @@ std::optional<std::pair<TransactionMainRow, int>> tryCombinedStart(const std::ve
         if (!combinedNext.empty() && std::regex_search(combinedNext, combinedMainRowRegex())) {
             return std::make_optional(std::make_pair(helpers::splitMainRowFromOcrLine(current, cols.valutaX, cols.debitX, cols.creditX), 1));
         }
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::tryCombinedStart", std::current_exception());
-    }
+    } catch (...) {}
     return std::nullopt;
 }
 
@@ -597,9 +582,7 @@ void appendDetailLine(TransactionBlock& cur,
 
         cur.detailLines.push_back(line);
         if (debugOut) debugOut->push_back(std::string("detail.append.helper.whole\t") + line.text);
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::appendDetailLine", std::current_exception());
-    }
+    } catch (...) {}
 }
 
 TransactionMainRow handleMainRow(const OcrLine& line,
@@ -619,9 +602,7 @@ TransactionMainRow handleMainRow(const OcrLine& line,
         appendDebugValue(debugOut, "tx.main.debit\t", mainRow.debit.line.text);
         appendDebugValue(debugOut, "tx.main.credit\t", mainRow.credit.line.text);
         return mainRow;
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::handleMainRow", std::current_exception());
-    }
+    } catch (...) {}
     return TransactionMainRow{};
 }
 
@@ -661,9 +642,7 @@ void attachOrphansToBlocks(std::vector<TransactionBlock>& blocks,
                 debugOut->push_back(std::string("orphan.drop\treason=amount-column-overlap\ttext=") + orphan.text);
             }
         }
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::attachOrphansToBlocks", std::current_exception());
-    }
+    } catch (...) {}
 }
 
 void appendPageSummary(const std::vector<RawLine>& lines,
@@ -676,7 +655,7 @@ void appendPageSummary(const std::vector<RawLine>& lines,
         std::ostringstream summary;
         summary << "page.summary\tocr.lines=" << lines.size() << "\theader.prebottomY=" << headerBottomY << "\tblocks=" << blocks.size() << "\ttxStartLoose=" << txStartLooseCount;
         out.debugLines.push_back(summary.str());
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::pageSummary", std::current_exception()); }
+    } catch (...) {  }
 }
 
 static void appendBlockDebug(const TransactionBlock& block,
@@ -693,7 +672,7 @@ static void appendBlockDebug(const TransactionBlock& block,
         out.debugLines.push_back(std::string("block.main.credit.empty\t") + (block.main.credit.empty() ? "1" : "0"));
         out.debugLines.push_back(std::string("block.main.credit.text\t") + (block.main.credit.empty() ? std::string("(none)") : block.main.credit.line.text));
         out.debugLines.push_back(std::string("cols.state\tvalutaX=") + std::to_string(cols.valutaX) + std::string("\tdebitX=") + std::to_string(cols.debitX) + std::string("\tcreditX=") + std::to_string(cols.creditX));
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::blockDebug", std::current_exception()); }
+    } catch (...) {  }
 }
 
 static void applyCellAmountOverride(core::application::importing::draft::TransactionDraft& tx,
@@ -737,7 +716,7 @@ static void applyCellAmountOverride(core::application::importing::draft::Transac
                 break;
             }
         }
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::cellOverride", std::current_exception()); }
+    } catch (...) {  }
 }
 
 static void attachProofCrop(core::application::importing::draft::TransactionDraft& tx,
@@ -791,7 +770,7 @@ static void attachProofCrop(core::application::importing::draft::TransactionDraf
         } catch (...) {
             out.debugLines.push_back(std::string("crop.exception\tunknown"));
         }
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultStatementParser::proofCrop", std::current_exception()); }
+    } catch (...) {  }
 }
 
 void appendTransactionsFromBlocks(const std::vector<TransactionBlock>& blocks,

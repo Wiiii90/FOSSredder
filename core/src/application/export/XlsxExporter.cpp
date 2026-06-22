@@ -151,8 +151,7 @@ XlsxExporter::exportData(
       return result;
     }
 
-    const auto matrix = internal::buildPropertyContractMatrix(
-        state, "core::exporting::XlsxExporter::exportData");
+    const auto matrix = internal::buildPropertyContractMatrix(state);
     if (shouldStop(request)) {
       return canceledResult(request);
     }

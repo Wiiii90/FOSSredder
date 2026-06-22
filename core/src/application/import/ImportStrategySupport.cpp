@@ -14,6 +14,7 @@
 #include <future>
 #include <nlohmann/json.hpp>
 #include <thread>
+#include <utility>
 
 namespace core::application::importing {
 
@@ -31,9 +32,12 @@ void waitWhilePaused(const ImportRequest& req)
 
 }
 
-SchedulerResources::SchedulerResources(const ImportRequest& req)
+SchedulerResources::SchedulerResources(
+    const ImportRequest& req,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
     : localScheduler(core::constants::importing::kLocalSchedulerWorkers,
-                     core::constants::importing::kLocalSchedulerQueueCapacity)
+                     core::constants::importing::kLocalSchedulerQueueCapacity,
+                     std::move(errorReporter))
     , localOcrLimiter(core::constants::importing::kLocalOcrSlots)
     , scheduler(req.scheduler ? req.scheduler : &localScheduler)
     , ocrLimiter(req.ocrLimiter ? req.ocrLimiter : &localOcrLimiter)

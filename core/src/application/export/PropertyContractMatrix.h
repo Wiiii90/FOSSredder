@@ -9,7 +9,6 @@
 #include "../../utils/Util.h"
 #include "core/constants/export.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
-#include "core/errors/ErrorReporterRegistry.h"
 
 #include <string>
 #include <unordered_map>
@@ -33,16 +32,13 @@ struct PropertyContractMatrix {
  * @param contractId Contract identifier from the transaction.
  * @param idToType Precomputed contract-type lookup table.
  * @param state Current workspace snapshot.
- * @param missingTypeOrigin Optional origin string for diagnostics when a type
- * is missing.
  * @return Contract type label, or the unassigned label when none can be
  * resolved.
  */
 inline std::string resolveContractType(
     const std::string &contractId,
     const std::unordered_map<std::string, std::string> &idToType,
-    const core::domain::catalog::WorkspaceCatalog &state,
-    const char *missingTypeOrigin) {
+    const core::domain::catalog::WorkspaceCatalog &state) {
   const std::string trimmedContractId = core::utils::trim(contractId);
   if (trimmedContractId.empty()) {
     return std::string(core::constants::exportFlow::labels::kUnassigned);
@@ -71,16 +67,6 @@ inline std::string resolveContractType(
     break;
   }
 
-  if (missingTypeOrigin) {
-    static std::unordered_set<std::string> loggedMissingIds;
-    if (loggedMissingIds.insert(trimmedContractId).second) {
-      core::errors::report(core::errors::ErrorSeverity::Warning,
-                           core::errors::codes::GenericError, missingTypeOrigin,
-                           "missing contractId->type mapping",
-                           {{"contractId", trimmedContractId}});
-    }
-  }
-
   return std::string(core::constants::exportFlow::labels::kUnassigned);
 }
 
@@ -88,13 +74,10 @@ inline std::string resolveContractType(
  * @brief Builds the property/contract matrix from the current workspace
  * snapshot.
  * @param state Current workspace snapshot.
- * @param missingTypeOrigin Optional origin string for diagnostics when a type
- * is missing.
  * @return Matrix containing properties, contract types, and aggregated amounts.
  */
 inline PropertyContractMatrix buildPropertyContractMatrix(
-    const core::domain::catalog::WorkspaceCatalog &state,
-    const char *missingTypeOrigin) {
+    const core::domain::catalog::WorkspaceCatalog &state) {
   std::unordered_map<std::string, std::string> propertyNamesById;
   propertyNamesById.reserve(state.properties().size());
   for (const auto &property : state.properties()) {
@@ -121,7 +104,7 @@ inline PropertyContractMatrix buildPropertyContractMatrix(
     }
 
     const std::string contractType = resolveContractType(
-        transaction->contractId(), contractTypesById, state, missingTypeOrigin);
+        transaction->contractId(), contractTypesById, state);
     if (seenContractTypes.insert(contractType).second) {
       matrix.contractTypes.push_back(contractType);
     }

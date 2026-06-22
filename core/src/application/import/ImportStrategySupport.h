@@ -37,7 +37,8 @@ struct SchedulerResources {
     core::jobs::Scheduler* scheduler = nullptr;
     core::jobs::SlotLimiter* ocrLimiter = nullptr;
 
-    explicit SchedulerResources(const ImportRequest& req);
+    SchedulerResources(const ImportRequest& req,
+                       std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 };
 
 void ensureDirectoryExists(const std::filesystem::path& path,

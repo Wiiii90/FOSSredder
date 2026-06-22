@@ -1,6 +1,6 @@
 #include "JobManager.h"
 
-#include "core/errors/ErrorReporterRegistry.h"
+#include "core/errors/ErrorReporting.h"
 #include "../utils/UniqId.h"
 
 #include <utility>
@@ -36,7 +36,9 @@ void applyEventToSnapshot(JobSnapshot& snapshot, const JobEvent& event)
 
 }
 
-JobManager::JobManager() = default;
+JobManager::JobManager(
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
+    : errorReporter_(std::move(errorReporter)) {}
 
 JobId JobManager::makeJobId() {
     return core::utils::makeUniqId();
@@ -104,7 +106,7 @@ void JobManager::cancel(const JobId& id) {
     }
 
     if (job->cancel) {
-        try { job->cancel->store(true); } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::cancel::store", std::current_exception()); }
+        try { job->cancel->store(true); } catch (...) { core::errors::reportException(errorReporter_.get(), core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::cancel::store", std::current_exception()); }
     }
 
     JobEvent ev;
@@ -129,7 +131,7 @@ void JobManager::pause(const JobId& id) {
     }
 
     if (job->pause) {
-        try { job->pause->store(true); } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::pause::store", std::current_exception()); }
+        try { job->pause->store(true); } catch (...) { core::errors::reportException(errorReporter_.get(), core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::pause::store", std::current_exception()); }
     }
 
     JobEvent ev;
@@ -153,7 +155,7 @@ void JobManager::resume(const JobId& id) {
     }
 
     if (job->pause) {
-        try { job->pause->store(false); } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::resume::store", std::current_exception()); }
+        try { job->pause->store(false); } catch (...) { core::errors::reportException(errorReporter_.get(), core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::resume::store", std::current_exception()); }
     }
 
     JobEvent ev;
@@ -306,7 +308,7 @@ void JobManager::publish(const JobEvent& ev) {
     }
 
     for (auto& cb : cbs) {
-        try { cb(ev); } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::publish::callback", std::current_exception()); }
+        try { cb(ev); } catch (...) { core::errors::reportException(errorReporter_.get(), core::errors::ErrorSeverity::Warning, "core::jobs::JobManager::publish::callback", std::current_exception()); }
     }
 }
 

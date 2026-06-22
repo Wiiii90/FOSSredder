@@ -13,6 +13,7 @@
 #include <functional>
 #include <memory>
 
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/usecases/export/ExportResult.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
@@ -42,11 +43,13 @@ public:
    * @brief Creates an export workflow backed by a snapshot provider and runner.
    * @param stateSnapshotProvider Provider for the current workspace snapshot.
    * @param exportAdapter Adapter used to invoke the core export runner.
+   * @param errorReporter Error reporter used for workflow diagnostics.
    * @param parent Optional Qt parent.
    */
   explicit ExportWorkflow(
       StateSnapshotProvider stateSnapshotProvider,
       std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter,
+      std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
       QObject* parent = nullptr);
 
   /**
@@ -180,6 +183,7 @@ private:
   StateSnapshotProvider stateSnapshotProvider_;
   ExportLogSink exportLogSink_;
   std::shared_ptr<ui::adapters::ExportAdapter> exportAdapter_;
+  std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
   std::shared_ptr<ExportControlState> exportControl_;
   QFuture<core::ports::exporting::ExportResult> exportFuture_;
   QFutureWatcher<core::ports::exporting::ExportResult> exportWatcher_;

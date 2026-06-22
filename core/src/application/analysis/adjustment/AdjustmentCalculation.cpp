@@ -3,7 +3,6 @@
 #include "core/ports/usecases/analysis/AnalysisResult.h"
 
 #include "core/constants/analysis.h"
-#include "core/errors/ErrorReporterRegistry.h"
 
 #include <nlohmann/json.hpp>
 
@@ -51,11 +50,7 @@ TaxConfig parseTax(const core::domain::Analysis &analysis) {
     const double percent = percentIt->get<double>();
     config.factor = 1.0 + (percent / 100.0);
     return config;
-  } catch (...) {
-    core::errors::reportException(core::errors::ErrorSeverity::Warning,
-                                  "core::application::analysis::parseTax",
-                                  std::current_exception());
-  }
+  } catch (...) {}
 
   return {};
 }

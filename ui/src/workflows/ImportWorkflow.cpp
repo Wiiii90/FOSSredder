@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "core/errors/ErrorCodes.h"
-#include "core/errors/ErrorReporterRegistry.h"
 #include "ui/i18n/Text.h"
 #include "ui/observability/Origins.h"
 #include "ui/observability/Trace.h"
@@ -593,7 +592,8 @@ void ImportWorkflow::clearDraft() {
 void ImportWorkflow::rejectImportStart(const QString& errorMessage,
                                        const char* traceMessage) {
   state_->rejectStart(errorMessage);
-  observability::reportFlow(core::errors::ErrorSeverity::Warning,
+  observability::reportFlow(errorReporter_.get(),
+                            core::errors::ErrorSeverity::Warning,
                             observability::codes::FlowImportRejected,
                             observability::origins::workflow::import::kStart,
                             traceMessage);
@@ -658,6 +658,7 @@ void ImportWorkflow::startImportForFile(const QString& path) {
        {observability::context::kQueuedCount,
         std::to_string(state_->queuedFiles().size())}});
   observability::reportFlow(
+      errorReporter_.get(),
       core::errors::ErrorSeverity::Info,
       observability::codes::FlowImportStarted,
       observability::origins::workflow::import::kStart, "Import started",
@@ -717,6 +718,7 @@ void ImportWorkflow::requestImportCancellation(bool clearQueue,
     importAdapter_->cancel(activeImportHandle_);
   }
   observability::reportFlow(
+      errorReporter_.get(),
       core::errors::ErrorSeverity::Info,
       observability::codes::FlowImportCanceled, origin, traceMessage,
       {{observability::context::kFile,
@@ -812,6 +814,7 @@ void ImportWorkflow::handleImportCanceled() {
     activeImportTerminalHandled_ = true;
   }
   observability::reportFlow(
+      errorReporter_.get(),
       core::errors::ErrorSeverity::Info,
       observability::codes::FlowImportCanceled,
       observability::origins::workflow::import::kTerminal, "Import canceled",
@@ -836,7 +839,8 @@ void ImportWorkflow::handleImportFailed(const QString& errorMessage,
                   errorMessage);
     activeImportTerminalHandled_ = true;
   }
-  observability::reportFlow(core::errors::ErrorSeverity::Warning,
+  observability::reportFlow(errorReporter_.get(),
+                            core::errors::ErrorSeverity::Warning,
                             observability::codes::FlowImportFailed,
                             observability::origins::workflow::import::kTerminal,
                             traceMessage,
@@ -901,6 +905,7 @@ bool ImportWorkflow::populateDraftFromResult() {
   activeImportTerminalHandled_ = true;
 
   observability::reportFlow(
+      errorReporter_.get(),
       core::errors::ErrorSeverity::Info,
       observability::codes::FlowImportFinished,
       observability::origins::workflow::import::kTerminal, "Import finished",

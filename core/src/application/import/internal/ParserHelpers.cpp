@@ -5,7 +5,6 @@
 
 #include "core/application/import/internal/ParserHelpers.h"
 #include "../../../utils/Util.h"
-#include "core/errors/ErrorReporterRegistry.h"
 #include <sstream>
 
 namespace core::application::importing::internal {
@@ -59,12 +58,7 @@ std::vector<size_t> findAmountTokenIndices(const OcrLine &line,
       }
       out.push_back(i);
     }
-  } catch (...) {
-    core::errors::reportException(
-        core::errors::ErrorSeverity::Warning,
-        "core::parser::helpers::findAmountTokenIndices",
-        std::current_exception());
-  }
+  } catch (...) {}
   return out;
 }
 
@@ -162,12 +156,7 @@ bool hasAmountLikeTokenInLine(const OcrLine &line,
                   .empty();
     }
     return !findAmountTokenIndices(line, -1, 0).empty();
-  } catch (...) {
-    core::errors::reportException(
-        core::errors::ErrorSeverity::Warning,
-        "core::parser::helpers::hasAmountLikeTokenInLine",
-        std::current_exception());
-  }
+  } catch (...) {}
   return false;
 }
 
@@ -189,12 +178,7 @@ bool hasLeftDescriptiveText(const OcrLine &line,
     for (unsigned char c : toks[0])
       if (std::isalpha(c))
         return true;
-  } catch (...) {
-    core::errors::reportException(
-        core::errors::ErrorSeverity::Warning,
-        "core::parser::helpers::hasLeftDescriptiveText",
-        std::current_exception());
-  }
+  } catch (...) {}
   return false;
 }
 
@@ -205,11 +189,7 @@ bool hasAmountNearValuta(const OcrLine &line, int valutaX,
   try {
     auto idxs = findAmountTokenIndices(line, valutaX, bandPx);
     return !idxs.empty();
-  } catch (...) {
-    core::errors::reportException(core::errors::ErrorSeverity::Warning,
-                                  "core::parser::helpers::hasAmountNearValuta",
-                                  std::current_exception());
-  }
+  } catch (...) {}
   return false;
 }
 
@@ -243,12 +223,7 @@ bool isLooseTransactionLine(const OcrLine &line,
       if (std::isalpha(c))
         return true;
     }
-  } catch (...) {
-    core::errors::reportException(
-        core::errors::ErrorSeverity::Warning,
-        "core::parser::helpers::isLooseTransactionLine",
-        std::current_exception());
-  }
+  } catch (...) {}
   return false;
 }
 
@@ -276,13 +251,7 @@ findAndParseAmountInLine(const OcrLine &line, int valutaX,
                                   s);
             return std::nullopt;
           }
-        } catch (...) {
-          core::errors::reportException(
-              core::errors::ErrorSeverity::Warning,
-              "core::parser::helpers::findAndParseAmountInLine::"
-              "containsShortDate",
-              std::current_exception());
-        }
+        } catch (...) {}
 
         try {
           std::string norm = s;
@@ -323,18 +292,8 @@ findAndParseAmountInLine(const OcrLine &line, int valutaX,
                                     std::string(" -> ") + std::to_string(v));
               return v;
             }
-          } catch (...) {
-            core::errors::reportException(
-                core::errors::ErrorSeverity::Warning,
-                "core::parser::helpers::findAndParseAmountInLine::stod",
-                std::current_exception());
-          }
-        } catch (...) {
-          core::errors::reportException(
-              core::errors::ErrorSeverity::Warning,
-              "core::parser::helpers::findAndParseAmountInLine::normalize",
-              std::current_exception());
-        }
+          } catch (...) {}
+        } catch (...) {}
 
         if (auto v =
                 ::core::application::importing::transaction::parseAmountString(s)) {
@@ -358,12 +317,7 @@ findAndParseAmountInLine(const OcrLine &line, int valutaX,
             return v2;
           }
         }
-      } catch (...) {
-        core::errors::reportException(
-            core::errors::ErrorSeverity::Warning,
-            "core::parser::helpers::findAndParseAmountInLine::tryParse",
-            std::current_exception());
-      }
+      } catch (...) {}
       return std::nullopt;
     };
 
@@ -413,12 +367,7 @@ findAndParseAmountInLine(const OcrLine &line, int valutaX,
                             std::string(" -> ") + std::to_string(*v));
       return v;
     }
-  } catch (...) {
-    core::errors::reportException(
-        core::errors::ErrorSeverity::Warning,
-        "core::parser::helpers::findAndParseAmountInLine",
-        std::current_exception());
-  }
+  } catch (...) {}
   return std::nullopt;
 }
 
@@ -557,41 +506,21 @@ inferColumnModelFromLines(const std::vector<OcrLine> &lines,
         if (out.valutaX < 0)
           if (auto vx = findTokenCenterX(l, "valuta"))
             out.valutaX = *vx;
-      } catch (...) {
-        core::errors::reportException(
-            core::errors::ErrorSeverity::Warning,
-            "core::parser::helpers::inferColumnModelFromLines::valuta",
-            std::current_exception());
-      }
+      } catch (...) {}
       try {
         if (out.debitX < 0)
           if (auto dx = findPhraseCenterX(l, {"zu", "ihren", "lasten"}))
             out.debitX = *dx;
-      } catch (...) {
-        core::errors::reportException(
-            core::errors::ErrorSeverity::Warning,
-            "core::parser::helpers::inferColumnModelFromLines::debit",
-            std::current_exception());
-      }
+      } catch (...) {}
       try {
         if (out.creditX < 0)
           if (auto cx = findPhraseCenterX(l, {"zu", "ihren", "gunsten"}))
             out.creditX = *cx;
-      } catch (...) {
-        core::errors::reportException(
-            core::errors::ErrorSeverity::Warning,
-            "core::parser::helpers::inferColumnModelFromLines::credit",
-            std::current_exception());
-      }
+      } catch (...) {}
       if (out.valutaX >= 0 && out.debitX >= 0 && out.creditX >= 0)
         break;
     }
-  } catch (...) {
-    core::errors::reportException(
-        core::errors::ErrorSeverity::Warning,
-        "core::parser::helpers::inferColumnModelFromLines",
-        std::current_exception());
-  }
+  } catch (...) {}
   return out;
 }
 
@@ -690,12 +619,7 @@ splitMainRowFromRaw(const RawLineLite &src, int valutaX, int debitX,
       try {
         if (tokenLooksLikeAmount(toks[i]))
           priority = 2;
-      } catch (...) {
-        core::errors::reportException(
-            core::errors::ErrorSeverity::Warning,
-            "core::parser::helpers::splitMainRowFromRaw::idxNearXPreferNumeric",
-            std::current_exception());
-      }
+      } catch (...) {}
       if (priority > bestPriority ||
           (priority == bestPriority && d < bestDist)) {
         bestPriority = priority;
@@ -720,12 +644,7 @@ splitMainRowFromRaw(const RawLineLite &src, int valutaX, int debitX,
             found = (int)i;
             break;
           }
-        } catch (...) {
-          core::errors::reportException(
-              core::errors::ErrorSeverity::Warning,
-              "core::parser::helpers::splitMainRowFromRaw::findAmount",
-              std::current_exception());
-        }
+        } catch (...) {}
       }
       if (found >= 0) {
         if (creditX >= 0)
@@ -736,11 +655,7 @@ splitMainRowFromRaw(const RawLineLite &src, int valutaX, int debitX,
           creditIdx = found;
       }
     }
-  } catch (...) {
-    core::errors::reportException(core::errors::ErrorSeverity::Warning,
-                                  "core::parser::helpers::splitMainRowFromRaw",
-                                  std::current_exception());
-  }
+  } catch (...) {}
   if (valutaIdx >= 0) {
     if (debitIdx == valutaIdx && debitX >= 0)
       debitIdx = idxNearX(debitX, valutaIdx);

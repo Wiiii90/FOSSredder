@@ -2,7 +2,6 @@
 #include "../internal/AnalysisFilter.h"
 #include "core/constants/analysis.h"
 #include "core/constants/filters.h"
-#include "core/errors/ErrorReporterRegistry.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Property.h"
@@ -75,11 +74,7 @@ PlotConfig parsePlotConfig(const core::domain::Analysis& analysis)
                 }
             }
         }
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning,
-                                      "core::application::analysis::parsePlotConfig",
-                                      std::current_exception());
-    }
+    } catch (...) {}
 
     return config;
 }

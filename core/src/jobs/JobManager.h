@@ -25,11 +25,15 @@ namespace core::domain {
 class Statement;
 }
 
+namespace core::ports::diagnostics {
+class IErrorReporter;
+}
+
 namespace core::jobs {
 
 class JobManager {
 public:
-    JobManager();
+    explicit JobManager(std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 
     JobId submitImportStatement(const ImportStatementJobSpec& spec);
 
@@ -82,6 +86,7 @@ private:
     std::unordered_map<JobId, std::shared_ptr<JobData>> jobs_;
     std::deque<JobId> order_;
     mutable std::mutex jobsMutex_;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
 };
 
 }

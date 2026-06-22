@@ -10,9 +10,10 @@
 #include <QQmlError>
 #include <QQuickView>
 
+#include <memory>
 #include <string>
 
-#include "core/errors/ErrorReporterRegistry.h"
+#include "core/errors/ErrorReporting.h"
 #include "ui/observability/ErrorCodes.h"
 #include "ui/observability/Origins.h"
 #include "ui/observability/Trace.h"
@@ -31,15 +32,18 @@ core::errors::ErrorContext qmlErrorContext(const QQmlError& error) {
   return context;
 }
 
-void reportQmlError(core::errors::ErrorSeverity severity, const char* code,
+void reportQmlError(core::ports::diagnostics::IErrorReporter* reporter,
+                    core::errors::ErrorSeverity severity, const char* code,
                     const char* origin, const QQmlError& error) {
-  core::errors::report(severity, code, origin, error.toString().toStdString(),
+  core::errors::report(reporter, severity, code, origin,
+                       error.toString().toStdString(),
                        qmlErrorContext(error));
 }
 
 } // namespace
 
-void reportQmlLoadErrors(QQuickView* quickView, const QUrl& source) {
+void reportQmlLoadErrors(QQuickView* quickView, const QUrl& source,
+                         core::ports::diagnostics::IErrorReporter* reporter) {
   if (!quickView || quickView->status() != QQuickView::Error) {
     return;
   }
@@ -47,6 +51,7 @@ void reportQmlLoadErrors(QQuickView* quickView, const QUrl& source) {
   const auto errors = quickView->errors();
   if (errors.isEmpty()) {
     core::errors::report(
+        reporter,
         core::errors::ErrorSeverity::Error,
         ui::observability::codes::QmlLoadFailed,
         ui::observability::origins::qml::kLoad,
@@ -56,22 +61,25 @@ void reportQmlLoadErrors(QQuickView* quickView, const QUrl& source) {
   }
 
   for (const auto& error : errors) {
-    reportQmlError(core::errors::ErrorSeverity::Error,
+    reportQmlError(reporter, core::errors::ErrorSeverity::Error,
                    ui::observability::codes::QmlLoadFailed,
                    ui::observability::origins::qml::kLoad, error);
   }
 }
 
-void wireQmlWarnings(QQmlEngine* engine, QObject* context) {
+void wireQmlWarnings(
+    QQmlEngine* engine, QObject* context,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter) {
   if (!engine || !context) {
     return;
   }
 
   QObject::connect(engine, &QQmlEngine::warnings, context,
-                   [](const QList<QQmlError>& warnings) {
+                   [reporter = std::move(reporter)](
+                       const QList<QQmlError>& warnings) {
                      for (const auto& warning : warnings) {
                        reportQmlError(
-                           core::errors::ErrorSeverity::Warning,
+                           reporter.get(), core::errors::ErrorSeverity::Warning,
                            ui::observability::codes::QmlWarning,
                            ui::observability::origins::qml::kWarnings, warning);
                      }

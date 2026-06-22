@@ -37,11 +37,11 @@
 #include "core/application/storage/StorageManager.h"
 #include "core/application/workspace/WorkspaceFacade.h"
 #include "core/errors/ErrorCodes.h"
-#include "core/errors/ErrorReporterRegistry.h"
+#include "core/errors/ErrorReporting.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include "diagnostics/DiagnosticsDefaults.h"
 #include "diagnostics/ErrorReporter.h"
 #include "diagnostics/FileDiagnostics.h"
-#include "core/ports/diagnostics/IDiagnostics.h"
 #include "ui/shell/Defaults.h"
 #include "xlsx-writer/XlntTableWriterAdapter.h"
 
@@ -51,6 +51,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <iostream>
+#include <mutex>
 #include <string_view>
 
 std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer>
@@ -62,13 +63,31 @@ createTextRecognizerAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnosti
 
 namespace {
 
+std::weak_ptr<core::ports::diagnostics::IErrorReporter> g_qtMessageReporter;
+std::mutex g_qtMessageReporterMutex;
+
+void setQtMessageReporter(
+    const std::shared_ptr<core::ports::diagnostics::IErrorReporter>& reporter) {
+  std::lock_guard<std::mutex> lock(g_qtMessageReporterMutex);
+  g_qtMessageReporter = reporter;
+}
+
+std::shared_ptr<core::ports::diagnostics::IErrorReporter> qtMessageReporter() {
+  std::lock_guard<std::mutex> lock(g_qtMessageReporterMutex);
+  return g_qtMessageReporter.lock();
+}
+
 void ensureParentDirectoryExists(const std::filesystem::path& path,
+                                 const std::shared_ptr<
+                                     core::ports::diagnostics::IErrorReporter>&
+                                     errorReporter,
                                  const char* origin) {
   try {
     if (path.has_parent_path())
       std::filesystem::create_directories(path.parent_path());
   } catch (...) {
-    core::errors::reportException(core::errors::ErrorSeverity::Warning, origin,
+    core::errors::reportException(errorReporter.get(),
+                                  core::errors::ErrorSeverity::Warning, origin,
                                   std::current_exception());
   }
 }
@@ -208,29 +227,30 @@ static void qtMessageHandler(QtMsgType type, const QMessageLogContext& context,
   const std::string text = localMsg.constData();
   const core::errors::ErrorContext ctx = {
       {"file", file}, {"line", std::to_string(context.line)}};
+  const auto reporter = qtMessageReporter();
   switch (type) {
     case QtDebugMsg:
-      core::errors::report(core::errors::ErrorSeverity::Info,
+      core::errors::report(reporter.get(), core::errors::ErrorSeverity::Info,
                            core::errors::codes::QtDebug,
                            "app::qtMessageHandler", text, ctx);
       break;
     case QtInfoMsg:
-      core::errors::report(core::errors::ErrorSeverity::Info,
+      core::errors::report(reporter.get(), core::errors::ErrorSeverity::Info,
                            core::errors::codes::QtInfo, "app::qtMessageHandler",
                            text, ctx);
       break;
     case QtWarningMsg:
-      core::errors::report(core::errors::ErrorSeverity::Warning,
+      core::errors::report(reporter.get(), core::errors::ErrorSeverity::Warning,
                            core::errors::codes::QtWarning,
                            "app::qtMessageHandler", text, ctx);
       break;
     case QtCriticalMsg:
-      core::errors::report(core::errors::ErrorSeverity::Error,
+      core::errors::report(reporter.get(), core::errors::ErrorSeverity::Error,
                            core::errors::codes::QtCritical,
                            "app::qtMessageHandler", text, ctx);
       break;
     case QtFatalMsg:
-      core::errors::report(core::errors::ErrorSeverity::Critical,
+      core::errors::report(reporter.get(), core::errors::ErrorSeverity::Critical,
                            core::errors::codes::QtFatal,
                            "app::qtMessageHandler", text, ctx);
       abort();
@@ -258,7 +278,7 @@ extern int startQmlApp(
 
 int main(int argc, char* argv[]) {
   auto errorReporter = diagnostics::createDefaultErrorReporter();
-  core::errors::setGlobalErrorReporter(errorReporter);
+  setQtMessageReporter(errorReporter);
 
 #if defined(_DEBUG)
   if (qEnvironmentVariableIsEmpty("QT_ACCESSIBILITY")) {
@@ -293,9 +313,9 @@ int main(int argc, char* argv[]) {
       appDataRoot / std::string(core::constants::runtime::kDatabaseFileName);
   const std::filesystem::path registryDbPath =
       appDataRoot / std::string(core::constants::runtime::kRegistryFileName);
-  ensureParentDirectoryExists(defaultDbPath,
+  ensureParentDirectoryExists(defaultDbPath, errorReporter,
                               "app::main::createConfigDirectory");
-  ensureParentDirectoryExists(registryDbPath,
+  ensureParentDirectoryExists(registryDbPath, errorReporter,
                               "app::main::createRegistryDirectory");
   printStartBanner(app, defaultDbPath, registryDbPath);
 
@@ -303,7 +323,7 @@ int main(int argc, char* argv[]) {
   try {
     registry = createSqliteRegistry(registryDbPath.string());
   } catch (const std::exception& ex) {
-    core::errors::report(core::errors::ErrorSeverity::Warning,
+    core::errors::report(errorReporter.get(), core::errors::ErrorSeverity::Warning,
                          core::errors::codes::ConfigDbOpenFailed,
                          "app::main::openRegistryDb",
                          std::string("failed to open registry DB '") +
@@ -333,7 +353,9 @@ int main(int argc, char* argv[]) {
   try {
     appStateFacade.openLatest();
   } catch (const std::exception& ex) {
-    core::errors::reportException(core::errors::ErrorSeverity::Warning,
+    (void)ex;
+    core::errors::reportException(errorReporter.get(),
+                                  core::errors::ErrorSeverity::Warning,
                                   "app::main::openLatest",
                                   std::current_exception());
     // continue with empty state
@@ -356,33 +378,37 @@ int main(int argc, char* argv[]) {
     printShutdownMessage(exitCode);
     qInstallMessageHandler(previousQtMessageHandler);
     appStateFacade.setErrorReporter({});
-    core::errors::setGlobalErrorReporter({});
+    setQtMessageReporter({});
     return exitCode;
   } catch (const std::exception& ex) {
     qInstallMessageHandler(previousQtMessageHandler);
-    core::errors::reportException(core::errors::ErrorSeverity::Critical,
+    core::errors::reportException(errorReporter.get(),
+                                  core::errors::ErrorSeverity::Critical,
                                   "app::main::startQmlApp",
                                   std::current_exception());
     QMessageBox::critical(
         nullptr, QObject::tr("Fatal error"),
         QObject::tr("Startup failed: %1").arg(QString::fromUtf8(ex.what())));
     appStateFacade.setErrorReporter({});
-    core::errors::setGlobalErrorReporter({});
+    setQtMessageReporter({});
     return -1;
   } catch (...) {
     qInstallMessageHandler(previousQtMessageHandler);
-    core::errors::reportException(core::errors::ErrorSeverity::Critical,
+    core::errors::reportException(errorReporter.get(),
+                                  core::errors::ErrorSeverity::Critical,
                                   "app::main::startQmlAppUnknown",
                                   std::current_exception());
     QMessageBox::critical(nullptr, QObject::tr("Fatal error"),
                           QObject::tr("Startup failed: unknown exception"));
     appStateFacade.setErrorReporter({});
-    core::errors::setGlobalErrorReporter({});
+    setQtMessageReporter({});
     return -2;
   }
 #else
   // No UI available in this build configuration
   qInstallMessageHandler(previousQtMessageHandler);
+  appStateFacade.setErrorReporter({});
+  setQtMessageReporter({});
   return 0;
 #endif
 }

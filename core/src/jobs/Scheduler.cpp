@@ -5,9 +5,10 @@
 
 #include "core/jobs/Scheduler.h"
 
-#include "core/errors/ErrorReporterRegistry.h"
+#include "core/errors/ErrorReporting.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace core::jobs {
 
@@ -39,8 +40,11 @@ void SlotLimiter::release()
     cv_.notify_one();
 }
 
-Scheduler::Scheduler(std::size_t workers, std::size_t queueCapacity)
+Scheduler::Scheduler(
+    std::size_t workers, std::size_t queueCapacity,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
     : cap_(std::max<std::size_t>(kMinimumWorkerCount, queueCapacity))
+    , errorReporter_(std::move(errorReporter))
 {
     workers = std::max<std::size_t>(kMinimumWorkerCount, workers);
     workers_.reserve(workers);
@@ -69,7 +73,8 @@ void Scheduler::stop()
         try {
             if (w.joinable()) w.join();
         } catch (...) {
-            core::errors::reportException(core::errors::ErrorSeverity::Warning,
+            core::errors::reportException(errorReporter_.get(),
+                                          core::errors::ErrorSeverity::Warning,
                                           "core::jobs::Scheduler::stop::join",
                                           std::current_exception());
         }
@@ -105,7 +110,8 @@ void Scheduler::workerLoop()
         try {
             if (t) t();
         } catch (...) {
-            core::errors::reportException(core::errors::ErrorSeverity::Error,
+            core::errors::reportException(errorReporter_.get(),
+                                          core::errors::ErrorSeverity::Error,
                                           "core::jobs::Scheduler::workerLoop::task",
                                           std::current_exception());
         }

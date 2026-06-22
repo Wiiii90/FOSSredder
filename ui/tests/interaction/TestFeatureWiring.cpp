@@ -70,7 +70,7 @@ TEST(
       [&harness]() {
         return harness.workspace->workspaceSnapshot();
       },
-      adapter, nullptr);
+      adapter, tests::support::noopErrorReporter(), nullptr);
   AnalysisViewModel viewModel;
   viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
                               harness.selection.get(), harness.selectors.get());
@@ -139,7 +139,7 @@ TEST(
       [&harness]() {
         return harness.workspace->workspaceSnapshot();
       },
-      adapter);
+      adapter, tests::support::noopErrorReporter());
   ExportViewModel viewModel;
   viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
                               harness.selectors.get());

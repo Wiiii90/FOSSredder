@@ -88,7 +88,8 @@ void createComposition(
   auto analysisAdapter = std::make_shared<ui::adapters::AnalysisAdapter>(
       std::move(analysisRunner));
   auto* analysisWorkflow =
-      new ui::AnalysisWorkflow(workspaceSnapshotProvider, analysisAdapter, &w);
+      new ui::AnalysisWorkflow(workspaceSnapshotProvider, analysisAdapter,
+                               errorReporter, &w);
 
   auto annualAdapter =
       std::make_shared<ui::adapters::AnnualAdapter>(std::move(annualRunner));
@@ -98,7 +99,8 @@ void createComposition(
   auto exportAdapter =
       std::make_shared<ui::adapters::ExportAdapter>(std::move(exportRunner));
   auto* exportWorkflow =
-      new ui::ExportWorkflow(workspaceSnapshotProvider, exportAdapter, &w);
+      new ui::ExportWorkflow(workspaceSnapshotProvider, exportAdapter,
+                             errorReporter, &w);
 
   ui::LanguageService* languageService = nullptr;
   if (auto* appContext = w.appContext()) {

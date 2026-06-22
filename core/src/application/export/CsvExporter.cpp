@@ -86,8 +86,7 @@ CsvExporter::exportData(
         std::string(core::constants::exportFlow::messages::kOutputPathEmpty);
     return result;
   }
-  const auto matrix = internal::buildPropertyContractMatrix(
-      state, "core::exporting::CsvExporter::exportData");
+  const auto matrix = internal::buildPropertyContractMatrix(state);
 
   char decimalSeparator = '.';
   if (request.locale.starts_with(

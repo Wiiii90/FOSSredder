@@ -5,7 +5,6 @@
 
 #include "core/application/import/internal/ParserDateUtils.h"
 
-#include "core/errors/ErrorReporterRegistry.h"
 
 #include <regex>
 
@@ -37,9 +36,7 @@ std::optional<std::string> findFirstFullDate(const std::string& text) noexcept
     try {
         std::smatch match;
         if (std::regex_search(text, match, gFullDateRegex)) return match.str(1);
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::helpers::findFirstFullDate", std::current_exception());
-    }
+    } catch (...) {}
     return std::nullopt;
 }
 

@@ -5,6 +5,8 @@
 
 #include "MainWindow.h"
 
+#include "core/ports/diagnostics/IErrorReporter.h"
+
 #include <QCloseEvent>
 #include <QEvent>
 #include <QIcon>
@@ -21,6 +23,7 @@
 #include <QWidget>
 #include <qqml.h>
 #include <string>
+#include <utility>
 
 #include "ui/i18n/Text.h"
 #include "ui/observability/Origins.h"
@@ -53,7 +56,10 @@ void syncRootObjectSize(QQuickView* quickView, QWidget* hostWidget) {
 
 } // namespace
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+    QWidget* parent)
+    : QMainWindow(parent), errorReporter_(std::move(errorReporter)) {
   setWindowTitle(ui::config::kApplicationDisplayName);
   resize(ui::config::kMainWindowDefaultWidth,
          ui::config::kMainWindowDefaultHeight);
@@ -124,6 +130,7 @@ void MainWindow::setupActionRouting() {
                                      workspaceCommands_, workspaceSelection_,
                                      workspaceSelectors_, nullptr, nullptr,
                                      settings_, status_},
+                                    errorReporter_,
                                     [this]() {
                                       onAbout();
                                     });
@@ -183,10 +190,12 @@ void MainWindow::loadQml(const QUrl& source) {
     m_quickView->loadFromModule(ui::qml::contracts::module::kName,
                                 ui::qml::contracts::module::kMainTypeName);
     ui::bootstrap::reportQmlLoadErrors(
-        m_quickView, QUrl(QStringLiteral("module:FossRedder/Main")));
+        m_quickView, QUrl(QStringLiteral("module:FossRedder/Main")),
+        errorReporter_.get());
   } else {
     m_quickView->setSource(source);
-    ui::bootstrap::reportQmlLoadErrors(m_quickView, source);
+    ui::bootstrap::reportQmlLoadErrors(m_quickView, source,
+                                       errorReporter_.get());
   }
   syncRootObjectSize(m_quickView, m_quickContainer);
 }
@@ -205,6 +214,7 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
     if (outcome.handled) {
       if (ev->type() == QEvent::Drop && outcome.accepted && actions_) {
         ui::window::reportMainWindowFlow(
+            errorReporter_.get(),
             ui::observability::origins::mainWindow::kDragDrop,
             "Import files dropped", core::errors::ErrorSeverity::Info,
             ui::window::makeFileListContext(outcome.files));
@@ -226,6 +236,7 @@ void MainWindow::setupAutosaveTimer() {
         return;
       }
       ui::window::reportMainWindowFlow(
+          errorReporter_.get(),
           ui::observability::origins::mainWindow::kActionRouting,
           "Periodic autosave requested");
       emit saveFileRequested();
@@ -274,6 +285,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 
   if (!settings_ || !settings_->autosaveOnClose()) {
     ui::window::reportMainWindowFlow(
+        errorReporter_.get(),
         ui::observability::origins::mainWindow::kClose,
         "Main window close requested; autosave on close disabled");
     prepareForQmlShutdown();
@@ -283,6 +295,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
   }
 
   ui::window::reportMainWindowFlow(
+      errorReporter_.get(),
       ui::observability::origins::mainWindow::kClose,
       "Main window close requested; triggering save workflow");
   closeWorkflow_.requestClose(event, [this]() {
@@ -304,6 +317,7 @@ void MainWindow::handleStorageOperationSucceeded(const QString& operation) {
   }
 
   ui::window::reportMainWindowFlow(
+      errorReporter_.get(),
       ui::observability::origins::mainWindow::kCloseSucceeded,
       "Pending close save finished; closing main window");
 }
@@ -320,6 +334,7 @@ void MainWindow::handleStorageOperationFailed(const QString& operation,
     status_->setText(message);
 
   ui::window::reportMainWindowFlow(
+      errorReporter_.get(),
       ui::observability::origins::mainWindow::kCloseFailed,
       "Pending close save failed; keeping main window open",
       core::errors::ErrorSeverity::Warning,

@@ -4,7 +4,6 @@
  */
 
 #include "core/application/import/transaction/DefaultTransactionParser.h"
-#include "core/errors/ErrorReporterRegistry.h"
 #include "../../../utils/Util.h"
 #include "core/application/import/internal/ParserHelpers.h"
 #include "core/application/import/internal/ParserDateUtils.h"
@@ -87,7 +86,7 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
 
     auto tokenIndicatesNegative = [&](const std::string &txt)->bool{
         std::string s = txt;
-        try { s = core::utils::trim(s); } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultTransactionParser::parseTransaction::trim", std::current_exception()); }
+        try { s = core::utils::trim(s); } catch (...) {  }
         if (s.empty()) return false;
         if (s.front() == '(' && s.back() == ')') return true;
         if (s.front() == '-') return true;
@@ -154,7 +153,7 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
                 }
             }
         }
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultTransactionParser::parseTransaction::recoveryScan", std::current_exception()); }
+    } catch (...) {  }
 
     if (creditVal && debitVal) {
         if (creditExplicitNeg && !debitExplicitNeg) {
@@ -177,7 +176,7 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
                 int cxDebit = centerXOf(block.main.debit.line);
                 int cxCredit = centerXOf(block.main.credit.line);
                 if (cxDebit > cxCredit) treatAsCredit = true;
-            } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultTransactionParser::parseTransaction::debitVsCreditCenter", std::current_exception()); }
+            } catch (...) {  }
         }
         if (tokenIndicatesNegative(block.main.debit.line.text)) {
             tx.amount = *debitVal;
@@ -197,12 +196,12 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
                 if (a.empty() || b.empty()) return std::nullopt;
                 if (auto p = amount_parser::parseAmountString(a + b)) return p;
                 if (auto p2 = amount_parser::parseAmountString(a + " " + b)) return p2;
-            } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultTransactionParser::parseTransaction::tryCombineParse", std::current_exception()); }
+            } catch (...) {  }
             return std::nullopt;
         };
         if (auto p = tryCombineParse(block.main.debit.line.text, block.main.credit.line.text)) {
             bool creditRightOfDebit = false;
-            try { creditRightOfDebit = centerXOf(block.main.credit.line) > centerXOf(block.main.debit.line); } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultTransactionParser::parseTransaction::combineCenter", std::current_exception()); }
+            try { creditRightOfDebit = centerXOf(block.main.credit.line) > centerXOf(block.main.debit.line); } catch (...) {  }
             if (creditRightOfDebit) tx.amount = *p; else tx.amount = -std::abs(*p);
             if (debugOut) debugOut->push_back(std::string("combine.debit+credit->") + std::to_string(tx.amount));
         } else if (auto p = tryCombineParse(block.main.credit.line.text, block.main.debit.line.text)) {
@@ -221,7 +220,7 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
             tx.amount = -std::abs(tx.amount);
             if (debugOut) debugOut->push_back(std::string("enforce.negMarker->") + std::to_string(tx.amount));
         }
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultTransactionParser::parseTransaction::negMarker", std::current_exception()); }
+    } catch (...) {  }
 
     try {
         if (sourceDebit && sourceCredit) {
@@ -230,7 +229,7 @@ DefaultTransactionParser DefaultTransactionParser::parseTransaction(const Transa
         } else if (sourceCredit) {
             if (tx.amount < 0.0) tx.amount = std::abs(tx.amount);
         }
-    } catch (...) { core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::DefaultTransactionParser::parseTransaction::columnSemantics", std::current_exception()); }
+    } catch (...) {  }
 
     std::vector<OcrLine> lines;
     if (!block.main.left.empty()) lines.push_back(block.main.left.line);

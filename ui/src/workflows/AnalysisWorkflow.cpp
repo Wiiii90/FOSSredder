@@ -7,13 +7,14 @@
 #include "ui/workflows/AnalysisWorkflow.h"
 
 #include "core/errors/ErrorCodes.h"
-#include "core/errors/ErrorReporterRegistry.h"
+#include "core/errors/ErrorReporting.h"
 #include "ui/adapters/AnalysisAdapter.h"
 #include "ui/i18n/Text.h"
 #include "ui/observability/Origins.h"
 #include "ui/observability/Trace.h"
 #include "ui/util/StringConversions.h"
 
+#include <stdexcept>
 #include <utility>
 
 namespace ui {
@@ -21,9 +22,15 @@ namespace ui {
 AnalysisWorkflow::AnalysisWorkflow(
     StateSnapshotProvider stateSnapshotProvider,
     std::shared_ptr<ui::adapters::AnalysisAdapter> analysisAdapter,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
     QObject* parent)
     : QObject(parent), stateSnapshotProvider_(std::move(stateSnapshotProvider)),
-      analysisAdapter_(std::move(analysisAdapter)) {}
+      analysisAdapter_(std::move(analysisAdapter)),
+      errorReporter_(std::move(errorReporter)) {
+  if (!errorReporter_) {
+    throw std::invalid_argument("AnalysisWorkflow requires an error reporter");
+  }
+}
 
 QString AnalysisWorkflow::analysisFilterSpec(
     const QString& dateField, const QString& dateMode, const QString& year,
@@ -57,6 +64,7 @@ QVariantMap AnalysisWorkflow::computeAnalysisPreview(
     bool includeAdjustments, const QVariantMap& adjustmentAmounts) const {
   if (!analysisAdapter_) {
     core::errors::report(
+        errorReporter_.get(),
         core::errors::ErrorSeverity::Warning, core::errors::codes::GenericError,
         observability::origins::workflow::analysis::kCompute,
         ui::text::workflowErrors::analysisEngineUnavailable().toStdString());
@@ -64,6 +72,7 @@ QVariantMap AnalysisWorkflow::computeAnalysisPreview(
   }
   if (!stateSnapshotProvider_) {
     core::errors::report(
+        errorReporter_.get(),
         core::errors::ErrorSeverity::Warning, core::errors::codes::GenericError,
         observability::origins::workflow::analysis::kCompute,
         ui::text::workflowErrors::analysisViewModelUnavailable().toStdString());
@@ -99,7 +108,8 @@ QVariantMap AnalysisWorkflow::computeAnalysisPreview(
     return payload;
   } catch (...) {
     core::errors::reportException(
-        core::errors::ErrorSeverity::Error, core::errors::codes::ExceptionError,
+        errorReporter_.get(), core::errors::ErrorSeverity::Error,
+        core::errors::codes::ExceptionError,
         observability::origins::workflow::analysis::kCompute,
         std::current_exception());
   }

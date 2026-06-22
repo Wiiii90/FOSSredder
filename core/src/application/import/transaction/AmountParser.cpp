@@ -6,7 +6,6 @@
 #include "core/application/import/transaction/AmountParser.h"
 
 #include "core/application/import/internal/ParserDateUtils.h"
-#include "core/errors/ErrorReporterRegistry.h"
 
 #include <algorithm>
 #include <cctype>
@@ -34,9 +33,7 @@ std::optional<double> parseAmountInternal(const std::string& line)
         replaceAll("\xE2\x80\x89", " ");
         replaceAll("\xE2\x80\xA2", ".");
         replaceAll("\xE2\x80\xB7", ".");
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::normalizeChars", std::current_exception());
-    }
+    } catch (...) {}
 
     std::string clean;
     clean.reserve(s.size());
@@ -58,9 +55,7 @@ std::optional<double> parseAmountInternal(const std::string& line)
                 return value;
             }
         }
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::direct", std::current_exception());
-    }
+    } catch (...) {}
 
     try {
         static const std::regex splitDec(R"((\d{1,3}[\.,]\d)\s+(\d{1,2}-?))");
@@ -71,9 +66,7 @@ std::optional<double> parseAmountInternal(const std::string& line)
             tmp = m.prefix().str() + repl + m.suffix().str();
         }
         s = std::move(tmp);
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::repairSplit", std::current_exception());
-    }
+    } catch (...) {}
 
     static const std::regex re(R"((\(?-?(?:\d{1,3}(?:[\.,]\d{3})*|\d+),\d{2}\)?))");
     try {
@@ -101,17 +94,11 @@ std::optional<double> parseAmountInternal(const std::string& line)
                         best = value;
                         bestAbs = absoluteValue;
                     }
-                } catch (...) {
-                    core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::stodPrimary", std::current_exception());
-                }
-            } catch (...) {
-                core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::tokenPrimary", std::current_exception());
-            }
+                } catch (...) {}
+            } catch (...) {}
         }
         if (best) return best;
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::primary", std::current_exception());
-    }
+    } catch (...) {}
 
     static const std::regex re2(R"((\(?-?\d+[\.,]\d{2}\)?))");
     try {
@@ -134,17 +121,11 @@ std::optional<double> parseAmountInternal(const std::string& line)
                         best = value;
                         bestAbs = absoluteValue;
                     }
-                } catch (...) {
-                    core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::stodFallback", std::current_exception());
-                }
-            } catch (...) {
-                core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::tokenFallback", std::current_exception());
-            }
+                } catch (...) {}
+            } catch (...) {}
         }
         if (best) return best;
-    } catch (...) {
-        core::errors::reportException(core::errors::ErrorSeverity::Warning, "core::parser::parseAmountInternal::recovery", std::current_exception());
-    }
+    } catch (...) {}
 
     return std::nullopt;
 }

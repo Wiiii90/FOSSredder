@@ -12,6 +12,7 @@
 #include <QElapsedTimer>
 #include <QThread>
 
+#include "support/ViewModelTestHarness.h"
 #include "support/WorkspacePortFakes.h"
 #include "support/WorkspaceTestData.h"
 #include "ui/adapters/AnalysisAdapter.h"
@@ -84,7 +85,7 @@ AnalysisStateHarness makeHarnessWithAdjustedAnalysis() {
       [workspacePtr]() {
         return workspacePtr->workspaceSnapshot();
       },
-      analysisAdapter, nullptr);
+      analysisAdapter, tests::support::noopErrorReporter(), nullptr);
 
   auto state = std::make_unique<AnalysisViewModel>();
   state->setWorkspaceRoles(store.get(), commands.get(), selection.get(),
@@ -121,7 +122,7 @@ AnalysisStateHarness makeCreateHarness() {
       [workspacePtr]() {
         return workspacePtr->workspaceSnapshot();
       },
-      analysisAdapter, nullptr);
+      analysisAdapter, tests::support::noopErrorReporter(), nullptr);
 
   auto state = std::make_unique<AnalysisViewModel>();
   state->setWorkspaceRoles(store.get(), commands.get(), selection.get(),

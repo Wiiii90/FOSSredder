@@ -10,6 +10,7 @@
 #include "core/application/import/ImportRequest.h"
 #include "core/application/import/IImportStatement.h"
 #include "core/application/import/ImportResult.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "JobManager.h"
 #include "core/jobs/Scheduler.h"
 
@@ -40,10 +41,12 @@ namespace core::jobs {
 
 class JobSystem::Impl {
 public:
-    Impl(std::shared_ptr<core::application::importing::IImportStatement> importService, std::size_t workers)
+    Impl(std::shared_ptr<core::application::importing::IImportStatement> importService,
+         std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+         std::size_t workers)
         : importService(std::move(importService))
-        , manager()
-        , scheduler(resolveWorkerCount(workers), core::constants::jobs::kQueueCapacity)
+        , manager(errorReporter)
+        , scheduler(resolveWorkerCount(workers), core::constants::jobs::kQueueCapacity, std::move(errorReporter))
         , ocrLimiter(std::max<std::size_t>(std::size_t{1}, resolveWorkerCount(workers) / core::constants::jobs::kOcrWorkerDivisor))
     {
     }
@@ -54,8 +57,12 @@ public:
     SlotLimiter ocrLimiter;
 };
 
-JobSystem::JobSystem(std::shared_ptr<core::application::importing::IImportStatement> importService, std::size_t workers)
-    : impl_(std::make_unique<Impl>(std::move(importService), workers)) {
+JobSystem::JobSystem(
+    std::shared_ptr<core::application::importing::IImportStatement> importService,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+    std::size_t workers)
+    : impl_(std::make_unique<Impl>(std::move(importService),
+                                   std::move(errorReporter), workers)) {
 }
 
 JobSystem::~JobSystem() = default;

@@ -10,7 +10,8 @@
 
 #include "core/errors/ErrorCodes.h"
 #include "core/errors/ErrorEvent.h"
-#include "core/errors/ErrorReporterRegistry.h"
+#include "core/errors/ErrorReporting.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "ui/observability/ErrorCodes.h"
 
 namespace ui::observability {
@@ -128,10 +129,11 @@ inline void traceWorkspace(const char* origin, std::string message,
  * @param message Error message.
  * @param context Structured error context.
  */
-inline void reportFlow(core::errors::ErrorSeverity severity, const char* code,
+inline void reportFlow(core::ports::diagnostics::IErrorReporter* reporter,
+                       core::errors::ErrorSeverity severity, const char* code,
                        const char* origin, std::string message,
                        core::errors::ErrorContext context = {}) {
-  core::errors::report(severity, code, origin, std::move(message),
+  core::errors::report(reporter, severity, code, origin, std::move(message),
                        std::move(context));
 }
 
@@ -142,10 +144,11 @@ inline void reportFlow(core::errors::ErrorSeverity severity, const char* code,
  * @param message Error message.
  * @param context Structured error context.
  */
-inline void reportFlow(core::errors::ErrorSeverity severity, const char* origin,
+inline void reportFlow(core::ports::diagnostics::IErrorReporter* reporter,
+                       core::errors::ErrorSeverity severity, const char* origin,
                        std::string message,
                        core::errors::ErrorContext context = {}) {
-  reportFlow(severity, core::errors::codes::GenericError, origin,
+  reportFlow(reporter, severity, core::errors::codes::GenericError, origin,
              std::move(message), std::move(context));
 }
 

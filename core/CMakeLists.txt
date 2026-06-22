@@ -68,7 +68,6 @@ set(CORE_PUBLIC_HEADERS
     include/core/errors/ErrorCodes.h
     include/core/errors/ErrorEvent.h
     include/core/errors/ErrorEventFactory.h
-    include/core/errors/ErrorReporterRegistry.h
     include/core/errors/ErrorReporting.h
     include/core/ports/diagnostics/IDiagnostics.h
     include/core/ports/diagnostics/IErrorReporter.h
@@ -163,7 +162,6 @@ set(CORE_SRCS
     src/application/workspace/WorkspaceQueryService.cpp
     src/application/workspace/WorkspaceSession.cpp
     src/application/workspace/WorkspaceStateManager.cpp
-    src/errors/ErrorReporterRegistry.cpp
     src/jobs/JobManager.cpp
     src/jobs/JobSystem.cpp
     src/jobs/Scheduler.cpp
