@@ -8,7 +8,7 @@
 #include <memory>
 #include <utility>
 
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 #include "support/WorkspacePortFakes.h"
 #include "ui/workspace/WorkspaceCommands.h"
@@ -18,7 +18,7 @@
 
 namespace ui::tests::support {
 
-class NoopErrorReporter final : public core::errors::IErrorReporter {
+class NoopErrorReporter final : public core::ports::diagnostics::IErrorReporter {
 public:
   void report(const core::errors::ErrorEvent&) override {}
 };

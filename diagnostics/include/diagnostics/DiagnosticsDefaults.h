@@ -1,6 +1,6 @@
 /**
- * @file debug/include/debug/DebugDefaults.h
- * @brief Declares shared debugger output and logging defaults.
+ * @file diagnostics/include/diagnostics/DiagnosticsDefaults.h
+ * @brief Declares shared diagnostics output and logging defaults.
  */
 
 #pragma once
@@ -8,9 +8,9 @@
 #include <cstddef>
 #include <string_view>
 
-namespace debug::defaults {
+namespace diagnostics::defaults {
 
-inline constexpr std::string_view kOutputDirectoryName = "debug_output";
+inline constexpr std::string_view kOutputDirectoryName = "diagnostics_output";
 inline constexpr std::string_view kDiagnosticsLogPath = "diagnostics/diagnostics.log";
 inline constexpr std::string_view kDiagnosticsProcessName = "diagnostics";
 inline constexpr std::string_view kImportProcessName = "import";

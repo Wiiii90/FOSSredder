@@ -9,7 +9,7 @@
 #include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/ports/infra/text-recognition/TextRecognitionTypes.h"
 #include "text-recognition/TesseractCore.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include <sstream>
 #include <fstream>
 #include <iterator>
@@ -18,7 +18,7 @@
 
 class TesseractTextRecognizerAdapter : public core::ports::text_recognition::ITextRecognizer {
 public:
-    explicit TesseractTextRecognizerAdapter(std::shared_ptr<IDebugger> dbg = nullptr) : debugger(std::move(dbg)) {}
+    explicit TesseractTextRecognizerAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg = nullptr) : debugger(std::move(dbg)) {}
 
     core::ports::text_recognition::ExtractResult extract(const core::ports::text_recognition::ExtractRequest& req) override {
         core::ports::text_recognition::ExtractResult out;
@@ -136,13 +136,13 @@ public:
     }
 
 private:
-    std::shared_ptr<IDebugger> debugger;
+    std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger;
 };
 
 std::shared_ptr<core::ports::text_recognition::ITextRecognizer> createTextRecognizerAdapter() {
     return std::make_shared<TesseractTextRecognizerAdapter>();
 }
 
-std::shared_ptr<core::ports::text_recognition::ITextRecognizer> createTextRecognizerAdapter(std::shared_ptr<IDebugger> debugger) {
+std::shared_ptr<core::ports::text_recognition::ITextRecognizer> createTextRecognizerAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     return std::make_shared<TesseractTextRecognizerAdapter>(std::move(debugger));
 }

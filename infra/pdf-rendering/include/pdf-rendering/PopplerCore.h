@@ -12,7 +12,7 @@
 #include <atomic>
 #include "core/ports/infra/pdf-rendering/PdfRenderingTypes.h"
 
-class IDebugger;
+namespace core::ports::diagnostics { class IDiagnostics; }
 
 class PopplerCore {
 public:
@@ -32,7 +32,7 @@ public:
                                                                  const std::filesystem::path& outputDir = std::filesystem::path(),
                                                                  const std::string& uniqIdPrefix = "",
                                                                  const std::string& filePrefix = "",
-                                                                 std::shared_ptr<IDebugger> dbg = nullptr,
+                                                                 std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg = nullptr,
                                                                  std::shared_ptr<std::atomic<bool>> cancelFlag = nullptr);
 
     /**
@@ -51,6 +51,6 @@ public:
                                                                       const std::filesystem::path& outputDir = std::filesystem::path(),
                                                                       const std::string& uniqIdPrefix = "",
                                                                       const std::string& filePrefix = "",
-                                                                      std::shared_ptr<IDebugger> dbg = nullptr,
+                                                                      std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg = nullptr,
                                                                       std::shared_ptr<std::atomic<bool>> cancelFlag = nullptr);
 };

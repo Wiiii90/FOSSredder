@@ -6,7 +6,7 @@
 #include "image-processing/pch.h"
 #include "image-processing/DetectAdapter.h"
 #include "image-processing/MaskAdapter.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 #include <sstream>
@@ -16,7 +16,7 @@ namespace opencv {
 namespace ports = core::ports::image_processing;
 namespace {
 
-void writeImageViaDebugger(std::shared_ptr<IDebugger> debugger, const std::string& relPath, const cv::Mat& img) {
+void writeImageViaDebugger(std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger, const std::string& relPath, const cv::Mat& img) {
     if (!debugger) return;
     std::vector<uint8_t> buf;
     try {
@@ -258,7 +258,7 @@ static std::vector<int> completeAxisLinesFromSegments(
     return out;
 }
 
-ports::Table detectTableGridHough(const cv::Mat& roiGrayIn, const cv::Rect& roiOffset, const std::vector<cv::Rect>&, int& outCells, double& outQuality, const std::string&, std::shared_ptr<IDebugger> debugger) {
+ports::Table detectTableGridHough(const cv::Mat& roiGrayIn, const cv::Rect& roiOffset, const std::vector<cv::Rect>&, int& outCells, double& outQuality, const std::string&, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     ports::Table table;
     outCells = 0; outQuality = 0.0;
     if (roiGrayIn.empty()) return table;
@@ -377,11 +377,11 @@ ports::Table detectTableGridHough(const cv::Mat& roiGrayIn, const cv::Rect& roiO
 } // anonymous namespace
 
 // Expose DetectTextBlocks implementation
-std::vector<cv::Rect> DetectAdapter::detectTextBlocks(const cv::Mat& img, std::shared_ptr<IDebugger> debugger) {
+std::vector<cv::Rect> DetectAdapter::detectTextBlocks(const cv::Mat& img, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     return findTextBlocksUsingMorphology(img);
 }
 
-std::vector<ports::Table> DetectAdapter::detectTables(const cv::Mat& img, const std::string& imagePath, std::shared_ptr<IDebugger> debugger) {
+std::vector<ports::Table> DetectAdapter::detectTables(const cv::Mat& img, const std::string& imagePath, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     std::vector<ports::Table> result;
     if (img.empty()) {
         if (debugger && debugger->enabled()) debugger->writeText("opencv/error.txt", "Empty image: " + imagePath);

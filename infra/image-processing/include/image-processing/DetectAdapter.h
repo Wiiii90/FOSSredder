@@ -11,7 +11,7 @@
 #include <vector>
 #include <memory>
 
-class IDebugger;
+namespace core::ports::diagnostics { class IDiagnostics; }
 
 namespace opencv {
 
@@ -26,14 +26,14 @@ public:
      * @param debugger Optional debugger used for trace output.
      * @return The detected tables.
      */
-    static std::vector<ports::Table> detectTables(const cv::Mat& img, const std::string& imagePath, std::shared_ptr<IDebugger> debugger = nullptr);
+    static std::vector<ports::Table> detectTables(const cv::Mat& img, const std::string& imagePath, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger = nullptr);
     /**
      * @brief Detects text blocks in a source image.
      * @param img The source image.
      * @param debugger Optional debugger used for trace output.
      * @return The detected text block rectangles.
      */
-    static std::vector<cv::Rect> detectTextBlocks(const cv::Mat& img, std::shared_ptr<IDebugger> debugger = nullptr);
+    static std::vector<cv::Rect> detectTextBlocks(const cv::Mat& img, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger = nullptr);
 };
 
 } // namespace opencv

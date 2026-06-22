@@ -141,7 +141,7 @@ direction to meet [Clean Architecture](appendix/reference.md#glossary-clean-arch
   workspace state persistence.
 - `infra/*` implements external-library adapters for rendering, image
   processing, OCR, export, archive, and analysis-image rendering.
-- `debug` owns diagnostic sinks and the default error reporter implementation.
+- `diagnostics` implements diagnostic sinks and the default error reporter.
 
 `core/include/core/ports` is the architectural boundary for infrastructure and
 use-case contracts. There is no separate `api` target; ports live with the
@@ -165,7 +165,7 @@ flowchart LR
   end
 
   Core["core<br/>domain application services ports jobs"]
-  Debug["debug<br/>error reporting diagnostic sinks"]
+  Diagnostics["diagnostics<br/>error reporter FileDiagnostics SpdlogDiagnostics"]
 
   App -->|wires| UI
   App -->|wires| Persistence
@@ -176,7 +176,7 @@ flowchart LR
   App -->|wires| InfraArchive
   App -->|wires| InfraAnalysis
   App -->|wires| Core
-  App -->|wires| Debug
+  App -->|wires| Diagnostics
 
   UI -->|uses ports| Core
   Persistence -->|implements ports| Core
@@ -187,15 +187,13 @@ flowchart LR
   InfraArchive -->|implements ports| Core
   InfraAnalysis -->|implements ports| Core
 
-  UI -. diagnostics .-> Debug
-  InfraPdf -. diagnostics .-> Debug
-  InfraImage -. diagnostics .-> Debug
-  InfraText -. diagnostics .-> Debug
+  Diagnostics -->|implements diagnostics ports| Core
 ```
 
 Read the diagram from left to right: `app` composes concrete targets, outer
-targets depend inward on `core` ports, and dotted arrows are diagnostic
-reporting paths rather than domain dependencies.
+targets depend inward on `core` ports, and `diagnostics` is just another outer
+implementation target. `IErrorReporter` and `IDiagnostics` live in
+`core/ports/diagnostics`; concrete file and spdlog sinks live outside the core.
 
 ### 3.2 Dependency Direction
 
@@ -212,8 +210,8 @@ together at startup.
   decisions must stay behind workspace/session abstractions.
 - `infra/*` may depend on `core` infra ports and the external library it wraps.
   It should not own domain policy.
-- `debug` is cross-cutting support. It can be injected where diagnostics are
-  needed, but business logic belongs in `core`.
+- `diagnostics` implements core diagnostics ports. It can be wired where local
+  diagnostics are needed, but business logic belongs in `core`.
 - `app` is allowed to know all targets because it is the executable composition
   root.
 
@@ -1227,7 +1225,7 @@ Import-related infrastructure work follows these constraints:
 - PDF rendering, image processing and OCR requests may receive cancellation flags.
 - OCR work is bounded by core import/job logic before calling `ITextRecognizer`.
 - Adapters may use local helper objects, but long-running workflow state belongs in core application services.
-- Debug artifacts should be optional and should not be required for successful runtime behavior.
+- Diagnostic artifacts should be optional and should not be required for successful runtime behavior.
 
 ### 5.7 Diagnostics And Artifacts
 
@@ -1237,7 +1235,7 @@ objects.
 | Source | Diagnostic output |
 |---|---|
 | Import pipeline | Parser logs, OCR TSV data, proof-image data and page artifacts are returned through import results or draft state. |
-| Infrastructure adapters | Optional debug files through `IDebugger` / `FileDebugger`. |
+| Infrastructure adapters | Optional diagnostic files through `core::ports::diagnostics::IDiagnostics` / `diagnostics::FileDiagnostics`. |
 | Persistence | Repository diagnostics helpers and explicit SQLite exceptions for schema, connection and transaction failures. |
 | Application startup | Error reporter wiring in `app/src/main.cpp` translates Qt and runtime errors into structured reports. |
 
@@ -1753,7 +1751,7 @@ Configure presets:
 | `app` | Visual Studio 18 2026 | App configuration without tests. Used by normal app builds and installer packaging. |
 | `app-fast` | Visual Studio 18 2026 | App configuration with fast QML build enabled. |
 | `app-ninja-fast` | Ninja Multi-Config | Fast local app configuration with fast QML build enabled. |
-| `tests` | Visual Studio 18 2026 | Full test configuration across core, persistence, UI, debug and infrastructure tests. |
+| `tests` | Visual Studio 18 2026 | Full test configuration across core, persistence, UI, diagnostics and infrastructure tests. |
 | `clang-tidy` | Visual Studio 18 2026 | Full test configuration with clang-tidy enabled. |
 | `coverage` | Visual Studio 18 2026 with ClangCL toolset | Full test configuration with LLVM coverage enabled. |
 
@@ -1923,7 +1921,7 @@ flowchart LR
   App --> Workspace["workspace.fossredder<br/>canonical financial data"]
   App --> Registry["registry.db<br/>latest workspace path"]
   App --> Exports["CSV XLSX ZIP exports"]
-  App --> Debug["optional local diagnostics"]
+  App --> Diagnostics["optional local diagnostics"]
   App -. "no telemetry client by default" .-> Network["Network boundary"]
 
   Repo["GitHub repository"] --> CI["GitHub Actions / self-hosted runner"]
@@ -1958,7 +1956,7 @@ Current enforcement points:
 
 - Startup composition in `app/src/main.cpp` does not register cloud clients or telemetry clients.
 - Core use cases run against local workspace snapshots and local infrastructure adapters.
-- Error reporting is routed through `core::errors::IErrorReporter`; no external reporter is wired by default.
+- Error reporting is routed through `core::ports::diagnostics::IErrorReporter`; no external reporter is wired by default.
 - GitHub, Codecov and Pages integrations exist only in CI workflows, not in the installed desktop runtime.
 
 If a future feature introduces network access, it must be documented as a new
@@ -1997,7 +1995,7 @@ Import and OCR workflows may create or expose sensitive intermediate data.
 | OCR TSV data | Treat as statement-derived data; expose only where needed for review or diagnostics. |
 | Parser logs | Keep diagnostic, deterministic and free from full financial document dumps unless user-controlled. |
 | Proof images | Treat as sensitive because they can contain statement content. |
-| Adapter debug files | Keep optional and route through `IDebugger` / `FileDebugger`. |
+| Adapter diagnostic files | Keep optional and route through `core::ports::diagnostics::IDiagnostics` / `diagnostics::FileDiagnostics`. |
 | Package logs | CI artifacts only; do not include user statement data. |
 
 Implementation rule: do not add long-lived raw document caches without an

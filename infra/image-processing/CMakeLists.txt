@@ -27,8 +27,6 @@ target_link_libraries(fossredder_infra_image_processing
     PUBLIC
         FossRedder::Core
         ${OpenCV_LIBS}
-    PRIVATE
-        FossRedder::Debug
 )
 
 fossredder_set_library_output_dirs(fossredder_infra_image_processing)

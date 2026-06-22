@@ -43,7 +43,7 @@ bool waitWhilePaused(const ImportRequest& req)
 }
 
 void safeReleaseLimiter(core::jobs::SlotLimiter* ocrLimiter,
-                        core::errors::IErrorReporter* errorReporter,
+                        core::ports::diagnostics::IErrorReporter* errorReporter,
                         const char* origin)
 {
     try {
@@ -80,7 +80,7 @@ void storeTsvArtifact(ImportResult& out,
                       size_t pageIndex,
                       const tesseract::ExtractResult& extractResult,
                       std::mutex& artifactsMutex,
-                      core::errors::IErrorReporter* errorReporter)
+                      core::ports::diagnostics::IErrorReporter* errorReporter)
 {
     try {
         std::vector<uint8_t> tsvData(extractResult.tsv.begin(), extractResult.tsv.end());
@@ -98,7 +98,7 @@ std::vector<uint8_t> readImportBytes(const std::filesystem::path& path)
     return readImportBytes(path, nullptr);
 }
 
-std::vector<uint8_t> readImportBytes(const std::filesystem::path& path, core::errors::IErrorReporter* errorReporter)
+std::vector<uint8_t> readImportBytes(const std::filesystem::path& path, core::ports::diagnostics::IErrorReporter* errorReporter)
 {
     std::vector<uint8_t> out;
     try {
@@ -120,7 +120,7 @@ PageWork processImportPage(size_t pageIndex,
                            const ProgressReporter& report,
                            std::atomic<size_t>& doneUnits,
                            size_t totalUnits,
-                           core::errors::IErrorReporter* errorReporter,
+                           core::ports::diagnostics::IErrorReporter* errorReporter,
                            ImportResult& out,
                            std::mutex& artifactsMutex)
 {
@@ -254,7 +254,7 @@ FinalizeStats finalizeParsedPages(const ImportRequest& req,
                                   std::vector<core::application::importing::draft::TransactionDraft>& all,
                                   std::string& carriedBookingDate,
                                   int& nextTxIndex,
-                                  core::errors::IErrorReporter* errorReporter,
+                                  core::ports::diagnostics::IErrorReporter* errorReporter,
                                   const ProgressReporter& report,
                                   std::mutex& artifactsMutex)
 {

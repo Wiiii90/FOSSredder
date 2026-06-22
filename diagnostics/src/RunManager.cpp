@@ -1,11 +1,11 @@
-#include "debug/pch.h"
-#include "debug/RunManager.h"
+#include "diagnostics/pch.h"
+#include "diagnostics/RunManager.h"
 #include <chrono>
 #include <mutex>
 #include <string>
 #include <sstream>
 
-namespace debug {
+namespace diagnostics {
 
 namespace {
     std::mutex mtx;
@@ -39,4 +39,4 @@ void endRun() {
     current_run.clear();
 }
 
-} // namespace debug
+} // namespace diagnostics

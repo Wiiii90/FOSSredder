@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/infra/storage/IStorageManager.h"
 #include "core/ports/workspace/WorkspaceCommands.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
@@ -37,7 +37,7 @@ public:
      * @brief Registers application error reporter used by workspace operations.
      * @param reporter Error reporter implementation.
      */
-    virtual void setErrorReporter(std::shared_ptr<core::errors::IErrorReporter> reporter) = 0;
+    virtual void setErrorReporter(std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter) = 0;
     /**
      * @brief Registers atomic persistence save callback.
      * @param saveFn Callback used by storage to save the current document.

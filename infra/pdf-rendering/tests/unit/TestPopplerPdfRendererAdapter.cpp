@@ -9,9 +9,9 @@
 #include "pdf-rendering/PopplerCore.h"
 #include "unit/TestPdfSupport.h"
 
-class IDebugger;
+namespace core::ports::diagnostics { class IDiagnostics; }
 
-std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> createPdfRendererAdapter(std::shared_ptr<IDebugger> debugger);
+std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> createPdfRendererAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger);
 
 namespace infra::pdf_rendering::tests {
 namespace {

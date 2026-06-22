@@ -30,6 +30,6 @@ public:
 std::unique_ptr<IImportStatementStrategy> createDefaultImportStrategy(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
                                                                       std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv,
                                                                       std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
-                                                                      std::shared_ptr<core::errors::IErrorReporter> errorReporter = nullptr);
+                                                                      std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 
 }

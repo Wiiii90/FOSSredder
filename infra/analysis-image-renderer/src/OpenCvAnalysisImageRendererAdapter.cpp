@@ -536,7 +536,7 @@ namespace infra::analysis_image_renderer {
 
 namespace {
 
-void reportImageFailure(core::errors::IErrorReporter* reporter,
+void reportImageFailure(core::ports::diagnostics::IErrorReporter* reporter,
                         std::string message,
                         const std::filesystem::path& outputPath)
 {
@@ -554,7 +554,7 @@ void reportImageFailure(core::errors::IErrorReporter* reporter,
 } // namespace
 
 OpenCvAnalysisImageRendererAdapter::OpenCvAnalysisImageRendererAdapter(
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
     : errorReporter_(std::move(errorReporter))
 {
 }

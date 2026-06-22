@@ -5,7 +5,7 @@
 
 #include "image-processing/pch.h"
 #include "image-processing/CropAdapter.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 #include <fstream>
@@ -19,7 +19,7 @@ std::vector<std::filesystem::path> CropAdapter::cropImages(const std::string& im
                                                          const std::filesystem::path& outputDir,
                                                          ports::CropRequest::OutputFormat fmt,
                                                          int jpegQuality,
-                                                         std::shared_ptr<IDebugger> debugger,
+                                                         std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger,
                                                          const std::string& filePrefix) {
     try {
         cv::Mat img = cv::imread(imagePath, cv::IMREAD_COLOR);
@@ -39,7 +39,7 @@ std::vector<std::filesystem::path> CropAdapter::cropImages(const cv::Mat& img,
                                                          ports::CropRequest::OutputFormat fmt,
                                                          int jpegQuality,
                                                          std::vector<std::vector<uint8_t>>* outBytes,
-                                                         std::shared_ptr<IDebugger> debugger,
+                                                         std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger,
                                                          const std::string& filePrefix) {
     std::vector<std::filesystem::path> outPaths;
     if (rects.empty()) return outPaths;

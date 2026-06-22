@@ -20,7 +20,7 @@ public:
         snapshotChanged = std::move(cb);
     }
 
-    void setErrorReporter(std::shared_ptr<core::errors::IErrorReporter>) override {}
+    void setErrorReporter(std::shared_ptr<core::ports::diagnostics::IErrorReporter>) override {}
     void setAtomicStoreSave(core::ports::storage::IStorageManager::AtomicStoreSave) override {}
     void setAtomicStoreLoad(core::ports::storage::IStorageManager::AtomicStoreLoad) override {}
     void setDeletionImpactCallback(core::ports::workspace::IWorkspaceWriter::DeletionImpactCallback) override {}

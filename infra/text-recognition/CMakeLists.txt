@@ -22,7 +22,6 @@ find_package(Tesseract REQUIRED CONFIG)
 target_link_libraries(fossredder_infra_text_recognition
     PRIVATE
         FossRedder::Core
-        FossRedder::Debug
         Tesseract::libtesseract
 )
 

@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <cctype>
 
-class IDebugger;
+namespace core::ports::diagnostics { class IDiagnostics; }
 
 std::shared_ptr<core::ports::text_recognition::ITextRecognizer> createTextRecognizerAdapter();
 

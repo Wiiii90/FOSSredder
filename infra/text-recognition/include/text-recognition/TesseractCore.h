@@ -11,7 +11,7 @@
 #include <vector>
 #include <memory>
 
-class IDebugger;
+namespace core::ports::diagnostics { class IDiagnostics; }
 
 class TesseractCore {
 public:
@@ -27,5 +27,5 @@ public:
         const std::vector<uint8_t>& data,
         const std::string& tessdataPath,
         const core::ports::text_recognition::Settings& recognition,
-        std::shared_ptr<IDebugger> debugger = nullptr);
+        std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger = nullptr);
 };

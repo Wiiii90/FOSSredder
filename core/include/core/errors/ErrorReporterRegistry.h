@@ -9,12 +9,14 @@
 #include <memory>
 #include <string>
 
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 
 namespace core::errors {
 
-void setGlobalErrorReporter(std::shared_ptr<IErrorReporter> reporter);
-std::shared_ptr<IErrorReporter> globalErrorReporter();
+void setGlobalErrorReporter(
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter);
+std::shared_ptr<core::ports::diagnostics::IErrorReporter>
+globalErrorReporter();
 
 void report(const ErrorEvent &event);
 void report(ErrorSeverity severity, const char *code, const char *origin,

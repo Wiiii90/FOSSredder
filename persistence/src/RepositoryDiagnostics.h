@@ -14,7 +14,7 @@
 
 namespace persistence::diagnostics {
 
-inline void report(const std::shared_ptr<core::errors::IErrorReporter>& reporter,
+inline void report(const std::shared_ptr<core::ports::diagnostics::IErrorReporter>& reporter,
                    core::errors::ErrorSeverity severity,
                    const char* origin,
                    std::string message,

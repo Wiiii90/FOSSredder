@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/application/storage/DeletionImpact.h"
 #include "core/application/workspace/WorkspaceSessionState.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
@@ -37,7 +37,7 @@ public:
     const std::string& currentPath() const noexcept;
 
     void setStateChangedCallback(StateChanged cb);
-    void setErrorReporter(std::shared_ptr<core::errors::IErrorReporter> reporter);
+    void setErrorReporter(std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter);
     void setAtomicStoreSave(core::ports::storage::IStorageManager::AtomicStoreSave saveFn);
     void setAtomicStoreLoad(core::ports::storage::IStorageManager::AtomicStoreLoad loadFn);
     void setDeletionImpactCallback(core::ports::storage::IStorageManager::DeletionImpactCallback cb);
@@ -59,7 +59,7 @@ private:
     std::unique_ptr<core::ports::storage::IStorageManager> storageManager_;
     core::application::workspace::WorkspaceSessionState document_;
     StateChanged onStateChanged_;
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
     core::ports::storage::IStorageManager::DeletionImpactCallback onDeletionImpact_;
 };
 

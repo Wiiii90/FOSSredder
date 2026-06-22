@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/repositories/ITransactionRepository.h"
 #include <memory>
 #include <string>
@@ -25,7 +25,7 @@ public:
      * @param dbPath SQLite database path.
      * @param errorReporter Error reporter used by the repository.
      */
-    SqliteTransactionRepository(const std::string& dbPath, std::shared_ptr<core::errors::IErrorReporter> errorReporter);
+    SqliteTransactionRepository(const std::string& dbPath, std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 
     /**
      * @brief Create a transaction repository using an existing database handle wrapper.
@@ -38,7 +38,7 @@ public:
      * @param db Shared SQLite database wrapper.
      * @param errorReporter Error reporter used by the repository.
      */
-    SqliteTransactionRepository(std::shared_ptr<SqliteDb> db, std::shared_ptr<core::errors::IErrorReporter> errorReporter);
+    SqliteTransactionRepository(std::shared_ptr<SqliteDb> db, std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 
     /**
      * @brief Destroy the repository.

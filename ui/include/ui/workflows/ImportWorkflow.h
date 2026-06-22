@@ -13,7 +13,7 @@
 #include <functional>
 #include <memory>
 
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/usecases/import/IImportRunner.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
@@ -79,7 +79,7 @@ public:
    */
   explicit ImportWorkflow(
       std::shared_ptr<ui::adapters::ImportAdapter> importAdapter,
-      std::shared_ptr<core::errors::IErrorReporter> errorReporter,
+      std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
       StateSnapshotProvider stateSnapshotProvider = {},
       WorkspaceCommands* commands = nullptr,
       WorkspaceSelectors* selectors = nullptr, QObject* parent = nullptr);
@@ -521,7 +521,7 @@ private:
   StateSnapshotProvider stateSnapshotProvider_;
   WorkspaceCommands* commands_ = nullptr;
   WorkspaceSelectors* selectors_ = nullptr;
-  std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
+  std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
 
   QString activeDraftId_;
   QHash<QString, int> draftTransactionIndexByDraftId_;

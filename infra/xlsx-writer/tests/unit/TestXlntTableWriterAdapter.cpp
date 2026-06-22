@@ -6,12 +6,26 @@
 #include <gtest/gtest.h>
 
 #include "xlsx-writer/XlntTableWriterAdapter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 
 #include <zip.h>
 #include <xlnt/xlnt.hpp>
 
+#include <memory>
+
 namespace infra::xlsx_writer::tests {
 namespace {
+
+class NoopErrorReporter final
+    : public core::ports::diagnostics::IErrorReporter {
+public:
+    void report(const core::errors::ErrorEvent&) override {}
+};
+
+std::shared_ptr<core::ports::diagnostics::IErrorReporter> makeErrorReporter()
+{
+    return std::make_shared<NoopErrorReporter>();
+}
 
 std::filesystem::path makeTempDir(const std::string& stem) {
     auto dir = std::filesystem::temp_directory_path() / stem;
@@ -29,7 +43,7 @@ TEST(XlntTableWriterAdapterTest, WritesWorkbookWithExpectedCellValues) {
         {"Formula", "=SUM(1,2)"},
     };
 
-    XlntTableWriterAdapter adapter;
+    XlntTableWriterAdapter adapter(makeErrorReporter());
     ASSERT_TRUE(adapter.writeTable(outputPath, rows, "Analysis"));
     ASSERT_TRUE(std::filesystem::exists(outputPath));
     ASSERT_GT(std::filesystem::file_size(outputPath), 0u);
@@ -73,7 +87,7 @@ TEST(XlntTableWriterAdapterTest, RejectsUnwritableOutputPaths) {
     const auto outputDir = tempDir / "as_directory.xlsx";
     std::filesystem::create_directories(outputDir);
 
-    XlntTableWriterAdapter adapter;
+    XlntTableWriterAdapter adapter(makeErrorReporter());
     EXPECT_FALSE(adapter.writeTable(outputDir, {{"A"}}, "Sheet"));
 }
 

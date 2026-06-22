@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <memory>
 
-namespace core::errors {
+namespace core::ports::diagnostics {
 class IErrorReporter;
 }
 
@@ -21,7 +21,7 @@ namespace infra::archive {
  */
 class ZipArchiveAdapter final : public core::ports::archive::IArchive {
 public:
-    explicit ZipArchiveAdapter(std::shared_ptr<core::errors::IErrorReporter> errorReporter = nullptr);
+    explicit ZipArchiveAdapter(std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 
     /**
      * @brief Creates a ZIP archive from the files contained in a source directory.
@@ -35,7 +35,7 @@ public:
                 core::ports::exporting::PackageFormat format) const override;
 
 private:
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
 };
 
 } // namespace infra::archive

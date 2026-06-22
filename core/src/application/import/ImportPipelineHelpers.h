@@ -8,7 +8,7 @@
 #include "core/ports/infra/image-processing/ImageProcessingResult.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "core/ports/infra/text-recognition/TextRecognitionResult.h"
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/application/import/ImportRequest.h"
 #include "core/application/import/ImportResult.h"
 #include "core/jobs/Scheduler.h"
@@ -48,7 +48,7 @@ struct FinalizeStats {
 };
 
 std::vector<uint8_t> readImportBytes(const std::filesystem::path& path);
-std::vector<uint8_t> readImportBytes(const std::filesystem::path& path, core::errors::IErrorReporter* errorReporter);
+std::vector<uint8_t> readImportBytes(const std::filesystem::path& path, core::ports::diagnostics::IErrorReporter* errorReporter);
 
 PageWork processImportPage(size_t pageIndex,
                            size_t totalPages,
@@ -61,7 +61,7 @@ PageWork processImportPage(size_t pageIndex,
                            const ProgressReporter& report,
                            std::atomic<size_t>& doneUnits,
                            size_t totalUnits,
-                           core::errors::IErrorReporter* errorReporter,
+                           core::ports::diagnostics::IErrorReporter* errorReporter,
                            ImportResult& out,
                            std::mutex& artifactsMutex);
 
@@ -72,7 +72,7 @@ FinalizeStats finalizeParsedPages(const ImportRequest& req,
                                   std::vector<core::application::importing::draft::TransactionDraft>& all,
                                   std::string& carriedBookingDate,
                                   int& nextTxIndex,
-                                  core::errors::IErrorReporter* errorReporter,
+                                  core::ports::diagnostics::IErrorReporter* errorReporter,
                                   const ProgressReporter& report,
                                   std::mutex& artifactsMutex);
 

@@ -5,7 +5,7 @@
 
 #include "image-processing/pch.h"
 #include "image-processing/DenoiseAdapter.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 
@@ -31,7 +31,7 @@ cv::Mat applyDenoise(const cv::Mat& img, ports::DenoiseRequest::Method method) {
 }
 }
 
-ports::DenoiseResult DenoiseAdapter::denoise(const ports::DenoiseRequest& req, std::shared_ptr<IDebugger> debugger) {
+ports::DenoiseResult DenoiseAdapter::denoise(const ports::DenoiseRequest& req, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     ports::DenoiseResult res;
     try {
         const auto path = std::filesystem::path(req.imagePath);

@@ -70,7 +70,8 @@ set(CORE_PUBLIC_HEADERS
     include/core/errors/ErrorEventFactory.h
     include/core/errors/ErrorReporterRegistry.h
     include/core/errors/ErrorReporting.h
-    include/core/errors/IErrorReporter.h
+    include/core/ports/diagnostics/IDiagnostics.h
+    include/core/ports/diagnostics/IErrorReporter.h
     include/core/jobs/ImportJobSpec.h
     include/core/jobs/JobSystem.h
     include/core/jobs/JobTypes.h

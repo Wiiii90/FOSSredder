@@ -11,7 +11,7 @@
 #include "core/ports/infra/pdf-rendering/PdfRenderingRequest.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "core/ports/infra/text-recognition/ITextRecognizer.h"
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/jobs/Scheduler.h"
 
 #include <chrono>
@@ -41,11 +41,11 @@ struct SchedulerResources {
 };
 
 void ensureDirectoryExists(const std::filesystem::path& path,
-                          core::errors::IErrorReporter* errorReporter,
+                          core::ports::diagnostics::IErrorReporter* errorReporter,
                           const char* origin);
 
 internal::ProgressReporter makeProgressReporter(const ImportRequest& req,
-                                                core::errors::IErrorReporter* errorReporter);
+                                                core::ports::diagnostics::IErrorReporter* errorReporter);
 
 core::ports::pdf_rendering::RenderRequest makeRenderRequest(const ImportRequest& req);
 core::ports::pdf_rendering::ExtractRequest makeExtractRequest(const core::ports::pdf_rendering::RenderRequest& renderRequest,
@@ -58,7 +58,7 @@ std::vector<internal::PageWork> collectPageWork(const ImportRequest& req,
                                               const std::shared_ptr<core::ports::text_recognition::ITextRecognizer>& tesseract,
                                               SchedulerResources& resources,
                                               const internal::ProgressReporter& report,
-                                              core::errors::IErrorReporter* errorReporter,
+                                              core::ports::diagnostics::IErrorReporter* errorReporter,
                                               ImportResult& out,
                                               std::mutex& artifactsMutex);
 
@@ -68,6 +68,6 @@ void attachMetricsArtifact(ImportResult& out,
                            size_t totalPages,
                            const internal::FinalizeStats& finalizeStats,
                            const ImportRunTimings& timings,
-                           core::errors::IErrorReporter* errorReporter);
+                           core::ports::diagnostics::IErrorReporter* errorReporter);
 
 }

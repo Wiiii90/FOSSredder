@@ -6,7 +6,7 @@
 #include "image-processing/pch.h"
 #include "image-processing/MaskAdapter.h"
 #include "image-processing/DetectAdapter.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 #include <sstream>
@@ -49,7 +49,7 @@ cv::Mat MaskAdapter::makeLineMask(const cv::Mat& grayIn, bool horizontal) {
     return m;
 }
 
-ports::MaskResult MaskAdapter::mask(const ports::MaskRequest& req, std::shared_ptr<IDebugger> debugger) {
+ports::MaskResult MaskAdapter::mask(const ports::MaskRequest& req, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     ports::MaskResult res;
     try {
         cv::Mat img;

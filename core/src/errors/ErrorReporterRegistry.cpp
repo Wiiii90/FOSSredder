@@ -8,18 +8,19 @@ namespace core::errors {
 
 namespace {
 
-std::shared_ptr<IErrorReporter> g_reporter;
+std::shared_ptr<core::ports::diagnostics::IErrorReporter> g_reporter;
 std::mutex g_mutex;
 
 }
 
-void setGlobalErrorReporter(std::shared_ptr<IErrorReporter> reporter)
+void setGlobalErrorReporter(
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter)
 {
     std::lock_guard<std::mutex> lock(g_mutex);
     g_reporter = std::move(reporter);
 }
 
-std::shared_ptr<IErrorReporter> globalErrorReporter()
+std::shared_ptr<core::ports::diagnostics::IErrorReporter> globalErrorReporter()
 {
     std::lock_guard<std::mutex> lock(g_mutex);
     return g_reporter;

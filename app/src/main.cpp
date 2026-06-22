@@ -38,10 +38,10 @@
 #include "core/application/workspace/WorkspaceFacade.h"
 #include "core/errors/ErrorCodes.h"
 #include "core/errors/ErrorReporterRegistry.h"
-#include "debug/DebugDefaults.h"
-#include "debug/ErrorReporter.h"
-#include "debug/FileDebugger.h"
-#include "debug/IDebugger.h"
+#include "diagnostics/DiagnosticsDefaults.h"
+#include "diagnostics/ErrorReporter.h"
+#include "diagnostics/FileDiagnostics.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include "ui/shell/Defaults.h"
 #include "xlsx-writer/XlntTableWriterAdapter.h"
 
@@ -54,11 +54,11 @@
 #include <string_view>
 
 std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer>
-createPdfRendererAdapter(std::shared_ptr<IDebugger> dbg);
+createPdfRendererAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg);
 std::shared_ptr<core::ports::image_processing::IImageProcessor>
-createImageProcessorAdapter(std::shared_ptr<IDebugger> dbg);
+createImageProcessorAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg);
 std::shared_ptr<core::ports::text_recognition::ITextRecognizer>
-createTextRecognizerAdapter(std::shared_ptr<IDebugger> dbg);
+createTextRecognizerAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg);
 
 namespace {
 
@@ -165,7 +165,7 @@ struct UseCaseRunners {
 };
 
 UseCaseRunners createUseCaseRunners(
-    const std::shared_ptr<core::errors::IErrorReporter>& errorReporter) {
+    const std::shared_ptr<core::ports::diagnostics::IErrorReporter>& errorReporter) {
   UseCaseRunners runners;
   runners.analysis =
       std::make_shared<core::application::analysis::AnalysisService>(
@@ -182,12 +182,12 @@ UseCaseRunners createUseCaseRunners(
                                OpenCvAnalysisImageRendererAdapter>(
               errorReporter));
 
-  auto importDebugger = std::make_shared<FileDebugger>(
-      "", std::string(debug::defaults::kImportProcessName));
+  auto importDiagnostics = std::make_shared<diagnostics::FileDiagnostics>(
+      "", std::string(diagnostics::defaults::kImportProcessName));
   auto importService = core::application::importing::createImportStatement(
-      createPdfRendererAdapter(importDebugger),
-      createImageProcessorAdapter(importDebugger),
-      createTextRecognizerAdapter(importDebugger), errorReporter);
+      createPdfRendererAdapter(importDiagnostics),
+      createImageProcessorAdapter(importDiagnostics),
+      createTextRecognizerAdapter(importDiagnostics), errorReporter);
   const auto importRunBasePath =
       QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
           .toStdString();
@@ -249,7 +249,7 @@ extern int startQmlApp(
     QApplication& app,
     core::ports::workspace::IWorkspaceReader& workspaceReader,
     core::ports::workspace::IWorkspaceWriter& workspaceWriter,
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
     std::shared_ptr<core::ports::analysis::IAnalysisRunner> analysisRunner,
     std::shared_ptr<core::ports::annual::IAnnualRunner> annualRunner,
     std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner,
@@ -257,7 +257,7 @@ extern int startQmlApp(
 #endif
 
 int main(int argc, char* argv[]) {
-  auto errorReporter = debug::createDefaultErrorReporter();
+  auto errorReporter = diagnostics::createDefaultErrorReporter();
   core::errors::setGlobalErrorReporter(errorReporter);
 
 #if defined(_DEBUG)

@@ -7,7 +7,7 @@
 
 #include "core/application/import/ImportRequest.h"
 #include "core/application/import/ImportResult.h"
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 
 #include <memory>
 
@@ -46,12 +46,12 @@ public:
  * @param poppler PDF rendering adapter.
  * @param openCv Image processing adapter.
  * @param tesseract Text recognition adapter.
- * @param errorReporter Optional error reporter.
+ * @param errorReporter Error reporter for structured import diagnostics.
  * @return Shared import service instance.
  */
 std::shared_ptr<IImportStatement> createImportStatement(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
                                                         std::shared_ptr<core::ports::image_processing::IImageProcessor> openCv,
                                                         std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
-                                                        std::shared_ptr<core::errors::IErrorReporter> errorReporter = nullptr);
+                                                        std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 
 }

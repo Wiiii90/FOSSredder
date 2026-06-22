@@ -26,7 +26,7 @@ void WorkspaceSession::setStateChangedCallback(StateChanged cb) {
     onStateChanged_ = std::move(cb);
 }
 
-void WorkspaceSession::setErrorReporter(std::shared_ptr<core::errors::IErrorReporter> reporter) {
+void WorkspaceSession::setErrorReporter(std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter) {
     errorReporter_ = std::move(reporter);
 }
 

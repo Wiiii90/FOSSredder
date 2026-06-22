@@ -11,14 +11,14 @@
 #include "image-processing/MaskAdapter.h"
 #include "image-processing/DetectAdapter.h"
 #include "image-processing/CropAdapter.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 
 class OpenCvImageProcessorAdapter : public core::ports::image_processing::IImageProcessor {
 public:
-    OpenCvImageProcessorAdapter(std::shared_ptr<IDebugger> dbg = nullptr) : debugger(std::move(dbg)) {}
+    OpenCvImageProcessorAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg = nullptr) : debugger(std::move(dbg)) {}
 
     core::ports::image_processing::DenoiseResult denoise(const core::ports::image_processing::DenoiseRequest& req) const override {
         if (req.cancelFlag && req.cancelFlag->load()) return {};
@@ -108,10 +108,10 @@ public:
     }
 
 private:
-    std::shared_ptr<IDebugger> debugger;
+    std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger;
 };
 
-std::shared_ptr<core::ports::image_processing::IImageProcessor> createImageProcessorAdapter(std::shared_ptr<IDebugger> debugger) {
+std::shared_ptr<core::ports::image_processing::IImageProcessor> createImageProcessorAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     return std::make_shared<OpenCvImageProcessorAdapter>(std::move(debugger));
 }
 

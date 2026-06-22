@@ -5,7 +5,7 @@
 
 #include "text-recognition/pch.h"
 #include "text-recognition/TesseractCore.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include "core/ports/infra/text-recognition/TextRecognitionTypes.h"
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
@@ -137,7 +137,7 @@ static void applyPsm(tesseract::TessBaseAPI& ocr, int psm) {
 static ports::Text recognizeTextFromBytes(const std::vector<uint8_t>& data,
                                                    const std::string& tessdataPath,
                                                    const ports::Settings& recognition,
-                                                   std::shared_ptr<IDebugger> dbg) {
+                                                   std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg) {
     ports::Text out;
     tesseract::TessBaseAPI ocr;
     std::string resolved = resolveTessdataPath(tessdataPath);
@@ -166,7 +166,7 @@ static ports::Text recognizeTextFromBytes(const std::vector<uint8_t>& data,
 static vector<ports::Word> getWordsFromBytes(const std::vector<uint8_t>& data,
                                                       const std::string& tessdataPath,
                                                       const ports::Settings& recognition,
-                                                      std::shared_ptr<IDebugger> dbg) {
+                                                      std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg) {
     std::vector<ports::Word> out;
     Pix* pix = pixFromBytes(data);
     if (!pix) return out;
@@ -235,7 +235,7 @@ std::pair<ports::Text, std::vector<ports::Word>> TesseractCore::extractFromBytes
     const std::vector<uint8_t>& data,
     const std::string& tessdataPath,
     const ports::Settings& recognition,
-    std::shared_ptr<IDebugger> dbg) {
+    std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg) {
     auto t = recognizeTextFromBytes(data, tessdataPath, recognition, dbg);
     auto w = getWordsFromBytes(data, tessdataPath, recognition, dbg);
     return {t, w};

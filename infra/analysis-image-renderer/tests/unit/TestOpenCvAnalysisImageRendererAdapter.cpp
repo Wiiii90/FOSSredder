@@ -7,13 +7,26 @@
 
 #include "analysis-image-renderer/OpenCvAnalysisImageRendererAdapter.h"
 #include "core/constants/analysis.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 
 #include <cmath>
+#include <memory>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/core.hpp>
 
 namespace infra::analysis_image_renderer::tests {
 namespace {
+
+class NoopErrorReporter final
+    : public core::ports::diagnostics::IErrorReporter {
+public:
+    void report(const core::errors::ErrorEvent&) override {}
+};
+
+std::shared_ptr<core::ports::diagnostics::IErrorReporter> makeErrorReporter()
+{
+    return std::make_shared<NoopErrorReporter>();
+}
 
 std::filesystem::path makeTempDir(const std::string& stem) {
     auto dir = std::filesystem::temp_directory_path() / stem;
@@ -53,7 +66,7 @@ TEST_P(OpenCvAnalysisImageRendererAdapterTest, WritesRenderableImageForSupported
     const auto outputPath = tempDir / (GetParam() + ".png");
     const auto result = makeResult(GetParam());
 
-    OpenCvAnalysisImageRendererAdapter adapter;
+    OpenCvAnalysisImageRendererAdapter adapter(makeErrorReporter());
     ASSERT_TRUE(adapter.writeAnalysisImage(outputPath, "Analysis", result));
     ASSERT_TRUE(std::filesystem::exists(outputPath));
     ASSERT_GT(std::filesystem::file_size(outputPath), 0u);
@@ -75,7 +88,7 @@ TEST(OpenCvAnalysisImageRendererAdapterStandaloneTest, PieUsesDistinctAdjacentSl
         {"C", "1.0"},
     };
 
-    OpenCvAnalysisImageRendererAdapter adapter;
+    OpenCvAnalysisImageRendererAdapter adapter(makeErrorReporter());
     ASSERT_TRUE(adapter.writeAnalysisImage(outputPath, "Analysis", result));
 
     const auto image = cv::imread(outputPath.string(), cv::IMREAD_UNCHANGED);

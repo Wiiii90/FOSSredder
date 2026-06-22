@@ -13,21 +13,21 @@
 
 struct SqliteTransactionRepository::Impl {
     std::shared_ptr<SqliteDb> db;
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter;
 };
 
 SqliteTransactionRepository::SqliteTransactionRepository(const std::string& dbPath)
     : SqliteTransactionRepository(std::make_shared<SqliteDb>(dbPath), nullptr) {}
 
 SqliteTransactionRepository::SqliteTransactionRepository(const std::string& dbPath,
-                                                         std::shared_ptr<core::errors::IErrorReporter> er)
+                                                         std::shared_ptr<core::ports::diagnostics::IErrorReporter> er)
     : SqliteTransactionRepository(std::make_shared<SqliteDb>(dbPath), std::move(er)) {}
 
 SqliteTransactionRepository::SqliteTransactionRepository(std::shared_ptr<SqliteDb> db)
     : SqliteTransactionRepository(std::move(db), nullptr) {}
 
 SqliteTransactionRepository::SqliteTransactionRepository(std::shared_ptr<SqliteDb> db,
-                                                         std::shared_ptr<core::errors::IErrorReporter> er)
+                                                         std::shared_ptr<core::ports::diagnostics::IErrorReporter> er)
     : pimpl_(std::make_unique<Impl>()) {
     if (!db) throw std::runtime_error("db is null");
     pimpl_->db = std::move(db);

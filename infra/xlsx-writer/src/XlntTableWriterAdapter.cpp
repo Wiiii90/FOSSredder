@@ -14,7 +14,7 @@
 
 namespace infra::xlsx_writer {
 
-XlntTableWriterAdapter::XlntTableWriterAdapter(std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+XlntTableWriterAdapter::XlntTableWriterAdapter(std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
     : errorReporter_(std::move(errorReporter))
 {
 }

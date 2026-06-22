@@ -395,7 +395,7 @@ double clampedProgress(double progress) {
 
 ImportWorkflow::ImportWorkflow(
     std::shared_ptr<ui::adapters::ImportAdapter> importAdapter,
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
     StateSnapshotProvider stateSnapshotProvider, WorkspaceCommands* commands,
     WorkspaceSelectors* selectors, QObject* parent)
     : QObject(parent),

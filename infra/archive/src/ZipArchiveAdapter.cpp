@@ -20,7 +20,7 @@ namespace infra::archive {
 
 namespace {
 
-void reportArchiveFailure(core::errors::IErrorReporter* reporter,
+void reportArchiveFailure(core::ports::diagnostics::IErrorReporter* reporter,
                           std::string message,
                           core::errors::ErrorContext context = {})
 {
@@ -37,7 +37,7 @@ void reportArchiveFailure(core::errors::IErrorReporter* reporter,
 
 bool createZipArchive(const std::filesystem::path& sourceDir,
                       const std::filesystem::path& outputArchive,
-                      core::errors::IErrorReporter* errorReporter)
+                      core::ports::diagnostics::IErrorReporter* errorReporter)
 {
     int errorCode = 0;
     zip_t* archive = zip_open(outputArchive.string().c_str(), ZIP_CREATE | ZIP_TRUNCATE, &errorCode);
@@ -97,7 +97,7 @@ bool createZipArchive(const std::filesystem::path& sourceDir,
 
 } // namespace
 
-ZipArchiveAdapter::ZipArchiveAdapter(std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+ZipArchiveAdapter::ZipArchiveAdapter(std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
     : errorReporter_(std::move(errorReporter))
 {
 }

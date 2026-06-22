@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/repositories/IPropertyRepository.h"
 #include <memory>
 #include <string>
@@ -25,7 +25,7 @@ public:
      * @param dbPath SQLite database path.
      * @param errorReporter Error reporter used by the repository.
      */
-    SqlitePropertyRepository(const std::string& dbPath, std::shared_ptr<core::errors::IErrorReporter> errorReporter);
+    SqlitePropertyRepository(const std::string& dbPath, std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 
     /**
      * @brief Create a property repository using an existing database handle wrapper.
@@ -38,7 +38,7 @@ public:
      * @param db Shared SQLite database wrapper.
      * @param errorReporter Error reporter used by the repository.
      */
-    SqlitePropertyRepository(std::shared_ptr<SqliteDb> db, std::shared_ptr<core::errors::IErrorReporter> errorReporter);
+    SqlitePropertyRepository(std::shared_ptr<SqliteDb> db, std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 
     /**
      * @brief Destroy the repository.

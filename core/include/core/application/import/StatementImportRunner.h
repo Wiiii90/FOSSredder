@@ -14,7 +14,7 @@
 namespace core::application::importing {
 class IImportStatement;
 }
-namespace core::errors {
+namespace core::ports::diagnostics {
 class IErrorReporter;
 }
 namespace core::jobs {
@@ -28,12 +28,12 @@ class StatementImportRunner final
 public:
   explicit StatementImportRunner(
       std::shared_ptr<IImportStatement> importService,
-      std::string runBasePath = {},
-      std::shared_ptr<core::errors::IErrorReporter> errorReporter = nullptr);
+      std::string runBasePath,
+      std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
   explicit StatementImportRunner(
       std::shared_ptr<core::jobs::JobSystem> jobSystem,
-      std::string runBasePath = {},
-      std::shared_ptr<core::errors::IErrorReporter> errorReporter = nullptr);
+      std::string runBasePath,
+      std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
   ~StatementImportRunner() override;
 
   StatementImportRunner(const StatementImportRunner &) = delete;

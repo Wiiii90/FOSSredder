@@ -63,7 +63,7 @@ void WorkspaceFacade::installStateChangedDispatcher() {
         });
 }
 
-void WorkspaceFacade::setErrorReporter(std::shared_ptr<core::errors::IErrorReporter> reporter) {
+void WorkspaceFacade::setErrorReporter(std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter) {
     session_->setErrorReporter(std::move(reporter));
 }
 

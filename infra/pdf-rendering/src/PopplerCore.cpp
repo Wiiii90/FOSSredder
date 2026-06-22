@@ -5,7 +5,7 @@
 
 #include "pdf-rendering/pch.h"
 #include "pdf-rendering/PopplerCore.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include <poppler-document.h>
 #include <poppler-page.h>
 #include <poppler-image.h>
@@ -19,7 +19,7 @@
 using json = nlohmann::json;
 namespace ports = core::ports::pdf_rendering;
 
-static void safeWriteText(const std::shared_ptr<IDebugger>& debugger, const std::string& path, const std::string& text) {
+static void safeWriteText(const std::shared_ptr<core::ports::diagnostics::IDiagnostics>& debugger, const std::string& path, const std::string& text) {
     if (!debugger || !debugger->enabled()) return;
     try {
         debugger->writeText(path, text);
@@ -28,7 +28,7 @@ static void safeWriteText(const std::shared_ptr<IDebugger>& debugger, const std:
     }
 }
 
-static void safeWriteBytes(const std::shared_ptr<IDebugger>& debugger, const std::string& path, const std::vector<uint8_t>& data) {
+static void safeWriteBytes(const std::shared_ptr<core::ports::diagnostics::IDiagnostics>& debugger, const std::string& path, const std::vector<uint8_t>& data) {
     if (!debugger || !debugger->enabled()) return;
     try {
         debugger->writeBytes(path, data);
@@ -37,7 +37,7 @@ static void safeWriteBytes(const std::shared_ptr<IDebugger>& debugger, const std
     }
 }
 
-static ports::RenderedPage extractPageMeta(poppler::page* page, int pageIndex, double dpi, std::shared_ptr<IDebugger> debugger) {
+static ports::RenderedPage extractPageMeta(poppler::page* page, int pageIndex, double dpi, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     ports::RenderedPage rp;
     double pageWidthPts = 0.0, pageHeightPts = 0.0;
     try {
@@ -143,7 +143,7 @@ std::vector<ports::RenderedPage> PopplerCore::extractDocumentMeta(const std::str
                                                                            const std::filesystem::path& outputDir,
                                                                            const std::string& uniqIdPrefix,
                                                                            const std::string& filePrefix,
-                                                                           std::shared_ptr<IDebugger> debugger,
+                                                                           std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger,
                                                                            std::shared_ptr<std::atomic<bool>> cancelFlag) {
     std::vector<ports::RenderedPage> result;
     if (!std::filesystem::exists(pdfPath)) throw std::runtime_error("PDF file does not exist: " + pdfPath);
@@ -169,7 +169,7 @@ std::vector<ports::RenderedPage> PopplerCore::renderDocument(const std::string& 
                                                                       const std::filesystem::path& outputDir,
                                                                       const std::string& uniqIdPrefix,
                                                                       const std::string& filePrefix,
-                                                                      std::shared_ptr<IDebugger> debugger,
+                                                                      std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger,
                                                                       std::shared_ptr<std::atomic<bool>> cancelFlag) {
     std::vector<ports::RenderedPage> result;
     if (!std::filesystem::exists(pdfPath)) throw std::runtime_error("PDF file does not exist: " + pdfPath);

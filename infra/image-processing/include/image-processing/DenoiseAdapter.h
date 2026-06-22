@@ -9,7 +9,7 @@
 #include "core/ports/infra/image-processing/ImageProcessingResult.h"
 #include <memory>
 
-class IDebugger;
+namespace core::ports::diagnostics { class IDiagnostics; }
 
 namespace opencv {
 
@@ -23,7 +23,7 @@ public:
      * @param debugger Optional debugger used for trace output.
      * @return The denoise result containing the output image path when successful.
      */
-    static ports::DenoiseResult denoise(const ports::DenoiseRequest& req, std::shared_ptr<IDebugger> debugger = nullptr);
+    static ports::DenoiseResult denoise(const ports::DenoiseRequest& req, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger = nullptr);
 };
 
 } // namespace opencv

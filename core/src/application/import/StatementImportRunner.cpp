@@ -16,7 +16,7 @@
 #include "core/jobs/ImportJobSpec.h"
 #include "core/jobs/JobSystem.h"
 #include "core/jobs/JobTypes.h"
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
 
 #include <algorithm>
@@ -517,7 +517,7 @@ class StatementImportRunner::Impl {
 public:
   Impl(std::shared_ptr<core::jobs::JobSystem> jobSystem,
        std::string runBasePath,
-       std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+       std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
       : jobSystem(std::move(jobSystem)),
         runBasePath(runBasePath.empty() ? defaultRunBasePath()
                                         : std::filesystem::path(runBasePath)),
@@ -525,19 +525,19 @@ public:
 
   std::shared_ptr<core::jobs::JobSystem> jobSystem;
   std::filesystem::path runBasePath;
-  std::shared_ptr<core::errors::IErrorReporter> errorReporter;
+  std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter;
 };
 
 StatementImportRunner::StatementImportRunner(
     std::shared_ptr<IImportStatement> importService, std::string runBasePath,
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
     : StatementImportRunner(
           std::make_shared<core::jobs::JobSystem>(std::move(importService)),
           std::move(runBasePath), std::move(errorReporter)) {}
 
 StatementImportRunner::StatementImportRunner(
     std::shared_ptr<core::jobs::JobSystem> jobSystem, std::string runBasePath,
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
     : impl_(std::make_unique<Impl>(std::move(jobSystem), std::move(runBasePath),
                                    std::move(errorReporter))) {}
 

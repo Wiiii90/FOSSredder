@@ -1,4 +1,4 @@
-﻿# IDE / Editor
+# IDE / Editor
 .vs/
 .vscode/
 *.qmlls.ini
@@ -48,7 +48,7 @@ third_party/
 LOCAL_APPDATA_FONTCONFIG_CACHE/
 docs/todo.txt
 
-debug_output/
+diagnostics_output/
 docs/html/
 
 .tmp-appdata/

@@ -6,7 +6,7 @@
 #include "ui/shell/Composition.h"
 
 #include "MainWindow.h"
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/usecases/analysis/IAnalysisRunner.h"
 #include "core/ports/usecases/annual/IAnnualRunner.h"
 #include "core/ports/usecases/export/IExportRunner.h"
@@ -51,7 +51,7 @@ void createComposition(
     QApplication& app, MainWindow& w,
     core::ports::workspace::IWorkspaceReader& workspaceReader,
     core::ports::workspace::IWorkspaceWriter& workspaceWriter,
-    const std::shared_ptr<core::errors::IErrorReporter>& errorReporter,
+    const std::shared_ptr<core::ports::diagnostics::IErrorReporter>& errorReporter,
     std::shared_ptr<core::ports::analysis::IAnalysisRunner> analysisRunner,
     std::shared_ptr<core::ports::annual::IAnnualRunner> annualRunner,
     std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner,
@@ -198,7 +198,7 @@ void createComposition(
 
 void wireWorkspaceCallbacks(
     MainWindow& w, core::ports::workspace::IWorkspaceWriter& workspaceWriter,
-    const std::shared_ptr<core::errors::IErrorReporter>& errorReporter) {
+    const std::shared_ptr<core::ports::diagnostics::IErrorReporter>& errorReporter) {
   workspaceWriter.setSnapshotChangedCallback(
       [&w](const core::ports::workspace::WorkspaceSnapshot& snapshot) {
         if (w.workspaceStore()) {

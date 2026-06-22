@@ -153,7 +153,7 @@ public:
   }
 
   void
-  setErrorReporter(std::shared_ptr<core::errors::IErrorReporter>) override {}
+  setErrorReporter(std::shared_ptr<core::ports::diagnostics::IErrorReporter>) override {}
 
   void setAtomicStoreSave(
       core::ports::storage::IStorageManager::AtomicStoreSave) override {}

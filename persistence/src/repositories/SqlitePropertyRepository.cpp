@@ -16,7 +16,7 @@
 
 struct SqlitePropertyRepository::Impl {
     std::shared_ptr<SqliteDb> db;
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter;
 };
 
 namespace {
@@ -143,14 +143,14 @@ SqlitePropertyRepository::SqlitePropertyRepository(const std::string& dbPath)
     : SqlitePropertyRepository(std::make_shared<SqliteDb>(dbPath), nullptr) {}
 
 SqlitePropertyRepository::SqlitePropertyRepository(const std::string& dbPath,
-                                                   std::shared_ptr<core::errors::IErrorReporter> er)
+                                                   std::shared_ptr<core::ports::diagnostics::IErrorReporter> er)
     : SqlitePropertyRepository(std::make_shared<SqliteDb>(dbPath), std::move(er)) {}
 
 SqlitePropertyRepository::SqlitePropertyRepository(std::shared_ptr<SqliteDb> db)
     : SqlitePropertyRepository(std::move(db), nullptr) {}
 
 SqlitePropertyRepository::SqlitePropertyRepository(std::shared_ptr<SqliteDb> db,
-                                                   std::shared_ptr<core::errors::IErrorReporter> er)
+                                                   std::shared_ptr<core::ports::diagnostics::IErrorReporter> er)
     : pimpl_(std::make_unique<Impl>()) {
     if (!db) throw std::runtime_error("db is null");
     pimpl_->db = std::move(db);

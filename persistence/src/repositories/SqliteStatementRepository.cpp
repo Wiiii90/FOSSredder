@@ -55,21 +55,21 @@ void saveTransactionIds(sqlite3* db, const std::string& statementId, const std::
 
 struct SqliteStatementRepository::Impl {
     std::shared_ptr<SqliteDb> db;
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter;
 };
 
 SqliteStatementRepository::SqliteStatementRepository(const std::string& dbPath)
     : SqliteStatementRepository(std::make_shared<SqliteDb>(dbPath), nullptr) {}
 
 SqliteStatementRepository::SqliteStatementRepository(const std::string& dbPath,
-                                                     std::shared_ptr<core::errors::IErrorReporter> er)
+                                                     std::shared_ptr<core::ports::diagnostics::IErrorReporter> er)
     : SqliteStatementRepository(std::make_shared<SqliteDb>(dbPath), std::move(er)) {}
 
 SqliteStatementRepository::SqliteStatementRepository(std::shared_ptr<SqliteDb> db)
     : SqliteStatementRepository(std::move(db), nullptr) {}
 
 SqliteStatementRepository::SqliteStatementRepository(std::shared_ptr<SqliteDb> db,
-                                                     std::shared_ptr<core::errors::IErrorReporter> er)
+                                                     std::shared_ptr<core::ports::diagnostics::IErrorReporter> er)
     : pimpl_(std::make_unique<Impl>()) {
     if (!db) throw std::runtime_error("db is null");
     pimpl_->db = std::move(db);

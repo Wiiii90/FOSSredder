@@ -5,7 +5,7 @@
 
 #ifdef USE_QML
 #include "MainWindow.h"
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/usecases/analysis/IAnalysisRunner.h"
 #include "core/ports/usecases/annual/IAnnualRunner.h"
 #include "core/ports/usecases/export/IExportRunner.h"
@@ -36,7 +36,7 @@ int startQmlApp(
     QApplication& app,
     core::ports::workspace::IWorkspaceReader& workspaceReader,
     core::ports::workspace::IWorkspaceWriter& workspaceWriter,
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter,
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
     std::shared_ptr<core::ports::analysis::IAnalysisRunner> analysisRunner,
     std::shared_ptr<core::ports::annual::IAnnualRunner> annualRunner,
     std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner,

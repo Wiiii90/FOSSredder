@@ -8,17 +8,18 @@
 #include <exception>
 
 #include "core/errors/ErrorEventFactory.h"
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 
 namespace core::errors {
 
-inline void report(IErrorReporter *reporter, const ErrorEvent &event) {
+inline void report(core::ports::diagnostics::IErrorReporter *reporter,
+                   const ErrorEvent &event) {
   if (reporter)
     reporter->report(event);
 }
 
-inline void reportException(IErrorReporter *reporter, ErrorSeverity severity,
-                            const char *origin,
+inline void reportException(core::ports::diagnostics::IErrorReporter *reporter,
+                            ErrorSeverity severity, const char *origin,
                             std::exception_ptr exception) {
   if (reporter)
     reporter->reportException(severity, origin, exception);

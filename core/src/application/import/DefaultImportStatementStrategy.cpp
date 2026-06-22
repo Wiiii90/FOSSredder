@@ -56,7 +56,7 @@ public:
     DefaultImportStatementStrategy(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
         std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv,
         std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
-        std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+        std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
         : poppler_(std::move(poppler))
         , opencv_(std::move(opencv))
         , tesseract_(std::move(tesseract))
@@ -168,13 +168,13 @@ private:
     std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler_;
     std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv_;
     std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract_;
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
 };
 
 std::unique_ptr<IImportStatementStrategy> createDefaultImportStrategy(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
     std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv,
     std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
-    std::shared_ptr<core::errors::IErrorReporter> errorReporter) {
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter) {
     return std::make_unique<DefaultImportStatementStrategy>(std::move(poppler), std::move(opencv), std::move(tesseract), std::move(errorReporter));
 }
 

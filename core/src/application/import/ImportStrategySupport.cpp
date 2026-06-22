@@ -41,7 +41,7 @@ SchedulerResources::SchedulerResources(const ImportRequest& req)
 }
 
 void ensureDirectoryExists(const std::filesystem::path& path,
-                          core::errors::IErrorReporter* errorReporter,
+                          core::ports::diagnostics::IErrorReporter* errorReporter,
                           const char* origin)
 {
     try {
@@ -52,7 +52,7 @@ void ensureDirectoryExists(const std::filesystem::path& path,
 }
 
 internal::ProgressReporter makeProgressReporter(const ImportRequest& req,
-                                                core::errors::IErrorReporter* errorReporter)
+                                                core::ports::diagnostics::IErrorReporter* errorReporter)
 {
     return [&](double progress, const std::string& phase) {
         if (!req.progressCallback) return;
@@ -101,7 +101,7 @@ std::vector<internal::PageWork> collectPageWork(const ImportRequest& req,
                                               const std::shared_ptr<core::ports::text_recognition::ITextRecognizer>& tesseract,
                                               SchedulerResources& resources,
                                               const internal::ProgressReporter& report,
-                                              core::errors::IErrorReporter* errorReporter,
+                                              core::ports::diagnostics::IErrorReporter* errorReporter,
                                               ImportResult& out,
                                               std::mutex& artifactsMutex)
 {
@@ -160,7 +160,7 @@ void attachMetricsArtifact(ImportResult& out,
                            size_t totalPages,
                            const internal::FinalizeStats& finalizeStats,
                            const ImportRunTimings& timings,
-                           core::errors::IErrorReporter* errorReporter)
+                           core::ports::diagnostics::IErrorReporter* errorReporter)
 {
     try {
         nlohmann::json metrics;

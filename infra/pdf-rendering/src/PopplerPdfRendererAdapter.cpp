@@ -8,7 +8,7 @@
 #include "core/ports/infra/pdf-rendering/PdfRenderingRequest.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "pdf-rendering/PopplerCore.h"
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <fstream>
@@ -18,7 +18,7 @@
 
 class PopplerPdfRendererAdapter : public core::ports::pdf_rendering::IPdfRenderer {
   public:
-    PopplerPdfRendererAdapter(std::shared_ptr<IDebugger> dbg = nullptr) : debugger(std::move(dbg)) {}
+    PopplerPdfRendererAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg = nullptr) : debugger(std::move(dbg)) {}
 
     void writeDebugTextSafe(const std::string& path, const std::string& text) const {
         if (!debugger || !debugger->enabled()) return;
@@ -80,10 +80,10 @@ class PopplerPdfRendererAdapter : public core::ports::pdf_rendering::IPdfRendere
     }
 
   private:
-    std::shared_ptr<IDebugger> debugger;
+    std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger;
 };
 
-std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> createPdfRendererAdapter(std::shared_ptr<IDebugger> debugger) {
+std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> createPdfRendererAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger) {
     return std::make_shared<PopplerPdfRendererAdapter>(std::move(debugger));
 }
 

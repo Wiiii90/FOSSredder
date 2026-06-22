@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 4.0.1)
+cmake_minimum_required(VERSION 4.0.1)
 
 include(cmake/modules/FossredderVcpkg.cmake)
 fossredder_configure_vcpkg()
@@ -29,7 +29,7 @@ set(QT_QML_GENERATE_QMLLS_INI ON)
 
 # Module layout.
 add_subdirectory(core)
-add_subdirectory(debug)
+add_subdirectory(diagnostics)
 add_subdirectory(infra)
 add_subdirectory(persistence)
 add_subdirectory(ui)

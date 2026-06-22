@@ -11,7 +11,7 @@
 #include <filesystem>
 #include <opencv2/opencv.hpp>
 
-class IDebugger;
+namespace core::ports::diagnostics { class IDiagnostics; }
 
 namespace opencv {
 
@@ -35,7 +35,7 @@ public:
                                                          const std::filesystem::path& outputDir,
                                                          ports::CropRequest::OutputFormat fmt,
                                                          int jpegQuality = 92,
-                                                         std::shared_ptr<IDebugger> debugger = nullptr,
+                                                         std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger = nullptr,
                                                          const std::string& filePrefix = "");
 
     /**
@@ -56,7 +56,7 @@ public:
                                                          ports::CropRequest::OutputFormat fmt,
                                                          int jpegQuality = 92,
                                                          std::vector<std::vector<uint8_t>>* outBytes = nullptr,
-                                                         std::shared_ptr<IDebugger> debugger = nullptr,
+                                                         std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger = nullptr,
                                                          const std::string& filePrefix = "");
 };
 

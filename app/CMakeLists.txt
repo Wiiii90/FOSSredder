@@ -65,7 +65,7 @@ target_compile_definitions(fossredder PRIVATE
 # Application dependencies.
 target_link_libraries(fossredder PRIVATE
     FossRedder::Core
-    FossRedder::Debug
+    FossRedder::Diagnostics
     FossRedder::Persistence
     FossRedder::InfraAnalysisImageRenderer
     FossRedder::InfraImageProcessing

@@ -10,7 +10,7 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 
-class IDebugger;
+namespace core::ports::diagnostics { class IDiagnostics; }
 
 namespace opencv {
 
@@ -24,7 +24,7 @@ public:
      * @param debugger Optional debugger used for trace output.
      * @return The mask result with binary mask bytes and masked image bytes.
      */
-    static ports::MaskResult mask(const ports::MaskRequest& req, std::shared_ptr<IDebugger> debugger = nullptr);
+    static ports::MaskResult mask(const ports::MaskRequest& req, std::shared_ptr<core::ports::diagnostics::IDiagnostics> debugger = nullptr);
     /**
      * @brief Creates a binary line mask for text or table detection.
      * @param gray The grayscale source image.

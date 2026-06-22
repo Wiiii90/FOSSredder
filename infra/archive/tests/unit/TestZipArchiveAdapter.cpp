@@ -6,15 +6,28 @@
 #include <gtest/gtest.h>
 
 #include "archive/ZipArchiveAdapter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 
 #include <zip.h>
 
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <string>
 
 namespace infra::archive::tests {
 namespace {
+
+class NoopErrorReporter final
+    : public core::ports::diagnostics::IErrorReporter {
+public:
+    void report(const core::errors::ErrorEvent&) override {}
+};
+
+std::shared_ptr<core::ports::diagnostics::IErrorReporter> makeErrorReporter()
+{
+    return std::make_shared<NoopErrorReporter>();
+}
 
 std::filesystem::path makeTempDir(const std::string& stem) {
     auto dir = std::filesystem::temp_directory_path() / stem;
@@ -40,7 +53,7 @@ TEST(ZipArchiveAdapterTest, CreatesArchiveAndPreservesRelativePaths) {
     writeFile(sourceDir / "alpha.txt", "alpha");
     writeFile(nestedDir / "beta.txt", "beta");
 
-    ZipArchiveAdapter adapter;
+    ZipArchiveAdapter adapter(makeErrorReporter());
     ASSERT_TRUE(adapter.create(sourceDir, archivePath, core::ports::exporting::PackageFormat::Zip));
     ASSERT_TRUE(std::filesystem::exists(archivePath));
     ASSERT_GT(std::filesystem::file_size(archivePath), 0u);
@@ -64,7 +77,7 @@ TEST(ZipArchiveAdapterTest, RejectsUnsupportedFormat) {
 
     writeFile(sourceDir / "alpha.txt", "alpha");
 
-    ZipArchiveAdapter adapter;
+    ZipArchiveAdapter adapter(makeErrorReporter());
     EXPECT_FALSE(adapter.create(sourceDir, archivePath, core::ports::exporting::PackageFormat::None));
     EXPECT_FALSE(std::filesystem::exists(archivePath));
 }

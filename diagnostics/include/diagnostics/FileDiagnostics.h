@@ -1,15 +1,17 @@
 #pragma once
 
-#include "debug/IDebugger.h"
+#include "core/ports/diagnostics/IDiagnostics.h"
 #include <string>
 #include <vector>
 #include <mutex>
 
-class FileDebugger : public IDebugger {
+namespace diagnostics {
+
+class FileDiagnostics : public core::ports::diagnostics::IDiagnostics {
 public:
-    // baseOrProcess: if second arg empty, this is treated as processName and base dir is ./debug_output
-    explicit FileDebugger(const std::string& baseOrProcess, const std::string& processName = "");
-    ~FileDebugger() override;
+    // baseOrProcess: if second arg empty, this is treated as processName and base dir is ./diagnostics_output
+    explicit FileDiagnostics(const std::string& baseOrProcess, const std::string& processName = "");
+    ~FileDiagnostics() override;
 
     bool enabled() const override { return true; }
     void writeText(const std::string& relPath, const std::string& text) override;
@@ -21,3 +23,5 @@ private:
     std::string processName_;
     std::mutex mtx_;
 };
+
+} // namespace diagnostics

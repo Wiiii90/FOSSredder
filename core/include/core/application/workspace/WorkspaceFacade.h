@@ -10,7 +10,7 @@
 #include <optional>
 #include <string>
 
-#include "core/errors/IErrorReporter.h"
+#include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/infra/storage/IStorageManager.h"
 #include "core/ports/workspace/IWorkspaceReader.h"
 #include "core/ports/workspace/IWorkspaceWriter.h"
@@ -54,7 +54,7 @@ public:
      * @brief Registers the error reporter used by workspace operations.
      * @param reporter Shared error reporter implementation.
      */
-    void setErrorReporter(std::shared_ptr<core::errors::IErrorReporter> reporter) override;
+    void setErrorReporter(std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter) override;
 
     /**
      * @brief Registers the atomic save callback delegated to the storage manager.
