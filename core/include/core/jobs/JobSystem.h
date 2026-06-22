@@ -1,26 +1,17 @@
 /**
  * @file core/include/core/jobs/JobSystem.h
- * @brief Declares the import job orchestration facade used by the UI and app layer.
+ * @brief Declares the generic job system facade.
  */
 
 #pragma once
 
-#include "core/jobs/ImportJobSpec.h"
 #include "core/jobs/JobTypes.h"
-#include "core/application/import/draft/TransactionDraft.h"
 
-#include <map>
+#include <atomic>
+#include <cstddef>
 #include <memory>
 #include <optional>
-#include <vector>
-
-namespace core::domain {
-class Statement;
-}
-
-namespace core::application::importing {
-class IImportStatement;
-}
+#include <string>
 
 namespace core::ports::diagnostics {
 class IErrorReporter;
@@ -28,16 +19,17 @@ class IErrorReporter;
 
 namespace core::jobs {
 
+class Scheduler;
+class SlotLimiter;
+
 class JobSystem {
 public:
     /**
-     * @brief Create a job system over an import service.
-     * @param importService Import service used for import jobs.
+     * @brief Create a generic job system.
      * @param errorReporter Reporter used for background job diagnostics.
      * @param workers Worker count for the scheduler.
      */
-    JobSystem(std::shared_ptr<core::application::importing::IImportStatement> importService,
-              std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+    explicit JobSystem(std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
               std::size_t workers = 0);
 
     /**
@@ -50,12 +42,15 @@ public:
     JobSystem(JobSystem&&) noexcept;
     JobSystem& operator=(JobSystem&&) noexcept;
 
-    /**
-     * @brief Start an import-statement job.
-     * @param spec Import job specification.
-     * @return Job identifier.
-     */
-    JobId startImportStatement(const ImportStatementJobSpec& spec);
+    [[nodiscard]] JobId submit(JobKind kind = JobKind::Generic);
+    void start(const JobId& id);
+    void publish(const JobEvent& event);
+    void fail(const JobId& id, const std::string& error);
+    void finish(const JobId& id);
+    [[nodiscard]] std::shared_ptr<std::atomic<bool>> cancelFlag(const JobId& id) const;
+    [[nodiscard]] std::shared_ptr<std::atomic<bool>> pauseFlag(const JobId& id) const;
+    [[nodiscard]] Scheduler& scheduler();
+    [[nodiscard]] SlotLimiter& slotLimiter();
 
     /**
      * @brief Subscribe to job events.
@@ -86,27 +81,6 @@ public:
      * @return Job snapshot, if the job exists.
      */
     std::optional<JobSnapshot> snapshot(const JobId& id) const;
-
-    /**
-     * @brief Retrieve the statement result of a job.
-     * @param id Job identifier.
-     * @return Imported statement result.
-     */
-    std::shared_ptr<core::domain::Statement> statementResult(const JobId& id) const;
-
-    /**
-     * @brief Retrieve the transaction drafts of a job.
-     * @param id Job identifier.
-     * @return Imported transaction drafts.
-     */
-    std::vector<core::application::importing::draft::TransactionDraft> statementTransactions(const JobId& id) const;
-
-    /**
-     * @brief Retrieve and clear job artifacts.
-     * @param id Job identifier.
-     * @return Job artifacts.
-     */
-    std::map<std::string, std::vector<uint8_t>> takeStatementArtifacts(const JobId& id);
 
     /**
      * @brief Shut down the job system.

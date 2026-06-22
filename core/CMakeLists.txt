@@ -10,6 +10,7 @@ set(CORE_PUBLIC_HEADERS
     include/core/application/import/ImportLog.h
     include/core/application/import/ImportRequest.h
     include/core/application/import/ImportResult.h
+    include/core/application/import/StatementImportJobSystem.h
     include/core/application/import/StatementImportRunner.h
     include/core/application/import/draft/DraftFinalizer.h
     include/core/application/import/draft/DraftMatcher.h
@@ -71,7 +72,6 @@ set(CORE_PUBLIC_HEADERS
     include/core/errors/ErrorReporting.h
     include/core/ports/diagnostics/IDiagnostics.h
     include/core/ports/diagnostics/IErrorReporter.h
-    include/core/jobs/ImportJobSpec.h
     include/core/jobs/JobSystem.h
     include/core/jobs/JobTypes.h
     include/core/jobs/Scheduler.h
@@ -144,6 +144,7 @@ set(CORE_SRCS
     src/application/import/draft/DraftMatcherSignals.cpp
     src/application/import/ImportPipelineHelpers.cpp
     src/application/import/ImportStatement.cpp
+    src/application/import/StatementImportJobSystem.cpp
     src/application/import/StatementImportRunner.cpp
     src/application/import/ImportStrategySupport.cpp
     src/application/import/internal/ParserDateUtils.cpp

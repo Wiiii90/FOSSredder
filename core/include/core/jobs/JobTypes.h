@@ -13,8 +13,7 @@ namespace core::jobs {
 using JobId = std::string;
 
 enum class JobKind {
-    ImportStatement,
-    Export,
+    Generic,
 };
 
 enum class JobState {
@@ -28,17 +27,11 @@ enum class JobState {
 
 enum class JobStage {
     None,
-    Render,
-    Extract,
-    Detect,
-    Ocr,
-    Parse,
-    Finalize,
 };
 
 struct JobEvent {
     JobId jobId;
-    JobKind kind = JobKind::ImportStatement;
+    JobKind kind = JobKind::Generic;
     JobState state = JobState::Pending;
     JobStage stage = JobStage::None;
 
@@ -53,7 +46,7 @@ struct JobEvent {
 
 struct JobSnapshot {
     JobId jobId;
-    JobKind kind = JobKind::ImportStatement;
+    JobKind kind = JobKind::Generic;
     JobState state = JobState::Pending;
     JobStage stage = JobStage::None;
 

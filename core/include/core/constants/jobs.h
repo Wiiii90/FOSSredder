@@ -8,7 +8,7 @@ namespace core::constants::jobs {
 inline constexpr std::size_t kFallbackWorkerCount = 4;
 inline constexpr std::size_t kQueueCapacity = 128;
 inline constexpr std::size_t kJobHistoryLimit = 64;
-inline constexpr std::size_t kOcrWorkerDivisor = 2;
+inline constexpr std::size_t kSlotLimiterWorkerDivisor = 2;
 
 namespace messages {
 inline constexpr std::string_view kQueued = "Queued";

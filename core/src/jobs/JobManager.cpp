@@ -44,18 +44,16 @@ JobId JobManager::makeJobId() {
     return core::utils::makeUniqId();
 }
 
-JobId JobManager::submitImportStatement(const ImportStatementJobSpec& spec) {
+JobId JobManager::submit(JobKind kind) {
     auto data = std::make_shared<JobData>();
     data->snap.jobId = makeJobId();
-    data->snap.kind = JobKind::ImportStatement;
+    data->snap.kind = kind;
     data->snap.state = JobState::Pending;
     data->snap.stage = JobStage::None;
     data->snap.progress = 0.0;
     data->snap.message = std::string(core::constants::jobs::messages::kQueued);
     data->cancel = std::make_shared<std::atomic<bool>>(false);
     data->pause = std::make_shared<std::atomic<bool>>(false);
-
-    (void)spec;
 
     {
         std::lock_guard<std::mutex> g(jobsMutex_);
@@ -194,99 +192,6 @@ std::shared_ptr<std::atomic<bool>> JobManager::pauseFlag(const JobId& id) const 
     auto it = jobs_.find(id);
     if (it == jobs_.end()) return nullptr;
     return it->second->pause;
-}
-
-void JobManager::setStatementResult(const JobId& id, std::shared_ptr<core::domain::Statement> stmt) {
-    std::shared_ptr<JobData> job;
-    {
-        std::lock_guard<std::mutex> g(jobsMutex_);
-        auto it = jobs_.find(id);
-        if (it == jobs_.end()) return;
-        job = it->second;
-    }
-
-    std::lock_guard<std::mutex> g(job->m);
-    job->statement = std::move(stmt);
-}
-
-std::shared_ptr<core::domain::Statement> JobManager::statementResult(const JobId& id) const {
-    std::shared_ptr<JobData> job;
-    {
-        std::lock_guard<std::mutex> g(jobsMutex_);
-        auto it = jobs_.find(id);
-        if (it == jobs_.end()) return nullptr;
-        job = it->second;
-    }
-
-    std::lock_guard<std::mutex> g(job->m);
-    return job->statement;
-}
-
-void JobManager::setStatementTransactions(const JobId& id, std::vector<core::application::importing::draft::TransactionDraft> transactions) {
-    std::shared_ptr<JobData> job;
-    {
-        std::lock_guard<std::mutex> g(jobsMutex_);
-        auto it = jobs_.find(id);
-        if (it == jobs_.end()) return;
-        job = it->second;
-    }
-
-    std::lock_guard<std::mutex> g(job->m);
-    job->transactions = std::move(transactions);
-}
-
-std::vector<core::application::importing::draft::TransactionDraft> JobManager::statementTransactions(const JobId& id) const {
-    std::shared_ptr<JobData> job;
-    {
-        std::lock_guard<std::mutex> g(jobsMutex_);
-        auto it = jobs_.find(id);
-        if (it == jobs_.end()) return {};
-        job = it->second;
-    }
-
-    std::lock_guard<std::mutex> g(job->m);
-    return job->transactions;
-}
-
-void JobManager::setStatementArtifacts(const JobId& id, std::map<std::string, std::vector<uint8_t>> artifacts) {
-    std::shared_ptr<JobData> job;
-    {
-        std::lock_guard<std::mutex> g(jobsMutex_);
-        auto it = jobs_.find(id);
-        if (it == jobs_.end()) return;
-        job = it->second;
-    }
-
-    std::lock_guard<std::mutex> g(job->m);
-    job->artifacts = std::move(artifacts);
-}
-
-std::map<std::string, std::vector<uint8_t>> JobManager::statementArtifacts(const JobId& id) const {
-    std::shared_ptr<JobData> job;
-    {
-        std::lock_guard<std::mutex> g(jobsMutex_);
-        auto it = jobs_.find(id);
-        if (it == jobs_.end()) return {};
-        job = it->second;
-    }
-
-    std::lock_guard<std::mutex> g(job->m);
-    return job->artifacts;
-}
-
-std::map<std::string, std::vector<uint8_t>> JobManager::takeStatementArtifacts(const JobId& id) {
-    std::shared_ptr<JobData> job;
-    {
-        std::lock_guard<std::mutex> g(jobsMutex_);
-        auto it = jobs_.find(id);
-        if (it == jobs_.end()) return {};
-        job = it->second;
-    }
-
-    std::lock_guard<std::mutex> g(job->m);
-    auto out = std::move(job->artifacts);
-    job->artifacts.clear();
-    return out;
 }
 
 void JobManager::publish(const JobEvent& ev) {
