@@ -5,7 +5,6 @@
 
 #include "core/application/import/internal/ParserHelpers.h"
 #include "../../../utils/Util.h"
-#include <sstream>
 
 namespace core::application::importing::internal {
 using core::application::importing::transaction::internal::OcrLine;

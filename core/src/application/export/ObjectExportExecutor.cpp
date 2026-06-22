@@ -21,8 +21,6 @@
 #include <sstream>
 #include <unordered_map>
 
-#include <nlohmann/json.hpp>
-
 namespace {
 
 using core::ports::exporting::ExportObjectRequest;

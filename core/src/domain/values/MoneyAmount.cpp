@@ -5,8 +5,6 @@
 
 #include "core/domain/values/MoneyAmount.h"
 
-#include <cmath>
-
 namespace core::domain {
 
 MoneyAmount::MoneyAmount(double value)

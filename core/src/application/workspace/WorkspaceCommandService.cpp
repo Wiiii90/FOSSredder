@@ -10,7 +10,6 @@
 #include "core/application/workspace/WorkspaceSession.h"
 
 #include "../../utils/StableId.h"
-#include "../../utils/Util.h"
 #include "core/domain/entities/Actor.h"
 #include "core/domain/entities/Analysis.h"
 #include "core/domain/entities/Annual.h"

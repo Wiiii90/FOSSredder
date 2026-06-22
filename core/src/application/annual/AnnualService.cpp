@@ -8,8 +8,6 @@
 #include "core/application/annual/AnnualService.h"
 #include "core/application/annual/AnnualWorkflowSupport.h"
 
-#include <algorithm>
-#include <cmath>
 #include <unordered_map>
 #include <unordered_set>
 
