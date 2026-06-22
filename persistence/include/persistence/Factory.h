@@ -1,6 +1,7 @@
 /**
  * @file persistence/include/persistence/Factory.h
- * @brief Declares factories for SQLite storage dependencies and repository bundles.
+ * @brief Declares factories for SQLite storage dependencies and repository
+ * bundles.
  */
 
 #pragma once
@@ -26,5 +27,5 @@ std::shared_ptr<SqliteDb> createSqliteDb(const std::string& dbPath);
  * @param dbPath SQLite database path.
  * @return Shared registry implementation.
  */
-std::shared_ptr<core::ports::storage::IRegistry> createSqliteRegistry(const std::string& dbPath);
-
+std::shared_ptr<core::ports::storage::IRegistry>
+createSqliteRegistry(const std::string& dbPath);

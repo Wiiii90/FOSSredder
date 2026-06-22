@@ -29,7 +29,7 @@ public:
   /** @brief Saves the complete application state and reports deletion impact
    * details. */
   core::domain::DeletionImpact
-  save(const core::application::workspace::WorkspaceSessionState &document);
+  save(const core::application::workspace::WorkspaceSessionState& document);
 
 private:
   std::shared_ptr<SqliteDb> db_;

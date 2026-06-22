@@ -12,24 +12,22 @@
 
 namespace persistence::tests {
 
-TEST(FactoryTest, CreatesAUsableDatabaseWrapper)
-{
-    TempDatabase dbFile("factory-db");
-    auto db = createSqliteDb(dbFile.string());
-    ASSERT_NE(db, nullptr);
-    ASSERT_NE(db->handle(), nullptr);
-    EXPECT_GE(pragmaInt(db->handle(), "user_version"), 1);
+TEST(FactoryTest, CreatesAUsableDatabaseWrapper) {
+  TempDatabase dbFile("factory-db");
+  auto db = createSqliteDb(dbFile.string());
+  ASSERT_NE(db, nullptr);
+  ASSERT_NE(db->handle(), nullptr);
+  EXPECT_GE(pragmaInt(db->handle(), "user_version"), 1);
 }
 
-TEST(FactoryTest, CreatesAUsableRegistry)
-{
-    TempDatabase dbFile("factory-registry");
-    auto registry = createSqliteRegistry(dbFile.string());
-    ASSERT_NE(registry, nullptr);
+TEST(FactoryTest, CreatesAUsableRegistry) {
+  TempDatabase dbFile("factory-registry");
+  auto registry = createSqliteRegistry(dbFile.string());
+  ASSERT_NE(registry, nullptr);
 
-    registry->setLatest("workspace-c.fr");
-    ASSERT_TRUE(registry->getLatest().has_value());
-    EXPECT_EQ(registry->getLatest().value(), "workspace-c.fr");
+  registry->setLatest("workspace-c.fr");
+  ASSERT_TRUE(registry->getLatest().has_value());
+  EXPECT_EQ(registry->getLatest().value(), "workspace-c.fr");
 }
 
 } // namespace persistence::tests

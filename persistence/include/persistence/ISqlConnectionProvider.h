@@ -9,6 +9,6 @@
 
 class ISqlConnectionProvider {
 public:
-    virtual ~ISqlConnectionProvider() = default;
-    virtual sqlite3* sqliteHandle() const noexcept = 0;
+  virtual ~ISqlConnectionProvider() = default;
+  virtual sqlite3* sqliteHandle() const noexcept = 0;
 };

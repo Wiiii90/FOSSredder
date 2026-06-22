@@ -10,32 +10,30 @@
 
 namespace persistence::tests {
 
-TEST(SqliteDbTest, OpensTheDatabaseAndInitializesTheSchema)
-{
-    TempDatabase dbFile("sqlite-db");
-    SqliteDb db(dbFile.string());
+TEST(SqliteDbTest, OpensTheDatabaseAndInitializesTheSchema) {
+  TempDatabase dbFile("sqlite-db");
+  SqliteDb db(dbFile.string());
 
-    ASSERT_NE(db.handle(), nullptr);
-    EXPECT_EQ(pragmaInt(db.handle(), "foreign_keys"), 1);
-    EXPECT_TRUE(tableExists(db.handle(), "actors"));
-    EXPECT_TRUE(tableExists(db.handle(), "configs"));
-    EXPECT_TRUE(tableExists(db.handle(), "transactions"));
-    EXPECT_GE(pragmaInt(db.handle(), "user_version"), 1);
+  ASSERT_NE(db.handle(), nullptr);
+  EXPECT_EQ(pragmaInt(db.handle(), "foreign_keys"), 1);
+  EXPECT_TRUE(tableExists(db.handle(), "actors"));
+  EXPECT_TRUE(tableExists(db.handle(), "configs"));
+  EXPECT_TRUE(tableExists(db.handle(), "transactions"));
+  EXPECT_GE(pragmaInt(db.handle(), "user_version"), 1);
 }
 
-TEST(SqliteDbTest, ReopensAnExistingDatabaseSafely)
-{
-    TempDatabase dbFile("sqlite-db-reopen");
+TEST(SqliteDbTest, ReopensAnExistingDatabaseSafely) {
+  TempDatabase dbFile("sqlite-db-reopen");
 
-    {
-        SqliteDb first(dbFile.string());
-        ASSERT_NE(first.handle(), nullptr);
-        EXPECT_TRUE(tableExists(first.handle(), "statements"));
-    }
+  {
+    SqliteDb first(dbFile.string());
+    ASSERT_NE(first.handle(), nullptr);
+    EXPECT_TRUE(tableExists(first.handle(), "statements"));
+  }
 
-    SqliteDb second(dbFile.string());
-    ASSERT_NE(second.handle(), nullptr);
-    EXPECT_TRUE(tableExists(second.handle(), "statements"));
+  SqliteDb second(dbFile.string());
+  ASSERT_NE(second.handle(), nullptr);
+  EXPECT_TRUE(tableExists(second.handle(), "statements"));
 }
 
 } // namespace persistence::tests

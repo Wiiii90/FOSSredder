@@ -7,6 +7,5 @@
 #include "persistence/SqliteDb.h"
 
 std::shared_ptr<SqliteDb> createSqliteDb(const std::string& dbPath) {
-    return std::make_shared<SqliteDb>(dbPath);
+  return std::make_shared<SqliteDb>(dbPath);
 }
-
