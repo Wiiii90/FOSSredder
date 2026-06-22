@@ -8,6 +8,11 @@
 #include "core/ports/infra/archive/IArchive.h"
 
 #include <filesystem>
+#include <memory>
+
+namespace core::errors {
+class IErrorReporter;
+}
 
 namespace infra::archive {
 
@@ -16,6 +21,8 @@ namespace infra::archive {
  */
 class ZipArchiveAdapter final : public core::ports::archive::IArchive {
 public:
+    explicit ZipArchiveAdapter(std::shared_ptr<core::errors::IErrorReporter> errorReporter = nullptr);
+
     /**
      * @brief Creates a ZIP archive from the files contained in a source directory.
      * @param sourceDirectory The directory whose files should be packaged.
@@ -26,6 +33,9 @@ public:
     bool create(const std::filesystem::path& sourceDirectory,
                 const std::filesystem::path& outputArchive,
                 core::ports::exporting::PackageFormat format) const override;
+
+private:
+    std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
 };
 
 } // namespace infra::archive

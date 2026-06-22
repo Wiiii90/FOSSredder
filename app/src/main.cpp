@@ -170,14 +170,17 @@ UseCaseRunners createUseCaseRunners(
   runners.analysis =
       std::make_shared<core::application::analysis::AnalysisService>(
           std::make_shared<infra::analysis_image_renderer::
-                               OpenCvAnalysisImageRendererAdapter>());
+                               OpenCvAnalysisImageRendererAdapter>(
+              errorReporter));
   runners.annual = std::make_shared<core::application::annual::AnnualService>();
   runners.exportRunner =
       std::make_shared<core::application::exporting::ExportService>(
-          std::make_shared<infra::archive::ZipArchiveAdapter>(),
-          std::make_shared<infra::xlsx_writer::XlntTableWriterAdapter>(),
+          std::make_shared<infra::archive::ZipArchiveAdapter>(errorReporter),
+          std::make_shared<infra::xlsx_writer::XlntTableWriterAdapter>(
+              errorReporter),
           std::make_shared<infra::analysis_image_renderer::
-                               OpenCvAnalysisImageRendererAdapter>());
+                               OpenCvAnalysisImageRendererAdapter>(
+              errorReporter));
 
   auto importDebugger = std::make_shared<FileDebugger>(
       "", std::string(debug::defaults::kImportProcessName));

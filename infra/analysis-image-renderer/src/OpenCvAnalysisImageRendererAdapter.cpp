@@ -7,13 +7,17 @@
 
 #include "core/constants/analysis.h"
 #include "core/constants/export.h"
+#include "core/errors/ErrorCodes.h"
+#include "core/errors/ErrorReporting.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <exception>
 #include <iomanip>
 #include <sstream>
 #include <unordered_map>
+#include <utility>
 #include <nlohmann/json.hpp>
 
 #include <opencv2/core.hpp>
@@ -530,12 +534,49 @@ bool writeImageFromResult(const std::filesystem::path& outputPath,
 
 namespace infra::analysis_image_renderer {
 
+namespace {
+
+void reportImageFailure(core::errors::IErrorReporter* reporter,
+                        std::string message,
+                        const std::filesystem::path& outputPath)
+{
+    if (!reporter) return;
+
+    core::errors::ErrorEvent event;
+    event.severity = core::errors::ErrorSeverity::Error;
+    event.origin = "infra::analysis_image_renderer::OpenCvAnalysisImageRendererAdapter::writeAnalysisImage";
+    event.message = std::move(message);
+    event.code = core::errors::codes::GenericError;
+    event.context = {{"path", outputPath.string()}};
+    core::errors::report(reporter, event);
+}
+
+} // namespace
+
+OpenCvAnalysisImageRendererAdapter::OpenCvAnalysisImageRendererAdapter(
+    std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+    : errorReporter_(std::move(errorReporter))
+{
+}
+
 bool OpenCvAnalysisImageRendererAdapter::writeAnalysisImage(const std::filesystem::path& outputPath,
                                                             const std::string& title,
                                                             const core::ports::analysis::AnalysisResult& result) const
 {
     (void)title;
-    return writeImageFromResult(outputPath, result);
+    try {
+        const bool ok = writeImageFromResult(outputPath, result);
+        if (!ok) {
+            reportImageFailure(errorReporter_.get(), "failed to render analysis image", outputPath);
+        }
+        return ok;
+    } catch (...) {
+        core::errors::reportException(errorReporter_.get(),
+                                      core::errors::ErrorSeverity::Error,
+                                      "infra::analysis_image_renderer::OpenCvAnalysisImageRendererAdapter::writeAnalysisImage",
+                                      std::current_exception());
+        return false;
+    }
 }
 
 } // namespace infra::analysis_image_renderer

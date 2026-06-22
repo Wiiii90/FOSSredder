@@ -347,7 +347,6 @@ endif()
 target_link_libraries(fossredder_ui
     PUBLIC
         FossRedder::Core
-        FossRedder::Debug
 )
 
 fossredder_enable_target_pch(fossredder_ui "${CMAKE_CURRENT_SOURCE_DIR}/include/ui/pch.h")

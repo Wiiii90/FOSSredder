@@ -7,13 +7,24 @@
 
 #include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
 
+#include <memory>
+
+namespace core::errors {
+class IErrorReporter;
+}
+
 namespace infra::analysis_image_renderer {
 
 class OpenCvAnalysisImageRendererAdapter final : public core::ports::analysis_image_renderer::IAnalysisImageRenderer {
 public:
+    explicit OpenCvAnalysisImageRendererAdapter(std::shared_ptr<core::errors::IErrorReporter> errorReporter = nullptr);
+
     bool writeAnalysisImage(const std::filesystem::path& outputPath,
                             const std::string& title,
                             const core::ports::analysis::AnalysisResult& result) const override;
+
+private:
+    std::shared_ptr<core::errors::IErrorReporter> errorReporter_;
 };
 
 } // namespace infra::analysis_image_renderer

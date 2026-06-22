@@ -5,9 +5,19 @@
 
 #include "xlsx-writer/XlntTableWriterAdapter.h"
 
+#include "core/errors/ErrorReporting.h"
+
+#include <exception>
+#include <utility>
+
 #include <xlnt/xlnt.hpp>
 
 namespace infra::xlsx_writer {
+
+XlntTableWriterAdapter::XlntTableWriterAdapter(std::shared_ptr<core::errors::IErrorReporter> errorReporter)
+    : errorReporter_(std::move(errorReporter))
+{
+}
 
 bool XlntTableWriterAdapter::writeTable(const std::filesystem::path& outputPath,
                                         const std::vector<std::vector<std::string>>& rows,
@@ -33,6 +43,10 @@ bool XlntTableWriterAdapter::writeTable(const std::filesystem::path& outputPath,
         workbook.save(outputPath.string());
         return true;
     } catch (...) {
+        core::errors::reportException(errorReporter_.get(),
+                                      core::errors::ErrorSeverity::Error,
+                                      "infra::xlsx_writer::XlntTableWriterAdapter::writeTable",
+                                      std::current_exception());
         return false;
     }
 }
