@@ -60,7 +60,7 @@ source for third-party dependency names; product versioning is owned by
 |---|---|
 | UI | `qtbase`, `qtdeclarative`, `qtquickcontrols2`, `qttools`, `qtsvg`, `qtimageformats`, `qtshadertools` |
 | PDF rendering | `poppler` |
-| Image processing | `opencv` |
+| Document image processing | `document-image-processing` |
 | OCR | `tesseract`, `leptonica`, runtime `tessdata` files |
 | Data and export | `nlohmann-json`, `xlnt`, `protobuf`, `libzip` |
 | Logging and support | `spdlog`, `icu`, `pkgconf` |
@@ -96,11 +96,11 @@ source for third-party dependency names; product versioning is owned by
 | Repository implementations | `persistence/src/repositories`, `persistence/include/persistence/repositories` |
 | Import application | `core/src/application/import`, `core/include/core/application/import` |
 | PDF adapter | `infra/pdf-rendering` |
-| Image-processing adapter | `infra/image-processing` |
+| document-image-processing adapter | `infra/document-image-processing` |
 | OCR adapter and tessdata | `infra/text-recognition` |
 | XLSX writer adapter | `infra/xlsx-writer` |
 | Archive adapter | `infra/archive` |
-| Analysis image renderer | `infra/analysis-image-renderer` |
+| Analysis image renderer | `infra/analysis-rendering` |
 | UI shell | `ui/include/ui/shell`, `ui/src/shell`, `ui/qml/FossRedder/Components` |
 | UI workspace roles | `ui/include/ui/workspace`, `ui/src/workspace` |
 | UI view models and workflows | `ui/include/ui/viewmodels`, `ui/src/viewmodels`, `ui/include/ui/workflows`, `ui/src/workflows` |

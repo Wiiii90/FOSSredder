@@ -30,10 +30,10 @@ private:
 }
 
 std::shared_ptr<IImportStatement> createImportStatement(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
-                                                        std::shared_ptr<core::ports::image_processing::IImageProcessor> openCv,
+                                                        std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor> documentImageProcessor,
                                                         std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
                                                         std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter) {
-    auto strat = createDefaultImportStrategy(poppler, openCv, tesseract, std::move(errorReporter));
+    auto strat = createDefaultImportStrategy(poppler, documentImageProcessor, tesseract, std::move(errorReporter));
     return std::make_shared<ImportStatementImpl>(std::move(strat));
 }
 

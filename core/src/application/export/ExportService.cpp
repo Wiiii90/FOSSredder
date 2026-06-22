@@ -106,7 +106,7 @@ ExportService::ExportService(
     std::shared_ptr<core::ports::archive::IArchive> archive,
     std::shared_ptr<core::ports::xlsx_writer::IXlsxWriter> xlsxWriter,
     std::shared_ptr<
-        core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+        core::ports::analysis_rendering::IAnalysisRenderer>
         imageRenderer)
     : archive_(std::move(archive)), xlsxWriter_(std::move(xlsxWriter)),
       imageRenderer_(std::move(imageRenderer)) {}

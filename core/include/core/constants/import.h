@@ -29,9 +29,9 @@ inline constexpr int kFirstSuffix = 1;
 
 inline constexpr std::string_view kPopplerRenderPrefix = "poppler_render";
 inline constexpr std::string_view kPopplerExtractPrefix = "poppler_extract";
-inline constexpr std::string_view kOpenCvMaskPrefix = "opencv_mask_page";
-inline constexpr std::string_view kOpenCvDetectPrefix = "opencv_detect_tables_page";
-inline constexpr std::string_view kOpenCvCropPrefix = "opencv_crop_table_page";
+inline constexpr std::string_view kDocumentImageProcessingMaskPrefix = "document_image_processing_mask_page";
+inline constexpr std::string_view kDocumentImageProcessingDetectPrefix = "document_image_processing_detect_tables_page";
+inline constexpr std::string_view kDocumentImageProcessingCropPrefix = "document_image_processing_crop_table_page";
 inline constexpr std::string_view kProgressCanceled = "Canceled";
 inline constexpr std::string_view kProgressPreparingMessage = "Preparing import";
 inline constexpr std::string_view kProgressRenderingMessage = "Rendering pages";

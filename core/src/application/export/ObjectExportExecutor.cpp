@@ -3,7 +3,7 @@
 #include "core/application/analysis/AnalysisService.h"
 #include "core/constants/analysis.h"
 #include "core/constants/export.h"
-#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/infra/analysis-rendering/IAnalysisRenderer.h"
 #include "core/ports/infra/archive/IArchive.h"
 #include "core/ports/infra/xlsx-writer/IXlsxWriter.h"
 
@@ -281,7 +281,7 @@ core::ports::exporting::ExportResult exportObjectRequests(
     const std::shared_ptr<core::ports::archive::IArchive> &archive,
     const std::shared_ptr<core::ports::xlsx_writer::IXlsxWriter> &xlsxWriter,
     const std::shared_ptr<
-        core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+        core::ports::analysis_rendering::IAnalysisRenderer>
         &imageRenderer) {
   core::ports::exporting::ExportResult result;
   result.actualFormat = request.format;
@@ -353,7 +353,7 @@ core::ports::exporting::ExportResult exportObjectRequests(
       case AnalysisExportFormat::Jpg:
       case AnalysisExportFormat::Png:
         ok = imageRenderer &&
-             imageRenderer->writeAnalysisImage(
+             imageRenderer->renderToImage(
                  outputFile,
                  computed.type.empty() ? item.objectId : computed.type,
                  computed);

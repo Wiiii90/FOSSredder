@@ -12,8 +12,8 @@
 namespace core::ports::pdf_rendering {
 class IPdfRenderer;
 }
-namespace core::ports::image_processing {
-class IImageProcessor;
+namespace core::ports::document_image_processing {
+class IDocumentImageProcessor;
 }
 namespace core::ports::text_recognition {
 class ITextRecognizer;
@@ -28,7 +28,7 @@ public:
 };
 
 std::unique_ptr<IImportStatementStrategy> createDefaultImportStrategy(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
-                                                                      std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv,
+                                                                      std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor> documentImageProcessor,
                                                                       std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
                                                                       std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 

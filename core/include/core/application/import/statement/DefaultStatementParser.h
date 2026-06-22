@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "core/ports/infra/image-processing/ImageProcessingResult.h"
-#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/document-image-processing/DocumentImageProcessingResult.h"
+#include "core/ports/infra/document-image-processing/IDocumentImageProcessor.h"
 #include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/application/import/draft/TransactionDraft.h"
 
@@ -36,16 +36,16 @@ public:
      * @param table Detected table structure from the page image.
      * @param ocr OCR result for the page or table region.
      * @param pageCropImagePath File path to the cropped page image.
-     * @param opencv Image processing adapter used for image extraction helpers.
+     * @param documentImageProcessor Document image processing adapter used for image extraction helpers.
      * @param pageCropImageBytes Raw bytes of the cropped page image.
      * @param initialBookingDate Booking date seed carried into parsing.
      * @param initialTransactionIndex Initial transaction counter value.
      * @return Parse result containing generated drafts, artifacts, and parser metadata.
      */
-    static ParseResult parse(const core::ports::image_processing::Table& table,
+    static ParseResult parse(const core::ports::document_image_processing::Table& table,
                              const core::ports::text_recognition::ExtractResult& ocr,
                              const std::string& pageCropImagePath,
-                             std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv,
+                             std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor> documentImageProcessor,
                              const std::vector<uint8_t>& pageCropImageBytes,
                              std::string initialBookingDate = {},
                              int initialTransactionIndex = 1);

@@ -1,18 +1,10 @@
-# UI startup options.
-option(USE_QML "Build with QML UI" OFF)
-
 set(APP_COMMON_SRCS
-    src/Environment.cpp
     src/main.cpp
+    src/main_qml.cpp
 )
 
 set(APP_HEADERS
-    include/app/Environment.h
     include/app/pch.h
-)
-
-set(APP_QML_SRCS
-    src/main_qml.cpp
 )
 
 set(APP_RESOURCE_SRCS
@@ -30,21 +22,10 @@ if(WIN32)
     list(APPEND APP_RESOURCE_SRCS "${APP_ICON_RC}")
 endif()
 
-find_package(Qt6 COMPONENTS Quick Qml Widgets LinguistTools QUIET)
-if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
-    if(NOT USE_QML)
-        set(USE_QML ON CACHE BOOL "Build with QML UI" FORCE)
-    endif()
-else()
-    if(USE_QML)
-        message(WARNING "USE_QML is ON but Qt Quick/Qml not found; build may fail or QML will be unavailable.")
-    endif()
-endif()
+find_package(Qt6 REQUIRED COMPONENTS Quick Qml Widgets)
+find_package(Qt6 COMPONENTS LinguistTools QUIET)
 
 set(APP_SRCS ${APP_COMMON_SRCS} ${APP_HEADERS} ${APP_RESOURCE_SRCS})
-if(USE_QML)
-    list(APPEND APP_SRCS ${APP_QML_SRCS})
-endif()
 
 add_executable(fossredder ${APP_SRCS})
 fossredder_enable_target_quality(fossredder)
@@ -67,13 +48,16 @@ target_link_libraries(fossredder PRIVATE
     FossRedder::Core
     FossRedder::Diagnostics
     FossRedder::Persistence
-    FossRedder::InfraAnalysisImageRenderer
-    FossRedder::InfraImageProcessing
+    FossRedder::InfraAnalysisRendering
+    FossRedder::InfraDocumentImageProcessing
     FossRedder::InfraArchive
     FossRedder::InfraPdfRendering
     FossRedder::InfraXlsxWriter
     FossRedder::InfraTextRecognition
     FossRedder::Ui
+    Qt6::Quick
+    Qt6::Qml
+    Qt6::Widgets
 )
 
 if(MSVC)
@@ -147,16 +131,6 @@ if(TARGET Qt6::lupdate AND TARGET Qt6::lrelease)
     endforeach()
 else()
     message(WARNING "Qt6 LinguistTools not found; translation catalogs will not be generated automatically")
-endif()
-
-# UI toolkit linkage.
-if(TARGET Qt6::Quick AND TARGET Qt6::Qml)
-    target_link_libraries(fossredder PRIVATE Qt6::Quick Qt6::Qml)
-    target_compile_definitions(fossredder PRIVATE USE_QML=1)
-endif()
-
-if(TARGET Qt6::Widgets)
-    target_link_libraries(fossredder PRIVATE Qt6::Widgets)
 endif()
 
 fossredder_enable_target_pch(fossredder "${CMAKE_CURRENT_SOURCE_DIR}/include/app/pch.h")

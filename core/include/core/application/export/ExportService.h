@@ -14,8 +14,8 @@
 namespace core::ports::archive {
 class IArchive;
 }
-namespace core::ports::analysis_image_renderer {
-class IAnalysisImageRenderer;
+namespace core::ports::analysis_rendering {
+class IAnalysisRenderer;
 }
 namespace core::ports::xlsx_writer {
 class IXlsxWriter;
@@ -32,7 +32,7 @@ public:
       std::shared_ptr<core::ports::archive::IArchive> archive = {},
       std::shared_ptr<core::ports::xlsx_writer::IXlsxWriter> xlsxWriter = {},
       std::shared_ptr<
-          core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+          core::ports::analysis_rendering::IAnalysisRenderer>
           imageRenderer = {});
 
   /**
@@ -52,7 +52,7 @@ public:
 private:
   std::shared_ptr<core::ports::archive::IArchive> archive_;
   std::shared_ptr<core::ports::xlsx_writer::IXlsxWriter> xlsxWriter_;
-  std::shared_ptr<core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+  std::shared_ptr<core::ports::analysis_rendering::IAnalysisRenderer>
       imageRenderer_;
 };
 

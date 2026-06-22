@@ -157,11 +157,11 @@ flowchart LR
     UI["ui<br/>QML modules<br/>view models workflows adapters"]
     Persistence["persistence<br/>SQLite repositories workspace store registry"]
     InfraPdf["infra/pdf-rendering<br/>Poppler"]
-    InfraImage["infra/image-processing<br/>OpenCV"]
+    InfraImage["infra/document-image-processing<br/>OpenCV"]
     InfraText["infra/text-recognition<br/>Tesseract"]
     InfraXlsx["infra/xlsx-writer<br/>xlnt"]
     InfraArchive["infra/archive<br/>libzip"]
-    InfraAnalysis["infra/analysis-image-renderer<br/>OpenCV"]
+    InfraAnalysis["infra/analysis-rendering<br/>OpenCV"]
   end
 
   Core["core<br/>domain application services ports jobs"]
@@ -761,9 +761,9 @@ Infrastructure ports isolate third-party libraries and platform services.
 | Port | Implementation area | Purpose |
 |---|---|---|
 | `IPdfRenderer` | `infra/pdf-rendering` | Render PDF pages and extract page text. |
-| `IImageProcessor` | `infra/image-processing` | Mask, detect, crop and process images for import and analysis workflows. |
+| `IDocumentImageProcessor` | `infra/document-image-processing` | Mask, detect, crop and process images for import and analysis workflows. |
 | `ITextRecognizer` | `infra/text-recognition` | Run OCR and return text-recognition results. |
-| `IAnalysisImageRenderer` | `infra/analysis-image-renderer` | Render analysis visuals for export output. |
+| `IAnalysisRenderer` | `infra/analysis-rendering` | Render analysis visuals for export output. |
 | `IArchive` | `infra/archive` | Create archive/package outputs for export. |
 | `IXlsxWriter` | `infra/xlsx-writer` | Write XLSX tabular output. |
 | `IStorageManager` | `core/application/storage`, `persistence` callbacks | Coordinate workspace file operations and atomic load/save. |
@@ -815,7 +815,7 @@ sequenceDiagram
     participant Importer as IImportStatement
     participant Strategy as DefaultImportStatementStrategy
     participant Pdf as IPdfRenderer
-    participant Image as IImageProcessor
+    participant Image as IDocumentImageProcessor
     participant Ocr as ITextRecognizer
     participant Parser as DefaultStatementParser
     participant Matcher as DraftMatcher
@@ -1186,9 +1186,9 @@ analysis and export services only see core port types.
 | Core port | Target | Main implementation | External dependencies |
 |---|---|---|---|
 | `IPdfRenderer` | `infra/pdf-rendering` | `PopplerPdfRendererAdapter`, `PopplerCore` | Poppler, OpenCV, nlohmann-json |
-| `IImageProcessor` | `infra/image-processing` | `OpenCvImageProcessorAdapter`, `DenoiseAdapter`, `MaskAdapter`, `DetectAdapter`, `CropAdapter` | OpenCV |
+| `IDocumentImageProcessor` | `infra/document-image-processing` | `OpenCvDocumentImageProcessorAdapter`, `DenoiseAdapter`, `MaskAdapter`, `DetectAdapter`, `CropAdapter` | OpenCV |
 | `ITextRecognizer` | `infra/text-recognition` | `TesseractTextRecognizerAdapter`, `TesseractCore` | Tesseract |
-| `IAnalysisImageRenderer` | `infra/analysis-image-renderer` | `OpenCvAnalysisImageRendererAdapter` | OpenCV |
+| `IAnalysisRenderer` | `infra/analysis-rendering` | `OpenCvAnalysisRendererAdapter` | OpenCV |
 | `IXlsxWriter` | `infra/xlsx-writer` | `XlntTableWriterAdapter` | xlnt |
 | `IArchive` | `infra/archive` | `ZipArchiveAdapter` | libzip |
 
@@ -1258,7 +1258,7 @@ Use this workflow when adding or changing infrastructure:
 
 The UI layer owns the desktop presentation model. It bridges Qt/QML with core
 workspace and use-case ports, but it does not own domain rules, persistence
-schema, OCR/PDF/image-processing integrations or export algorithms.
+schema, OCR/PDF/document-image-processing integrations or export algorithms.
 
 QML, C++ view models, UI workflows and shell wiring share one presentation
 contract. This chapter is therefore structured by runtime role rather than by

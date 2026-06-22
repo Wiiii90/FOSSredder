@@ -15,7 +15,7 @@
 #include "core/domain/entities/Property.h"
 #include "core/domain/entities/Transaction.h"
 #include "core/ports/usecases/analysis/AnalysisResult.h"
-#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/infra/analysis-rendering/IAnalysisRenderer.h"
 #include "internal/AnalysisFilter.h"
 #include "presentation/PlotAnalysis.h"
 #include "presentation/TableAnalysis.h"
@@ -352,7 +352,7 @@ std::filesystem::path analysisPreviewPath(
 
 AnalysisService::AnalysisService(
     std::shared_ptr<
-        core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+        core::ports::analysis_rendering::IAnalysisRenderer>
         imageRenderer)
     : imageRenderer_(std::move(imageRenderer)) {}
 
@@ -446,7 +446,7 @@ core::ports::analysis::AnalysisResult AnalysisService::withRenderedArtifacts(
   const auto outputPath = analysisPreviewPath(request, result);
   std::error_code error;
   if (std::filesystem::exists(outputPath, error) ||
-      imageRenderer_->writeAnalysisImage(outputPath, request.analysisId,
+      imageRenderer_->renderToImage(outputPath, request.analysisId,
                                          result)) {
     result.artifacts.push_back(outputPath.string());
   }

@@ -9,16 +9,16 @@
 #include "core/domain/entities/Analysis.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Transaction.h"
-#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/infra/analysis-rendering/IAnalysisRenderer.h"
 
 namespace core::application::analysis {
 
 namespace {
 
 class RecordingAnalysisImageRenderer final
-    : public core::ports::analysis_image_renderer::IAnalysisImageRenderer {
+    : public core::ports::analysis_rendering::IAnalysisRenderer {
 public:
-  bool writeAnalysisImage(
+  bool renderToImage(
       const std::filesystem::path &outputPath, const std::string &title,
       const core::ports::analysis::AnalysisResult &result) const override {
     lastOutputPath = outputPath;

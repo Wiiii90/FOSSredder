@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "core/ports/infra/image-processing/ImageProcessingRequest.h"
-#include "core/ports/infra/image-processing/ImageProcessingResult.h"
+#include "core/ports/infra/document-image-processing/DocumentImageProcessingRequest.h"
+#include "core/ports/infra/document-image-processing/DocumentImageProcessingResult.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
 #include "core/constants/import.h"
@@ -26,15 +26,15 @@ inline core::ports::text_recognition::Settings buildRecognitionSettings(int defa
     return settings;
 }
 
-inline core::ports::image_processing::MaskRequest buildMaskRequest(const std::vector<uint8_t>& pageBytes,
+inline core::ports::document_image_processing::MaskRequest buildMaskRequest(const std::vector<uint8_t>& pageBytes,
                                                  size_t pageIndex,
                                                  const ImportRequest& req,
                                                  const core::ports::pdf_rendering::ExtractResult& extractRes)
 {
-    core::ports::image_processing::MaskRequest request;
+    core::ports::document_image_processing::MaskRequest request;
     request.imageBytes = pageBytes;
     request.uniqIdPrefix = core::utils::makeUniqId();
-    request.filePrefix = std::string(core::constants::importing::kOpenCvMaskPrefix) + std::to_string(pageIndex + 1);
+    request.filePrefix = std::string(core::constants::importing::kDocumentImageProcessingMaskPrefix) + std::to_string(pageIndex + 1);
     request.usePoppler = true;
     request.useMorphology = true;
     request.useTesseract = false;
@@ -45,7 +45,7 @@ inline core::ports::image_processing::MaskRequest buildMaskRequest(const std::ve
         const double scaleX = pageExtract.dpiX / 72.0;
         const double scaleY = pageExtract.dpiY / 72.0;
         for (const auto& textElement : pageExtract.textElements) {
-            core::ports::image_processing::Rect rect;
+            core::ports::document_image_processing::Rect rect;
             rect.x = static_cast<int>(std::round(textElement.x * scaleX));
             rect.y = static_cast<int>(std::round(textElement.y * scaleY));
             rect.width = static_cast<int>(std::round(textElement.width * scaleX));
@@ -67,28 +67,28 @@ inline core::ports::text_recognition::ExtractRequest buildMaskOcrRequest(const s
     return request;
 }
 
-inline core::ports::image_processing::DetectRequest buildDetectRequest(const std::vector<uint8_t>& maskedBytes,
+inline core::ports::document_image_processing::DetectRequest buildDetectRequest(const std::vector<uint8_t>& maskedBytes,
                                                      size_t pageIndex,
                                                      const ImportRequest& req)
 {
-    core::ports::image_processing::DetectRequest request;
+    core::ports::document_image_processing::DetectRequest request;
     request.imageBytes = maskedBytes;
     request.uniqIdPrefix = core::utils::makeUniqId();
-    request.filePrefix = std::string(core::constants::importing::kOpenCvDetectPrefix) + std::to_string(pageIndex + 1);
-    request.kind = core::ports::image_processing::DetectRequest::DetectKind::Tables;
+    request.filePrefix = std::string(core::constants::importing::kDocumentImageProcessingDetectPrefix) + std::to_string(pageIndex + 1);
+    request.kind = core::ports::document_image_processing::DetectRequest::DetectKind::Tables;
     request.cancelFlag = req.cancelFlag;
     return request;
 }
 
-inline core::ports::image_processing::CropRequest buildCropRequest(const std::vector<uint8_t>& pageBytes,
+inline core::ports::document_image_processing::CropRequest buildCropRequest(const std::vector<uint8_t>& pageBytes,
                                                  size_t pageIndex,
                                                  const ImportRequest& req,
-                                                 const core::ports::image_processing::DetectResult& detectResponse)
+                                                 const core::ports::document_image_processing::DetectResult& detectResponse)
 {
-    core::ports::image_processing::CropRequest request;
+    core::ports::document_image_processing::CropRequest request;
     request.imageBytes = pageBytes;
     request.uniqIdPrefix = core::utils::makeUniqId();
-    request.filePrefix = std::string(core::constants::importing::kOpenCvCropPrefix) + std::to_string(pageIndex + 1);
+    request.filePrefix = std::string(core::constants::importing::kDocumentImageProcessingCropPrefix) + std::to_string(pageIndex + 1);
     request.bbox = detectResponse.table.bbox;
     request.cancelFlag = req.cancelFlag;
     return request;
@@ -97,7 +97,7 @@ inline core::ports::image_processing::CropRequest buildCropRequest(const std::ve
 inline core::ports::text_recognition::ExtractRequest buildTableOcrRequest(const std::vector<uint8_t>& croppedBytes,
                                                            size_t pageIndex,
                                                            const ImportRequest& req,
-                                                           const core::ports::image_processing::DetectResult& detectResponse)
+                                                           const core::ports::document_image_processing::DetectResult& detectResponse)
 {
     core::ports::text_recognition::ExtractRequest request;
     request.imageBytes = croppedBytes;

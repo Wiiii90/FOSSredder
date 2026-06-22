@@ -14,8 +14,8 @@
 namespace core::ports::pdf_rendering {
 class IPdfRenderer;
 }
-namespace core::ports::image_processing {
-class IImageProcessor;
+namespace core::ports::document_image_processing {
+class IDocumentImageProcessor;
 }
 namespace core::ports::text_recognition {
 class ITextRecognizer;
@@ -44,13 +44,13 @@ public:
 /**
  * @brief Creates the default statement import service over the configured adapters.
  * @param poppler PDF rendering adapter.
- * @param openCv Image processing adapter.
+ * @param documentImageProcessor Document image processing adapter.
  * @param tesseract Text recognition adapter.
  * @param errorReporter Error reporter for structured import diagnostics.
  * @return Shared import service instance.
  */
 std::shared_ptr<IImportStatement> createImportStatement(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
-                                                        std::shared_ptr<core::ports::image_processing::IImageProcessor> openCv,
+                                                        std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor> documentImageProcessor,
                                                         std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
                                                         std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter);
 

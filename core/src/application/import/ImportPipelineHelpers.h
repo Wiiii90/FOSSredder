@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "core/ports/infra/image-processing/ImageProcessingResult.h"
+#include "core/ports/infra/document-image-processing/DocumentImageProcessingResult.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/ports/diagnostics/IErrorReporter.h"
@@ -13,7 +13,7 @@
 #include "core/application/import/ImportResult.h"
 #include "core/jobs/Scheduler.h"
 #include "core/application/import/draft/TransactionDraft.h"
-#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/document-image-processing/IDocumentImageProcessor.h"
 #include "core/ports/infra/text-recognition/ITextRecognizer.h"
 
 #include <atomic>
@@ -30,7 +30,7 @@ using ProgressReporter = std::function<void(double, const std::string&)>;
 
 struct PageWork {
     bool hasTable = false;
-    core::ports::image_processing::Table table;
+    core::ports::document_image_processing::Table table;
     core::ports::text_recognition::ExtractResult ocr;
     std::vector<uint8_t> cropBytes;
     size_t pageIndex = 0;
@@ -55,7 +55,7 @@ PageWork processImportPage(size_t pageIndex,
                            const ImportRequest& req,
                            const core::ports::pdf_rendering::RenderResult& renderRes,
                            const core::ports::pdf_rendering::ExtractResult& extractRes,
-                           const std::shared_ptr<core::ports::image_processing::IImageProcessor>& opencv,
+                           const std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>& documentImageProcessor,
                                               const std::shared_ptr<core::ports::text_recognition::ITextRecognizer>& tesseract,
                            core::jobs::SlotLimiter* ocrLimiter,
                            const ProgressReporter& report,
@@ -67,7 +67,7 @@ PageWork processImportPage(size_t pageIndex,
 
 FinalizeStats finalizeParsedPages(const ImportRequest& req,
                                   const std::vector<PageWork>& pages,
-                                  const std::shared_ptr<core::ports::image_processing::IImageProcessor>& opencv,
+                                  const std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>& documentImageProcessor,
                                   ImportResult& out,
                                   std::vector<core::application::importing::draft::TransactionDraft>& all,
                                   std::string& carriedBookingDate,

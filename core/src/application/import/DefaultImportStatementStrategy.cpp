@@ -9,9 +9,9 @@
 #include "core/ports/infra/pdf-rendering/PdfRenderingRequest.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "core/ports/infra/pdf-rendering/IPdfRenderer.h"
-#include "core/ports/infra/image-processing/ImageProcessingRequest.h"
-#include "core/ports/infra/image-processing/ImageProcessingResult.h"
-#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/document-image-processing/DocumentImageProcessingRequest.h"
+#include "core/ports/infra/document-image-processing/DocumentImageProcessingResult.h"
+#include "core/ports/infra/document-image-processing/IDocumentImageProcessor.h"
 #include "core/ports/infra/text-recognition/TextRecognitionRequest.h"
 #include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/ports/infra/text-recognition/ITextRecognizer.h"
@@ -33,7 +33,6 @@ using core::application::importing::internal::finalizeParsedPages;
 
 namespace core::application::importing {
 namespace poppler = core::ports::pdf_rendering;
-namespace opencv = core::ports::image_processing;
 namespace tesseract = core::ports::text_recognition;
 
 namespace {
@@ -54,18 +53,18 @@ bool waitWhilePaused(const ImportRequest& req)
 class DefaultImportStatementStrategy : public IImportStatementStrategy {
 public:
     DefaultImportStatementStrategy(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
-        std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv,
+        std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor> documentImageProcessor,
         std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
         std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter)
         : poppler_(std::move(poppler))
-        , opencv_(std::move(opencv))
+        , documentImageProcessor_(std::move(documentImageProcessor))
         , tesseract_(std::move(tesseract))
         , errorReporter_(std::move(errorReporter)) {
     }
 
     ImportResult run(const ImportRequest& req) override {
         ImportResult out;
-        if (!poppler_ || !opencv_ || !tesseract_) return out;
+        if (!poppler_ || !documentImageProcessor_ || !tesseract_) return out;
         if (req.runRoot.empty()) return out;
 
         core::application::importing::ImportRunTimings timings;
@@ -115,7 +114,7 @@ public:
         auto pages = core::application::importing::collectPageWork(req,
                                                       renderRes,
                                                       extractRes,
-                                                      opencv_,
+                                                      documentImageProcessor_,
                                                       tesseract_,
                                                       schedulerResources,
                                                       report,
@@ -128,7 +127,7 @@ public:
         const auto finalizeStart = core::application::importing::ImportClock::now();
         const auto finalizeStats = finalizeParsedPages(req,
                                                        pages,
-                                                       opencv_,
+                                                       documentImageProcessor_,
                                                        out,
                                                        all,
                                                        carriedBookingDate,
@@ -167,16 +166,16 @@ public:
 
 private:
     std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler_;
-    std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv_;
+    std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor> documentImageProcessor_;
     std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract_;
     std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
 };
 
 std::unique_ptr<IImportStatementStrategy> createDefaultImportStrategy(std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer> poppler,
-    std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv,
+    std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor> documentImageProcessor,
     std::shared_ptr<core::ports::text_recognition::ITextRecognizer> tesseract,
     std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter) {
-    return std::make_unique<DefaultImportStatementStrategy>(std::move(poppler), std::move(opencv), std::move(tesseract), std::move(errorReporter));
+    return std::make_unique<DefaultImportStatementStrategy>(std::move(poppler), std::move(documentImageProcessor), std::move(tesseract), std::move(errorReporter));
 }
 
 }

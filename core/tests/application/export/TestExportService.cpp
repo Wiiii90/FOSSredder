@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "core/application/export/ExportService.h"
-#include "core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h"
+#include "core/ports/infra/analysis-rendering/IAnalysisRenderer.h"
 #include "core/ports/infra/archive/IArchive.h"
 #include "core/ports/usecases/export/ExportRequest.h"
 #include "core/ports/workspace/WorkspaceSnapshot.h"
@@ -46,9 +46,9 @@ public:
 };
 
 class FakeAnalysisImageRenderer final
-    : public core::ports::analysis_image_renderer::IAnalysisImageRenderer {
+    : public core::ports::analysis_rendering::IAnalysisRenderer {
 public:
-  bool writeAnalysisImage(
+  bool renderToImage(
       const std::filesystem::path &outputPath, const std::string &title,
       const core::ports::analysis::AnalysisResult &result) const override {
     (void)title;

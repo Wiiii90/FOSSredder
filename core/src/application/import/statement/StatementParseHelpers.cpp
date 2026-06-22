@@ -722,13 +722,13 @@ static void applyCellAmountOverride(core::application::importing::draft::Transac
 static void attachProofCrop(core::application::importing::draft::TransactionDraft& tx,
                             const TransactionBlock& block,
                             int txIndex,
-                            const std::shared_ptr<core::ports::image_processing::IImageProcessor>& opencv,
+                            const std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>& documentImageProcessor,
                             const std::string& pageCropImagePath,
                             const std::vector<uint8_t>& pageCropImageBytes,
                             DefaultStatementParser::ParseResult& out)
 {
     try {
-        if (!opencv || (pageCropImagePath.empty() && pageCropImageBytes.empty())) return;
+        if (!documentImageProcessor || (pageCropImagePath.empty() && pageCropImageBytes.empty())) return;
 
         int minX = std::numeric_limits<int>::max();
         int maxX = std::numeric_limits<int>::min();
@@ -746,12 +746,12 @@ static void attachProofCrop(core::application::importing::draft::TransactionDraf
         for (const auto& line : block.detailLines) accBounds(line);
         if (minX == std::numeric_limits<int>::max()) return;
 
-        core::ports::image_processing::CropRequest request;
+        core::ports::document_image_processing::CropRequest request;
         if (!pageCropImagePath.empty()) request.imagePath = std::filesystem::path(pageCropImagePath);
         request.imageBytes = pageCropImageBytes;
         request.uniqIdPrefix = std::string(core::utils::makeUniqId());
-        request.filePrefix = std::string("opencv_proof_tx") + std::to_string(txIndex);
-        request.outputFormat = core::ports::image_processing::CropRequest::OutputFormat::Jpg;
+        request.filePrefix = std::string("document_image_processing_proof_tx") + std::to_string(txIndex);
+        request.outputFormat = core::ports::document_image_processing::CropRequest::OutputFormat::Jpg;
         request.jpegQuality = 92;
         request.bbox.x = 0;
         request.bbox.y = std::max(0, minY - 20);
@@ -760,7 +760,7 @@ static void attachProofCrop(core::application::importing::draft::TransactionDraf
 
         try {
             out.debugLines.push_back(std::string("crop.request\t") + request.imagePath.string() + std::string("\tfilePrefix=") + request.filePrefix);
-            const auto response = opencv->crop(request);
+            const auto response = documentImageProcessor->crop(request);
             out.debugLines.push_back(std::string("crop.result.count\t") + std::to_string(response.croppedImagePaths.size()));
             if (!response.croppedImageBytes.empty() && !response.croppedImageBytes.front().empty()) {
                 tx.proofImageData = response.croppedImageBytes.front();
@@ -776,7 +776,7 @@ static void attachProofCrop(core::application::importing::draft::TransactionDraf
 void appendTransactionsFromBlocks(const std::vector<TransactionBlock>& blocks,
                                   const ColumnModel& cols,
                                   const core::ports::text_recognition::ExtractResult& ocr,
-                                  const std::shared_ptr<core::ports::image_processing::IImageProcessor>& opencv,
+                                  const std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>& documentImageProcessor,
                                   const std::string& pageCropImagePath,
                                   const std::vector<uint8_t>& pageCropImageBytes,
                                   int& txIndex,
@@ -800,7 +800,7 @@ void appendTransactionsFromBlocks(const std::vector<TransactionBlock>& blocks,
         tx.metadata = !blockMetadata.empty() ? blockMetadata : parsed.metadata;
 
         applyCellAmountOverride(tx, block, cols, ocr, out);
-        attachProofCrop(tx, block, txIndex, opencv, pageCropImagePath, pageCropImageBytes, out);
+        attachProofCrop(tx, block, txIndex, documentImageProcessor, pageCropImagePath, pageCropImageBytes, out);
 
         ++txIndex;
         out.transactions.push_back(std::move(tx));

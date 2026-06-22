@@ -114,7 +114,7 @@ PageWork processImportPage(size_t pageIndex,
                            const ImportRequest& req,
                            const poppler::RenderResult& renderRes,
                            const poppler::ExtractResult& extractRes,
-                           const std::shared_ptr<core::ports::image_processing::IImageProcessor>& opencv,
+                           const std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>& documentImageProcessor,
                            const std::shared_ptr<core::ports::text_recognition::ITextRecognizer>& tesseract,
                            core::jobs::SlotLimiter* ocrLimiter,
                            const ProgressReporter& report,
@@ -188,7 +188,7 @@ PageWork processImportPage(size_t pageIndex,
         finishUnits(std::string(core::constants::importing::kProgressCanceled));
         return page;
     }
-    auto maskResponse = opencv->mask(maskRequest);
+    auto maskResponse = documentImageProcessor->mask(maskRequest);
     std::vector<uint8_t> maskedBytes = !maskResponse.maskedImageBytes.empty() ? maskResponse.maskedImageBytes : pageBytes;
     unitDone(1, std::string(core::constants::importing::pageSteps::kMask));
 
@@ -197,7 +197,7 @@ PageWork processImportPage(size_t pageIndex,
         return page;
     }
     const auto detectRequest = buildDetectRequest(maskedBytes, pageIndex, req);
-    auto detectResponse = opencv->detect(detectRequest);
+    auto detectResponse = documentImageProcessor->detect(detectRequest);
     unitDone(1, std::string(core::constants::importing::pageSteps::kDetect));
 
     if (!detectResponse.detected) {
@@ -210,7 +210,7 @@ PageWork processImportPage(size_t pageIndex,
         return page;
     }
     const auto cropRequest = buildCropRequest(pageBytes, pageIndex, req, detectResponse);
-    auto cropResponse = opencv->crop(cropRequest);
+    auto cropResponse = documentImageProcessor->crop(cropRequest);
     unitDone(1, std::string(core::constants::importing::pageSteps::kCrop));
 
     if (cropResponse.croppedImageBytes.empty() || cropResponse.croppedImageBytes.front().empty()) {
@@ -249,7 +249,7 @@ PageWork processImportPage(size_t pageIndex,
 
 FinalizeStats finalizeParsedPages(const ImportRequest& req,
                                   const std::vector<PageWork>& pages,
-                                  const std::shared_ptr<core::ports::image_processing::IImageProcessor>& opencv,
+                                  const std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>& documentImageProcessor,
                                   ImportResult& out,
                                   std::vector<core::application::importing::draft::TransactionDraft>& all,
                                   std::string& carriedBookingDate,
@@ -286,7 +286,7 @@ FinalizeStats finalizeParsedPages(const ImportRequest& req,
         auto parsed = DefaultStatementParser::parse(page.table,
                                                     page.ocr,
                                                     std::string(),
-                                                    opencv,
+                                                    documentImageProcessor,
                                                     page.cropBytes,
                                                     carriedBookingDate,
                                                     nextTxIndex);

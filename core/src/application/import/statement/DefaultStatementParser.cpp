@@ -56,10 +56,10 @@ static bool isLikelyTransactionMainRowText(const std::string& line) {
 
 }
 
-DefaultStatementParser::ParseResult DefaultStatementParser::parse([[maybe_unused]] const core::ports::image_processing::Table& table,
+DefaultStatementParser::ParseResult DefaultStatementParser::parse([[maybe_unused]] const core::ports::document_image_processing::Table& table,
                                                                   const core::ports::text_recognition::ExtractResult& ocr,
                                                                   const std::string& pageCropImagePath,
-                                                                  std::shared_ptr<core::ports::image_processing::IImageProcessor> opencv,
+                                                                  std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor> documentImageProcessor,
                                                                   const std::vector<uint8_t>& pageCropImageBytes,
                                                                   std::string initialBookingDate,
                                                                   int initialTransactionIndex) {
@@ -438,7 +438,7 @@ DefaultStatementParser::ParseResult DefaultStatementParser::parse([[maybe_unused
     out.debugLines.push_back(std::string("blocks\t") + std::to_string(blocks.size()));
 
     core::application::importing::statement::internal::appendPageSummary(lines, headerBottomY, blocks, txStartLooseCount, out);
-    core::application::importing::statement::internal::appendTransactionsFromBlocks(blocks, cols, ocr, opencv, pageCropImagePath, pageCropImageBytes, txIndex, out);
+    core::application::importing::statement::internal::appendTransactionsFromBlocks(blocks, cols, ocr, documentImageProcessor, pageCropImagePath, pageCropImageBytes, txIndex, out);
 
     out.debugLines.push_back(std::string("transactions\t") + std::to_string(out.transactions.size()));
 

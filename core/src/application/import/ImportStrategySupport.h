@@ -7,7 +7,7 @@
 
 #include "ImportPipelineHelpers.h"
 
-#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/document-image-processing/IDocumentImageProcessor.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingRequest.h"
 #include "core/ports/infra/pdf-rendering/PdfRenderingResult.h"
 #include "core/ports/infra/text-recognition/ITextRecognizer.h"
@@ -55,7 +55,7 @@ core::ports::pdf_rendering::ExtractRequest makeExtractRequest(const core::ports:
 std::vector<internal::PageWork> collectPageWork(const ImportRequest& req,
                                               const core::ports::pdf_rendering::RenderResult& renderResult,
                                               const core::ports::pdf_rendering::ExtractResult& extractResult,
-                                              const std::shared_ptr<core::ports::image_processing::IImageProcessor>& opencv,
+                                              const std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>& documentImageProcessor,
                                               const std::shared_ptr<core::ports::text_recognition::ITextRecognizer>& tesseract,
                                               SchedulerResources& resources,
                                               const internal::ProgressReporter& report,

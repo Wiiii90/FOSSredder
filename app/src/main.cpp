@@ -3,8 +3,7 @@
  * @brief Initializes the desktop application and shared runtime infrastructure.
  */
 
-#include "analysis-image-renderer/OpenCvAnalysisImageRendererAdapter.h"
-#include "app/Environment.h"
+#include "analysis-rendering/OpenCvAnalysisRendererAdapter.h"
 #include "archive/ZipArchiveAdapter.h"
 #include "core/application/analysis/AnalysisService.h"
 #include "core/application/annual/AnnualService.h"
@@ -12,7 +11,7 @@
 #include "core/application/import/IImportStatement.h"
 #include "core/application/import/StatementImportRunner.h"
 #include "core/application/workspace/WorkspaceSessionState.h"
-#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/document-image-processing/IDocumentImageProcessor.h"
 #include "core/ports/infra/pdf-rendering/IPdfRenderer.h"
 #include "core/ports/infra/text-recognition/ITextRecognizer.h"
 #include "core/ports/usecases/analysis/IAnalysisRunner.h"
@@ -56,8 +55,8 @@
 
 std::shared_ptr<core::ports::pdf_rendering::IPdfRenderer>
 createPdfRendererAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg);
-std::shared_ptr<core::ports::image_processing::IImageProcessor>
-createImageProcessorAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg);
+std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>
+createDocumentImageProcessorAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg);
 std::shared_ptr<core::ports::text_recognition::ITextRecognizer>
 createTextRecognizerAdapter(std::shared_ptr<core::ports::diagnostics::IDiagnostics> dbg);
 
@@ -177,43 +176,91 @@ void printShutdownMessage(int exitCode) {
 }
 
 struct UseCaseRunners {
-  std::shared_ptr<core::ports::analysis::IAnalysisRunner> analysis;
-  std::shared_ptr<core::ports::annual::IAnnualRunner> annual;
+  std::shared_ptr<core::ports::analysis::IAnalysisRunner> analysisRunner;
+  std::shared_ptr<core::ports::annual::IAnnualRunner> annualRunner;
   std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner;
-  std::shared_ptr<core::ports::importing::IImportRunner> import;
+  std::shared_ptr<core::ports::importing::IImportRunner> importRunner;
+};
+
+class AppComposition {
+public:
+  explicit AppComposition(
+      std::shared_ptr<core::ports::diagnostics::IErrorReporter> reporter)
+      : errorReporter_(std::move(reporter)) {}
+
+  UseCaseRunners createUseCaseRunners() const {
+    return {
+        createAnalysisRunner(),
+        createAnnualRunner(),
+        createExportRunner(),
+        createImportRunner(),
+    };
+  }
+
+private:
+  std::shared_ptr<core::ports::analysis::IAnalysisRunner>
+  createAnalysisRunner() const {
+    return std::make_shared<core::application::analysis::AnalysisService>(
+        createAnalysisRenderer());
+  }
+
+  std::shared_ptr<core::ports::annual::IAnnualRunner>
+  createAnnualRunner() const {
+    return std::make_shared<core::application::annual::AnnualService>();
+  }
+
+  std::shared_ptr<core::ports::exporting::IExportRunner>
+  createExportRunner() const {
+    return std::make_shared<core::application::exporting::ExportService>(
+        createArchiveAdapter(), createTableWriterAdapter(),
+        createAnalysisRenderer());
+  }
+
+  std::shared_ptr<core::ports::importing::IImportRunner>
+  createImportRunner() const {
+    const auto importDiagnostics = createImportDiagnostics();
+    auto importService = core::application::importing::createImportStatement(
+        createPdfRendererAdapter(importDiagnostics),
+        createDocumentImageProcessorAdapter(importDiagnostics),
+        createTextRecognizerAdapter(importDiagnostics), errorReporter_);
+    const auto importRunBasePath =
+        QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+            .toStdString();
+    return std::make_shared<core::application::importing::StatementImportRunner>(
+        importService, importRunBasePath, errorReporter_);
+  }
+
+  std::shared_ptr<infra::analysis_rendering::
+                      OpenCvAnalysisRendererAdapter>
+  createAnalysisRenderer() const {
+    return std::make_shared<
+        infra::analysis_rendering::OpenCvAnalysisRendererAdapter>(
+        errorReporter_);
+  }
+
+  std::shared_ptr<infra::archive::ZipArchiveAdapter>
+  createArchiveAdapter() const {
+    return std::make_shared<infra::archive::ZipArchiveAdapter>(errorReporter_);
+  }
+
+  std::shared_ptr<infra::xlsx_writer::XlntTableWriterAdapter>
+  createTableWriterAdapter() const {
+    return std::make_shared<infra::xlsx_writer::XlntTableWriterAdapter>(
+        errorReporter_);
+  }
+
+  std::shared_ptr<core::ports::diagnostics::IDiagnostics>
+  createImportDiagnostics() const {
+    return std::make_shared<diagnostics::FileDiagnostics>(
+        "", std::string(diagnostics::defaults::kImportProcessName));
+  }
+
+  std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter_;
 };
 
 UseCaseRunners createUseCaseRunners(
-    const std::shared_ptr<core::ports::diagnostics::IErrorReporter>& errorReporter) {
-  UseCaseRunners runners;
-  runners.analysis =
-      std::make_shared<core::application::analysis::AnalysisService>(
-          std::make_shared<infra::analysis_image_renderer::
-                               OpenCvAnalysisImageRendererAdapter>(
-              errorReporter));
-  runners.annual = std::make_shared<core::application::annual::AnnualService>();
-  runners.exportRunner =
-      std::make_shared<core::application::exporting::ExportService>(
-          std::make_shared<infra::archive::ZipArchiveAdapter>(errorReporter),
-          std::make_shared<infra::xlsx_writer::XlntTableWriterAdapter>(
-              errorReporter),
-          std::make_shared<infra::analysis_image_renderer::
-                               OpenCvAnalysisImageRendererAdapter>(
-              errorReporter));
-
-  auto importDiagnostics = std::make_shared<diagnostics::FileDiagnostics>(
-      "", std::string(diagnostics::defaults::kImportProcessName));
-  auto importService = core::application::importing::createImportStatement(
-      createPdfRendererAdapter(importDiagnostics),
-      createImageProcessorAdapter(importDiagnostics),
-      createTextRecognizerAdapter(importDiagnostics), errorReporter);
-  const auto importRunBasePath =
-      QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
-          .toStdString();
-  runners.import =
-      std::make_shared<core::application::importing::StatementImportRunner>(
-          importService, importRunBasePath, errorReporter);
-  return runners;
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter) {
+  return AppComposition(std::move(errorReporter)).createUseCaseRunners();
 }
 
 /**
@@ -259,11 +306,10 @@ static void qtMessageHandler(QtMsgType type, const QMessageLogContext& context,
 
 } // namespace
 
-#ifdef USE_QML
 /**
  * @brief Start the QML application UI.
  *
- * Implemented in `main_qml.cpp`. Only available when built with USE_QML.
+ * Implemented in `main_qml.cpp`.
  */
 extern int startQmlApp(
     QApplication& app,
@@ -274,7 +320,6 @@ extern int startQmlApp(
     std::shared_ptr<core::ports::annual::IAnnualRunner> annualRunner,
     std::shared_ptr<core::ports::exporting::IExportRunner> exportRunner,
     std::shared_ptr<core::ports::importing::IImportRunner> importRunner);
-#endif
 
 int main(int argc, char* argv[]) {
   auto errorReporter = diagnostics::createDefaultErrorReporter();
@@ -288,8 +333,6 @@ int main(int argc, char* argv[]) {
 
   const auto previousQtMessageHandler =
       qInstallMessageHandler(qtMessageHandler);
-
-  app::runtime::loadDotEnv(".env", false);
 
   QQuickStyle::setStyle(core::constants::runtime::kQtStyle.data());
 
@@ -368,13 +411,12 @@ int main(int argc, char* argv[]) {
 
   QCoreApplication::addLibraryPath(QCoreApplication::applicationDirPath());
 
-#ifdef USE_QML
   try {
     auto runners = createUseCaseRunners(errorReporter);
-    const int exitCode =
-        startQmlApp(app, appStateFacade, appStateFacade, errorReporter,
-                    std::move(runners.analysis), std::move(runners.annual),
-                    std::move(runners.exportRunner), std::move(runners.import));
+    const int exitCode = startQmlApp(
+        app, appStateFacade, appStateFacade, errorReporter,
+        std::move(runners.analysisRunner), std::move(runners.annualRunner),
+        std::move(runners.exportRunner), std::move(runners.importRunner));
     printShutdownMessage(exitCode);
     qInstallMessageHandler(previousQtMessageHandler);
     appStateFacade.setErrorReporter({});
@@ -404,11 +446,4 @@ int main(int argc, char* argv[]) {
     setQtMessageReporter({});
     return -2;
   }
-#else
-  // No UI available in this build configuration
-  qInstallMessageHandler(previousQtMessageHandler);
-  appStateFacade.setErrorReporter({});
-  setQtMessageReporter({});
-  return 0;
-#endif
 }

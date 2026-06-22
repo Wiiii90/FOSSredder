@@ -9,8 +9,8 @@
 #include "core/application/import/transaction/TransactionParserTypes.h"
 #include "core/application/import/statement/StatementParserTypes.h"
 #include "core/application/import/internal/ParserHelpers.h"
-#include "core/ports/infra/image-processing/ImageProcessingRequest.h"
-#include "core/ports/infra/image-processing/IImageProcessor.h"
+#include "core/ports/infra/document-image-processing/DocumentImageProcessingRequest.h"
+#include "core/ports/infra/document-image-processing/IDocumentImageProcessor.h"
 #include "core/ports/infra/text-recognition/TextRecognitionResult.h"
 #include "core/application/import/draft/TransactionDraft.h"
 
@@ -181,7 +181,7 @@ void appendPageSummary(const std::vector<core::application::importing::statement
  * @param blocks Parsed transaction blocks.
  * @param cols Current column model.
  * @param ocr OCR result for the page.
- * @param opencv Image processing adapter used for artifact generation.
+ * @param documentImageProcessor Document image processing adapter used for artifact generation.
  * @param pageCropImagePath File path to the cropped page image.
  * @param pageCropImageBytes Raw bytes of the cropped page image.
  * @param txIndex Running transaction index counter.
@@ -190,7 +190,7 @@ void appendPageSummary(const std::vector<core::application::importing::statement
 void appendTransactionsFromBlocks(const std::vector<core::application::importing::transaction::internal::TransactionBlock>& blocks,
                                   const core::application::importing::statement::internal::ColumnModel& cols,
                                   const core::ports::text_recognition::ExtractResult& ocr,
-                                  const std::shared_ptr<core::ports::image_processing::IImageProcessor>& opencv,
+                                  const std::shared_ptr<core::ports::document_image_processing::IDocumentImageProcessor>& documentImageProcessor,
                                   const std::string& pageCropImagePath,
                                   const std::vector<uint8_t>& pageCropImageBytes,
                                   int& txIndex,

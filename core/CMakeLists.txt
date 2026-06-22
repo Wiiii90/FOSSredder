@@ -29,7 +29,7 @@ set(CORE_PUBLIC_HEADERS
     include/core/ports/usecases/analysis/AnalysisRequest.h
     include/core/ports/usecases/analysis/AnalysisResult.h
     include/core/ports/usecases/analysis/IAnalysisRunner.h
-    include/core/ports/infra/analysis-image-renderer/IAnalysisImageRenderer.h
+    include/core/ports/infra/analysis-rendering/IAnalysisRenderer.h
     include/core/ports/usecases/annual/AnnualRequest.h
     include/core/ports/usecases/annual/AnnualResult.h
     include/core/ports/usecases/annual/IAnnualRunner.h
@@ -87,10 +87,10 @@ set(CORE_PUBLIC_HEADERS
     include/core/ports/repositories/IStatementRepository.h
     include/core/ports/repositories/ITransactionDraftRepository.h
     include/core/ports/repositories/ITransactionRepository.h
-    include/core/ports/infra/image-processing/IImageProcessor.h
-    include/core/ports/infra/image-processing/ImageProcessingRequest.h
-    include/core/ports/infra/image-processing/ImageProcessingResult.h
-    include/core/ports/infra/image-processing/ImageProcessingTypes.h
+    include/core/ports/infra/document-image-processing/IDocumentImageProcessor.h
+    include/core/ports/infra/document-image-processing/DocumentImageProcessingRequest.h
+    include/core/ports/infra/document-image-processing/DocumentImageProcessingResult.h
+    include/core/ports/infra/document-image-processing/DocumentImageProcessingTypes.h
     include/core/ports/infra/pdf-rendering/IPdfRenderer.h
     include/core/ports/infra/pdf-rendering/PdfRenderingRequest.h
     include/core/ports/infra/pdf-rendering/PdfRenderingResult.h

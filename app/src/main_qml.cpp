@@ -3,7 +3,6 @@
  * @brief Boots the QML application shell and wires UI-facing services.
  */
 
-#ifdef USE_QML
 #include "MainWindow.h"
 #include "core/ports/diagnostics/IErrorReporter.h"
 #include "core/ports/usecases/analysis/IAnalysisRunner.h"
@@ -56,5 +55,3 @@ int startQmlApp(
   w.show();
   return app.exec();
 }
-
-#endif

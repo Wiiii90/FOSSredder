@@ -12,8 +12,8 @@ class IArchive;
 namespace core::ports::xlsx_writer {
 class IXlsxWriter;
 }
-namespace core::ports::analysis_image_renderer {
-class IAnalysisImageRenderer;
+namespace core::ports::analysis_rendering {
+class IAnalysisRenderer;
 }
 
 namespace core::application::exporting {
@@ -24,7 +24,7 @@ core::ports::exporting::ExportResult exportObjectRequests(
     const std::shared_ptr<core::ports::archive::IArchive> &archive,
     const std::shared_ptr<core::ports::xlsx_writer::IXlsxWriter> &xlsxWriter,
     const std::shared_ptr<
-        core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+        core::ports::analysis_rendering::IAnalysisRenderer>
         &imageRenderer);
 
 } // namespace core::application::exporting

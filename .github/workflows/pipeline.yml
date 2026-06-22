@@ -48,7 +48,7 @@ jobs:
 
       - name: Ensure no running binaries
         run: |
-          $procs = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match 'fossredder|_unit_tests|ui_interaction_tests|ui_unit_tests|opencv_unit_tests|persistence_unit_tests|qml' }
+          $procs = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match 'fossredder|_unit_tests|ui_interaction_tests|ui_unit_tests|document_image_processing_unit_tests|persistence_unit_tests|qml' }
           if ($procs) { $procs | ForEach-Object { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } }
 
       - name: Clean previous build

@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 
-namespace core::ports::analysis_image_renderer {
-class IAnalysisImageRenderer;
-} // namespace core::ports::analysis_image_renderer
+namespace core::ports::analysis_rendering {
+class IAnalysisRenderer;
+} // namespace core::ports::analysis_rendering
 
 namespace core::application::analysis {
 
@@ -32,7 +32,7 @@ public:
   AnalysisService() = default;
   explicit AnalysisService(
       std::shared_ptr<
-          core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+          core::ports::analysis_rendering::IAnalysisRenderer>
           imageRenderer);
   ~AnalysisService() = default;
 
@@ -167,7 +167,7 @@ private:
   withRenderedArtifacts(const core::ports::analysis::AnalysisRequest &request,
                         core::ports::analysis::AnalysisResult result) const;
 
-  std::shared_ptr<core::ports::analysis_image_renderer::IAnalysisImageRenderer>
+  std::shared_ptr<core::ports::analysis_rendering::IAnalysisRenderer>
       imageRenderer_;
 };
 
