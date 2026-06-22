@@ -5,7 +5,7 @@
 
 #include "core/application/workspace/WorkspaceSnapshotProjector.h"
 
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/ports/usecases/analysis/AnalysisRequest.h"
 
 #include <nlohmann/json.hpp>
@@ -84,11 +84,11 @@ analysisConfigFromJson(const std::string& raw, const std::string& type) {
     if (!config.is_object()) {
         return out;
     }
-    out.plotType = jsonString(config, core::constants::analysis::kPlotTypeKey);
-    out.plotMeasure = jsonString(config, core::constants::analysis::kPlotMeasureKey);
-    out.propertyIds = jsonStringList(config, core::constants::analysis::kPropertiesKey);
-    out.contractTypes = jsonStringList(config, core::constants::analysis::kContractTypesKey);
-    out.taxPercent = jsonDouble(config, core::constants::analysis::calculation::kPercentKey);
+    out.plotType = jsonString(config, core::application::analysis::keys::kPlotTypeKey);
+    out.plotMeasure = jsonString(config, core::application::analysis::keys::kPlotMeasureKey);
+    out.propertyIds = jsonStringList(config, core::application::analysis::keys::kPropertiesKey);
+    out.contractTypes = jsonStringList(config, core::application::analysis::keys::kContractTypesKey);
+    out.taxPercent = jsonDouble(config, core::application::analysis::keys::calculation::kPercentKey);
     return out;
 }
 

@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/domain/values/AnalysisType.h"
 #include "core/domain/values/ExportFormat.h"
 #include "core/domain/values/FilterSpec.h"

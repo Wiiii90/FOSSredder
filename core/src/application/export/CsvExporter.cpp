@@ -6,7 +6,7 @@
 #include "core/application/export/CsvExporter.h"
 
 #include "PropertyContractMatrix.h"
-#include "core/constants/export.h"
+#include "ExportConstants.h"
 
 #include <fstream>
 #include <iomanip>
@@ -82,9 +82,9 @@ CsvExporter::exportData(
   if (request.outputPath.empty()) {
     result.status = export_ports::ExportStatus::InvalidInput;
     result.errorCode =
-        std::string(core::constants::exportFlow::errors::kOutputPathEmpty);
+        std::string(core::application::exporting::constants::errors::kOutputPathEmpty);
     result.message =
-        std::string(core::constants::exportFlow::messages::kOutputPathEmpty);
+        std::string(core::application::exporting::constants::messages::kOutputPathEmpty);
     return result;
   }
   const auto matrix = internal::buildPropertyContractMatrix(state);
@@ -99,9 +99,9 @@ CsvExporter::exportData(
   if (!output) {
     result.status = export_ports::ExportStatus::WriteFailed;
     result.errorCode =
-        std::string(core::constants::exportFlow::errors::kFileOpenFailed);
+        std::string(core::application::exporting::constants::errors::kFileOpenFailed);
     result.message =
-        std::string(core::constants::exportFlow::messages::kFileOpenFailed);
+        std::string(core::application::exporting::constants::messages::kFileOpenFailed);
     return result;
   }
 
@@ -122,12 +122,12 @@ CsvExporter::exportData(
     return text;
   };
 
-  output << std::string(core::constants::exportFlow::labels::kPropertyHeader);
+  output << std::string(core::application::exporting::constants::labels::kPropertyHeader);
   for (const auto &contractType : matrix.contractTypes) {
     output << separator << escapeCsv(contractType, separator);
   }
   output << separator
-         << std::string(core::constants::exportFlow::labels::kTotal) << "\n";
+         << std::string(core::application::exporting::constants::labels::kTotal) << "\n";
 
   for (const auto &propertyName : matrix.propertyNames) {
     if (shouldStop(request)) {
@@ -154,9 +154,9 @@ CsvExporter::exportData(
   if (!output) {
     result.status = export_ports::ExportStatus::WriteFailed;
     result.errorCode =
-        std::string(core::constants::exportFlow::errors::kFileWriteFailed);
+        std::string(core::application::exporting::constants::errors::kFileWriteFailed);
     result.message =
-        std::string(core::constants::exportFlow::messages::kFileWriteFailed);
+        std::string(core::application::exporting::constants::messages::kFileWriteFailed);
     return result;
   }
 

@@ -2,7 +2,7 @@
 #include "../internal/AnalysisFilter.h"
 #include "core/ports/usecases/analysis/AnalysisResult.h"
 
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 
 #include <nlohmann/json.hpp>
 
@@ -30,19 +30,19 @@ TaxConfig parseTax(const core::domain::Analysis &analysis) {
     }
 
     const auto strategyIt =
-        json.find(core::constants::analysis::calculation::kStrategyKey);
+        json.find(core::application::analysis::keys::calculation::kStrategyKey);
     if (strategyIt == json.end() || !strategyIt->is_string()) {
       return config;
     }
     if (strategyIt->get<std::string>() !=
-        core::constants::analysis::calculation::kStrategyTax) {
+        core::application::analysis::keys::calculation::kStrategyTax) {
       return config;
     }
 
     config.enabled = true;
 
     const auto percentIt =
-        json.find(core::constants::analysis::calculation::kPercentKey);
+        json.find(core::application::analysis::keys::calculation::kPercentKey);
     if (percentIt == json.end() || !percentIt->is_number()) {
       return config;
     }
@@ -80,23 +80,23 @@ computeAdjustmentAnalysis(const core::domain::Analysis &analysis,
     }
 
     nlohmann::json summary;
-    summary[core::constants::analysis::resultFields::kAmountOriginal] =
+    summary[core::application::analysis::keys::resultFields::kAmountOriginal] =
         transaction->amount();
-    summary[core::constants::analysis::resultFields::kAmountAdjusted] =
+    summary[core::application::analysis::keys::resultFields::kAmountAdjusted] =
         adjustedAmount;
     if (taxConfig.enabled) {
-      summary[core::constants::analysis::resultFields::kTaxPercent] =
+      summary[core::application::analysis::keys::resultFields::kTaxPercent] =
           (taxConfig.factor - 1.0) * 100.0;
-      summary[core::constants::analysis::resultFields::kTaxFactor] =
+      summary[core::application::analysis::keys::resultFields::kTaxFactor] =
           taxConfig.factor;
     }
-    summary[core::constants::analysis::resultFields::kTransactionId] =
+    summary[core::application::analysis::keys::resultFields::kTransactionId] =
         transaction->id();
 
     out.table.push_back({label, summary.dump()});
   }
 
-  out.metrics[std::string(core::constants::analysis::metricKeys::kRows)] =
+  out.metrics[std::string(core::application::analysis::keys::metricKeys::kRows)] =
       static_cast<double>(out.table.size());
   return out;
 }

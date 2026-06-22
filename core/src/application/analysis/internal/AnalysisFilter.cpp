@@ -1,6 +1,6 @@
 #include "AnalysisFilter.h"
 
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/domain/entities/Contract.h"
 #include "core/domain/entities/Transaction.h"
 
@@ -55,8 +55,8 @@ std::vector<std::string> splitList(const std::string &value) {
   std::vector<std::string> wanted;
   std::string current;
   for (const char ch : cleanValue(value)) {
-    if (ch == core::constants::filters::separators::kAlternatives ||
-        ch == core::constants::filters::separators::kList) {
+    if (ch == core::application::analysis::filterKeys::separators::kAlternatives ||
+        ch == core::application::analysis::filterKeys::separators::kList) {
       const auto token = trim(current);
       if (!token.empty())
         wanted.push_back(token);
@@ -111,13 +111,13 @@ int dateToInt(const std::string &value) {
     return 0;
   }
 
-  if (cleaned.find(core::constants::filters::separators::kDateParts) !=
+  if (cleaned.find(core::application::analysis::filterKeys::separators::kDateParts) !=
       std::string::npos) {
     std::vector<std::string> parts;
     std::istringstream stream(cleaned);
     std::string token;
     while (std::getline(stream, token,
-                        core::constants::filters::separators::kDateParts)) {
+                        core::application::analysis::filterKeys::separators::kDateParts)) {
       parts.push_back(trim(token));
     }
 
@@ -199,17 +199,17 @@ std::optional<AnalysisFilterClause> parseClause(const std::string &token) {
   };
 
   static const OperatorSpec operators[] = {
-      {core::constants::filters::operators::kGreaterEqual,
+      {core::application::analysis::filterKeys::operators::kGreaterEqual,
        AnalysisFilterOperator::GreaterEqual},
-      {core::constants::filters::operators::kLessEqual,
+      {core::application::analysis::filterKeys::operators::kLessEqual,
        AnalysisFilterOperator::LessEqual},
-      {core::constants::filters::operators::kNotEqual,
+      {core::application::analysis::filterKeys::operators::kNotEqual,
        AnalysisFilterOperator::NotEqual},
-      {core::constants::filters::operators::kGreater,
+      {core::application::analysis::filterKeys::operators::kGreater,
        AnalysisFilterOperator::Greater},
-      {core::constants::filters::operators::kLess,
+      {core::application::analysis::filterKeys::operators::kLess,
        AnalysisFilterOperator::Less},
-      {core::constants::filters::operators::kEqual,
+      {core::application::analysis::filterKeys::operators::kEqual,
        AnalysisFilterOperator::Equal},
   };
 
@@ -232,8 +232,8 @@ std::vector<std::string> splitContractTypes(const std::string &value) {
   std::vector<std::string> wanted;
   std::string current;
   for (const char ch : toLowerStr(cleanValue(value))) {
-    if (ch == core::constants::filters::separators::kAlternatives ||
-        ch == core::constants::filters::separators::kList) {
+    if (ch == core::application::analysis::filterKeys::separators::kAlternatives ||
+        ch == core::application::analysis::filterKeys::separators::kList) {
       const auto token = trim(current);
       if (!token.empty())
         wanted.push_back(token);
@@ -302,7 +302,7 @@ void addContractTypePredicate(
 
     const bool allowUnassigned =
         std::find(wanted.begin(), wanted.end(),
-                  std::string(core::constants::filters::kUnassigned)) !=
+                  std::string(core::application::analysis::filterKeys::kUnassigned)) !=
         wanted.end();
     if (transaction->contractId().empty())
       return allowUnassigned;
@@ -336,7 +336,7 @@ void addPropertyPredicate(core::application::analysis::AnalysisFilter &filter,
       return false;
     const bool allowUnassigned =
         std::find(wanted.begin(), wanted.end(),
-                  std::string(core::constants::filters::kUnassigned)) !=
+                  std::string(core::application::analysis::filterKeys::kUnassigned)) !=
         wanted.end();
     bool hasAnyProperty = false;
 
@@ -404,7 +404,7 @@ AnalysisFilter parseAnalysisFilterSpec(const std::string &spec) {
   std::istringstream ss(spec);
   std::string token;
   while (
-      std::getline(ss, token, core::constants::filters::separators::kClause)) {
+      std::getline(ss, token, core::application::analysis::filterKeys::separators::kClause)) {
     token = trim(token);
     if (token.empty())
       continue;
@@ -412,7 +412,7 @@ AnalysisFilter parseAnalysisFilterSpec(const std::string &spec) {
     const auto clause = parseClause(token);
     if (!clause)
       continue;
-    if (clause->key == core::constants::filters::kDateField) {
+    if (clause->key == core::application::analysis::filterKeys::kDateField) {
       dateField = parseDateField(clause->value);
       continue;
     }
@@ -420,15 +420,15 @@ AnalysisFilter parseAnalysisFilterSpec(const std::string &spec) {
   }
 
   for (const auto &clause : clauses) {
-    if (clause.key == core::constants::filters::kDate) {
+    if (clause.key == core::application::analysis::filterKeys::kDate) {
       addDatePredicate(f, clause, dateField);
-    } else if (clause.key == core::constants::filters::kAmount) {
+    } else if (clause.key == core::application::analysis::filterKeys::kAmount) {
       addAmountPredicate(f, clause);
-    } else if (clause.key == core::constants::filters::kContractType) {
+    } else if (clause.key == core::application::analysis::filterKeys::kContractType) {
       addContractTypePredicate(f, clause);
-    } else if (clause.key == core::constants::filters::kPropertyId) {
+    } else if (clause.key == core::application::analysis::filterKeys::kPropertyId) {
       addPropertyPredicate(f, clause);
-    } else if (clause.key == core::constants::filters::kAllocatable) {
+    } else if (clause.key == core::application::analysis::filterKeys::kAllocatable) {
       addAllocatablePredicate(f, clause);
     }
   }

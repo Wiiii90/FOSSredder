@@ -9,7 +9,7 @@
 #include "core/application/export/CsvExporter.h"
 #include "core/application/export/XlsxExporter.h"
 #include "core/application/workspace/WorkspaceSnapshotCatalogMapper.h"
-#include "core/constants/export.h"
+#include "ExportConstants.h"
 
 #include <set>
 #include <unordered_map>
@@ -165,8 +165,8 @@ export_ports::ExportResult ExportService::exportData(
       export_ports::ExportStatus::UnsupportedFormat,
       request.format,
       {},
-      std::string(core::constants::exportFlow::kErrorUnsupportedFormat),
-      std::string(core::constants::exportFlow::kMessageUnsupportedFormat)};
+      std::string(core::application::exporting::constants::kErrorUnsupportedFormat),
+      std::string(core::application::exporting::constants::kMessageUnsupportedFormat)};
 }
 
 } // namespace core::application::exporting

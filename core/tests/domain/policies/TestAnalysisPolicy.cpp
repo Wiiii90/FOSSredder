@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/domain/policies/AnalysisPolicy.h"
 
 namespace core::domain::policies::analysis {
@@ -25,9 +25,9 @@ TEST(AnalysisPolicyTest, NormalizesKeysAndConfigurationState) {
 }
 
 TEST(AnalysisPolicyTest, ResolvesExecutionAndOutputTypes) {
-    EXPECT_EQ(resolveExecutionType(""), core::constants::analysis::kTypeTab);
+    EXPECT_EQ(resolveExecutionType(""), core::application::analysis::keys::kTypeTab);
     EXPECT_EQ(resolveExecutionType(" tab "), "tab");
-    EXPECT_EQ(resolveOutputType("plot", ""), core::constants::analysis::plotTypes::kPie);
+    EXPECT_EQ(resolveOutputType("plot", ""), core::application::analysis::keys::plotTypes::kPie);
     EXPECT_EQ(resolveOutputType("plot", R"({"plotType":"histogram"})"), "histogram");
 }
 

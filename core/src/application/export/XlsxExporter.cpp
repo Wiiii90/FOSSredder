@@ -6,7 +6,7 @@
 #include "core/application/export/XlsxExporter.h"
 
 #include "PropertyContractMatrix.h"
-#include "core/constants/export.h"
+#include "ExportConstants.h"
 #include "core/ports/infra/xlsx-writer/IXlsxWriter.h"
 
 #include <vector>
@@ -50,10 +50,10 @@ buildRows(const internal::PropertyContractMatrix &matrix,
   std::vector<std::vector<std::string>> rows;
   std::vector<std::string> header;
   header.push_back(
-      std::string(core::constants::exportFlow::labels::kPropertyHeader));
+      std::string(core::application::exporting::constants::labels::kPropertyHeader));
   header.insert(header.end(), matrix.propertyNames.begin(),
                 matrix.propertyNames.end());
-  header.push_back(std::string(core::constants::exportFlow::labels::kTotal));
+  header.push_back(std::string(core::application::exporting::constants::labels::kTotal));
   rows.push_back(std::move(header));
 
   std::vector<double> columnSums(matrix.propertyNames.size(), 0.0);
@@ -94,7 +94,7 @@ buildRows(const internal::PropertyContractMatrix &matrix,
     std::vector<std::string> totalRow;
     totalRow.reserve(matrix.propertyNames.size() + 2);
     totalRow.push_back(
-        std::string(core::constants::exportFlow::labels::kTotal));
+        std::string(core::application::exporting::constants::labels::kTotal));
 
     double grandTotal = 0.0;
     for (double value : columnSums) {
@@ -137,17 +137,17 @@ XlsxExporter::exportData(
     if (request.outputPath.empty()) {
       result.status = export_ports::ExportStatus::InvalidInput;
       result.errorCode =
-          std::string(core::constants::exportFlow::errors::kOutputPathEmpty);
+          std::string(core::application::exporting::constants::errors::kOutputPathEmpty);
       result.message =
-          std::string(core::constants::exportFlow::messages::kOutputPathEmpty);
+          std::string(core::application::exporting::constants::messages::kOutputPathEmpty);
       return result;
     }
     if (!writer_) {
       result.status = export_ports::ExportStatus::XlsxGenerationFailed;
       result.errorCode = std::string(
-          core::constants::exportFlow::errors::kXlsxGenerationFailed);
+          core::application::exporting::constants::errors::kXlsxGenerationFailed);
       result.message = std::string(
-          core::constants::exportFlow::messages::kXlsxGenerationFailed);
+          core::application::exporting::constants::messages::kXlsxGenerationFailed);
       return result;
     }
 
@@ -163,9 +163,9 @@ XlsxExporter::exportData(
     if (!writer_->writeTable(request.outputPath, rows, "Export")) {
       result.status = export_ports::ExportStatus::XlsxGenerationFailed;
       result.errorCode = std::string(
-          core::constants::exportFlow::errors::kXlsxGenerationFailed);
+          core::application::exporting::constants::errors::kXlsxGenerationFailed);
       result.message = std::string(
-          core::constants::exportFlow::messages::kXlsxGenerationFailed);
+          core::application::exporting::constants::messages::kXlsxGenerationFailed);
       return result;
     }
 
@@ -174,9 +174,9 @@ XlsxExporter::exportData(
   } catch (...) {
     result.status = export_ports::ExportStatus::XlsxGenerationFailed;
     result.errorCode =
-        std::string(core::constants::exportFlow::errors::kXlsxGenerationFailed);
+        std::string(core::application::exporting::constants::errors::kXlsxGenerationFailed);
     result.message = std::string(
-        core::constants::exportFlow::messages::kXlsxGenerationFailed);
+        core::application::exporting::constants::messages::kXlsxGenerationFailed);
   }
 
   return result;

@@ -5,7 +5,7 @@
 
 #include "core/ports/usecases/analysis/AnalysisRequest.h"
 
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/domain/values/FilterSpec.h"
 
 #include <algorithm>
@@ -55,7 +55,7 @@ std::vector<std::string> splitList(const std::string &raw) {
   std::unordered_set<std::string> seen;
   std::string token;
   std::istringstream ss(raw);
-  while (std::getline(ss, token, core::constants::filters::separators::kList)) {
+  while (std::getline(ss, token, core::application::analysis::filterKeys::separators::kList)) {
     const std::string trimmed = trim(token);
     if (trimmed.empty() || seen.contains(trimmed)) {
       continue;
@@ -81,72 +81,72 @@ parseAnalysisFilterSelection(const std::string &filterSpec) {
   std::istringstream ss(normalized);
   std::string clause;
   while (
-      std::getline(ss, clause, core::constants::filters::separators::kClause)) {
+      std::getline(ss, clause, core::application::analysis::filterKeys::separators::kClause)) {
     clause = trim(clause);
     if (clause.empty()) {
       continue;
     }
 
     if (clause.rfind(
-            std::string(core::constants::filters::kDate) +
-                std::string(core::constants::filters::operators::kGreaterEqual),
+            std::string(core::application::analysis::filterKeys::kDate) +
+                std::string(core::application::analysis::filterKeys::operators::kGreaterEqual),
             0) == 0) {
       out.dateFrom = clause.substr(6);
       continue;
     }
     if (clause.rfind(
-            std::string(core::constants::filters::kDate) +
-                std::string(core::constants::filters::operators::kLessEqual),
+            std::string(core::application::analysis::filterKeys::kDate) +
+                std::string(core::application::analysis::filterKeys::operators::kLessEqual),
             0) == 0) {
       out.dateTo = clause.substr(6);
       continue;
     }
     if (clause.rfind(
-            std::string(core::constants::filters::kDateField) +
-                std::string(core::constants::filters::operators::kEqual),
+            std::string(core::application::analysis::filterKeys::kDateField) +
+                std::string(core::application::analysis::filterKeys::operators::kEqual),
             0) == 0) {
       const std::string value = toLower(trim(clause.substr(10)));
       out.dateField = value == "valuta" ? "valuta" : "bookingDate";
       continue;
     }
     if (clause.rfind(
-            std::string(core::constants::filters::kPropertyId) +
-                std::string(core::constants::filters::operators::kEqual),
+            std::string(core::application::analysis::filterKeys::kPropertyId) +
+                std::string(core::application::analysis::filterKeys::operators::kEqual),
             0) == 0) {
       const std::vector<std::string> values = splitList(clause.substr(11));
       out.propertyIdsUnassigned =
           std::find(values.begin(), values.end(),
-                    std::string(core::constants::filters::kUnassigned)) !=
+                    std::string(core::application::analysis::filterKeys::kUnassigned)) !=
           values.end();
       out.propertyIds.clear();
       for (const auto &value : values) {
-        if (value != core::constants::filters::kUnassigned) {
+        if (value != core::application::analysis::filterKeys::kUnassigned) {
           out.propertyIds.push_back(value);
         }
       }
       continue;
     }
     if (clause.rfind(
-            std::string(core::constants::filters::kContractType) +
-                std::string(core::constants::filters::operators::kEqual),
+            std::string(core::application::analysis::filterKeys::kContractType) +
+                std::string(core::application::analysis::filterKeys::operators::kEqual),
             0) == 0) {
       const std::vector<std::string> values = splitList(clause.substr(14));
       out.contractTypesUnassigned =
           std::find(values.begin(), values.end(),
-                    std::string(core::constants::filters::kUnassigned)) !=
+                    std::string(core::application::analysis::filterKeys::kUnassigned)) !=
           values.end();
       out.contractTypes.clear();
       for (auto value : values) {
         value = toLower(value);
-        if (value != core::constants::filters::kUnassigned) {
+        if (value != core::application::analysis::filterKeys::kUnassigned) {
           out.contractTypes.push_back(std::move(value));
         }
       }
       continue;
     }
     if (clause.rfind(
-            std::string(core::constants::filters::kAllocatable) +
-                std::string(core::constants::filters::operators::kEqual),
+            std::string(core::application::analysis::filterKeys::kAllocatable) +
+                std::string(core::application::analysis::filterKeys::operators::kEqual),
             0) == 0) {
       const std::string mode = toLower(trim(clause.substr(12)));
       if (mode == "allocatable" || mode == "non-allocatable") {
@@ -215,9 +215,9 @@ std::string buildAnalysisFilterSpec(const AnalysisFilterSelection &selection) {
   }
   if (selection.propertyIdsUnassigned &&
       !propertySeen.contains(
-          std::string(core::constants::filters::kUnassigned))) {
+          std::string(core::application::analysis::filterKeys::kUnassigned))) {
     propertyValues.push_back(
-        std::string(core::constants::filters::kUnassigned));
+        std::string(core::application::analysis::filterKeys::kUnassigned));
   }
   if (!propertyValues.empty()) {
     std::ostringstream propertyClause;
@@ -243,9 +243,9 @@ std::string buildAnalysisFilterSpec(const AnalysisFilterSelection &selection) {
   }
   if (selection.contractTypesUnassigned &&
       !contractSeen.contains(
-          std::string(core::constants::filters::kUnassigned))) {
+          std::string(core::application::analysis::filterKeys::kUnassigned))) {
     contractValues.push_back(
-        std::string(core::constants::filters::kUnassigned));
+        std::string(core::application::analysis::filterKeys::kUnassigned));
   }
   if (!contractValues.empty()) {
     std::ostringstream contractClause;

@@ -5,8 +5,7 @@
 
 #include "analysis-rendering/OpenCvAnalysisRendererAdapter.h"
 
-#include "core/constants/analysis.h"
-#include "core/constants/export.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/errors/ErrorCodes.h"
 #include "core/errors/ErrorReporting.h"
 
@@ -152,16 +151,16 @@ void drawRotatedText(cv::Mat& image,
 
 std::vector<std::vector<std::string>> normalizedRowsForImage(const core::ports::analysis::AnalysisResult& result)
 {
-    using core::constants::analysis::resultFields::kAmountAdjusted;
-    using core::constants::analysis::resultFields::kAmountOriginal;
-    using core::constants::analysis::resultFields::kMonth;
-    using core::constants::analysis::resultFields::kTaxFactor;
-    using core::constants::analysis::resultFields::kTaxPercent;
-    using core::constants::analysis::resultFields::kTotal;
-    using core::constants::analysis::resultFields::kTransactionId;
+    using core::application::analysis::keys::resultFields::kAmountAdjusted;
+    using core::application::analysis::keys::resultFields::kAmountOriginal;
+    using core::application::analysis::keys::resultFields::kMonth;
+    using core::application::analysis::keys::resultFields::kTaxFactor;
+    using core::application::analysis::keys::resultFields::kTaxPercent;
+    using core::application::analysis::keys::resultFields::kTotal;
+    using core::application::analysis::keys::resultFields::kTransactionId;
 
     std::vector<std::vector<std::string>> rows;
-    if (result.type == core::constants::analysis::plotTypes::kPie) {
+    if (result.type == core::application::analysis::keys::plotTypes::kPie) {
         rows.push_back({"Category", "Value"});
         for (const auto& row : result.table) {
             if (row.empty()) continue;
@@ -171,7 +170,7 @@ std::vector<std::vector<std::string>> normalizedRowsForImage(const core::ports::
         return rows;
     }
 
-    if (result.type == core::constants::analysis::plotTypes::kHistogram) {
+    if (result.type == core::application::analysis::keys::plotTypes::kHistogram) {
         rows.push_back({"Month", "Total"});
         for (const auto& row : result.table) {
             if (row.empty()) continue;
@@ -195,7 +194,7 @@ std::vector<std::vector<std::string>> normalizedRowsForImage(const core::ports::
         return rows;
     }
 
-    if (result.type == core::constants::analysis::kTypeCalculation) {
+    if (result.type == core::application::analysis::keys::kTypeCalculation) {
         rows.push_back({"Label", "OriginalAmount", "AdjustedAmount", "TaxPercent", "TaxFactor", "TransactionId"});
         for (const auto& row : result.table) {
             if (row.empty()) continue;
@@ -339,13 +338,13 @@ bool drawHistogramImage(cv::Mat& image, const core::ports::analysis::AnalysisRes
         if (row.size() > 1) {
             nlohmann::json summary;
             if (tryParseJsonObject(row[1], summary)) {
-                if (summary.contains(core::constants::analysis::resultFields::kMonth)
-                    && summary[core::constants::analysis::resultFields::kMonth].is_string()) {
-                    month = summary[core::constants::analysis::resultFields::kMonth].get<std::string>();
+                if (summary.contains(core::application::analysis::keys::resultFields::kMonth)
+                    && summary[core::application::analysis::keys::resultFields::kMonth].is_string()) {
+                    month = summary[core::application::analysis::keys::resultFields::kMonth].get<std::string>();
                 }
-                if (summary.contains(core::constants::analysis::resultFields::kTotal)
-                    && summary[core::constants::analysis::resultFields::kTotal].is_number()) {
-                    total = std::fabs(summary[core::constants::analysis::resultFields::kTotal].get<double>());
+                if (summary.contains(core::application::analysis::keys::resultFields::kTotal)
+                    && summary[core::application::analysis::keys::resultFields::kTotal].is_number()) {
+                    total = std::fabs(summary[core::application::analysis::keys::resultFields::kTotal].get<double>());
                 }
                 if (summary.contains("byContract") && summary["byContract"].is_object()) {
                     for (const auto& item : summary["byContract"].items()) {
@@ -517,9 +516,9 @@ bool writeImageFromResult(const std::filesystem::path& outputPath,
     else image = cv::Mat(height, width, CV_8UC3, cv::Scalar(250, 250, 250));
 
     bool ok = false;
-    if (result.type == core::constants::analysis::plotTypes::kPie) {
+    if (result.type == core::application::analysis::keys::plotTypes::kPie) {
         ok = drawPieChartImage(image, result);
-    } else if (result.type == core::constants::analysis::plotTypes::kHistogram) {
+    } else if (result.type == core::application::analysis::keys::plotTypes::kHistogram) {
         ok = drawHistogramImage(image, result);
     } else {
         ok = drawTableImage(image, normalizedRowsForImage(result));

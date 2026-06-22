@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace core::constants::exportFlow {
+namespace core::application::exporting::constants {
 
 inline constexpr std::string_view kErrorUnsupportedFormat = "EXPORT_UNSUPPORTED_FORMAT";
 inline constexpr std::string_view kMessageUnsupportedFormat = "Unsupported export format";
@@ -35,4 +35,4 @@ inline constexpr std::string_view kTotal = "Summe";
 inline constexpr std::string_view kUnassigned = "(Unassigned)";
 } // namespace labels
 
-} // namespace core::constants::exportFlow
+} // namespace core::application::exporting::constants

@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace core::constants::analysis {
+namespace core::application::analysis::keys {
 
 inline constexpr std::string_view kTypeTab = "tab";
 inline constexpr std::string_view kTypePlot = "plot";
@@ -52,9 +52,9 @@ namespace labels {
 inline constexpr std::string_view kNoProperty = "(no-property)";
 } // namespace labels
 
-} // namespace core::constants::analysis
+} // namespace core::application::analysis::keys
 
-namespace core::constants::filters {
+namespace core::application::analysis::filterKeys {
 
 inline constexpr std::string_view kDate = "date";
 inline constexpr std::string_view kDateField = "dateField";
@@ -80,4 +80,4 @@ inline constexpr char kList = ',';
 inline constexpr char kDateParts = '.';
 } // namespace separators
 
-} // namespace core::constants::filters
+} // namespace core::application::analysis::filterKeys

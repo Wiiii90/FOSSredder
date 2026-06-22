@@ -17,13 +17,13 @@ bool supportsResultType(const std::string& type) {
 }
 
 bool isTabularType(const std::string& type) {
-    return core::domain::AnalysisType::normalize(type) == core::constants::analysis::kTypeTab;
+    return core::domain::AnalysisType::normalize(type) == core::application::analysis::keys::kTypeTab;
 }
 
 bool isChartLikeType(const std::string& type) {
     const auto normalized = core::domain::AnalysisType::normalize(type);
-    return normalized == core::constants::analysis::plotTypes::kPie ||
-           normalized == core::constants::analysis::plotTypes::kHistogram;
+    return normalized == core::application::analysis::keys::plotTypes::kPie ||
+           normalized == core::application::analysis::keys::plotTypes::kHistogram;
 }
 
 bool isExportable(const std::string& type, const std::string& exportFormat) {
@@ -46,29 +46,29 @@ bool isConfigured(const std::string& type,
 
 std::string resolveOutputType(const std::string& type, const std::string& configJson) {
     const auto normalizedType = core::domain::AnalysisType::normalize(type);
-    if (normalizedType != core::constants::analysis::kTypePlot) {
+    if (normalizedType != core::application::analysis::keys::kTypePlot) {
         return normalizedType;
     }
 
     if (configJson.empty()) {
-        return std::string(core::constants::analysis::plotTypes::kPie);
+        return std::string(core::application::analysis::keys::plotTypes::kPie);
     }
 
     try {
         const auto config = nlohmann::json::parse(configJson);
-        if (config.contains(core::constants::analysis::kPlotTypeKey) && config[core::constants::analysis::kPlotTypeKey].is_string()) {
-            return config[core::constants::analysis::kPlotTypeKey].get<std::string>();
+        if (config.contains(core::application::analysis::keys::kPlotTypeKey) && config[core::application::analysis::keys::kPlotTypeKey].is_string()) {
+            return config[core::application::analysis::keys::kPlotTypeKey].get<std::string>();
         }
     } catch (...) {
     }
 
-    return std::string(core::constants::analysis::plotTypes::kPie);
+    return std::string(core::application::analysis::keys::plotTypes::kPie);
 }
 
 std::string resolveExecutionType(const std::string& type) {
     const auto normalizedType = core::domain::AnalysisType::normalize(type);
     if (normalizedType.empty()) {
-        return std::string(core::constants::analysis::kTypeTab);
+        return std::string(core::application::analysis::keys::kTypeTab);
     }
     return normalizedType;
 }

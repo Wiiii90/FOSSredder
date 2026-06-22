@@ -40,8 +40,7 @@ set(CORE_PUBLIC_HEADERS
     include/core/ports/usecases/import/ImportRequest.h
     include/core/ports/usecases/import/ImportResult.h
     include/core/ports/infra/xlsx-writer/IXlsxWriter.h
-    include/core/constants/analysis.h
-    include/core/constants/export.h
+    include/core/application/analysis/AnalysisKeys.h
     include/core/domain/entities/Actor.h
     include/core/domain/entities/Analysis.h
     include/core/domain/entities/Annual.h
@@ -100,6 +99,7 @@ set(CORE_PRIVATE_HEADERS
     src/application/analysis/presentation/PlotAnalysis.h
     src/application/analysis/presentation/TableAnalysis.h
     src/application/analysis/adjustment/AdjustmentCalculation.h
+    src/application/export/ExportConstants.h
     src/application/export/PropertyContractMatrix.h
     src/application/import/ImportConstants.h
     src/application/import/ImportPageRequests.h

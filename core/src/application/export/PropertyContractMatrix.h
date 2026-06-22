@@ -7,7 +7,7 @@
 #pragma once
 
 #include "../../utils/Util.h"
-#include "core/constants/export.h"
+#include "ExportConstants.h"
 #include "core/domain/catalog/WorkspaceCatalog.h"
 
 #include <string>
@@ -41,7 +41,7 @@ inline std::string resolveContractType(
     const core::domain::catalog::WorkspaceCatalog &state) {
   const std::string trimmedContractId = core::utils::trim(contractId);
   if (trimmedContractId.empty()) {
-    return std::string(core::constants::exportFlow::labels::kUnassigned);
+    return std::string(core::application::exporting::constants::labels::kUnassigned);
   }
 
   const auto indexedType = idToType.find(trimmedContractId);
@@ -67,7 +67,7 @@ inline std::string resolveContractType(
     break;
   }
 
-  return std::string(core::constants::exportFlow::labels::kUnassigned);
+  return std::string(core::application::exporting::constants::labels::kUnassigned);
 }
 
 /**

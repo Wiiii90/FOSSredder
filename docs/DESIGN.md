@@ -309,9 +309,9 @@ The core is intentionally split into three primary areas:
 | Application layer | `core/include/core/application`, `core/src/application` | Use-case orchestration, workspace session state, import parsing, matching, analysis, annual reports, export and storage coordination. |
 | Ports | `core/include/core/ports` | Stable contracts used by UI, persistence and infrastructure. Ports contain snapshots, commands, request/result [DTOs](appendix/reference.md#glossary-dto) and abstract service interfaces. |
 
-Supporting packages such as `core/errors`, `core/jobs`, `core/constants` and
-`core/utils` are allowed to support the domain and application layer, but they
-should stay out of business workflow ownership.
+Supporting packages such as `core/errors`, `core/jobs` and `core/utils` are
+allowed to support the domain and application layer, but they should stay out
+of business workflow ownership.
 
 New core code should follow these rules:
 

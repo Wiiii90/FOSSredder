@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "analysis-rendering/OpenCvAnalysisRendererAdapter.h"
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/ports/diagnostics/IErrorReporter.h"
 
 #include <cmath>
@@ -40,18 +40,18 @@ protected:
     static core::ports::analysis::AnalysisResult makeResult(const std::string& type) {
         core::ports::analysis::AnalysisResult result;
         result.type = type;
-        if (type == core::constants::analysis::plotTypes::kPie) {
+        if (type == core::application::analysis::keys::plotTypes::kPie) {
             result.table = {
                 {"Rent", "2.0"},
                 {"Food", "1.0"},
             };
-        } else if (type == core::constants::analysis::plotTypes::kHistogram) {
+        } else if (type == core::application::analysis::keys::plotTypes::kHistogram) {
             result.table = {
                 {"January", R"({"month":"January","total":120.5})"},
                 {"February", R"({"month":"February","total":98.0})"},
             };
         } else {
-            result.type = core::constants::analysis::kTypeCalculation;
+            result.type = core::application::analysis::keys::kTypeCalculation;
             result.table = {
                 {"Adjustment", R"({"amountOriginal":100.0,"amountAdjusted":80.0,"taxPercent":19.0,"taxFactor":0.19,"transactionId":"tx-1"})"},
                 {"Refund", R"({"amountOriginal":25.0,"amountAdjusted":25.0,"taxPercent":0.0,"taxFactor":0.0,"transactionId":"tx-2"})"},
@@ -81,7 +81,7 @@ TEST(OpenCvAnalysisRendererAdapterStandaloneTest, PieUsesDistinctAdjacentSliceCo
     const auto outputPath = tempDir / "pie_palette.png";
 
     core::ports::analysis::AnalysisResult result;
-    result.type = core::constants::analysis::plotTypes::kPie;
+    result.type = core::application::analysis::keys::plotTypes::kPie;
     result.table = {
         {"A", "1.0"},
         {"B", "1.0"},
@@ -128,9 +128,9 @@ INSTANTIATE_TEST_SUITE_P(
     SupportedTypes,
     OpenCvAnalysisRendererAdapterTest,
     ::testing::Values(
-        std::string(core::constants::analysis::plotTypes::kPie),
-        std::string(core::constants::analysis::plotTypes::kHistogram),
-        std::string(core::constants::analysis::kTypeCalculation)));
+        std::string(core::application::analysis::keys::plotTypes::kPie),
+        std::string(core::application::analysis::keys::plotTypes::kHistogram),
+        std::string(core::application::analysis::keys::kTypeCalculation)));
 
 } // namespace
 } // namespace infra::analysis_rendering::tests

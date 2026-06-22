@@ -5,7 +5,7 @@
 
 #include "core/application/analysis/AnalysisWorkflowSupport.h"
 
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 #include "core/ports/usecases/analysis/AnalysisRequest.h"
 
 #include <nlohmann/json.hpp>
@@ -47,23 +47,23 @@ std::string buildAnalysisConfigJson(
     nlohmann::json config;
     const std::string normalizedType = toLower(trim(input.type));
 
-    if (normalizedType == core::constants::analysis::kTypeCalculation) {
-        config[std::string(core::constants::analysis::calculation::kStrategyKey)] =
-            core::constants::analysis::calculation::kStrategyTax;
-        config[std::string(core::constants::analysis::calculation::kPercentKey)] =
+    if (normalizedType == core::application::analysis::keys::kTypeCalculation) {
+        config[std::string(core::application::analysis::keys::calculation::kStrategyKey)] =
+            core::application::analysis::keys::calculation::kStrategyTax;
+        config[std::string(core::application::analysis::keys::calculation::kPercentKey)] =
             input.taxPercent;
         return config.dump();
     }
 
     const std::string plotType = trim(input.plotType);
-    config[std::string(core::constants::analysis::kPlotTypeKey)] =
-        plotType.empty() ? core::constants::analysis::plotTypes::kPie
+    config[std::string(core::application::analysis::keys::kPlotTypeKey)] =
+        plotType.empty() ? core::application::analysis::keys::plotTypes::kPie
                          : plotType;
 
     const std::string plotMeasure = trim(input.plotMeasure);
-    config[std::string(core::constants::analysis::kPlotMeasureKey)] =
+    config[std::string(core::application::analysis::keys::kPlotMeasureKey)] =
         plotMeasure.empty()
-            ? core::constants::analysis::plotMeasures::kTotalAmount
+            ? core::application::analysis::keys::plotMeasures::kTotalAmount
             : plotMeasure;
 
     nlohmann::json properties = nlohmann::json::array();
@@ -73,7 +73,7 @@ std::string buildAnalysisConfigJson(
             properties.push_back(value);
         }
     }
-    config[std::string(core::constants::analysis::kPropertiesKey)] =
+    config[std::string(core::application::analysis::keys::kPropertiesKey)] =
         std::move(properties);
 
     nlohmann::json contractTypes = nlohmann::json::array();
@@ -83,7 +83,7 @@ std::string buildAnalysisConfigJson(
             contractTypes.push_back(contractType);
         }
     }
-    config[std::string(core::constants::analysis::kContractTypesKey)] =
+    config[std::string(core::application::analysis::keys::kContractTypesKey)] =
         std::move(contractTypes);
 
     return config.dump();

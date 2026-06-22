@@ -1,6 +1,6 @@
 #include "TableAnalysis.h"
 #include "../internal/AnalysisFilter.h"
-#include "core/constants/analysis.h"
+#include "core/application/analysis/AnalysisKeys.h"
 
 namespace core::application::analysis {
 
@@ -16,7 +16,7 @@ computeTableAnalysis(const core::domain::Analysis& analysis,
         result.table.push_back({transaction->bookingDate(), transaction->name(), std::to_string(transaction->amount())});
     }
 
-    result.metrics[std::string(core::constants::analysis::metricKeys::kRowCount)] = static_cast<double>(result.table.size());
+    result.metrics[std::string(core::application::analysis::keys::metricKeys::kRowCount)] = static_cast<double>(result.table.size());
     return result;
 }
 
