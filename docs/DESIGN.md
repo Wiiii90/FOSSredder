@@ -1,16 +1,14 @@
 # Design — FOSSredder
 
-Date: 2026-04-21
+Date: 2026-06-10
 
 Author: Wilhelm Altemeier
-
-Status: Draft
 
 ## Table of Contents
 1. [Executive Summary](#1-executive-summary)
 2. [System Context](#2-system-context)
 3. [Architecture Design](#3-architecture-design)
-4. [Component Specifications](#4-component-specifications)
+4. [Core Domain & Application Model](#4-core-domain--application-model)
 5. [Infrastructure Layer](#5-infrastructure-layer)
 6. [UI Layer & Presentation](#6-ui-layer--presentation)
 7. [Quality Assurance & Testing](#7-quality-assurance--testing)
@@ -24,540 +22,1030 @@ Status: Draft
 
 FOSSredder is a local-first system for extracting, managing, and analyzing financial data from bank statements in PDF or image formats. The system transforms raw documents into a structured SQLite database to facilitate long-term financial reporting and annual accounting without cloud-based processing. The implementation covers the entire lifecycle from document rendering and computer vision-based table detection to the generation of persistent analysis snapshots and annual reports.
 
-The technical architecture consists of a modular C++ engine that separates domain logic from the graphical user interface and third-party libraries. The ingestion pipeline follows a fixed sequence using Poppler for document rendering, OpenCV for table structure detection, and Tesseract OCR for text recovery. This process combines spatial coordinates with extracted text to identify transaction rows and columns. After parsing the metadata into domain objects, a matching layer uses fuzzy logic to link transactions to actors, properties, and contracts for automated cost allocation.
+The technical architecture consists of a modular C++ engine that separates domain logic from the graphical user interface and third-party libraries. The ingestion pipeline follows a fixed sequence using Poppler for document rendering, OpenCV for table structure detection, and Tesseract OCR for text recovery. This process combines spatial coordinates with extracted text to identify transaction rows and columns. After parsing the metadata into domain objects, a matching layer uses scored alias and token matching to link transactions to actors, properties, and contracts for automated cost allocation.
 
 Beyond data ingestion, the system provides a framework for creating immutable analysis objects and annual reports. These objects capture snapshots of financial data to ensure consistency, even if underlying records are modified. Users can extend these snapshots with additional data, such as tax-related vectors, and export the consolidated results into XLSX or CSV formats. The design ensures that the entire process from initial PDF rendering to final report generation is testable, private, and capable of producing results that can be verified against manual accounting records.
 
 ## 2. System Context <a id="2-system-context"></a>
-### 2.1 Operational Environment
+### 2.1 Runtime Environment
 
-FOSSredder is a standalone desktop application for local financial data processing. The system follows a zero-network-access policy to ensure data privacy. High-resolution document ingestion and OCR tasks are handled asynchronously to maintain UI responsiveness during peak computational loads.
+FOSSredder is a local-first Windows desktop application. The runtime is built as
+a Qt 6 / QML application with a C++20 backend, packaged for Windows x64, and
+designed to operate without a server-side component.
 
-### 2.2 Technical Constraints
+The default workspace is created under Qt's application data location as
+`workspace.fossredder`; the recent-workspace registry is stored separately as
+`registry.db`. Both files are local SQLite databases. The registry is a
+convenience index only, while the workspace file is the canonical application
+state.
 
-#### Development Stack
-* **Language:** C++20
-* **Build System:** CMake
-* **Package Management:** vcpkg (utilized in manifest mode with a project-specific toolchain)
-* **UI Framework:** Qt 6 / QML
+High-cost import work is executed asynchronously through the core job and import
+services so the UI can remain responsive while PDFs are rendered, page images are
+processed, OCR is executed, and draft transactions are created.
 
-#### Core Toolchain
-* **PDF Rendering:** Poppler
-* **Image Processing:** OpenCV
-* **OCR Engine:** Tesseract
+### 2.2 External Actors And Data Boundaries
 
-#### Runtime & Platform
-* **Target OS:** Windows 10 or newer
-* **Architecture:** x86_64
-* **Persistence:** SQLite (Single-file database)
-* **Concurrency:** Heavy workloads are managed via the central `Scheduler` and `SlotLimiter`.
+The system has one human actor: the desktop user. The user provides input
+documents, reviews detected statement data, maintains catalog data, and exports
+validated results.
 
-### 2.3 System Boundaries
+Inbound data:
 
-The system operates exclusively on the local machine. Inbound data is restricted to user-provided PDF and image files. Outbound data is limited to structured exports (XLSX, CSV) and the internal SQLite state. The architecture strictly excludes telemetry, cloud synchronization, and external API dependencies.
+- PDF bank statements and image files selected by the user.
+- Workspace files opened from local storage.
+- Optional user-provided export locations.
 
-## 3. Architecture Design <a id="3-architecture-design"></a>
-### 3.1 Layered Architecture
+Outbound data:
 
-The system is divided into four main layers:
+- Saved workspace state in the local `workspace.fossredder` file.
+- Generated exports such as XLSX, CSV, and ZIP-packaged export bundles.
+- Local diagnostic artifacts created by import and packaging flows.
 
-1. **Presentation Layer (ui, app)**: Handles QML views and C++ controllers for user interaction; the app component serves as the central composition root for bootstrapping and wiring concrete implementations.
-2. **Domain Layer (core)**: Houses the central business logic, orchestrators, and use cases for document processing; defines the repository interfaces that decouple data access from the rest of the system.
-3. **Abstraction Layer (api)**: Defines the interfaces for all processing services such as OCR, image enhancement, PDF rendering; ensures loose coupling from external libraries like Tesseract, OpenCV, or Poppler.
-4. **Infrastructure Layer (services, persistence, debug)**: Contains the concrete technical implementations, including engines for document analysis, SQLite database persistence, and system-wide diagnostic or logging tools.
- 
+The application does not require telemetry, cloud synchronization, or remote API
+calls for its core workflows. Any future feature that introduces network access
+must be treated as a new system boundary, documented explicitly, and wired behind
+a port so the local-first default remains testable.
+
+### 2.3 Technical Constraints
+
+Development stack:
+
+- **Language:** C++20
+- **Build system:** CMake presets
+- **Dependency management:** vcpkg manifest mode
+- **UI framework:** Qt 6, QML, Qt Quick
+- **Packaging:** Inno Setup through the CMake `package` target
+
+Runtime and processing stack:
+
+- **PDF rendering:** Poppler infrastructure adapter
+- **Image processing:** OpenCV infrastructure adapter
+- **OCR:** Tesseract infrastructure adapter with bundled `tessdata`
+- **Persistence:** SQLite-backed workspace and registry storage
+- **Export:** CSV, XLSX, and archive adapters
+- **Localization:** Qt Linguist catalogs plus bundled OCR language models
+
+The repository is organized around CMake targets rather than one monolithic
+binary. `app` owns startup and composition, `ui` owns presentation and
+QML-facing state, `core` owns domain/application logic and ports, `persistence`
+owns SQLite implementations, and `infra/*` owns concrete adapters for external
+libraries.
+
+### 2.4 Extension Rules
+
+New code should preserve the system boundary described above:
+
+- Add business rules, use-case orchestration, request DTOs, and ports in `core`.
+- Add Qt/QML presentation state, view models, workflows, and UI adapters in
+  `ui`.
+- Add SQLite implementations in `persistence` only when the feature needs
+  durable storage.
+- Add concrete integrations with Poppler, OpenCV, Tesseract, xlnt, libzip, or
+  similar external libraries under `infra/*`.
+- Wire concrete implementations in `app`; do not let `core` depend on Qt UI,
+  SQLite, or third-party infrastructure libraries directly.
+- Keep long-running work cancellable, observable, and routed through existing
+  job/import/export workflow patterns instead of blocking the UI thread.
+- Update the relevant CMake target and test target when adding a new source
+  file, port, adapter, or workflow.
+
+### 2.5 Context Diagram
+
 ```mermaid
-graph TD
-  %% Composition Root
-  App["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;app/*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"]
+flowchart LR
+  User["Desktop user"]
+  Docs["Local PDFs and images"]
+  Workspace["Local workspace.fossredder"]
+  Registry["Local registry.db"]
+  Exports["Local XLSX CSV ZIP exports"]
+  App["FOSSredder desktop app"]
+  Runtime["Bundled runtime adapters<br/>Poppler OpenCV Tesseract SQLite"]
 
-  %% Tier 1: User Interface
-  subgraph Presentation ["Presentation Layer"]
-    UI["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ui/*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"]
-  end
-
-  %% Tier 2: The Stable Core
-  subgraph Abstraction ["Domain & Abstraction"]
-    Core["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;core/*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"]
-    API["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;api/*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"]
-  end
-
-  %% Tier 3: Implementation & Tooling
-  subgraph Infrastructure ["Infrastructure & Tooling"]
-    Services["services/* (Tesseract, OpenCV, Poppler)"]
-    Persistence["persistence/* (SQLite)"]
-    Debug["&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;debug/*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"]
-  end
-
-  %% Bootstrapping
-  App --> UI
-  App --> Core
-  App --> API
-  App --> Services
-  App --> Persistence
-  App --> Debug
-
-  %% Logical Data & Control Flow
-  UI --> Core
-  Core --> API
-  
-  %% Dependency Inversion (Implementations point to Interfaces)
-  Services --> API
-  Persistence --> Core
-  
-  %% Cross-Cutting Usage (Runtime dependencies)
-  Services --> Debug
-  Persistence --> Debug
-  Core --> Debug
-
-  %% Styling
-  style App fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff
-  style UI fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#fff
-  
-  style Core fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#fff
-  style API fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#fff
-  
-  style Services fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#fff
-  style Persistence fill:#1e293b,stroke:#94a3b8,stroke-width:1px,color:#fff
-  style Debug fill:#334155,stroke:#94a3b8,stroke-dasharray: 5 5,color:#cbd5e1
-
-  style Presentation fill:none,stroke:#cbd5e1,stroke-dasharray: 5 5
-  style Abstraction fill:none,stroke:#6366f1,stroke-dasharray: 5 5
-  style Infrastructure fill:none,stroke:#cbd5e1,stroke-dasharray: 5 5
+  User --> App
+  Docs --> App
+  App <--> Workspace
+  App <--> Registry
+  App --> Exports
+  App --> Runtime
 ```
 
-### 3.2 Design Principles
+## 3. Architecture Design <a id="3-architecture-design"></a>
+### 3.1 Target-Level Architecture
 
-The architecture follows two core mandates to ensure long-term maintainability and system stability:
+FOSSredder is structured around CMake targets with explicit dependency
+direction. The codebase is not organized as a single application folder with
+incidental helpers. Each target owns a distinct architectural responsibility.
 
-* **Dependency Inversion**: The `core` layer operates exclusively against abstractions. All external capabilities (Persistence, OCR, PDF Rendering) are consumed via interfaces defined in `core` or `api`. Concrete implementations are injected at runtime by the `app` component, enabling isolated unit testing of the domain logic without infrastructure dependencies.
-* **Decoupled Execution**: Computationally intensive operations are encapsulated as discrete `Job` objects. These are managed by a centralized `JobSystem` that enforces resource constraints and ensures UI responsiveness by decoupling long-running processing tasks from the main event loop.
+- `app` builds the `fossredder` executable and acts as the [composition root](#glossary-composition-root).
+- `ui` owns QML modules, view models, workflows, UI adapters, and shell wiring.
+- `core` owns domain types, use-case services, workspace/session orchestration,
+  jobs, policies, DTOs, and all public ports.
+- `persistence` implements SQLite-backed storage, repository, registry, and
+  workspace state persistence.
+- `infra/*` implements external-library adapters for rendering, image
+  processing, OCR, export, archive, and analysis-image rendering.
+- `debug` owns diagnostic sinks and the default error reporter implementation.
 
-## 4. Component Specifications <a id="4-component-specifications"></a>
-### 4.1 Domain Entities
+`core/include/core/ports` is the architectural boundary for infrastructure and
+use-case contracts. There is no separate `api` target; ports live with the
+domain/application core so use cases can be tested without linking concrete
+adapters.
 
-Below is a UML class diagram summarizing the main domain entities, their attributes, and relationships:
+```mermaid
+flowchart TD
+  App["app<br/>fossredder executable<br/>composition root"]
+  UI["ui<br/>QML modules<br/>view models workflows adapters"]
+  Core["core<br/>domain application services ports jobs"]
+  Persistence["persistence<br/>SQLite repositories workspace store registry"]
+  Debug["debug<br/>error reporting diagnostic sinks"]
+  InfraPdf["infra/pdf-rendering<br/>Poppler"]
+  InfraImage["infra/image-processing<br/>OpenCV"]
+  InfraText["infra/text-recognition<br/>Tesseract"]
+  InfraXlsx["infra/xlsx-writer<br/>xlnt"]
+  InfraArchive["infra/archive<br/>libzip"]
+  InfraAnalysis["infra/analysis-image-renderer<br/>OpenCV"]
+
+  App --> UI
+  App --> Core
+  App --> Persistence
+  App --> Debug
+  App --> InfraPdf
+  App --> InfraImage
+  App --> InfraText
+  App --> InfraXlsx
+  App --> InfraArchive
+  App --> InfraAnalysis
+
+  UI --> Core
+  UI --> Debug
+  Persistence --> Core
+  InfraPdf --> Core
+  InfraImage --> Core
+  InfraText --> Core
+  InfraXlsx --> Core
+  InfraArchive --> Core
+  InfraAnalysis --> Core
+  InfraPdf --> Debug
+  InfraImage --> Debug
+  InfraText --> Debug
+```
+
+The same target structure maps to a [Clean Architecture](#glossary-clean-architecture) boundary model. Code is
+allowed to depend inward toward domain and application rules; concrete
+frameworks, persistence, rendering, OCR, export, and QML stay outside the core.
+
+```mermaid
+flowchart TB
+  subgraph Outer["Frameworks and drivers"]
+    AppDriver["app composition root"]
+    UiDriver["ui Qt/QML MVVM"]
+    PersistenceDriver["persistence SQLite"]
+    InfraDriver["infra Poppler OpenCV Tesseract xlnt libzip"]
+    DebugDriver["debug diagnostics"]
+  end
+
+  subgraph InterfaceAdapters["Interface adapters and ports"]
+    WorkspacePorts["workspace ports"]
+    UseCasePorts["use-case ports"]
+    RepositoryPorts["repository ports"]
+    InfraPorts["infra ports"]
+    Dtos["snapshots requests results"]
+  end
+
+  subgraph ApplicationLayer["Application use cases"]
+    WorkspaceUseCases["workspace services"]
+    ImportUseCases["import services"]
+    AnalysisUseCases["analysis services"]
+    AnnualUseCases["annual services"]
+    ExportUseCases["export services"]
+  end
+
+  subgraph DomainLayer["Domain rules"]
+    Entities["domain entities"]
+    Values["value objects"]
+    Policies["domain policies"]
+    Catalog["WorkspaceCatalog"]
+  end
+
+  Outer --> InterfaceAdapters
+  InterfaceAdapters --> ApplicationLayer
+  ApplicationLayer --> DomainLayer
+  ApplicationLayer --> InterfaceAdapters
+  PersistenceDriver -. implements .-> RepositoryPorts
+  InfraDriver -. implements .-> InfraPorts
+  UiDriver --> WorkspacePorts
+  UiDriver --> UseCasePorts
+  AppDriver --> Outer
+```
+
+### 3.2 Dependency Direction
+
+The dependency rule is intentionally simple: `core` defines contracts, outer
+targets implement or consume them, and `app` wires concrete implementations
+together at startup.
+
+- `core` must not depend on Qt UI, SQLite, Poppler, OpenCV, Tesseract, xlnt, or
+  libzip.
+- `ui` may depend on `core` ports and snapshots, but it should call use cases
+  through UI workflows/adapters instead of reaching into persistence or
+  infrastructure targets.
+- `persistence` may depend on `core` repository and storage ports, but storage
+  decisions must stay behind workspace/session abstractions.
+- `infra/*` may depend on `core` infra ports and the external library it wraps.
+  It should not own domain policy.
+- `debug` is cross-cutting support. It can be injected where diagnostics are
+  needed, but business logic belongs in `core`.
+- `app` is allowed to know all targets because it is the executable composition
+  root.
+
+### 3.3 Runtime Composition
+
+Startup wiring happens in `app/src/main.cpp` and `app/src/main_qml.cpp`.
+`app` constructs concrete adapters, creates the workspace facade, registers the
+SQLite load/save functions, creates use-case runners, and then exposes the
+workspace reader/writer ports to the UI shell.
+
+At runtime, the dependency flow is:
+
+1. QML sends user intent into `ui` view models and workflows.
+2. UI workflows translate UI state into `core` requests or workspace commands.
+3. `core` services execute domain rules against workspace snapshots and ports.
+4. Concrete `persistence` and `infra/*` adapters perform local I/O or
+   third-party-library work.
+5. Results flow back as DTOs, snapshots, progress events, or diagnostics.
+
+### 3.4 Design Principles
+
+The architecture follows these mandates to keep the system maintainable:
+
+- **Dependency inversion:** Use cases depend on interfaces and DTOs in
+  `core/ports`. Concrete SQLite, OCR, rendering, export, and archive
+  implementations are injected from outside the core.
+- **Composition over global access:** Runtime wiring belongs in `app`. New
+  features should not introduce global service locators or hidden singleton
+  dependencies.
+- **Snapshot-oriented UI boundary:** UI state is driven by workspace snapshots,
+  command payloads, and explicit workflow state. QML should not mutate domain
+  objects directly.
+- **Decoupled execution:** Long-running import/export work must be cancellable,
+  observable, and routed through job/workflow abstractions instead of blocking
+  the Qt event loop.
+- **Adapter isolation:** Third-party libraries are wrapped by focused adapters
+  under `infra/*` or `persistence`, keeping library-specific error handling and
+  data conversion out of domain code.
+- **Testable seams:** Ports, DTOs, and workspace snapshots must remain small
+  enough to fake in unit and interaction tests.
+
+### 3.5 Adding Architectural Code
+
+When adding a feature, choose the target based on responsibility:
+
+- Add new domain rules, request/response DTOs, use-case services, and ports to
+  `core`.
+- Add UI-facing orchestration to `ui/src/workflows`, mapping logic to
+  `ui/src/adapters`, and QML-facing state to `ui/src/viewmodels` or
+  `ui/src/workspace`.
+- Add concrete storage behavior to `persistence` and expose it through existing
+  workspace/storage ports.
+- Add external tool integrations as new or existing `infra/*` adapters.
+- Add startup composition and dependency wiring in `app`, not in `core`.
+- Add target wiring in the closest `CMakeLists.txt` and cover the seam with the
+  nearest test family.
+
+## 4. Core Domain & Application Model <a id="4-core-domain--application-model"></a>
+### 4.1 Domain-Driven Design Orientation
+
+The `core` target is the inner boundary of FOSSredder. It follows a
+[Domain-Driven Design (DDD)](#glossary-domain-driven-design) orientation: core
+owns the domain language, application use cases and
+[ports](#glossary-port) that connect the desktop UI, persistence and
+[infrastructure adapters](#glossary-adapter) without making the core depend on
+Qt, SQLite, Poppler, OpenCV, Tesseract, xlnt or Inno Setup.
+
+The core is intentionally split into three primary areas:
+
+| Area | Path | Responsibility |
+|---|---|---|
+| Domain model | `core/include/core/domain`, `core/src/domain` | Entities, value objects, policies and the workspace catalog. This code represents business concepts and invariants. |
+| Application layer | `core/include/core/application`, `core/src/application` | Use-case orchestration, workspace session state, import parsing, matching, analysis, annual reports, export and storage coordination. |
+| Ports | `core/include/core/ports` | Stable contracts used by UI, persistence and infrastructure. Ports contain snapshots, commands, request/result [DTOs](#glossary-dto) and abstract service interfaces. |
+
+Supporting packages such as `core/errors`, `core/jobs`, `core/constants` and
+`core/utils` are allowed to support the domain and application layer, but they
+should stay out of business workflow ownership.
+
+New core code should follow these rules:
+
+- Put business vocabulary and invariants into `domain`.
+- Put cross-entity workflow orchestration into `application`.
+- Put boundary contracts into `ports`.
+- Keep infrastructure names and third-party APIs outside the domain model.
+- Prefer behavior methods on entities and policies over direct public mutation.
+- Use snapshots and commands at the UI boundary instead of exposing mutable domain objects.
+
+```mermaid
+flowchart TB
+  Intent["User intent<br/>QML action or app command"]
+  UiBoundary["Workspace and use-case ports"]
+  UseCase["Application use case<br/>workspace import analysis annual export storage"]
+  Domain["Domain model<br/>entities values policies WorkspaceCatalog"]
+  Invariants["Business invariants<br/>normalization matching allocation ordering"]
+  OutboundPorts["Outbound ports<br/>repositories OCR PDF image XLSX archive registry"]
+  Adapters["Concrete adapters<br/>SQLite Poppler OpenCV Tesseract xlnt libzip"]
+  Result["Snapshot progress event result DTO"]
+
+  Intent --> UiBoundary
+  UiBoundary --> UseCase
+  UseCase --> Domain
+  Domain --> Invariants
+  UseCase --> OutboundPorts
+  Adapters -. implement .-> OutboundPorts
+  OutboundPorts --> UseCase
+  UseCase --> Result
+  Result --> Intent
+```
+
+### 4.2 Domain Entities
+
+Domain entities live under `core/include/core/domain/entities`. They are
+identity-bearing objects and expose behavior-oriented methods such as `rename`,
+`addAlias`, `setType`, `addTransaction`, `markVerified` or `apply`. Hydration
+setters exist for persistence and snapshot reconstruction, but feature code
+should prefer domain behavior and policies.
+
+| Entity | Responsibility | Related values | Related policies and use cases |
+|---|---|---|---|
+| `Actor` | Represents a person, organization or counterparty that can be linked to contracts and transactions. Actors own aliases for import matching and contract relation ids for navigation. | `EntityName`, `Alias` | `AliasPolicy`, workspace commands, draft matching, transaction assignment. |
+| `Property` | Represents an accounting object such as a property or cost center. Properties own aliases and contract relation ids. | `EntityName`, `Alias` | `AliasPolicy`, workspace commands, draft matching, transaction allocation. |
+| `Contract` | Represents the allocation contract between actors and properties. Contracts group actor ids, property ids, aliases, type and allocatable mode. | `EntityName`, `ContractType`, `Alias` | `AliasPolicy`, draft matching, transaction assignment, export matrix generation. |
+| `Statement` | Represents an imported statement and the ordered list of finalized transaction ids belonging to it. | `EntityName` | `StatementPolicy`, import finalization, workspace commands. |
+| `Transaction` | Represents a finalized booking with booking date, valuta, amount, status, allocatable flag and optional links to statement, actor, contract and properties. | `BookingDate`, `MoneyAmount` | `TransactionPolicy`, draft finalization, analysis, annual reports, exports. |
+| `Analysis` | Represents a persisted analysis definition and result state. It stores type, configuration, filters, export format, snapshot transactions and calculation adjustments. | `EntityName`, `AnalysisType`, `FilterSpec`, `ExportFormat` | `AnalysisPolicy`, `AnalysisService`, export use cases, annual reports. |
+| `Annual` | Represents an annual aggregate for one year and an ordered set of linked analysis ids. | `EntityName`, `Year` | `AnnualPolicy`, `AnnualService`, export use cases. |
+| `WorkspaceCatalog` | Aggregates the current domain entity collections for one workspace. It is the catalog state used by application services and matching logic. | Entity collections | Workspace session state, catalog projection, draft matching, analysis, annual and export services. |
+
+The domain relationship model is:
 
 ```mermaid
 classDiagram
     direction TB
 
-    class Statement {
-        <<Entity>>
-        +string id
-        +string name
-    }
-
-    class Transaction {
-        <<Entity>>
-        +string id
-        +string name
-        +string bookingDate
-        +string valuta
-        +double amount = 0.0
-        +Transaction::Status status
-        +string contractId
-        +string actorId
-        +string statementId
-        +string description
-        +bool allocatable
-        +vector~string~ propertyIds
+    class WorkspaceCatalog {
+        <<Aggregate>>
+        PropertyList properties_
+        ActorList actors_
+        ContractList contracts_
+        StatementList statements_
+        TransactionList transactions_
+        AnalysisList analyses_
+        AnnualList annuals_
+        properties()
+        setProperties(value)
+        actors()
+        setActors(value)
+        empty()
     }
 
     class Actor {
         <<Entity>>
-        +string id
-        +string name
-        +string type
-        +string description
-        +vector~string~ aliases
-        +vector~AliasUsage~ aliasUsage
-    }
-
-    class AliasUsage {
-        <<ValueObject>>
-        +string alias
-        +int hitCount = 0
-        +string lastUsedAt
-        +string updatedAt
-        +string createdAt
+        string id_
+        string name_
+        AliasList aliases_
+        StringList contractIds_
+        string createdAt_
+        string updatedAt_
+        rename(value)
+        addAlias(value)
+        recordAliasHit(value)
+        setContractIds(value)
+        hasAlias(value)
+        hasContractRelations()
     }
 
     class Property {
         <<Entity>>
-        +string id
-        +string name
-        +string address
-        +string description
-        +double consumption = 0.0
-        +string consumptionUnit
-        +vector~string~ aliases
-        +vector~AliasUsage~ aliasUsage
+        string id_
+        string name_
+        AliasList aliases_
+        StringList contractIds_
+        string createdAt_
+        string updatedAt_
+        rename(value)
+        addAlias(value)
+        recordAliasHit(value)
+        setContractIds(value)
+        hasAlias(value)
+        hasContractRelations()
     }
 
     class Contract {
         <<Entity>>
-        +string id
-        +string name
-        +string type
-        +string description
-        +string startDate
-        +string endDate
-        +double basePrice = 0.0
-        +double consumptionPrice = 0.0
-        +double monthlyAdvance = 0.0
-        +vector~string~ actorIds
-        +vector~string~ propertyIds
-        +vector~string~ aliases
-        +vector~AliasUsage~ aliasUsage
+        string id_
+        string name_
+        string type_
+        string allocatableMode_
+        StringList actorIds_
+        StringList propertyIds_
+        AliasList aliases_
+        rename(value)
+        setType(value)
+        setAllocatableMode(value)
+        setActorIds(value)
+        setPropertyIds(value)
+        addAlias(value)
+        isConfigured()
+        isMatchingReady()
+    }
+
+    class Statement {
+        <<Entity>>
+        string id_
+        string name_
+        StringList transactionIds_
+        string createdAt_
+        string updatedAt_
+        rename(value)
+        addTransaction(value)
+        setTransactionIds(value)
+        insertTransaction(value)
+        moveTransaction(value)
+        containsTransaction(value)
+        empty()
+    }
+
+    class Transaction {
+        <<Entity>>
+        string id_
+        string name_
+        string bookingDate_
+        string valuta_
+        double amount_
+        Status status_
+        string contractId_
+        string actorId_
+        string statementId_
+        bool allocatable_
+        StringList propertyIds_
+        setBookingDate(value)
+        setAmount(value)
+        setStatus(value)
+        setContractId(value)
+        setActorId(value)
+        setStatementId(value)
+        setPropertyIds(value)
+        markVerified()
+        hasRelations()
     }
 
     class Analysis {
         <<Entity>>
-        +string id
-        +string name
-        +string type
-        +string configJson
-        +string filterSpec
-        +unordered_map~string,double~ adjustments
-        +string createdAt
-        +string updatedAt
-        +int schemaVersion
+        string id_
+        string name_
+        string type_
+        string configJson_
+        string filterSpec_
+        string exportFormat_
+        bool includeCalculationAdjustments_
+        string exportStateJson_
+        string snapshotTransactionsJson_
+        AdjustmentMap adjustments_
+        rename(value)
+        setType(value)
+        setFilterSpec(value)
+        setExportFormat(value)
+        setAdjustment(key)
+        isConfigured()
+        isReadyForExport()
+        isResultReady()
     }
 
     class Annual {
         <<Entity>>
-        +string id
-        +int year
-        +vector~string~ transactionIds
-        +vector~string~ assignedAnalysisIds
-        +VerificationState verificationState
-        +string createdAt
-        +string updatedAt
-        +int schemaVersion
+        string id_
+        string name_
+        int year_
+        StringList analysisIds_
+        string createdAt_
+        string updatedAt_
+        rename(value)
+        setYear(value)
+        apply(value)
+        setAnalysisIds(value)
+        addAnalysisId(value)
+        moveAnalysisId(value)
+        hasYear()
+        isEmpty()
     }
 
-    class StatementDraft {
-        <<Draft>>
-        +string id
-        +string name
-        +vector~TransactionDraft~ transactions
+    class Alias {
+        <<Value>>
+        string value_
+        string kind_
+        string source_
+        string createdAt_
+        string updatedAt_
+        int hitCount_
+        string lastUsedAt_
     }
 
-    class TransactionDraft {
-        <<Draft>>
-        +string id
-        +string statementDraftId
-        +int position
-        +string name
-        +string bookingDate
-        +string valuta
-        +double amount
-        +string description
-        +string actorText
-        +string propertyText
-        +string actorId
-        +bool newActorSelected
-        +string contractId
-        +bool newContractSelected
-        +string metadata
-        +string proofImagePath
-        +string type
-        +bool allocatable
-        +bool allocatableManualOverride
-        +Transaction::Status status
-        +vector~string~ propertyIds
+    class EntityName {
+        <<Value>>
+        string value_
     }
 
-    class ImportLog {
-        <<Log>>
-        +string id
-        +string time
-        +string type
-        +string file
-        +string status
-        +string message
-        +bool draftAttached = false
-        +string draftId
-        +string statementId
+    class BookingDate {
+        <<Value>>
+        string value_
     }
 
-    class ExportLog {
-        <<Log>>
-        +TODO : details pending
+    class MoneyAmount {
+        <<Value>>
+        double value_
     }
 
-    %% Beziehungen
-    Statement "1" *-- "many" Transaction : contains
-    StatementDraft "1" *-- "*" TransactionDraft : transactions
+    class FilterSpec {
+        <<Value>>
+        string value_
+    }
 
-    Actor "1" *-- "many" AliasUsage : aliasUsage
-    Property "1" *-- "many" AliasUsage : aliasUsage
-    Contract "1" *-- "many" AliasUsage : aliasUsage
+    class Year {
+        <<Value>>
+        int value_
+    }
 
-    Contract "1" o-- "*" Actor : actorIds
-    Contract "1" o-- "*" Property : propertyIds
+    class AliasPolicy {
+        <<Policy>>
+        trimCopy(value)
+        canonicalAliasValue(value)
+        normalizeAliases(values)
+        recordAliasHit(values)
+    }
 
-    Transaction --> Contract : contractId
-    Transaction --> Actor : actorId
+    class TransactionPolicy {
+        <<Policy>>
+        normalizeIds(values)
+        canFinalizeFromDraft(value)
+        statusCanAdvance(value)
+    }
+
+    class StatementPolicy {
+        <<Policy>>
+        normalizeIds(values)
+        hasUniqueTransactionIds(values)
+    }
+
+    class AnalysisPolicy {
+        <<Policy>>
+        isConfigured(value)
+        isExportable(value)
+        resolveExecutionType(value)
+    }
+
+    class AnnualPolicy {
+        <<Policy>>
+        isValidYear(value)
+        normalizeIds(values)
+        validateTransactionsForYear(value)
+    }
+
+    class DraftMatchingPolicy {
+        <<Policy>>
+        normalizeText(value)
+        tokenOverlapScore(value)
+        referenceAliasesFromMetadata(value)
+        extractTypeText(value)
+        extractActorText(value)
+    }
+
+    WorkspaceCatalog o-- Actor
+    WorkspaceCatalog o-- Property
+    WorkspaceCatalog o-- Contract
+    WorkspaceCatalog o-- Statement
+    WorkspaceCatalog o-- Transaction
+    WorkspaceCatalog o-- Analysis
+    WorkspaceCatalog o-- Annual
+
+    Actor --> Alias
+    Property --> Alias
+    Contract --> Alias
+
+    Contract --> Actor : actorIds
+    Contract --> Property : propertyIds
+    Statement --> Transaction : transactionIds
     Transaction --> Statement : statementId
+    Transaction --> Actor : actorId
+    Transaction --> Contract : contractId
+    Transaction --> Property : propertyIds
+    Annual --> Analysis : analysisIds
 
-    Annual "1" o-- "*" Transaction : transactionIds
-    Annual "1" o-- "*" Analysis : assignedAnalysisIds
- ```
+    Actor --> EntityName
+    Property --> EntityName
+    Contract --> EntityName
+    Statement --> EntityName
+    Analysis --> EntityName
+    Annual --> EntityName
+    Transaction --> BookingDate
+    Transaction --> MoneyAmount
+    Analysis --> FilterSpec
+    Annual --> Year
 
-### 4.2 Domain Interfaces & Storage
-#### 4.2.1 Repository Interfaces
-
-The core exposes a set of repository interfaces. Each interface manages the lifecycle of a
-single domain entity (create / read / update / delete) and any small domain-specific helper
-queries that are required by higher-level code. Concrete implementations (adapters) live in the
-`persistence` layer and implement these interfaces.
-
-Below is a compact summary of the repository interfaces and the key methods implementers must
-provide:
-
-| Interface | Responsibility | Key methods (condensed) |
-|---|---:|---|
-| `IActorRepository` | CRUD for `core::domain::Actor` | `addActor(...)`, `getActors()`, `getActorById(id)`, `removeActor(id)`, `updateActor(...)`, `upsertActor(...)`, `clearActors()` |
-| `IPropertyRepository` | CRUD for `core::domain::Property` | `addProperty(...)`, `getProperties()`, `getPropertyById(id)`, `removeProperty(id)`, `updateProperty(...)`, `upsertProperty(...)`, `clearProperties()` |
-| `IContractRepository` | CRUD + helper queries for `core::domain::Contract` | `addContract(...)`, `getContracts()`, `getContractById(id)`, `removeContract(id)`, `updateContract(...)`, `upsertContract(...)`, `clearContracts()`, `getContractsForActor(actorId)`, `getContractsForProperty(propertyId)`, `getActorIdsForContract(contractId)`, `getPropertyIdsForContract(contractId)` |
-| `IStatementRepository` | CRUD for `core::domain::Statement` | `addStatement(...)`, `getStatements()`, `getStatementById(id)`, `removeStatement(id)`, `updateStatement(...)`, `upsertStatement(...)`, `clearStatements()` |
-| `ITransactionRepository` | CRUD + domain operations for `core::domain::Transaction` | `addTransaction(...)`, `getTransactions()`, `getTransactionById(id)`, `removeTransaction(id)`, `updateTransaction(...)`, `upsertTransaction(...)`, `clearTransactions()`, `getTransactionsForContract(contractId)`, `assignTransactionsToContract(contractId, ids)` |
-| `IStatementDraftRepository` | CRUD for `core::domain::StatementDraft` entities (Ingestion) | `addStatementDraft(...)`, `getStatementDrafts()`, `getStatementDraftById(id)`, `removeStatementDraft(id)`, `updateStatementDraft(...)`, `upsertStatementDraft(...)`, `clearStatementDrafts()` (plus convenience helpers) |
-| `ITransactionDraftRepository` | CRUD for `core::domain::TransactionDraft` entities (Ingestion) | `addTransactionDraft(...)`, `getTransactionDrafts()`, `getTransactionDraftById(id)`, `removeTransactionDraft(id)`, `updateTransactionDraft(...)`, `upsertTransactionDraft(...)`, `clearTransactionDrafts()` (plus helper `saveTransactionDrafts(...)`) |
-| `IAnalysisRepository` | CRUD for `core::domain::Analysis` | `addAnalysis(...)`, `getAnalyses()`, `getAnalysisById(id)`, `removeAnalysis(id)`, `updateAnalysis(...)`, `upsertAnalysis(...)`, `clearAnalyses()` |
-| `IAnnualRepository` | CRUD for `core::domain::Annual` | `addAnnual(...)`, `getAnnuals()`, `getAnnualById(id)`, `removeAnnual(id)`, `updateAnnual(...)`, `upsertAnnual(...)`, `clearAnnuals()` |
-
-#### 4.2.2 Storage Infrastructure & Orchestration
-
-**Key Definitions & Contracts:**
-```cpp
-using AtomicStoreSave = std::function<core::domain::DeletionImpact(const std::string& path, const core::domain::AppState& state)>;
-using AtomicStoreLoad = std::function<core::domain::AppState(const std::string& path)>;
-using DeletionImpactCallback = std::function<void(const core::domain::DeletionImpact&)>;
+    Actor ..> AliasPolicy
+    Property ..> AliasPolicy
+    Contract ..> AliasPolicy
+    Statement ..> StatementPolicy
+    Transaction ..> TransactionPolicy
+    Analysis ..> AnalysisPolicy
+    Annual ..> AnnualPolicy
+    WorkspaceCatalog ..> DraftMatchingPolicy
 ```
 
-* **`IStorageManager`**: Acts as the central orchestrator for atomic persistence. It manages file-level operations (`loadFrom`, `saveAs`, `createNew`) and bridges physical storage with core logic. It utilizes the `DeletionImpact` mechanism to notify the UI when store-level changes require synchronization of in-memory models.
-* **`IRegistry`**: A lightweight abstraction used to persist and retrieve application environment settings, such as the most recently accessed project path.
+### 4.3 Value Objects
 
-### 4.3 Core Logic & Processing
-#### 4.3.1 Ingestion & parsing
+Value objects are small normalized wrappers or semantic primitives used by
+entities and policies. They keep low-level validation close to the domain
+language and avoid spreading string normalization rules across application code.
 
-The import pipeline implemented in `core/src/import` is an asynchronous, page‑oriented workflow that turns a file into `ImportResult` which contains parsed `TransactionDraft`s, artifacts and diagnostic traces. The actual entry point for callers is the `IImportStatement` abstraction (factory in `ImportStatement.cpp`), whose default strategy coordinates the steps described below.
+| Value object | Used by | Purpose |
+|---|---|---|
+| `Alias` | `Actor`, `Property`, `Contract` | Stores a normalized matching token with kind, source and usage metadata such as hit count and last-used timestamp. |
+| `EntityName` | `Actor`, `Property`, `Contract`, `Statement`, `Analysis`, `Annual` | Normalizes display names and rejects empty or overlong names. |
+| `ContractType` | `Contract` | Normalizes contract type labels used for allocation and import matching. |
+| `BookingDate` | `Transaction` | Normalizes booking date text and validates that it is non-empty and bounded. |
+| `MoneyAmount` | `Transaction` | Validates numeric transaction amounts. |
+| `AnalysisType` | `Analysis` | Normalizes the analysis execution type. |
+| `ExportFormat` | `Analysis`, export use cases | Normalizes export format keys. |
+| `FilterSpec` | `Analysis`, analysis filtering | Normalizes persisted filter specifications. |
+| `Year` | `Annual` | Validates and normalizes supported annual report years. |
 
-Key infrastructure abstractions invoked by the pipeline (see `core/src/import` and `core/src/import/parsing`):
-- `api::poppler::IPopplerService` — page rendering and text extraction (render / extract results).
-- `api::opencv::IOpenCvService` — mask, detect, crop and table layout helpers (`detect`, `crop`, `mask`).
-- `api::tesseract::ITesseractService` — OCR extraction (`extract`) returning `api::tesseract::ExtractResult`.
-- Parsing helpers: `DefaultStatementParser::parse` and related helpers under `core/src/import/parsing`.
+### 4.4 Domain Policies
 
-Sequence:
+Policies hold rules that do not belong to a single field setter or that must be
+shared between entities and application services.
+
+| Policy | Applies to | Responsibility |
+|---|---|---|
+| `AliasPolicy` | `Actor`, `Property`, `Contract`, draft matching | Trims, canonicalizes, deduplicates and records alias hits. This is the shared rule set for matching imported text to existing catalog entities. |
+| `TransactionPolicy` | `Transaction`, `TransactionDraft`, draft finalization | Normalizes relation ids, validates booking date and amount, guards non-regressive status transitions and checks whether drafts can become finalized transactions. |
+| `StatementPolicy` | `Statement`, import finalization | Normalizes transaction id lists and preserves unique ordered transaction references. |
+| `AnalysisPolicy` | `Analysis`, `AnalysisService`, export | Validates analysis type, chart/table behavior, exportability, filter keys and whether an analysis is configured enough to run. |
+| `AnnualPolicy` | `Annual`, `AnnualService` | Validates years, normalizes linked analysis ids and validates that transaction booking years match an annual year when required. |
+| `DraftMatchingPolicy` | Import drafts, `WorkspaceCatalog` | Normalizes imported text, filters noisy tokens, extracts reference-like aliases and derives suggestions for actor, contract type and catalog selection. |
+
+Policy placement rule: if a rule decides whether domain state is valid or how
+domain text is normalized, it belongs in `domain/policies`. If a rule decides
+which workflow step to run next, it belongs in `application`.
+
+### 4.5 Application Use Cases
+
+Application services orchestrate domain objects and ports. They can coordinate
+multiple entities, call infrastructure ports and return DTOs, but they should
+not leak infrastructure implementation types into the domain.
+
+| Use case area | Main classes | Responsibility |
+|---|---|---|
+| Workspace | `WorkspaceFacade`, `WorkspaceSession`, `WorkspaceCommandService`, `WorkspaceQueryService`, `WorkspaceWorkflowService`, `WorkspaceStateManager`, `WorkspaceSnapshotProjector` | Owns the mutable `WorkspaceSessionState`, exposes reader/writer ports, validates commands, commits changes, projects snapshots and coordinates load/save behavior. |
+| Import | `StatementImportRunner`, `IImportStatement`, `DefaultImportStatementStrategy`, `DefaultStatementParser`, `DefaultTransactionParser`, `DraftMatcher`, `DraftFinalizer` | Renders/extracts input documents through ports, parses statement pages into drafts, derives suggestions, supports pause/cancel/resume and finalizes drafts into domain statements and transactions. |
+| Analysis | `AnalysisService`, `AnalysisWorkflowSupport`, `AnalysisFilter`, `TableAnalysis`, `PlotAnalysis`, `AdjustmentCalculation` | Runs configured analyses over workspace snapshots and produces tabular or chart-like results. |
+| Annual | `AnnualService`, `AnnualWorkflowSupport` | Builds annual report results from a workspace snapshot, a target year and selected analyses. |
+| Export | `ExportService`, `CsvExporter`, `XlsxExporter`, `ObjectExportExecutor`, `PropertyContractMatrix` | Exports analysis, annual and workspace data into CSV, XLSX or archive-oriented outputs through writer/archive ports. |
+| Storage | `StorageManager`, `WorkspaceStateManager`, `RepositoryBundle`, `DeletionImpact` | Coordinates workspace file operations, atomic load/save callbacks and repository-backed state reconstruction. |
+
+The internal workspace state is `WorkspaceSessionState`. It contains a
+`WorkspaceCatalog` for durable domain entities and a `WorkspaceWorkflowState`
+for workflow artifacts such as statement drafts, transaction drafts, import logs
+and export logs. This split keeps transient import/export workflow records
+separate from the core catalog while still saving them as part of a workspace
+when required.
+
+```mermaid
+flowchart TB
+  WorkspaceState["WorkspaceSessionState"]
+  Catalog["WorkspaceCatalog<br/>actors properties contracts statements transactions analyses annuals"]
+  WorkflowState["WorkspaceWorkflowState<br/>drafts import logs export logs"]
+  Snapshot["WorkspaceSnapshot"]
+
+  WorkspaceCommands["Workspace commands<br/>catalog edits load save new workspace"]
+  ImportWorkflow["Import workflow<br/>parse match finalize drafts"]
+  AnalysisWorkflow["Analysis workflow<br/>filter calculate present"]
+  AnnualWorkflow["Annual workflow<br/>year selection linked analyses"]
+  ExportWorkflow["Export workflow<br/>CSV XLSX archive outputs"]
+  StorageWorkflow["Storage workflow<br/>registry workspace file repositories"]
+
+  WorkspaceState --> Catalog
+  WorkspaceState --> WorkflowState
+  WorkspaceState --> Snapshot
+  WorkspaceCommands --> WorkspaceState
+  ImportWorkflow --> WorkflowState
+  ImportWorkflow --> Catalog
+  AnalysisWorkflow --> Snapshot
+  AnalysisWorkflow --> Catalog
+  AnnualWorkflow --> Snapshot
+  ExportWorkflow --> Snapshot
+  ExportWorkflow --> Catalog
+  StorageWorkflow <--> WorkspaceState
+```
+
+
+### 4.6 Ports
+
+Ports define the public contracts of the core. The dependency direction is
+always inward: UI, persistence and infrastructure depend on core ports, while
+the core only knows the port interfaces.
+
+#### 4.6.1 Workspace Ports
+
+Workspace ports are the main UI boundary.
+
+| Port | Purpose |
+|---|---|
+| `IWorkspaceReader` | Read-only workspace access, current path, snapshots, draft lookup and identity helpers. |
+| `IWorkspaceWriter` | Workspace mutation API for file operations, validation, catalog commands, draft finalization, logs, callbacks and error reporting. |
+| `WorkspaceCommands` | Command DTOs used to mutate actors, properties, contracts, statements, transactions, analyses, annuals, drafts and logs. |
+| `WorkspaceSnapshot` | Read DTOs used by UI and use cases. Snapshots mirror current state without exposing mutable domain objects. |
+
+#### 4.6.2 Use-Case Ports
+
+Use-case ports are implemented by application services and consumed by app/UI
+composition.
+
+| Port group | Interfaces and DTOs | Implemented by |
+|---|---|---|
+| Analysis | `IAnalysisRunner`, `AnalysisRequest`, `AnalysisResult` | `AnalysisService` |
+| Annual | `IAnnualRunner`, `AnnualRequest`, `AnnualResult` | `AnnualService` |
+| Export | `IExportRunner`, `ExportRequest`, `ExportResult` | `ExportService` |
+| Import | `IImportRunner`, `ImportRequest`, `ImportResult` | `StatementImportRunner` |
+
+#### 4.6.3 Infrastructure Ports
+
+Infrastructure ports isolate third-party libraries and platform services.
+
+| Port | Implementation area | Purpose |
+|---|---|---|
+| `IPdfRenderer` | `infra/pdf-rendering` | Render PDF pages and extract page text. |
+| `IImageProcessor` | `infra/image-processing` | Mask, detect, crop and process images for import and analysis workflows. |
+| `ITextRecognizer` | `infra/text-recognition` | Run OCR and return text-recognition results. |
+| `IAnalysisImageRenderer` | `infra/analysis-image-renderer` | Render analysis visuals for export output. |
+| `IArchive` | `infra/archive` | Create archive/package outputs for export. |
+| `IXlsxWriter` | `infra/xlsx-writer` | Write XLSX tabular output. |
+| `IStorageManager` | `core/application/storage`, `persistence` callbacks | Coordinate workspace file operations and atomic load/save. |
+| `IRegistry` | `persistence` | Store and load application-level registry values such as the latest workspace path. |
+
+#### 4.6.4 Repository Ports
+
+Repository ports are still part of the persistence boundary and are used by
+`WorkspaceStateManager` and persistence tests to reconstruct and store
+workspace state through a `RepositoryBundle`.
+
+| Repository port | Domain/application object |
+|---|---|
+| `IActorRepository` | `Actor` |
+| `IPropertyRepository` | `Property` |
+| `IContractRepository` | `Contract` |
+| `IStatementRepository` | `Statement` |
+| `ITransactionRepository` | `Transaction` |
+| `IAnalysisRepository` | `Analysis` |
+| `IAnnualRepository` | `Annual` |
+| `IStatementDraftRepository` | `StatementDraft` |
+| `ITransactionDraftRepository` | `TransactionDraft` |
+| `IImportLogRepository` | `ImportLog` |
+| `IExportLogRepository` | `ExportLog` |
+
+New feature code should normally start from workspace or use-case ports. Add or
+change repository ports only when persistence state shape changes or when the
+repository-backed state manager needs a new storage operation.
+
+### 4.7 Import Drafts, Logs And Finalization
+
+Import drafts and logs are application workflow objects rather than domain
+entities. They live under `core/application/import` and are persisted with the
+workspace because the user can pause, review and finalize an import later.
+
+| Workflow object | Responsibility |
+|---|---|
+| `StatementDraft` | Holds imported statement metadata and the ordered draft transaction ids/transactions before finalization. |
+| `TransactionDraft` | Holds parsed transaction text, amount, booking date, candidate links, metadata, proof image information and manual override flags. |
+| `ImportLog` | Records import events, status, source file information and draft/statement linkage. |
+| `ExportLog` | Records export events, status and produced output metadata. |
+
+The import flow is:
 
 ```mermaid
 sequenceDiagram
-    participant Caller as App / UI
-    participant IS as IImportStatement (Import API)
-    participant Strat as DefaultImportStrategy
-    participant Pop as api::poppler::IPopplerService
-    participant CV as api::opencv::IOpenCvService
-    participant Tess as api::tesseract::ITesseractService
+    participant UI as UI
+    participant Runner as IImportRunner / StatementImportRunner
+    participant Importer as IImportStatement
+    participant Strategy as DefaultImportStatementStrategy
+    participant Pdf as IPdfRenderer
+    participant Image as IImageProcessor
+    participant Ocr as ITextRecognizer
     participant Parser as DefaultStatementParser
+    participant Matcher as DraftMatcher
+    participant Writer as IWorkspaceWriter
 
-    Caller->>IS: importStatement(ImportRequest)
-    IS->>Strat: run(req)
-    Strat->>Pop: render(extract request)
-    Pop-->>Strat: RenderResult / ExtractResult
-    Strat->>Strat: for each page -> processImportPage()
-    Strat->>Tess: extract(tableRequest)  -- via extractWithLimiter (SlotLimiter)
-    Strat->>CV: detect(mask/crop)         -- detect/crop/mask
-    Strat->>Parser: DefaultStatementParser::parse(table, ocr, ...)
-    Parser-->>Strat: ParseResult (TransactionDrafts + artifacts)
-    Strat->>Strat: finalizeParsedPages() -> merges drafts, artifacts
-    Strat-->>IS: ImportResult
-    IS-->>Caller: ImportResult
+    UI->>Runner: startImport(request, callback)
+    Runner->>Importer: importStatement(request)
+    Importer->>Strategy: run(request)
+    Strategy->>Pdf: render/extract
+    Strategy->>Image: detect/crop/mask
+    Strategy->>Ocr: extract text
+    Strategy->>Parser: parse table and OCR
+    Parser-->>Strategy: transaction drafts and artifacts
+    Strategy-->>Runner: ImportResult
+    Runner->>Matcher: derive suggestions from WorkspaceSnapshot
+    UI->>Writer: saveStatementDraft(command)
+    UI->>Writer: finalizeStatementDraft(command)
+    Writer-->>UI: updated WorkspaceSnapshot
 ```
 
-Notes:
-- The implementation uses `processImportPage` (see `ImportPipelineHelpers.cpp`) which performs `mask`, `detect`, `crop`, and then calls Tesseract via `extractWithLimiter` (connected to a `core::jobs::SlotLimiter`) so OCR concurrency is bounded.
-- Page‑level OCR TSV and parser logs are stored as artifacts in the resulting `ImportResult` (see `storeTsvArtifact`).
-- Parsing of OCR+layout into drafts is performed by `DefaultStatementParser::parse`, which returns `ParseResult` containing `TransactionDraft`s, debug lines and per‑page artifacts.
-
-#### 4.3.2 Post‑parse processing & matching
-
-After parsing the pipeline performs deterministic post‑processing in `finalizeParsedPages` and later stages of the import strategy:
-- Merge page drafts into a statement draft and normalize booking dates / transaction indices.
-- Apply alias matching and assignment helpers (catalog / facade) to propose `actorId`, `propertyIds` and `contractId` for each `TransactionDraft`.
-- Persist interim drafts via `IStatementDraftRepository` / `ITransactionDraftRepository` when the user chooses to keep a draft or when import finalization requires it.
-
-Contracts and invariants:
-- Parsers and post‑processors must not throw fatal exceptions; they produce partial results plus diagnostics.
-- Matching operations must be idempotent and produce deterministic suggestions. Updates to `AliasUsage` (hit counts, timestamps) are side effects of matching and must be recorded by the catalog layer.
-
-### 4.4 Application & State Management
-#### 4.4.1 AppState ownership (WorkspaceSession)
-
-- The `WorkspaceSession` (see `core/include/core/application/WorkspaceSession.h` / `core/src/application/WorkspaceSession.cpp`) owns the mutable `core::domain::AppState` instance (`state_`) and a unique `IStorageManager` implementation (`storageManager_`).
-- `WorkspaceSession` exposes `state()` and `mutableState()` accessors and a `StateChanged` callback (`setStateChangedCallback`) that callers (e.g. the UI) can register to receive notifications after state changes.
-- On construction the `WorkspaceSession` wires the `IStorageManager` deletion impact callback and forwards storage-produced `DeletionImpact` values to any registered session callback.
-
-#### 4.4.2 Persistence flows (WorkspaceSession + AppStateManager)
-
-- Loading and saving are performed by `WorkspaceSession` via the configured `IStorageManager`:
-  - `openLatest()` queries `storageManager_->loadLatestPath()` and then `loadFrom(path)` to obtain an `AppState`.
-  - `openFile(path)` calls `storageManager_->loadFrom(path)` and replaces the in‑memory state.
-  - `newFile(path)` delegates to `storageManager_->createNew(path)` then resets `state_` to an empty `AppState`.
-  - `saveFile()` and `commit()` call `storageManager_->save(state_)` (save to current path); `saveFileAs(path)` calls `storageManager_->saveAs(path, state_)`.
-- Under the hood, `IStorageManager` either uses repository-backed persistence (via a `RepoFactory` that provides a `RepositoryBundle`) or an atomic save/load callback. The repository-backed load/save is implemented by `AppStateManager` which maps between `RepositoryBundle` and `core::domain::AppState` (`core/include/core/application/AppStateManager.h`).
-
-#### 4.4.3 Mutation API and coordination (AppStateFacade)
-
-- The `AppStateFacade` (see `core/include/core/application/AppStateFacade.h` and `core/src/application/AppStateFacade.cpp`) is the application‑facing API used by UI controllers. It composes a `WorkspaceSession` and a `CatalogService` to provide high‑level mutation operations such as `addActor`, `updateContract`, `addTransaction`, `finalizeStatementDraft`, etc.
-- Typical mutation flow:
-  1. A facade method (e.g. `addActor(...)`) calls into the `CatalogService` to perform the change on `mutableState()` and returns the created id.
-  2. The facade calls `commit()` (or the session arranges persistence) which results in `WorkspaceSession` invoking `storageManager_->save(state_)` when a current path exists.
-  3. After persistence, `WorkspaceSession::notifyState()` invokes the registered `StateChanged` callback to update UI models.
-- The facade also exposes configuration hooks for persistence and error reporting: `setRepoFactory`, `setAtomicStoreSave`, `setAtomicStoreLoad`, `setDeletionImpactCallback`, and `setErrorReporter` which are forwarded to the session/storage manager.
-
-#### 4.4.4 UI synchronization, deletion handling and observability
-
-- `WorkspaceSession` records a `DeletionImpactCallback` received from `IStorageManager` and forwards it to a registered session callback. The UI layer (e.g. `ui::SessionStore`) consumes deletion impacts to remove stale rows and keep in-memory view models consistent (see `ui/src/state/SessionMutationState.cpp`).
-- Error reporting is centralized via `IErrorReporter` — sessions and import strategies use the reporter to surface exceptions and warnings instead of throwing fatal errors.
-- State change notifications are intentionally coarse‑grained (the entire `AppState` is passed to `StateChanged`) to keep synchronization simple. UI adapters maintain lightweight models that mirror `AppState` contents and provide incremental updates where necessary.
+Finalization must be deterministic. A draft may become a finalized statement and
+transactions only when required transaction data passes `TransactionPolicy`, the
+statement relation can be established and the user-confirmed links can be mapped
+back into the workspace catalog.
 
 ## 5. Infrastructure Layer <a id="5-infrastructure-layer"></a>
-### 5.1 Persistence & Storage
+### 5.1 Scope And Dependency Rule
 
-The application now uses **atomic application-state persistence** as the only supported persistence workflow. `AppStateStore` performs full `AppState` load/save operations through SQLite in one transactional unit, and `StorageManager` delegates file open/save behavior to that atomic contract.
+The infrastructure layer contains concrete implementations for ports defined by
+`core`. It is allowed to depend on third-party libraries and operating-system
+details. It must not introduce business rules or UI behavior.
 
-Why this is the chosen approach:
+Infrastructure code is split into two target families:
 
-- It keeps the public persistence model simple and deterministic.
-- It preserves consistency across all aggregates in one save/load operation.
-- It avoids exposing lower-level persistence coordination to the UI or application layer.
-- It matches the local-first desktop workflow better than a fragmented entity-by-entity API.
+| Target family | Path | Responsibility |
+|---|---|---|
+| Persistence | `persistence` | SQLite database access, schema creation, migrations, repository implementations, workspace state load/save and latest-workspace registry. |
+| External adapters | `infra/*` | Concrete adapters for Poppler, OpenCV, Tesseract, xlnt, ZIP/archive output and analysis image rendering. |
 
-If we ever want an even cleaner end-state, the next step would be a dedicated `UnitOfWork` or `SnapshotStore` abstraction that keeps the same atomic behavior but makes the orchestration boundary even more explicit.
+The application target is the composition root. `app/src/main.cpp` creates the
+concrete persistence and infrastructure adapters, wires them to core ports, and
+passes only port interfaces into application services.
 
-Key components and responsibilities:
+```mermaid
+flowchart LR
+    CorePorts["core/ports<br/>contracts"]
+    App["app<br/>composition root"]
+    Persistence["persistence<br/>SQLite implementations"]
+    Infra["infra/*<br/>external library adapters"]
+    CoreApp["core/application<br/>use cases"]
 
-- `persistence::SqliteDb` (`persistence/src/SqliteDb.cpp`, `persistence/include/persistence/SqliteDb.h`) — thin wrapper around `sqlite3` handles and connection lifecycle.
-- `persistence::AppStateStore` (`persistence/src/AppStateStore.cpp`, `persistence/include/persistence/AppStateStore.h`) — owns the atomic save/load flow and persists the complete `AppState` in one operation while returning a `DeletionImpact`.
-- `persistence::SqliteRegistry` (`persistence/src/SqliteRegistry.cpp`) — small registry used to persist the latest workspace path.
-- `persistence::SqliteSchema` (`persistence/src/SqliteSchema.cpp`) — schema creation and migration helpers.
+    CoreApp --> CorePorts
+    Persistence -. implements .-> CorePorts
+    Infra -. implements .-> CorePorts
+    App --> Persistence
+    App --> Infra
+    App --> CoreApp
+```
 
-Operational note: `app/src/main.cpp` now wires only atomic load/save callbacks. The application no longer configures a repository factory at startup.
+### 5.2 Persistence And Storage
 
-#### Persistence schema truth and adapter audit
+FOSSredder uses local SQLite databases for both workspace state and the recent
+workspace registry.
 
-The authoritative schema is `persistence/src/SqliteSchema.cpp`. The remaining non-repository persistence files are currently aligned as follows:
+| File | Default location | Responsibility |
+|---|---|---|
+| `workspace.fossredder` | Qt application data location | Canonical workspace state. This file contains catalog entities, workflow drafts, import logs and export logs. |
+| `registry.db` | Qt application data location | Convenience registry. It stores the latest opened workspace path and can be recreated without losing workspace data. |
 
-- `SqliteDb.cpp` — consistent with the current connection lifecycle wrapper role.
-- `SqliteTransaction.cpp` — thin transactional guard around `BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`.
-- `SqliteRegistry.cpp` — matches the `configs` table and acts as a key/value registry.
-- `AppStateStore.cpp` — now owns the atomic save/load orchestration directly.
-- `StmtGuard.h` / `Uuid.h` — utility helpers; no schema coupling beyond the SQLite C API.
+The persistence boundary is intentionally atomic at the application level:
 
-Refactor notes:
+- `core::storage::StorageManager` owns file-path coordination and calls configured atomic load/save callbacks.
+- `persistence::WorkspaceStateStore` loads and saves a complete `WorkspaceSessionState`.
+- `persistence::SqliteDb` owns SQLite connection lifecycle.
+- `persistence::SqliteSchema` is the authoritative schema and migration source.
+- `persistence::SqliteTransaction` wraps transactional SQLite operations.
+- `persistence::SqliteRegistry` implements `core::ports::storage::IRegistry`.
+- Repository implementations under `persistence/include/persistence/repositories` and `persistence/src/repositories` implement repository ports used by state reconstruction, persistence tests and repository-level validation.
 
-- `SqliteSchema.cpp` remains the schema truth source.
-- `SqliteRegistry.cpp` now surfaces registry-table creation failures instead of silently ignoring them.
-- `AppStateStore.cpp` still contains the core atomic orchestration logic; it is intentionally the central coordination point.
+Runtime wiring in `app/src/main.cpp`:
 
-ER diagram (final schema / baseline assumed — displays the post‑migration table names)
+```mermaid
+sequenceDiagram
+    participant App as app/src/main.cpp
+    participant Facade as WorkspaceFacade
+    participant Storage as StorageManager
+    participant Registry as SqliteRegistry
+    participant Store as WorkspaceStateStore
+    participant Db as SqliteDb
+
+    App->>Registry: createSqliteRegistry(registry.db)
+    App->>Storage: construct with IRegistry
+    App->>Facade: construct with StorageManager
+    App->>Facade: setAtomicStoreLoad(callback)
+    App->>Facade: setAtomicStoreSave(callback)
+    Facade->>Storage: openLatest / openFile / saveFile
+    Storage->>Registry: getLatest / setLatest
+    Storage->>Store: load(dbPath) / save(dbPath, document)
+    Store->>Db: open workspace.fossredder
+```
+
+Persistence rules:
+
+- Keep `SqliteSchema.cpp` as the source of truth for tables, indices, foreign keys and `PRAGMA user_version` migrations.
+- Keep `WorkspaceStateStore` responsible for full-document load/save behavior.
+- Keep registry persistence separate from workspace persistence.
+- Preserve `PRAGMA foreign_keys = ON` behavior for all workspace databases.
+- Add migrations for schema changes instead of relying on destructive recreation.
+- Update repository tests and `WorkspaceStateStore` tests when changing persisted state.
+
+### 5.3 Workspace Schema Overview
+
+The current workspace schema stores the domain catalog and workflow state in one
+SQLite database. The diagram mirrors the table and column shape created by
+`persistence/src/SqliteSchema.cpp`.
 
 ```mermaid
 erDiagram
+    CONFIGS {
+        TEXT name PK
+        TEXT value
+    }
+
     ACTORS {
         TEXT id PK
         TEXT name
-        TEXT type
-        TEXT description
+        TEXT created_at
+        TEXT updated_at
     }
-    PROPERTIES {
-        TEXT id PK
-        TEXT name
-        TEXT address
-        TEXT description
-        REAL consumption
-        TEXT consumption_unit
-    }
-    CONTRACTS {
-        TEXT id PK
-        TEXT name
-        TEXT type
-        TEXT description
-        TEXT start_date
-        TEXT end_date
-        REAL base_price
-        REAL consumption_price
-        REAL monthly_advance
-    }
-    CONTRACT_ACTORS {
-        TEXT contract_id PK
-        TEXT actor_id PK
-    }
-    CONTRACT_PROPERTIES {
-        TEXT contract_id PK
-        TEXT property_id PK
-    }
-    STATEMENTS {
-        TEXT id PK
-        TEXT name
-    }
-    TRANSACTIONS {
-        TEXT id PK
-        TEXT name
-        TEXT booking_date
-        TEXT valuta
-        REAL amount
-        INTEGER status
-        TEXT description
-        TEXT type
-        TEXT actor_id FK
-        TEXT contract_id FK
-        TEXT statement_id FK
-        TEXT metadata
-        TEXT proof_image_path
-        INTEGER allocatable
-    }
-    TRANSACTION_PROPERTIES {
-        TEXT transaction_id PK
-        TEXT property_id PK
-    }
-    ANALYSES {
-        TEXT id PK
-        TEXT name
-        TEXT type
-        TEXT config_json
-        TEXT filter_spec
-    }
-    ANNUALS {
-        TEXT id PK
-        INTEGER year
-        TEXT transaction_ids
-        TEXT assigned_analysis_ids
-        INTEGER verification_state
-    }
+
     ACTOR_ALIASES {
         TEXT actor_id PK
         TEXT alias PK
         INTEGER hit_count
+        TEXT created_at
+        TEXT updated_at
+        TEXT last_used_at
     }
+
+    PROPERTIES {
+        TEXT id PK
+        TEXT name
+        TEXT created_at
+        TEXT updated_at
+    }
+
     PROPERTY_ALIASES {
         TEXT property_id PK
         TEXT alias PK
         INTEGER hit_count
+        TEXT created_at
+        TEXT updated_at
+        TEXT last_used_at
     }
+
+    CONTRACTS {
+        TEXT id PK
+        TEXT name
+        TEXT type
+        TEXT allocatable_mode
+        TEXT created_at
+        TEXT updated_at
+    }
+
     CONTRACT_ALIASES {
         TEXT contract_id PK
         TEXT alias PK
         INTEGER hit_count
+        TEXT created_at
+        TEXT updated_at
+        TEXT last_used_at
     }
+
+    CONTRACT_ACTORS {
+        TEXT contract_id PK
+        TEXT actor_id PK
+    }
+
+    CONTRACT_PROPERTIES {
+        TEXT contract_id PK
+        TEXT property_id PK
+    }
+
+    STATEMENTS {
+        TEXT id PK
+        TEXT name
+        TEXT created_at
+        TEXT updated_at
+    }
+
+    STATEMENT_TRANSACTIONS {
+        TEXT statement_id PK
+        TEXT transaction_id PK
+        INTEGER position
+    }
+
     STATEMENT_DRAFTS {
         TEXT id PK
         TEXT name
+        TEXT created_at
+        TEXT updated_at
     }
+
+    STATEMENT_DRAFT_TRANSACTIONS {
+        TEXT statement_draft_id PK
+        TEXT transaction_draft_id PK
+        INTEGER position
+    }
+
     TRANSACTION_DRAFTS {
         TEXT id PK
         TEXT statement_draft_id FK
@@ -566,253 +1054,1084 @@ erDiagram
         TEXT booking_date
         TEXT valuta
         REAL amount
-        TEXT description
         TEXT actor_text
         TEXT property_text
         TEXT actor_id
-        INTEGER new_actor_selected
+        INTEGER actor_selected
         TEXT contract_id
-        INTEGER new_contract_selected
+        INTEGER contract_selected
         TEXT metadata
-        TEXT proof_image_path
+        BLOB proof_image_data
         TEXT type
         INTEGER allocatable
-        INTEGER allocatable_manual_override
+        INTEGER allocatable_selected
         INTEGER status
+        TEXT created_at
+        TEXT updated_at
     }
+
     TRANSACTION_DRAFT_PROPERTIES {
         TEXT transaction_draft_id PK
         INTEGER property_position PK
         TEXT property_id
     }
 
-    %% Relationships
-    CONTRACTS ||--o{ CONTRACT_ACTORS : has
-    ACTORS ||--o{ CONTRACT_ACTORS : part_of
+    TRANSACTIONS {
+        TEXT id PK
+        TEXT name
+        TEXT booking_date
+        REAL amount
+        TEXT statement_id FK
+        INTEGER status
+        TEXT actor_id FK
+        TEXT contract_id FK
+        TEXT valuta
+        INTEGER allocatable
+        TEXT created_at
+        TEXT updated_at
+    }
 
-    CONTRACTS ||--o{ CONTRACT_PROPERTIES : has
-    PROPERTIES ||--o{ CONTRACT_PROPERTIES : part_of
+    TRANSACTION_PROPERTIES {
+        TEXT transaction_id PK
+        TEXT property_id PK
+    }
 
-    STATEMENTS ||--o{ TRANSACTIONS : contains
-    TRANSACTIONS }o--|| ACTORS : "actor_id"
-    TRANSACTIONS }o--|| CONTRACTS : "contract_id"
-    TRANSACTIONS }o--|| STATEMENTS : "statement_id"
+    ANALYSES {
+        TEXT id PK
+        TEXT name
+        TEXT type
+        TEXT config_json
+        TEXT filter_spec
+        TEXT export_format
+        INTEGER include_calc_adjustments
+        TEXT export_state_json
+        TEXT snapshot_transactions_json
+        TEXT created_at
+        TEXT updated_at
+    }
 
-    TRANSACTIONS ||--o{ TRANSACTION_PROPERTIES : has
-    PROPERTIES ||--o{ TRANSACTION_PROPERTIES : used_by
+    ANALYSIS_ADJUSTMENTS {
+        TEXT analysis_id PK
+        TEXT adjustment_key PK
+        REAL adjustment_value
+        INTEGER position
+    }
 
-    STATEMENT_DRAFTS ||--o{ TRANSACTION_DRAFTS : contains
-    TRANSACTION_DRAFTS ||--o{ TRANSACTION_DRAFT_PROPERTIES : has
-    PROPERTIES ||--o{ TRANSACTION_DRAFT_PROPERTIES : used_by
+    ANNUALS {
+        TEXT id PK
+        TEXT name
+        INTEGER year
+        TEXT created_at
+        TEXT updated_at
+    }
 
-    ACTORS ||--o{ ACTOR_ALIASES : has
-    PROPERTIES ||--o{ PROPERTY_ALIASES : has
-    CONTRACTS ||--o{ CONTRACT_ALIASES : has
+    ANNUAL_ANALYSES {
+        TEXT annual_id PK
+        TEXT analysis_id PK
+        INTEGER position
+    }
 
+    IMPORT_LOGS {
+        TEXT id PK
+        TEXT time
+        TEXT type
+        TEXT file
+        TEXT status
+        TEXT message
+        INTEGER draft_attached
+        TEXT draft_id
+        TEXT statement_id
+    }
+
+    IMPORT_LOG_STATEMENT_DRAFTS {
+        TEXT import_log_id PK
+        TEXT statement_draft_id PK
+        INTEGER position
+    }
+
+    EXPORT_LOGS {
+        TEXT id PK
+        TEXT time
+        TEXT target_path
+        TEXT status
+        TEXT message
+        TEXT payload
+    }
+
+    EXPORT_LOG_ANNUALS {
+        TEXT export_log_id PK
+        TEXT annual_id PK
+        INTEGER position
+    }
+
+    EXPORT_LOG_ANALYSES {
+        TEXT export_log_id PK
+        TEXT analysis_id PK
+        INTEGER position
+    }
+
+    ACTORS ||--o{ ACTOR_ALIASES : aliases
+    PROPERTIES ||--o{ PROPERTY_ALIASES : aliases
+    CONTRACTS ||--o{ CONTRACT_ALIASES : aliases
+    CONTRACTS ||--o{ CONTRACT_ACTORS : actor_links
+    ACTORS ||--o{ CONTRACT_ACTORS : contracts
+    CONTRACTS ||--o{ CONTRACT_PROPERTIES : property_links
+    PROPERTIES ||--o{ CONTRACT_PROPERTIES : contracts
+    STATEMENTS ||--o{ STATEMENT_TRANSACTIONS : ordering
+    TRANSACTIONS ||--o{ STATEMENT_TRANSACTIONS : member
+    STATEMENTS ||--o{ TRANSACTIONS : statement_id
+    ACTORS ||--o{ TRANSACTIONS : actor_id
+    CONTRACTS ||--o{ TRANSACTIONS : contract_id
+    TRANSACTIONS ||--o{ TRANSACTION_PROPERTIES : property_links
+    PROPERTIES ||--o{ TRANSACTION_PROPERTIES : transactions
+    ANALYSES ||--o{ ANALYSIS_ADJUSTMENTS : adjustments
+    ANNUALS ||--o{ ANNUAL_ANALYSES : analysis_order
+    ANALYSES ||--o{ ANNUAL_ANALYSES : annuals
+    STATEMENT_DRAFTS ||--o{ STATEMENT_DRAFT_TRANSACTIONS : ordering
+    TRANSACTION_DRAFTS ||--o{ STATEMENT_DRAFT_TRANSACTIONS : member
+    STATEMENT_DRAFTS ||--o{ TRANSACTION_DRAFTS : statement_draft_id
+    TRANSACTION_DRAFTS ||--o{ TRANSACTION_DRAFT_PROPERTIES : property_links
+    IMPORT_LOGS ||--o{ IMPORT_LOG_STATEMENT_DRAFTS : drafts
+    STATEMENT_DRAFTS ||--o{ IMPORT_LOG_STATEMENT_DRAFTS : logs
+    EXPORT_LOGS ||--o{ EXPORT_LOG_ANNUALS : annuals
+    ANNUALS ||--o{ EXPORT_LOG_ANNUALS : export_logs
+    EXPORT_LOGS ||--o{ EXPORT_LOG_ANALYSES : analyses
+    ANALYSES ||--o{ EXPORT_LOG_ANALYSES : export_logs
 ```
 
-### 5.2 External tool adapters (Poppler / OpenCV / Tesseract)
+### 5.4 External Library Adapters
 
-The ingestion pipeline interacts with external libraries through small adapter/service interfaces under `api/include`:
+External libraries are isolated behind infrastructure ports. The import,
+analysis and export services only see core port types.
 
-- `api::poppler::IPopplerService` (`api/include/api/poppler/IPopplerService.h`) — page rendering and text extraction.
-- `api::opencv::IOpenCvService` (`api/include/api/opencv/IOpenCvService.h`) — image masks, table detection and crop operations (`mask`, `detect`, `crop`, `table` models).
-- `api::tesseract::ITesseractService` (`api/include/api/tesseract/ITesseractService.h`) — OCR extraction returning `ExtractResult` / TSV output.
+| Core port | Target | Main implementation | External dependencies |
+|---|---|---|---|
+| `IPdfRenderer` | `infra/pdf-rendering` | `PopplerPdfRendererAdapter`, `PopplerCore` | Poppler, OpenCV, nlohmann-json |
+| `IImageProcessor` | `infra/image-processing` | `OpenCvImageProcessorAdapter`, `DenoiseAdapter`, `MaskAdapter`, `DetectAdapter`, `CropAdapter` | OpenCV |
+| `ITextRecognizer` | `infra/text-recognition` | `TesseractTextRecognizerAdapter`, `TesseractCore` | Tesseract |
+| `IAnalysisImageRenderer` | `infra/analysis-image-renderer` | `OpenCvAnalysisImageRendererAdapter` | OpenCV |
+| `IXlsxWriter` | `infra/xlsx-writer` | `XlntTableWriterAdapter` | xlnt |
+| `IArchive` | `infra/archive` | `ZipArchiveAdapter` | libzip |
 
-These interfaces are implemented by concrete adapters in the `services` / `infrastructure` layer of the project (see `app` startup wiring in `app/src/main.cpp`). The import strategy uses `extractWithLimiter` (in `ImportPipelineHelpers.cpp`) to bound OCR concurrency via `core::jobs::SlotLimiter`.
+Adapter rules:
 
-### 5.3 Job system and concurrency
+- Translate between third-party types and `core::ports::*` DTOs at the adapter boundary.
+- Keep third-party headers out of domain entities and application policies.
+- Honor cancellation flags where request DTOs provide them.
+- Prefer deterministic outputs and structured error reporting over exceptions that escape into UI code.
+- Add unit tests under the corresponding `infra/*/tests` directory when adapter behavior changes.
 
-Long‑running tasks (imports) are scheduled via the job subsystem in `core/src/jobs` and its headers in `core/include/core/jobs`:
+### 5.5 Runtime Assets
 
-- `core::jobs::JobSystem` / `Scheduler` (`core/src/jobs/JobSystem.cpp`, `core/src/jobs/Scheduler.cpp`, headers in `core/include/core/jobs`) — central scheduling primitives for background jobs.
-- `core::jobs::JobManager` (`core/src/jobs/JobManager.cpp`) — process and lifecycle helper used by higher‑level services.
-- `core::jobs::SlotLimiter` (used from import code) — limits parallel OCR work so Tesseract calls are bounded.
+Infrastructure assets must be installed with the application and must not depend
+on source-tree paths at runtime.
 
-Import strategies call OCR through `extractWithLimiter` which acquires/releases slots on the limiter to avoid saturating CPU / OCR resources (see `core/src/import/ImportPipelineHelpers.cpp`).
+| Asset group | Source | Installed/runtime location | Consumer |
+|---|---|---|---|
+| OCR models | `infra/text-recognition/res/tessdata/*.traineddata` | `bin/res/tessdata` | `TesseractTextRecognizerAdapter` / `TesseractCore` |
+| QML modules | `ui/qml` | `bin/qml` | Qt runtime |
+| Translation catalogs | `app/i18n` and generated `.qm` files | `bin/i18n` | Qt localization |
+| Application assets | `app/assets` | `share/fossredder/assets` | application runtime and installer metadata |
 
-### 5.4 Diagnostics & artifacts
+The packaged OCR set currently includes German, English and French models in
+standard, fast and best variants, plus `osd.traineddata`. Packaging validation
+checks that every source `.traineddata` file is staged under `bin/res/tessdata`.
 
-Import pipelines produce artifacts and diagnostics that are persisted in the `ImportResult` and can be used by the UI for debugging and export:
+### 5.6 Concurrency And Cancellation Contract
 
-- TSV artifacts and parser logs are created per page by the import flow (`storeTsvArtifact` in `ImportPipelineHelpers.cpp`) and attached to the `ImportResult`.
-- Repository diagnostics helpers exist in `persistence/src/RepositoryDiagnostics.h` to log repository operations and errors.
+The scheduler and job orchestration live in `core/jobs`, not in infrastructure.
+Infrastructure adapters participate by honoring request-level cancellation and
+by avoiding ownership of cross-use-case scheduling policy.
+
+Import-related infrastructure work follows these constraints:
+
+- PDF rendering, image processing and OCR requests may receive cancellation flags.
+- OCR work is bounded by core import/job logic before calling `ITextRecognizer`.
+- Adapters may use local helper objects, but long-running workflow state belongs in core application services.
+- Debug artifacts should be optional and should not be required for successful runtime behavior.
+
+### 5.7 Diagnostics And Artifacts
+
+Diagnostics are cross-cutting but must stay behind explicit sinks and result
+objects.
+
+| Source | Diagnostic output |
+|---|---|
+| Import pipeline | Parser logs, OCR TSV data, proof-image data and page artifacts are returned through import results or draft state. |
+| Infrastructure adapters | Optional debug files through `IDebugger` / `FileDebugger`. |
+| Persistence | Repository diagnostics helpers and explicit SQLite exceptions for schema, connection and transaction failures. |
+| Application startup | Error reporter wiring in `app/src/main.cpp` translates Qt and runtime errors into structured reports. |
+
+### 5.8 Adding Infrastructure Code
+
+Use this workflow when adding or changing infrastructure:
+
+1. Define or extend a core port first if the use case needs a new capability.
+2. Implement the port in `infra/*` or `persistence`, not in `core`.
+3. Wire the concrete implementation in `app/src/main.cpp` or a composition helper.
+4. Add the source file to the owning CMake target.
+5. Add install/package rules for runtime assets such as tessdata, QML imports or plugin files.
+6. Add unit tests for adapter behavior and persistence tests for schema/repository changes.
+7. Update `ci/package/test-package-layout.ps1` when a new runtime asset is required by the installed app.
+8. Update this design document when the dependency boundary, schema shape or runtime asset contract changes.
 
 ## 6. UI Layer & Presentation <a id="6-ui-layer--presentation"></a>
 
-This section maps the presentation concerns to concrete files and runtime interactions in the codebase, bridging the Qt/QML frontend with the C++ UI logic.
+The UI layer owns the desktop presentation model. It bridges Qt/QML with core
+workspace and use-case ports, but it does not own domain rules, persistence
+schema, OCR/PDF/image-processing integrations or export algorithms.
 
-### 6.1 Pattern and code locations
+QML, C++ view models, UI workflows and shell wiring share one presentation
+contract. This chapter is therefore structured by runtime role rather than by
+file extension.
 
-The UI follows an MVVM-like composition where QML views are backed by C++ controllers and view models. Relevant locations in the workspace:
+### 6.1 UI Architecture Scope
 
-- Views (QML): `ui/qml/*` — QML modules used by the application UI.
-- Controllers (C++): `ui/src/controllers/*` — examples: `ActorController.cpp`, `DraftController.cpp`, `ImportController.cpp`, `StorageController.cpp`.
-- View models / session state: `ui/src/state/*` — `SessionStore.cpp`, `SessionMutationState.cpp`, and additional import run models under `ui/src/import`.
+The UI target is organized into these areas:
 
-### 6.2 Session wiring and synchronization
+| Area | Path | Responsibility |
+|---|---|---|
+| QML shell and views | `ui/qml/FossRedder` | Declarative layout, navigation routing, view composition, reusable controls and theme definitions. |
+| Shell composition | `ui/include/ui/shell`, `ui/src/shell`, `ui/include/MainWindow.h` | Main window hosting, QML runtime setup, AppContext, navigation, status, settings, actions and object wiring. |
+| Workspace roles | `ui/include/ui/workspace`, `ui/src/workspace` | UI-side snapshot store, command submission, read selectors and selected-entity state. |
+| View models | `ui/include/ui/viewmodels`, `ui/src/viewmodels` | QML-facing state and operations for each feature area. |
+| Workflows | `ui/include/ui/workflows`, `ui/src/workflows` | Longer UI flows such as import, analysis, annual and export execution. |
+| Adapters | `ui/include/ui/adapters`, `ui/src/adapters` | Thin translation layer from UI workflows to core use-case runner ports. |
+| Platform services | `ui/include/ui/platform`, `ui/src/platform` | Native file dialogs, filesystem browsing and runtime language switching. |
+| Observability | `ui/include/ui/observability`, `ui/src/observability` | UI-specific trace origins and diagnostic helpers. |
 
-Practical wiring in the codebase:
+The UI uses an [MVVM](#glossary-mvvm)-oriented structure:
 
-- The UI obtains an `AppStateFacade` instance during application composition and uses controllers to call into the facade.
-- The UI registers a `StateChanged` callback on the session/facade. `WorkspaceSession::notifyState()` (see `core/src/application/WorkspaceSession.cpp`) triggers the UI to refresh or incrementally update view models.
-- `DeletionImpact` handling: `WorkspaceSession` forwards storage deletion impacts to the UI; `SessionMutationState::applyDeletionImpact` (see `ui/src/state/SessionMutationState.cpp`) removes stale rows from models.
-
-### 6.3 Technical Data Flow
-
-The diagram below uses actual components and file groups used in the codebase. Labels avoid parentheses/special characters to keep Mermaid parsing robust.
+- QML reads and invokes QML-facing `QObject` APIs.
+- View models own presentation state and form behavior.
+- Workspace roles project core snapshots into QML payloads and submit commands to core writer ports.
+- Workflows coordinate multi-step or asynchronous UI behavior.
+- Adapters invoke core use-case runners and translate between Qt-facing and core-facing types.
 
 ```mermaid
-graph LR
-    QML["QML View (ui/qml)"]
-    Controller["UI Controller (ui/src/controllers)"]
-    ViewModels["SessionStore / ViewModels (ui/src/state)"]
-    Facade["AppStateFacade (core/include/core/application)"]
-    Session["WorkspaceSession (core/src/application)"]
-    Storage["IStorageManager / StorageManager (core/src/storage)"]
-    RepoFactory["RepoFactory -> RepositoryBundle (persistence/Factory)"]
-    AppStateManager["AppStateManager (core/include/core/application)"]
-    Persistence["SqliteDb / AppStateStore (persistence)"]
-    ImportRun["ImportRunStore / ImportJobBridge (ui/src/import)"]
-    JobSystem["JobSystem / SlotLimiter (core/src/jobs)"]
+flowchart LR
+  subgraph View["View"]
+    QmlViews["QML shell controls views<br/>ui/qml/FossRedder"]
+  end
 
-    QML -->|user action| Controller
-    Controller -->|calls facade| Facade
-    Facade -->|mutate / commit| Session
-    Session -->|save / load| Storage
-    Storage -->|repo flow| RepoFactory
-    RepoFactory -->|provides repositories| AppStateManager
-    AppStateManager -->|CRUD| Persistence
+  subgraph ViewModel["ViewModel"]
+    FeatureVms["QObject feature view models"]
+    WorkspaceRoles["WorkspaceStore Commands Selection Selectors"]
+    UiWorkflows["Import Analysis Annual Export workflows"]
+    UiAdapters["UI adapters"]
+  end
 
-    Session -->|state changed callback| ViewModels
-    ViewModels -->|Q_PROPERTY / signals| QML
+  subgraph Model["Model"]
+    WorkspacePorts["IWorkspaceReader IWorkspaceWriter"]
+    UseCasePorts["IImportRunner IAnalysisRunner IAnnualRunner IExportRunner"]
+    Snapshots["WorkspaceSnapshot result DTOs progress events"]
+    CoreModel["core domain and application model"]
+  end
 
-    QML -->|start import| ImportRun
-    ImportRun -->|schedule OCR| JobSystem
-    JobSystem -->|executes| ImportRun
-    ImportRun -->|produces ImportResult| Session
-
-    classDef infra fill:#f8fafc,stroke:#94a3b8
-    class Storage,RepoFactory,AppStateManager,Persistence,JobSystem infra
+  QmlViews --> FeatureVms
+  FeatureVms --> WorkspaceRoles
+  FeatureVms --> UiWorkflows
+  WorkspaceRoles --> WorkspacePorts
+  UiWorkflows --> UiAdapters
+  UiAdapters --> UseCasePorts
+  WorkspacePorts --> CoreModel
+  UseCasePorts --> CoreModel
+  CoreModel --> Snapshots
+  Snapshots --> WorkspaceRoles
+  Snapshots --> FeatureVms
+  FeatureVms --> QmlViews
 ```
 
-### 6.4 Key UI workflows
+### 6.2 QML Runtime And Composition
 
-- **Ingestion Wizard / Import**: implemented across `ui/src/import/*` (e.g. `ImportRunStore.cpp`, `ImportState.cpp`, `ImportJobBridge.cpp`). The UI triggers `IImportStatement` (core import strategy) and observes progress through job signals and `ImportRunStore`.
-- **Draft Review**: `ui/src/controllers/DraftController.cpp` together with `ui/src/import/DraftViewMapper.cpp` and `ui/src/import/ImportDraftMapper.cpp` expose `TransactionDraft` fields and proof images from `ImportResult` for QML review.
-- **Job Observability**: `core/src/jobs/*` provides progress and cancellation primitives consumed by UI components under `ui/src/state` and `ui/src/import` to render progress bars and status.
+QML startup is split between the app target and the UI target.
+
+| Component | Responsibility |
+|---|---|
+| `app/src/main_qml.cpp` | Creates `MainWindow`, calls `ui::shell::createComposition`, wires workspace callbacks, registers QML warnings and starts the Qt event loop. |
+| `MainWindow` | Hosts the `QQuickView`, owns shell objects, exposes workspace roles, loads QML and handles close/autosave/window events. |
+| `ui::shell::createComposition` | Creates adapters, workflows, view models and platform services, then attaches them to `AppContext`. |
+| `ui::bootstrap::registerTypes` | Registers C++ types and enum contracts for the `FossRedder 1.0` QML module. |
+| `ui::bootstrap::configureRuntime` | Adds QML import paths and runtime plugin paths for installed and local runs. |
+
+Runtime object graph:
+
+```mermaid
+flowchart LR
+    App["app/src/main_qml.cpp"]
+    MainWindow["MainWindow"]
+    Composition["ui::shell::createComposition"]
+    AppContext["AppContext"]
+    QmlRuntime["QmlRuntime"]
+    QML["ui/qml/FossRedder/Main.qml"]
+
+    App --> MainWindow
+    App --> Composition
+    Composition --> AppContext
+    MainWindow --> QmlRuntime
+    MainWindow --> QML
+    QML --> AppContext
+```
+
+### 6.3 QML Module Structure
+
+The QML module is `FossRedder 1.0`. `Main.qml` creates the root
+`Components.Shell` and passes the provided `AppContext` and `Theme` singletons
+into it.
+
+| QML area | Responsibility |
+|---|---|
+| `Main.qml` | Root QML entry point loaded by `MainWindow`. |
+| `Components` | Shell layout, app menu, toolbar, sidebar/content routers, status bar and reusable shell-level components. |
+| `Controls` | Project-specific controls such as buttons, panels, dropdowns, scrollbars, fields and progress bars. |
+| `Views/*` | Feature screens for actors, properties, contracts, booking, import/draft review, analysis, annual reports, export and settings. |
+| `Theme` | Dark/light palettes and shared design tokens consumed by shell, controls and views. |
+| `Assets` | SVG icons used by navigation and feature views. |
+
+The installed package must contain the same QML module descriptors that are
+listed in `ci/package/package-layout-contract.json`.
+
+| QML module contract | Modules |
+|---|---|
+| Root | `FossRedder` |
+| Shared modules | `FossRedder.Components`, `FossRedder.Controls`, `FossRedder.Views` |
+| Feature view modules | `FossRedder.Views.Actor`, `FossRedder.Views.Analysis`, `FossRedder.Views.Annual`, `FossRedder.Views.Booking`, `FossRedder.Views.Contract`, `FossRedder.Views.Export`, `FossRedder.Views.Import`, `FossRedder.Views.Property`, `FossRedder.Views.Settings` |
+
+The shell uses `ContentRouter.qml` and `SidebarRouter.qml` to select the active
+feature view from `Navigation`. Feature views receive only the view model(s) and
+theme data they need.
+
+```mermaid
+flowchart TB
+    Main["Main.qml"]
+    Shell["Components/Shell.qml"]
+    AppMenu["AppMenu"]
+    Toolbar["Toolbar"]
+    SidebarRouter["SidebarRouter"]
+    ContentRouter["ContentRouter"]
+    StatusBar["StatusBar"]
+    Views["Views/*"]
+    Controls["Controls/*"]
+    Theme["Theme/*"]
+
+    Main --> Shell
+    Shell --> AppMenu
+    Shell --> Toolbar
+    Shell --> SidebarRouter
+    Shell --> ContentRouter
+    Shell --> StatusBar
+    SidebarRouter --> Views
+    ContentRouter --> Views
+    Views --> Controls
+    Shell --> Theme
+    Views --> Theme
+    Controls --> Theme
+```
+
+### 6.4 AppContext And Shell State
+
+`AppContext` is the QML-facing shell object. It is provided as the stable access
+point for application-wide actions, navigation, status, platform services and
+feature view models.
+
+| AppContext member | Purpose |
+|---|---|
+| `Actions` | File/menu actions and browse/drop signals for import/export/workspace flows. |
+| `Navigation` | Active top-level section and settings sub-section. |
+| `Status` | User-visible shell status text. |
+| `FileSystemBrowser` | QML-facing filesystem helper. |
+| `LanguageService` | Available UI languages and runtime language switching. |
+| Feature view models | QML APIs for actor, property, contract, booking, import, analysis, annual, export and settings screens. |
+| `isDebugBuild` | Runtime flag exposed to QML for debug-only behavior. |
+
+Shell-state rules:
+
+- Add new global QML-facing services to `AppContext` only when they are needed by multiple feature areas.
+- Keep feature-specific state inside the relevant view model or workflow.
+- Keep navigation values stable through `QmlContracts` and `Navigation`.
+- Prefer queued Qt signals for UI refreshes when updates can be coalesced.
+
+### 6.5 Workspace UI Roles
+
+The UI does not mutate domain objects directly. It consumes workspace snapshots
+and submits typed commands through the core workspace ports.
+
+| Role | Responsibility |
+|---|---|
+| `WorkspaceStore` | Holds the current `WorkspaceSnapshot`, current path and UI data revision. |
+| `WorkspaceCommands` | Converts UI intent into core `IWorkspaceWriter` commands, validates commands and refreshes the store after successful mutations. |
+| `WorkspaceSelectors` | Projects snapshot data into QML-friendly rows, dropdowns and lookup payloads. |
+| `WorkspaceSelection` | Tracks currently selected actor, property, contract, statement, transaction, analysis and annual ids. |
+| `WorkspacePayloads` / `PayloadMapper` | Convert between snapshot DTOs and QVariant/QML payloads. |
+
+Workspace update flow:
+
+```mermaid
+sequenceDiagram
+    participant QML as QML View
+    participant VM as ViewModel
+    participant Commands as WorkspaceCommands
+    participant Writer as IWorkspaceWriter
+    participant Store as WorkspaceStore
+    participant Selectors as WorkspaceSelectors
+
+    QML->>VM: user action
+    VM->>Commands: save or delete command
+    Commands->>Writer: validate and mutate
+    Writer-->>Commands: operation result
+    Commands->>Store: refresh from reader snapshot
+    Store-->>VM: dataRevisionChanged
+    VM->>Selectors: read projected rows
+    VM-->>QML: changed signal and Q_PROPERTY values
+```
+
+Deletion impact flow:
+
+- Core workspace writer reports a deletion impact through the callback registered in `wireWorkspaceCallbacks`.
+- `WorkspaceStore::applyDeletionImpact` removes stale references from the UI snapshot.
+- `WorkspaceSelection` validates selections after the store changes.
+- View models emit change signals so QML refreshes only through their public API.
+
+### 6.6 View Models, Workflows And Adapters
+
+View models are the public QML API for feature screens. Workflows own longer
+operations, and adapters invoke core use-case ports.
+
+| Feature | View model | Workflow | Adapter / core runner |
+|---|---|---|---|
+| Actors | `ActorViewModel` | workspace commands only | `IWorkspaceWriter` through `WorkspaceCommands` |
+| Properties | `PropertyViewModel` | workspace commands only | `IWorkspaceWriter` through `WorkspaceCommands` |
+| Contracts | `ContractViewModel` | workspace commands only | `IWorkspaceWriter` through `WorkspaceCommands` |
+| Booking | `BookingViewModel` | workspace commands only | `IWorkspaceWriter` through `WorkspaceCommands` |
+| Import | `ImportViewModel` | `ImportWorkflow` | `ImportAdapter` -> `IImportRunner` |
+| Analysis | `AnalysisViewModel` | `AnalysisWorkflow` | `AnalysisAdapter` -> `IAnalysisRunner` |
+| Annual | `AnnualViewModel` | `AnnualWorkflow` | `AnnualAdapter` -> `IAnnualRunner` |
+| Export | `ExportViewModel` | `ExportWorkflow` | `ExportAdapter` -> `IExportRunner` |
+| Settings | `SettingsViewModel` | settings and platform services | `Settings`, `LanguageService`, `Actions` |
+
+Feature workflows follow the same MVVM path when they need asynchronous or
+multi-step behavior. Simple catalog screens stop after `WorkspaceCommands`;
+import, analysis, annual and export continue through workflow and adapter
+objects before entering core use-case runners.
+
+```mermaid
+sequenceDiagram
+    participant View as QML feature view
+    participant VM as Feature ViewModel
+    participant Store as WorkspaceStore
+    participant Workflow as UI Workflow
+    participant Adapter as UI Adapter
+    participant Runner as Core use-case runner
+    participant Core as Core application model
+
+    View->>VM: user action
+    VM->>Store: read current snapshot or selection
+    VM->>Workflow: start operation
+    Workflow->>Adapter: map Qt state to core request
+    Adapter->>Runner: run request
+    Runner->>Core: execute use case
+    Core-->>Runner: result DTO or progress event
+    Runner-->>Adapter: result
+    Adapter-->>Workflow: Qt-facing result
+    Workflow-->>VM: workflow state changed
+    VM->>Store: refresh snapshot when state changed
+    VM-->>View: Q_PROPERTY notification
+```
+
+Workflow rules:
+
+- View models expose QML-friendly `Q_PROPERTY` values and invokable operations.
+- Workflows may hold in-memory UI session state, such as active import drafts or running export state.
+- Adapters must remain thin; they translate calls and should not duplicate core business rules.
+- Long-running workflow results are reported back through Qt signals and view-model refresh methods.
+- Before storage save, active import draft state is flushed through the callback installed by `createComposition`.
+
+### 6.7 Platform Services And Observability
+
+Platform services keep native Qt/desktop integration out of feature view models.
+
+| Service | Responsibility |
+|---|---|
+| `FileDialogs` | Native dialogs for import files, export targets and workspace files. |
+| `FileSystemBrowser` | QML-facing file/directory browsing helpers. |
+| `LanguageService` | Translation discovery, QTranslator management, language persistence and QML retranslation. |
+| `Settings` | Persistent UI preferences such as theme mode, autosave, import defaults, export defaults and toolbar visibility. |
+| `QmlDiagnostics` | QML warning/error forwarding. |
+| `Trace`, `Origins`, `ErrorCodes` | UI diagnostic metadata for structured error reporting. |
+
+### 6.8 Adding UI Features
+
+Use this workflow when adding a new UI feature or screen:
+
+1. Add or extend the core workspace/use-case port first if new domain behavior is required.
+2. Add UI projection helpers in `WorkspaceSelectors` or `WorkspacePayloads` when QML needs new snapshot data.
+3. Add workspace mutations to `WorkspaceCommands` when the UI needs to submit new core commands.
+4. Add a feature view model under `ui/viewmodels` for QML-facing state.
+5. Add a workflow under `ui/workflows` only when the feature has multi-step or asynchronous behavior.
+6. Add an adapter under `ui/adapters` only when the feature invokes a core use-case runner.
+7. Register or attach the new object in `ui::shell::createComposition` and `AppContext`.
+8. Add QML components under `ui/qml/FossRedder/Views/<Feature>` and route them through `ContentRouter` and `SidebarRouter` when the feature is top-level.
+9. Add unit tests for view models/workflows/adapters and QML tests for reusable views or controls.
 
 ## 7. Quality Assurance & Testing <a id="7-quality-assurance--testing"></a>
 
-This project includes unit, integration and UI tests. The test layout and tools are aligned with the C++/Qt code structure so implementers can find and run tests close to the code under test.
+Quality assurance is a design boundary, not only a CI activity. The test suite
+mirrors the product architecture: domain rules stay in core tests, SQLite
+behavior stays in persistence tests, external-library behavior stays in
+infrastructure tests, and QML-facing behavior stays in UI/QML tests.
 
-### 7.1 Test layout
-- Core unit tests (Google Test): `core/tests/unit/*` (examples: `TestDefaultStatementParser.cpp`, `TestAppStateManager.cpp`, `TestAppStateFacade.cpp`).
-- Core interaction/integration tests: `core/tests/interaction/*` (examples: `TestStorageManagerInteraction.cpp`, `TestAppStateManagerInteraction.cpp`).
-- Persistence tests: `persistence/tests/unit/*` (examples: `TestAppStateStore.cpp`, `TestSqliteRegistry.cpp`).
-- UI tests (QML / Qt Test): `ui/tests/qml/*` (examples: `tst_ExportView.qml`).
-- Test helpers / mocks: `core/tests/include/mocks/*` (e.g. `MockStorageManager.h`, `MockActorRepository.h`) used to isolate units from disk/IO.
+Chapter 7 covers the QA strategy, the test pyramid, quality gates and a compact
+matrix summary. Full row-level traceability lives in
+[docs/quality/test-matrices.md](quality/test-matrices.md). Machine-readable
+runtime and localization contracts remain next to the CI scripts that enforce
+them.
 
-### 7.2 How tests are wired and run
-- Tests are registered as CMake test targets in the respective `CMakeLists.txt` for `core`, `persistence`, and `ui`. The build generates native test executables that are runnable via CTest or Visual Studio Test Explorer.
-- Typical local run (CLI):
-  - Configure: `cmake -S . -B build -G "Visual Studio 18 2026"`
-  - Build: `cmake --build build --config Debug`
-  - Run all tests: `ctest -C Debug --output-on-failure` (from `build`).
-  - Run a single test: `ctest -R <TestName> -C Debug --output-on-failure`.
-- QML tests are executed by the Qt test harness; they appear as CTest targets and can be run with the same `ctest` commands or through the Test Explorer in Visual Studio.
+### 7.1 QA Strategy And Test Pyramid
 
-### 7.3 Test guidance and conventions
-- Use mocks from `core/tests/include/mocks` to avoid hitting the real database for unit tests. Prefer in-memory or temp-file SQLite only in integration tests.
-- Keep parser tests deterministic by using stored OCR TSV fixtures (see existing parser tests in `core/tests/unit`).
-- Interaction/integration tests that exercise persistence should create isolated temporary DB paths and remove them after the test to avoid cross-test interference.
+The test pyramid follows the dependency direction of the application. Stable
+domain and application behavior is tested at the lowest practical layer; higher
+layers verify integration, presentation state, runtime assets and packaging
+without duplicating business-rule assertions.
 
-### 7.4 CI recommendations (brief)
-- CI should build the solution and run `ctest` in Debug (or CI configuration) and fail the build on test failures. Capture and attach failing test logs for debugging.
+```mermaid
+flowchart BT
+  Domain["Domain tests<br/>entities, values, policies, catalog"]
+  Application["Application tests<br/>workspace, import, analysis, annual, export"]
+  Persistence["Persistence tests<br/>SQLite schema, repositories, state store"]
+  Infrastructure["Infrastructure tests<br/>PDF, OCR, image processing, XLSX, archive"]
+  UI["UI and QML tests<br/>view models, workflows, interaction, components"]
+  Runtime["Runtime QA<br/>installer, staged layout, localization, OCR assets"]
 
-### 7.5 Adding tests
-- Add new tests under the appropriate `*/tests/*` folder and update the subproject `CMakeLists.txt` following the existing examples. Add mocks in `core/tests/include/mocks` when needed.
-- UI source-layer test planning is documented in `docs/design/uisrctesting.md`.
-- QML/UI test planning is documented in `docs/design/uiqmltesting.md`.
+  Domain --> Application
+  Application --> Persistence
+  Application --> Infrastructure
+  Persistence --> UI
+  Infrastructure --> UI
+  UI --> Runtime
+```
+
+### 7.2 Matrix Summary
+
+The design document keeps only the matrix grouping. Row-level traceability is
+kept in [docs/quality/test-matrices.md](quality/test-matrices.md) so matrix
+maintenance does not interrupt the architecture narrative.
+
+Matrix grouping:
+
+| Matrix | Scope |
+|---|---|
+| Core Layer Test Matrix | Domain, application and core port behavior. |
+| Infrastructure Layer Test Matrix | Persistence and infrastructure adapters. |
+| UI Layer Test Matrix | C++ UI source tests, interaction tests and QML behavior. |
+| Deployment Runtime QA Matrix | Installer artifact, staged runtime layout, localization catalogs and OCR model assets. |
+
+CI and deployment contracts are intentionally not embedded in this document.
+They stay next to the scripts that validate them:
+
+| Contract | Owner |
+|---|---|
+| `ci/package/package-layout-contract.json` | Staged runtime and installer layout. |
+| `ci/localization/localization-contract.json` | UI translation catalogs and bundled OCR models. |
+
+### 7.3 Test Execution
+
+The full [CMake preset](#glossary-cmake-preset) inventory is documented in
+Chapter 8 because presets are part of the build and deployment environment. The
+QA chapter only documents the execution paths that quality gates consume.
+
+| Purpose | Command |
+|---|---|
+| Configure all tests | `cmake --preset tests` |
+| Build all release tests | `cmake --build --preset release-tests --parallel 2` |
+| Run all release tests | `ctest --preset release-tests` |
+| Configure clang-tidy | `cmake --preset clang-tidy` |
+| Build clang-tidy target set | `cmake --build --preset release-clang-tidy --parallel 2` |
+| Configure coverage | `cmake --preset coverage` |
+| Build coverage target set | `cmake --build --preset release-coverage --parallel 2` |
+| Collect coverage report | `.\ci\coverage\coverage-windows.ps1 -BuildDir .build\coverage -Config Release -OutDir coverage` |
+
+### 7.4 Pipeline Quality Gates
+
+The main [CI pipeline](#glossary-ci-pipeline) is `.github/workflows/pipeline.yml`
+and is named `Pipeline`. It runs for pushes and pull requests on `develop` and
+`master`, for `v*` tags, and by manual dispatch.
+
+```mermaid
+flowchart LR
+  Trigger["push, PR, tag or manual dispatch"] --> Tests["build-and-test<br/>release-tests"]
+  Tests --> Static["static-analysis<br/>release-clang-tidy"]
+  Tests --> Coverage["coverage<br/>LLVM + LCOV + HTML + Codecov"]
+  Tests --> Docs["documentation<br/>Doxygen HTML"]
+  Coverage --> Pages["publish-pages<br/>coverage report"]
+  Docs --> Pages
+  Static --> Installer["installer<br/>develop only"]
+  Coverage --> Installer
+  Docs --> Installer
+  Installer --> Nightly["develop-nightly<br/>mutable pre-release"]
+```
+
+| Gate | Workflow job | Required output |
+|---|---|---|
+| Test gate | `build-and-test` | `ctest --preset release-tests` passes. |
+| Static-analysis gate | `static-analysis` | `release-clang-tidy` builds successfully. |
+| Coverage gate | `coverage` | LCOV, HTML coverage and Codecov upload input are produced. |
+| Documentation gate | `documentation` | Doxygen HTML artifact is produced. |
+| Pages gate | `publish-pages` | GitHub Pages receives documentation and coverage HTML. |
+| Localization gate | `installer`, `release` | `ci/localization/localization-contract.json` matches available translations and OCR models. |
+| Runtime-layout gate | `installer`, `release` | `ci/package/package-layout-contract.json` matches the staged installer runtime. |
+| Installer gate | `installer`, `release` | `FOSSredder-Setup-<version>-win-x64.exe` exists and passes package QA. |
+
+### 7.5 Adding Or Changing Tests
+
+Use this workflow when adding tests:
+
+1. Start from the architectural owner: domain, application, persistence, infrastructure, UI source, QML or package QA.
+2. Add or update the corresponding matrix row when the feature changes observable behavior.
+3. Keep matrix IDs unique and update the row together with the matching test file or test function name.
+4. Use underscore form in C++ and QML test names when a matrix ID is mirrored in code.
+5. Place the test near the boundary it exercises.
+6. Add the test source to the owning CMake test target.
+7. Prefer domain policies and port fakes over broad end-to-end tests for business rules.
+8. Use temporary SQLite files for persistence behavior that needs a real database.
+9. Keep OCR/parser tests deterministic with generated fixtures or controlled input data.
+10. Update layout, localization or workflow contracts when a feature adds a required runtime asset.
 
 ## 8. Deployment & Environment <a id="8-deployment--environment"></a>
-### 8.1 Target Platform
-The application is designed for desktop environments with a primary focus on performance and local resource management:
-* **Operating System**: Windows 10/11 (x86_64).
-* **Hardware Requirements**: Requires a multi-core CPU to effectively utilize the asynchronous Job System for OCR tasks. Minimum recommended RAM is 8GB to handle high-resolution PDF rendering and image processing buffers.
 
-### 8.2 Execution Environment
-FOSSredder operates as a portable-friendly desktop application. It does not require a centralized server or background daemon:
-* **Binary Distribution**: The application is deployed as a standalone executable with linked dynamic libraries (DLLs) for Qt, OpenCV, and Tesseract.
-* **Working Directory**: The application maintains its configuration and a small registry for the most recent workspace paths in the standard local application data folder.
+Deployment covers build presets, runtime layout, installer packaging, generated
+reports and release channels. These mechanics turn source code into a runnable
+desktop application.
 
-### 8.3 External Toolchain Integration
-At runtime, the system interacts with several pre-compiled engines:
-* **OCR Data**: The application requires access to Tesseract training data files (`tessdata`). These must be present in the application's runtime directory to enable multi-language text recognition.
-* **PDF Backend**: Poppler integration is handled through the internal abstraction layer, requiring the necessary rendering plugins to be present in the deployment package.
+### 8.1 Delivery Model
 
-### 8.4 Portability & Backup
-Since the entire state is contained within a single SQLite database file, deployment-level backups are trivial:
-* **Zero-Install Capable**: The system can be run from external drives as long as the required runtime libraries and Tesseract data files are bundled within the folder structure.
-* **Database Portability**: Workspace files can be moved between machines without loss of integrity, provided the target environment meets the minimum hardware requirements.
+FOSSredder is Windows-first and installer-driven. The repository does not
+currently publish a package-registry artifact such as Docker, NuGet or an SDK
+package; the user-facing deliverable is the Windows installer attached to
+GitHub Releases.
+
+```mermaid
+flowchart LR
+  Develop["develop branch"] --> Pipeline["Pipeline"]
+  Pipeline --> Nightly["develop-nightly<br/>mutable pre-release"]
+  Master["master branch"] --> Pipeline
+  Tag["v* tag"] --> ReleaseWorkflow["Release workflow"]
+  ReleaseWorkflow --> Stable["stable GitHub Release<br/>installer + checksums + manifest"]
+  Pipeline --> Pages["GitHub Pages<br/>documentation + coverage"]
+```
+
+| Runtime concern | Current contract |
+|---|---|
+| Operating system | Windows 10 or newer. |
+| Architecture | x64 Windows. |
+| UI runtime | Qt 6, QML and Qt Quick. |
+| Local persistence | SQLite workspace and registry databases. |
+| Import runtime | Poppler, OpenCV, Tesseract and bundled tessdata. |
+| Export runtime | CSV, XLSX and ZIP/archive support. |
+
+### 8.2 Build Presets
+
+`CMakePresets.json` is the canonical entry point for local development and CI.
+Raw generator commands should not be documented in normal workflows unless a new
+preset cannot express the use case.
+
+Configure presets:
+
+| Configure preset | Generator | Purpose |
+|---|---|---|
+| `app` | Visual Studio 18 2026 | App configuration without tests. Used by normal app builds and installer packaging. |
+| `app-fast` | Visual Studio 18 2026 | App configuration with fast QML build enabled. |
+| `app-ninja-fast` | Ninja Multi-Config | Fast local app configuration with fast QML build enabled. |
+| `tests` | Visual Studio 18 2026 | Full test configuration across core, persistence, UI, debug and infrastructure tests. |
+| `clang-tidy` | Visual Studio 18 2026 | Full test configuration with clang-tidy enabled. |
+| `coverage` | Visual Studio 18 2026 with ClangCL toolset | Full test configuration with LLVM coverage enabled. |
+
+Build and test presets:
+
+| Preset | Type | Purpose |
+|---|---|---|
+| `debug-app`, `release-app` | Build | Build the application from the `app` configuration. |
+| `debug-app-fast`, `release-app-fast` | Build | Build the application with fast QML mode. |
+| `debug-app-ninja-fast`, `release-app-ninja-fast` | Build | Build the application with Ninja Multi-Config and fast QML mode. |
+| `debug-tests`, `release-tests` | Build/Test | Build and run the full registered test suite. |
+| `release-clang-tidy` | Build | Run clang-tidy as part of the configured build. |
+| `release-coverage` | Build/Test | Build and run the LLVM coverage configuration. |
+| `release-installer` | Build | Build the CMake `package` target. |
+
+The installer workflows configure the `app` preset with the explicit
+`FOSSREDDER_FAST_QML_BUILD=ON` cache override, then build `release-app` and the
+`release-installer` package target.
+
+### 8.3 Installed Runtime Layout
+
+The [installer](#glossary-installer) must stage a self-contained
+[runtime layout](#glossary-runtime-layout) under the installation directory.
+
+```text
+<install-root>/
+  bin/
+    fossredder.exe
+    qt.conf
+    platforms/
+      qwindows.dll
+    qml/
+      FossRedder/
+      QtQuick/
+      ...
+    i18n/
+      *.qm
+    res/
+      tessdata/
+        deu.traineddata
+        eng.traineddata
+        fra.traineddata
+        osd.traineddata
+        *-fast.traineddata
+        *-best.traineddata
+```
+
+| Runtime path | Purpose |
+|---|---|
+| `bin/fossredder.exe` | Main application executable. |
+| `bin/qt.conf` | Qt runtime path configuration. |
+| `bin/platforms/qwindows.dll` | Required Qt Windows platform plugin. |
+| `bin/qml` | Qt and FOSSredder QML imports. |
+| `bin/i18n` | Compiled Qt translation catalogs. |
+| `bin/res/tessdata` | Bundled [tessdata](#glossary-tessdata) OCR language and orientation models. |
+
+The layout contract is explicit in `ci/package/package-layout-contract.json`.
+It verifies required runtime files, Qt QML imports and the FOSSredder QML module
+tree.
+
+### 8.4 Installer Packaging Flow
+
+The Windows installer is defined by `installer/inno/fossredder.iss` and include
+files under `installer/inno/includes`.
+
+```mermaid
+sequenceDiagram
+    participant CI as Pipeline or Release workflow
+    participant CMake as CMake app preset
+    participant Build as build-installer.ps1
+    participant Deploy as FossredderQtDeploy.cmake
+    participant Inno as Inno Setup
+    participant QA as package QA scripts
+    participant GH as GitHub Release
+
+    CI->>CMake: configure app with fast QML build
+    CI->>Build: build app and package target
+    Build->>Deploy: stage Qt, QML, i18n and tessdata
+    Build->>Inno: create setup executable
+    CI->>QA: validate artifact and runtime layout
+    CI->>GH: upload nightly or stable release assets
+```
+
+| Component | Responsibility |
+|---|---|
+| `cmake/modules/FossredderPackaging.cmake` | Exposes the CMake `package` target. |
+| `cmake/modules/FossredderQtDeploy.cmake` | Stages Qt plugins, QML imports and runtime configuration. |
+| `ci/package/package-inno.ps1` | Runs CMake install, deploys runtime files and invokes Inno Setup. |
+| `ci/package/validate-package.ps1` | Verifies that the expected installer artifact exists. |
+| `ci/package/test-package-layout.ps1` | Verifies staged runtime files, QML modules, tessdata and installer assets. |
+| `installer/assets` | Wizard banner and small image assets. |
+| `installer/inno/includes` | Setup metadata, file rules, icons, languages, messages, tasks and run behavior. |
+
+Installer artifact format:
+
+```text
+FOSSredder-Setup-<version>-win-x64.exe
+```
+
+### 8.5 Release Channels
+
+| Release channel | Trigger | Intended audience | Output |
+|---|---|---|---|
+| Develop nightly | Successful `Pipeline` run on `develop` | Project testing and validation before master/release. | Mutable `develop-nightly` GitHub pre-release and short-lived workflow artifacts. |
+| Stable release | Push of a `v*` tag | Public release users. | Immutable GitHub Release with installer, SHA256 sums and release manifest. |
+
+The current installer is not documented as [code-signed](#glossary-code-signing).
+Windows can therefore show an unknown-publisher warning until release signing is
+added.
+
+### 8.6 Documentation And Coverage Publishing
+
+GitHub Pages publishes generated project reports from CI artifacts.
+
+| Pages area | Source |
+|---|---|
+| Documentation | Doxygen HTML generated from `Doxyfile`. |
+| Coverage report | HTML generated by `ci/coverage/coverage-windows.ps1`. |
+| Landing page | `ci/pages/index.html`. |
+
+Pages deployment runs from the `Pipeline` workflow on pushes to `develop` and
+`master`. The repository must be configured for GitHub Pages deployment from
+GitHub Actions.
+
+### 8.7 User Data And Portability
+
+[Workspace](#glossary-workspace) data is user-managed and portable.
+
+| File | Role |
+|---|---|
+| `workspace.fossredder` | Canonical SQLite-backed workspace file. |
+| `registry.db` | Local latest-workspace [registry](#glossary-registry). It can be recreated. |
+
+Users can back up, copy or move `.fossredder` workspace files as regular files.
+The registry is a convenience index and is not required to recover workspace
+data.
+
+### 8.8 Deployment Change Checklist
+
+When deployment changes, update all related contracts together:
+
+1. CMake install/package rules.
+2. Qt deployment rules.
+3. Inno Setup file/include rules.
+4. Package layout contract.
+5. Installer QA script.
+6. Localization contract when languages or OCR models change.
+7. Pipeline/release workflows when artifact paths or release channels change.
+8. This design document.
 
 ## 9. Security & Privacy <a id="9-security--privacy"></a>
 
-This section documents how the codebase enforces the project's local-first privacy goals and where sensitive artefacts are handled.
+FOSSredder processes financial documents, OCR text, statement transactions and
+derived accounting results. The security design is therefore based on a
+local-first boundary, explicit data ownership and conservative defaults.
 
-### 9.1 Local-first policy (enforcement points)
-- The application is designed to operate without network access. There are no client‑side components in the codebase that perform automatic remote telemetry or cloud sync. Startup wiring and services (see `app/src/main.cpp`) do not register any network clients by default.
-- Error reporting is pluggable via `core::errors::IErrorReporter` and the debug implementation is configured in `app/src/main.cpp` (`debug::createDefaultErrorReporter()`). No external reporter is wired by default.
+### 9.1 Threat Model
 
-### 9.2 Persistent state and registry
-- The single canonical workspace is stored in a SQLite file. Low‑level DB handling is implemented in `persistence/src/SqliteDb.cpp` and the application schema and migrations are defined in `persistence/src/SqliteSchema.cpp`.
-- The small registry that stores the "latest" workspace path is implemented in `persistence/src/SqliteRegistry.cpp` and is used by `app/src/main.cpp` and `core/src/storage/StorageManager.cpp` to remember recent workspaces.
-- Users can directly manage their `.fossredder` workspace file(s) on disk; the application treats each workspace as a SQLite-backed single-file artefact.
+The current [threat model](#glossary-threat-model) focuses on local desktop use.
+It does not claim enterprise endpoint management, encrypted workspace storage or
+signed releases yet.
 
-### 9.3 Transient artefacts and import hygiene
-- Import code attempts to avoid long‑lived raw image caches: `core/src/import/ImportPipelineHelpers.cpp` reads images, produces `ImportResult` artifacts (TSV, parser logs, small proof images) and stores them in memory or as in‑result byte buffers. The helper `readImportBytes` reads input files; temporary files used by external adapters should be cleaned up by the adapter implementations.
-- Parser implementations (e.g. `core/src/import/parsing/DefaultStatementParser.cpp`) collect debug lines and artifact blobs and return them in `ParseResult`/`ImportResult` so the UI can display proof images without requiring persistent raw image caches.
+```mermaid
+flowchart LR
+  User["Desktop user"] --> Docs["Local PDFs and images"]
+  Docs --> App["FOSSredder desktop runtime"]
+  App --> Workspace["workspace.fossredder<br/>canonical financial data"]
+  App --> Registry["registry.db<br/>latest workspace path"]
+  App --> Exports["CSV XLSX ZIP exports"]
+  App --> Debug["optional local diagnostics"]
+  App -. "no telemetry client by default" .-> Network["Network boundary"]
 
-### 9.4 Access control and encryption (notes)
-- The codebase currently treats the DB file as a regular file on disk; there is no built‑in transparent encryption in the repository. If you require at‑rest encryption, add an encrypted SQLite VFS or an explicit encrypted export/import wrapper around `AppStateStore` (`persistence/src/AppStateStore.cpp`).
+  Repo["GitHub repository"] --> CI["GitHub Actions / self-hosted runner"]
+  CI --> Artifacts["workflow artifacts"]
+  CI --> Pages["GitHub Pages"]
+  CI --> Releases["GitHub Releases"]
+```
 
-### 9.5 Secure defaults and error handling
-- The application installs a global Qt message handler early in `app/src/main.cpp` that forwards Qt diagnostics into the project's `IErrorReporter` pipeline. Error reporting is centralized (`core/errors/*`) and used across import and persistence code paths to avoid uncaught exceptions leaking sensitive data.
-- `WorkspaceSession` and import strategies catch and report exceptions via `core::errors` helpers (see `core/src/application/WorkspaceSession.cpp` and `core/src/import/ImportPipelineHelpers.cpp`) instead of allowing crashes that might leave partial files.
+| Risk | Current mitigation | Remaining gap |
+|---|---|---|
+| Accidental cloud upload of financial data | Desktop runtime has no telemetry or cloud client by default. | Future network features need explicit ports and documentation. |
+| Sensitive data in local workspace | Workspace is a normal local SQLite file controlled by the user. | No transparent at-rest encryption yet. |
+| Sensitive local paths in registry | Registry only stores latest workspace path and can be recreated. | Path disclosure is still possible on a compromised user profile. |
+| Raw import artifacts outliving the workflow | Long-lived raw document caches are not part of the default contract. | Any future cache needs retention and deletion policy. |
+| Unsigned installer trust warning | Release artifacts are validated by package QA. | Code signing is not implemented/documented yet. |
+| CI secret exposure | Secrets are stored in GitHub secrets and scoped to workflows. | Runner hygiene remains an operational responsibility. |
+
+### 9.2 Data Classification
+
+| Data class | Examples | Persistence | Sensitivity |
+|---|---|---|---|
+| Raw source documents | PDFs and images selected by the user. | User-provided files outside the workspace unless explicitly imported/cached. | High |
+| OCR and parser output | TSV data, parsed rows, proof images and parser diagnostics. | Import result/draft workflow state where needed. | High |
+| Workspace data | Actors, properties, contracts, statements, transactions, analyses, annuals, drafts and logs. | `workspace.fossredder`. | High |
+| Registry data | Latest workspace path. | `registry.db`. | Medium |
+| Export output | CSV, XLSX and ZIP export bundles. | User-selected output paths. | High |
+| CI artifacts | Coverage HTML, Doxygen HTML, package logs, installer artifacts. | GitHub Actions artifacts and Pages/Releases. | Low to medium, unless logs accidentally include local sensitive data. |
+
+### 9.3 Runtime Privacy Boundary
+
+Current enforcement points:
+
+- Startup composition in `app/src/main.cpp` does not register cloud clients or telemetry clients.
+- Core use cases run against local workspace snapshots and local infrastructure adapters.
+- Error reporting is routed through `core::errors::IErrorReporter`; no external reporter is wired by default.
+- GitHub, Codecov and Pages integrations exist only in CI workflows, not in the installed desktop runtime.
+
+If a future feature introduces network access, it must be documented as a new
+system boundary and hidden behind a core-owned [port](#glossary-port).
+
+### 9.4 Storage And Encryption
+
+Persistent data is stored in local SQLite files.
+
+| Data | File | Implementation |
+|---|---|---|
+| Workspace state | `workspace.fossredder` | `persistence/WorkspaceStateStore`, `SqliteDb`, `SqliteSchema`, repository implementations. |
+| Latest workspace registry | `registry.db` | `persistence/src/SqliteRegistry.cpp`. |
+| UI preferences | Local UI settings services. |
+
+The workspace file is the sensitive asset. The registry can reveal local file
+paths, but it does not contain the workspace catalog itself.
+
+There is no transparent [at-rest encryption](#glossary-at-rest-encryption) in
+the current implementation. If encrypted workspaces become a requirement, add
+the feature behind an explicit storage boundary. Candidate approaches:
+
+- encrypted SQLite VFS,
+- encrypted workspace export/import wrapper,
+- password-protected external archive format.
+
+Any encryption design must document key ownership, recovery behavior, migration
+strategy and UI failure modes before implementation.
+
+### 9.5 Diagnostics And Logging Rules
+
+Import and OCR workflows may create or expose sensitive intermediate data.
+
+| Artifact | Handling rule |
+|---|---|
+| OCR TSV data | Treat as statement-derived data; expose only where needed for review or diagnostics. |
+| Parser logs | Keep diagnostic, deterministic and free from full financial document dumps unless user-controlled. |
+| Proof images | Treat as sensitive because they can contain statement content. |
+| Adapter debug files | Keep optional and route through `IDebugger` / `FileDebugger`. |
+| Package logs | CI artifacts only; do not include user statement data. |
+
+Implementation rule: do not add long-lived raw document caches without an
+explicit retention and deletion policy.
+
+### 9.6 CI, Secrets And Release Integrity
+
+CI-only integrations use GitHub infrastructure boundaries.
+
+| Secret or token | Scope |
+|---|---|
+| `GITHUB_TOKEN` | Used by workflows to upload artifacts, publish Pages and create/update releases. |
+| `CODECOV_TOKEN` | Used only by the coverage upload script when present. |
+| GitHub Pages OIDC token | Used only for Pages deployment. |
+
+Release integrity rules:
+
+- Do not store secrets in repository files.
+- Keep workflow permissions scoped to each job.
+- Treat stable release artifacts from `v*` tags as immutable.
+- Treat `develop-nightly` as mutable and testing-only.
+- Add code signing before claiming publisher identity in Windows installer flows.
+- Preserve checksum and manifest generation for stable releases.
+
+### 9.7 Security Hardening Backlog
+
+| Backlog item | Why it matters | Recommended timing |
+|---|---|---|
+| Code signing | Removes unknown-publisher warning and improves installer trust. | Before a broader public release. |
+| Workspace encryption design | Protects sensitive local financial data at rest. | When users require shared machines or stronger local privacy. |
+| Dependency/SBOM reporting | Improves release transparency for third-party libraries. | Before packaging is advertised as production-grade. |
+| Artifact retention review | Limits exposure of build logs and package artifacts. | Before public CI/release hardening. |
+| Explicit network-access policy | Keeps local-first behavior enforceable if online features arrive. | Before any network feature. |
 
 ## 10. Appendix <a id="10-appendix"></a>
 ### 10.1 Glossary
 
-[TODO]
+| Term | Meaning |
+|---|---|
+| <a id="glossary-domain-driven-design"></a>Domain-Driven Design (DDD) | Design approach that models software around business concepts, language and invariants. In FOSSredder this means core owns entities, values, policies and use cases rather than Qt or database details. |
+| <a id="glossary-clean-architecture"></a>Clean Architecture | Dependency model where domain and application rules sit at the center, while UI, persistence, frameworks and external libraries stay outside and depend inward through ports. |
+| <a id="glossary-composition-root"></a>Composition root | Startup boundary that is allowed to know concrete implementations and wire them together. In FOSSredder this is the `app` target. |
+| <a id="glossary-mvvm"></a>Model-View-ViewModel (MVVM) | UI architecture where QML views bind to `QObject` view models, while model data comes from core snapshots, commands and use-case ports. |
+| <a id="glossary-dto"></a>Data Transfer Object (DTO) | Plain request, result or snapshot structure used to cross architectural boundaries without exposing mutable domain objects. |
+| <a id="glossary-domain-language"></a>Domain language | The project vocabulary used by the product and the code, for example actor, property, contract, statement, transaction, analysis and annual. |
+| <a id="glossary-domain-entity"></a>Domain entity | A domain object with identity and lifecycle, such as `Actor`, `Contract`, `Transaction` or `Annual`. |
+| <a id="glossary-value-object"></a>Value object | Immutable or normalization-focused domain type identified by its value rather than an id, such as `EntityName`, `MoneyAmount` or `Year`. |
+| <a id="glossary-policy"></a>Policy | A named domain rule object for behavior that should not be hidden in UI, persistence or ad-hoc helpers. |
+| <a id="glossary-use-case"></a>Use case | Application-level operation that coordinates domain objects and ports to perform user-visible work. |
+| <a id="glossary-port"></a>Port | Core-defined interface or DTO boundary consumed by UI, persistence or infrastructure. Ports keep dependency direction pointing inward. |
+| <a id="glossary-adapter"></a>Adapter | Concrete implementation that translates between a port and an external library, service or UI workflow. |
+| <a id="glossary-repository"></a>Repository | Persistence interface or implementation responsible for storing and loading one family of domain/application records. |
+| <a id="glossary-workspace"></a>Workspace | User-managed `.fossredder` SQLite file containing catalog entities, workflow state and logs. |
+| <a id="glossary-registry"></a>Registry | Small local `registry.db` used to remember the latest workspace path. |
+| <a id="glossary-catalog"></a>Catalog | Domain aggregate containing actors, properties, contracts, statements, transactions, analyses and annuals. |
+| <a id="glossary-session-state"></a>Workspace session state | In-memory application state for the active workspace, including catalog data and workflow records. |
+| <a id="glossary-snapshot"></a>Snapshot | Read model projected from workspace state for UI or use-case consumption. |
+| <a id="glossary-draft"></a>Draft | Import-time statement or transaction state that can be reviewed before finalization. |
+| <a id="glossary-import-log"></a>Import log | Persisted workflow record describing an import run, its status and related draft/final statement. |
+| <a id="glossary-export-log"></a>Export log | Persisted workflow record describing an export run, its status and produced output metadata. |
+| <a id="glossary-view-model"></a>View model | QML-facing `QObject` that owns presentation state for one feature area. |
+| <a id="glossary-workflow"></a>Workflow | Coordinator for multi-step or asynchronous behavior, for example import, analysis, annual or export execution. |
+| <a id="glossary-qml-module"></a>QML module | Importable QML package described by `qmldir` files and loaded by the Qt QML engine. |
+| <a id="glossary-cmake-preset"></a>CMake preset | Named CMake configure/build/test entry in `CMakePresets.json`. Presets are the supported way to describe repeatable local and CI builds. |
+| <a id="glossary-test-matrix"></a>Test matrix | Table that maps behavior families to expected tests and implementation locations. |
+| <a id="glossary-quality-gate"></a>Quality gate | Required validation step that must pass before a branch, release or installer artifact is considered acceptable. |
+| <a id="glossary-ci-pipeline"></a>CI pipeline | GitHub Actions workflow that validates build, tests, static analysis, coverage, documentation, Pages and develop-nightly packaging. |
+| <a id="glossary-static-analysis"></a>Static analysis | Source/build analysis that checks code without relying only on runtime behavior. The current configured tool is clang-tidy. |
+| <a id="glossary-coverage"></a>Coverage | Measurement of which code lines or regions are exercised by tests. FOSSredder generates LLVM/LCOV coverage and uploads Codecov input. |
+| <a id="glossary-doxygen"></a>Doxygen | Documentation generator used to produce HTML documentation from source comments and configured inputs. |
+| <a id="glossary-pages"></a>GitHub Pages | Hosted GitHub site used here for generated documentation and coverage reports. |
+| <a id="glossary-artifact"></a>Artifact | File or directory produced by CI, for example coverage HTML, Doxygen HTML, package logs or installer output. |
+| <a id="glossary-installer"></a>Installer | Windows setup executable produced by Inno Setup and attached to nightly or stable releases. |
+| <a id="glossary-runtime-layout"></a>Runtime layout | Installed file structure required for the application to start correctly, including executable, Qt plugins, QML modules, translations and tessdata. |
+| <a id="glossary-tessdata"></a>Tessdata | Tesseract OCR language and orientation model files bundled with the application. |
+| <a id="glossary-release-channel"></a>Release channel | Distribution path with its own trigger and audience, for example develop nightly or stable tagged release. |
+| <a id="glossary-develop-nightly"></a>Develop nightly | Mutable GitHub pre-release built from validated `develop` pipeline runs. |
+| <a id="glossary-stable-release"></a>Stable release | GitHub Release built from an immutable `v*` tag. |
+| <a id="glossary-code-signing"></a>Code signing | Cryptographic signing of installer/executable artifacts so Windows can identify the publisher. |
+| <a id="glossary-threat-model"></a>Threat model | Structured view of relevant risks, trust boundaries and mitigations. |
+| <a id="glossary-at-rest-encryption"></a>At-rest encryption | Encryption of stored files such as the workspace database while they are not actively in use. |
+| <a id="glossary-telemetry"></a>Telemetry | Automatic runtime collection or upload of usage, diagnostic or environment data. |
+| <a id="glossary-runner"></a>Runner | Machine that executes GitHub Actions jobs. FOSSredder uses a self-hosted Windows runner for Windows build jobs. |
+| <a id="glossary-vcpkg-manifest"></a>vcpkg manifest | `vcpkg.json` dependency declaration used by CMake/vcpkg manifest mode. |
 
-### 10.2 External dependencies
-Dependencies are managed via `vcpkg.json` at the repository root. The design text uses grouped roles for readability; the exact manifest below is the authoritative source for reproducible builds.
+### 10.2 External Dependencies
 
-Grouped summary (by role):
-- UI: Qt modules (`qtbase`, `qtdeclarative`, `qtquickcontrols2`, `qttools`, `qtsvg`, `qtimageformats`, `qtshadertools`)
-- Image / vision: `opencv`
-- OCR: `tesseract` + `leptonica` (runtime requires `tessdata`)
-- PDF rendering: `poppler`
-- Data & export: `nlohmann-json`, `xlnt`, `protobuf`
-- Logging / infra: `spdlog`
-- Build / test: `gtest` (test-only), `pkgconf`, `icu`
+Dependencies are managed through `vcpkg.json`. The manifest is the authoritative
+source for third-party dependency names; product versioning is owned by
+`project(FossRedder VERSION ...)` in the root `CMakeLists.txt`.
 
-### 10.3 Reference index (quick navigator)
+| Role | Dependencies |
+|---|---|
+| UI | `qtbase`, `qtdeclarative`, `qtquickcontrols2`, `qttools`, `qtsvg`, `qtimageformats`, `qtshadertools` |
+| PDF rendering | `poppler` |
+| Image processing | `opencv` |
+| OCR | `tesseract`, `leptonica`, runtime `tessdata` files |
+| Data and export | `nlohmann-json`, `xlnt`, `protobuf`, `libzip` |
+| Logging and support | `spdlog`, `icu`, `pkgconf` |
+| Tests | `gtest` |
+
+### 10.3 Important Runtime Files
+
+| File or directory | Meaning |
+|---|---|
+| `core/include/core/constants/runtime.h` | Canonical runtime filenames such as workspace and registry names. |
+| `app/i18n` | Translation sources and generated catalogs. |
+| `infra/text-recognition/res/tessdata` | OCR models bundled into the installed runtime. |
+| `ui/qml/FossRedder` | Application QML module tree. |
+| `installer/inno` | Inno Setup definition and include files. |
+| `ci/package/package-layout-contract.json` | Installer/runtime layout contract. |
+| `ci/localization/localization-contract.json` | Supported language and OCR model contract. |
+
+### 10.4 Reference Index
+
 | Concept | Representative files |
 |---|---|
-| Application entry / wiring | `app/src/main.cpp` |
-| Storage orchestration | `core/src/storage/StorageManager.cpp`, `core/include/core/storage/IStorageManager.h` |
-| Schema & migrations | `persistence/src/SqliteSchema.cpp`, `persistence/src/SqliteDb.cpp` |
-| Atomic store (single-file) | `persistence/src/AppStateStore.cpp` |
-| Repository implementations | `persistence/src/repositories/Sqlite*.cpp`, headers in `persistence/include/persistence/repositories/` |
-| Repo factory | `persistence/src/Factory.cpp` |
-| App state and session | `core/include/core/application/AppStateFacade.h`, `core/src/application/AppStateFacade.cpp`, `core/src/application/WorkspaceSession.cpp` |
-| AppState ↔ Repositories mapping | `core/include/core/application/AppStateManager.h`, `core/src/application/AppStateManager.cpp` |
-| Import orchestration | `core/src/import/ImportStatement.cpp`, `core/src/import/ImportPipelineHelpers.cpp` |
-| Parser implementation | `core/src/import/parsing/DefaultStatementParser.cpp` |
-| Job system / SlotLimiter | `core/src/jobs/*`, headers in `core/include/core/jobs/*` |
-| UI controllers / view models | `ui/src/controllers/*`, `ui/src/state/*`, QML in `ui/qml/*` |
-| Tests (unit / integration) | `core/tests/*`, `persistence/tests/*`, `ui/tests/*` |
-| Design docs | `docs/DESIGN.md`, `docs/design/*` |
+| Application entry and composition | `app/src/main.cpp`, `app/src/main_qml.cpp` |
+| CMake presets | `CMakePresets.json` |
+| CMake project version | `CMakeLists.txt` |
+| Core domain model | `core/include/core/domain`, `core/src/domain` |
+| Core application services | `core/include/core/application`, `core/src/application` |
+| Core ports | `core/include/core/ports` |
+| Workspace session and facade | `core/include/core/application/workspace`, `core/src/application/workspace` |
+| Storage orchestration | `core/include/core/application/storage/StorageManager.h`, `core/src/application/storage/StorageManager.cpp` |
+| Schema and migrations | `persistence/src/SqliteSchema.cpp`, `persistence/include/persistence/SqliteSchema.h` |
+| Workspace state store | `persistence/src/WorkspaceStateStore.cpp`, `persistence/include/persistence/WorkspaceStateStore.h` |
+| Registry | `persistence/src/SqliteRegistry.cpp`, `core/include/core/ports/infra/storage/IRegistry.h` |
+| Repository implementations | `persistence/src/repositories`, `persistence/include/persistence/repositories` |
+| Import application | `core/src/application/import`, `core/include/core/application/import` |
+| PDF adapter | `infra/pdf-rendering` |
+| Image-processing adapter | `infra/image-processing` |
+| OCR adapter and tessdata | `infra/text-recognition` |
+| XLSX writer adapter | `infra/xlsx-writer` |
+| Archive adapter | `infra/archive` |
+| Analysis image renderer | `infra/analysis-image-renderer` |
+| UI shell | `ui/include/ui/shell`, `ui/src/shell`, `ui/qml/FossRedder/Components` |
+| UI workspace roles | `ui/include/ui/workspace`, `ui/src/workspace` |
+| UI view models and workflows | `ui/include/ui/viewmodels`, `ui/src/viewmodels`, `ui/include/ui/workflows`, `ui/src/workflows` |
+| QML views and controls | `ui/qml/FossRedder/Views`, `ui/qml/FossRedder/Controls` |
+| Tests | `core/tests`, `persistence/tests`, `infra/*/tests`, `ui/tests` |
+| Pipeline workflow | `.github/workflows/pipeline.yml` |
+| Release workflow | `.github/workflows/release.yml` |
+| Packaging scripts | `ci/package`, `installer` |
+| Coverage and Pages | `ci/coverage`, `ci/pages`, `Doxyfile` |
 
-End of Appendix.
+### 10.5 Quality Traceability
+
+The full row-level test matrices live in [docs/quality/test-matrices.md](quality/test-matrices.md). This design document keeps the QA strategy and gate model in Chapter 7; the dedicated matrix document provides traceability across core, infrastructure, UI, QML and deployment/runtime QA.

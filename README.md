@@ -15,7 +15,7 @@
 
 The application replaces a manual, Excel-based workflow with a semi-automated pipeline. It extracts transaction data from PDF statements using OCR and heuristic parsing, followed by a custom matching engine that pre-fills entries by linking them to specific actors, properties, and contracts. A dedicated review interface allows for human-in-the-loop validation, streamlining the process of identifying recoverable costs before the final export back into a structured Excel format.
 
-While the core problem could be addressed with simple scripts or well-known LLMs, this project also serves as an engineering exercise to explore modular system design, extensibility, and modern development workflows as for example agentic ai.
+While the core problem could be addressed with simpler scripts, this project also serves as an engineering exercise in modular system design, extensibility, automation, and AI-assisted development workflows.
 ## Technology Stack
 
 - **Application:** C++20, Qt 6, QML / Qt Quick
@@ -33,8 +33,8 @@ While the core problem could be addressed with simple scripts or well-known LLMs
 Prerequisites:
 
 - CMake 4.0.1 or newer
-- vcpkg in manifest mode, exposed through the VCPKG_ROOT environment variable
-- A Windows C++ toolchain. The standard presets use Visual Studio 18 2026. Separate fast presets use Ninja Multi-Config for app builds.
+- vcpkg in manifest mode
+- A Windows C++ toolchain supported by the configured CMake presets
 - Inno Setup 6 when building the Windows installer
 
 Minimal setup:

@@ -1,7 +1,7 @@
 # FOSSredder Installer
 
-This directory owns the Windows installer definition and release packaging
-expectations for FOSSredder.
+This directory owns the Windows installer definition, setup branding, and
+release packaging expectations for FOSSredder.
 
 ## Installer Contract
 
@@ -38,7 +38,7 @@ The packaging flow is intentionally split by responsibility:
 - `installer/inno/fossredder.iss` defines the user-facing installer entry point.
 - `installer/inno/includes/*.iss` split setup metadata, tasks, files, icons, and run behavior.
 - `infra/text-recognition/res/tessdata` provides the bundled OCR models installed to `bin/res/tessdata`.
-- `installer/assets/` owns installer-specific branding assets if setup artwork diverges from the application icon.
+- `installer/assets/` owns installer-specific wizard artwork.
 
 Local package build:
 
@@ -47,13 +47,13 @@ cmake --preset app
 cmake --build --preset release-installer
 ```
 
-Manual installer runs are uploaded as the `fossredder-installer` artifact from
-the `Installer` workflow.
+Successful `develop` pipeline runs build and validate the installer as part of
+the main `Pipeline` workflow. The validated installer is uploaded as the
+`fossredder-installer` artifact and is used to update the mutable
+`develop-nightly` GitHub pre-release for testing.
 
-Successful `develop` pipeline runs trigger the `Installer` workflow and update
-the mutable `develop-nightly` GitHub pre-release with the latest validated
-installer. This nightly release is for testing only; stable installers are
-published by the `Release` workflow from version tags.
+Stable installers are published by the `Release` workflow from `v*` version
+tags.
 
 ## Release Hardening
 

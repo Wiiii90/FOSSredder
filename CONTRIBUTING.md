@@ -1,94 +1,80 @@
 # Contributing to FOSSredder
 
-Thanks for taking the time to contribute.
+Thanks for helping improve FOSSredder. This guide keeps contribution workflow
+small, predictable and reviewable.
 
-This document describes the preferred workflow for working on FOSSredder so that changes stay consistent, reviewable, and release-friendly.
-
-## Branch model
+## Branching
 
 - `master` is the release line.
 - `develop` is the integration line for ongoing work.
-- Feature, bugfix, refactor, and release-related work should normally target `develop`.
-- Release work moves from `develop` to `master` only when a release is being prepared.
+- Feature, bugfix, docs, chore and refactor branches should normally start from
+  `develop` and target `develop`.
+- Hotfix branches start from `master` only when a released version needs an
+  urgent fix. Merge the fix back into `develop` afterwards.
 
-## Workflows
+## Issues
 
-### Feature work
+Use the GitHub issue forms whenever possible:
 
-- Create a feature branch from `develop`.
-- Open a pull request back into `develop`.
-- Use the `Feature request` issue form for new product work or meaningful workflow changes.
+- `Bug report` for reproducible defects or regressions.
+- `Feature request` for new product behavior or workflow changes.
+- `Docs` for documentation work.
+- `Refactor` for structural improvements that should preserve behavior.
+- `Chore` for maintenance, tooling or repository hygiene.
+- `Release task` for versioning, packaging checks, release notes or milestone closure.
+- `Hotfix` for urgent fixes against released versions.
 
-### Bug fixes
+Good issues state the problem, expected outcome, scope, acceptance criteria and
+relevant links or logs.
 
-- Create a branch from `develop` unless a hotfix against a released version is explicitly required.
-- Open a pull request back into `develop`.
-- Use the `Bug report` issue form for reproducible defects or regressions.
+## Pull Requests
 
-### Refactors
+- Keep pull requests focused and reviewable.
+- Link the related issue.
+- Describe behavior changes, risk and verification.
+- Update tests, documentation, test matrices or CI contracts when the change
+  affects behavior, architecture, runtime layout or supported languages.
+- Prefer clean, squashable commits over mixed-purpose history.
 
-- Use the `Refactor` issue form for architecture cleanup, structural changes, or codebase improvements that should preserve the intended behavior.
-- Keep refactors focused and behavior-preserving unless the issue explicitly states otherwise.
+## Engineering Standards
 
-### Release work
+Use [docs/quality/engineering-standards.md](docs/quality/engineering-standards.md)
+as the detailed project standard.
 
-- Use the `Release task` issue form for versioning, tagging, release verification, packaging checks, or milestone closure.
-- Release tasks belong to the milestone they help complete.
-- Final release pull requests should move from `develop` to `master`.
+Short version:
 
-## Issue creation
+- Preserve behavior during refactors unless the issue explicitly says otherwise.
+- Keep business rules in `core`, persistence in `persistence`, external-library
+  integrations in `infra/*`, and presentation state in `ui`.
+- Keep QML declarative and route user intent through UI state, workflows or core
+  ports.
+- Remove dead code instead of moving it into new wrappers or private support files.
+- Keep public headers documented when public API changes.
 
-- Prefer the GitHub issue forms instead of free-form issues.
-- Choose the template that best matches the work:
-  - `Feature request`
-  - `Bug report`
-  - `Refactor`
-  - `Release task`
-- Fill in the fields with concrete, actionable information.
-- Include acceptance criteria or a clear checklist where possible.
+## Quality Checklist
 
-## Labels
+Before opening or merging a pull request, make sure:
 
-- Use labels to describe the issue type, priority, and current status.
-- Keep label usage consistent with the repository conventions.
-- When in doubt, mark the issue for triage instead of guessing.
-
-Recommended label groups:
-
-- `type/*` for the kind of work
-- `prio/*` for priority
-- `status/*` for the current workflow state
-
-## Pull requests
-
-- Keep pull requests small and focused whenever possible.
-- Link the related issue in the pull request description.
-- Include testing notes when behavior changes or risk is non-trivial.
-- Prefer squashable, reviewable changes over large mixed-purpose commits.
-
-## Quality expectations
-
-Before opening a pull request, make sure the change is in a good state:
-
-- formatting is consistent
-- tests were added or updated when appropriate
-- documentation was updated when behavior or usage changed
-- no unnecessary magic values or hidden assumptions were introduced
-- architecture changes stay aligned with the existing core design
-
-## Documentation
-
-- Update `docs/` when the change affects architecture, workflow, or product behavior.
-- Update the README when setup, usage, or release-related instructions change.
-- Keep code and documentation aligned.
+- relevant tests or CI jobs were run, or the skipped verification is stated
+  clearly
+- behavior-changing work includes matching tests where practical
+- documentation is updated when setup, architecture, usage or release behavior
+  changes
+- [docs/quality/test-matrices.md](docs/quality/test-matrices.md) is updated when
+  test coverage or observable behavior changes
+- `ci/package` and `ci/localization` contracts are updated when runtime assets,
+  QML modules, translations or OCR models change
 
 ## Releases
 
-- A milestone represents a version target.
-- A release task closes out the version target by handling the release-specific work.
-- Use the release task to finish tagging, packaging checks, release notes, and final verification.
+- Milestones represent version targets.
+- `develop` can publish nightly pre-releases for installer validation.
+- Stable releases are cut from `master` using `v*` tags.
+- Release work should verify versioning, release notes, installer output,
+  package layout and localization/OCR assets.
 
-## Questions and triage
+## Questions
 
-- If something is unclear, create an issue with the best matching template and add enough context for triage.
-- If the work does not fit an existing template, open a discussion or ask a maintainer to triage it.
+If something is unclear, open the closest matching issue type and add enough
+context for triage. If the work does not fit an existing template, start with a
+discussion or ask for maintainer guidance.
