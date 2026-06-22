@@ -1,7 +1,5 @@
 # Design — FOSSredder
 
-Date: 2026-06-10
-
 Author: Wilhelm Altemeier
 
 ## Table of Contents
@@ -133,8 +131,7 @@ flowchart LR
 ### 3.1 Target-Level Architecture
 
 FOSSredder is structured around CMake targets with explicit dependency
-direction. The codebase is not organized as a single application folder with
-incidental helpers. Each target owns a distinct architectural responsibility.
+direction to meet [Clean Architecture](appendix/reference.md#glossary-clean-architecture) criteria:
 
 - `app` builds the `fossredder` executable and acts as the [composition root](appendix/reference.md#glossary-composition-root).
 - `ui` owns QML modules, view models, workflows, UI adapters, and shell wiring.
@@ -155,41 +152,50 @@ adapters.
 flowchart LR
   App["app<br/>fossredder executable<br/>composition root"]
 
-  subgraph Outer["outer targets"]
+  subgraph OuterTargets["outer targets"]
     direction TB
     UI["ui<br/>QML modules<br/>view models workflows adapters"]
     Persistence["persistence<br/>SQLite repositories workspace store registry"]
-    Infra["infra/* adapters<br/>pdf-rendering<br/>image-processing<br/>text-recognition<br/>xlsx-writer<br/>archive<br/>analysis-image-renderer"]
+    InfraPdf["infra/pdf-rendering<br/>Poppler"]
+    InfraImage["infra/image-processing<br/>OpenCV"]
+    InfraText["infra/text-recognition<br/>Tesseract"]
+    InfraXlsx["infra/xlsx-writer<br/>xlnt"]
+    InfraArchive["infra/archive<br/>libzip"]
+    InfraAnalysis["infra/analysis-image-renderer<br/>OpenCV"]
   end
 
-  subgraph Inner["inner contracts and diagnostics"]
-    direction TB
-    Core["core<br/>domain application services ports jobs"]
-    Debug["debug<br/>error reporting diagnostic sinks"]
-  end
+  Core["core<br/>domain application services ports jobs"]
+  Debug["debug<br/>error reporting diagnostic sinks"]
 
-  App --> Core
-  App --> Debug
-  App --> UI
-  App --> Persistence
-  App --> Infra
+  App -->|wires| UI
+  App -->|wires| Persistence
+  App -->|wires| InfraPdf
+  App -->|wires| InfraImage
+  App -->|wires| InfraText
+  App -->|wires| InfraXlsx
+  App -->|wires| InfraArchive
+  App -->|wires| InfraAnalysis
+  App -->|wires| Core
+  App -->|wires| Debug
 
-  UI --> Core
-  Persistence --> Core
-  Infra --> Core
+  UI -->|uses ports| Core
+  Persistence -->|implements ports| Core
+  InfraPdf -->|implements ports| Core
+  InfraImage -->|implements ports| Core
+  InfraText -->|implements ports| Core
+  InfraXlsx -->|implements ports| Core
+  InfraArchive -->|implements ports| Core
+  InfraAnalysis -->|implements ports| Core
 
   UI -. diagnostics .-> Debug
-  Infra -. pdf/image/text diagnostics .-> Debug
+  InfraPdf -. diagnostics .-> Debug
+  InfraImage -. diagnostics .-> Debug
+  InfraText -. diagnostics .-> Debug
 ```
 
-The same target structure maps to a [Clean Architecture](appendix/reference.md#glossary-clean-architecture) boundary model:
-
-| Boundary | Owned by | Rule |
-|---|---|---|
-| Domain rules | `core/domain` | No UI, persistence or third-party runtime dependency. |
-| Application use cases | `core/application` | Coordinate workflows through domain objects, snapshots and ports. |
-| Ports and DTOs | `core/ports` | Define stable contracts for UI, persistence and infrastructure. |
-| Adapters and drivers | `ui`, `persistence`, `infra/*`, `debug`, `app` | Depend inward, implement ports, and keep concrete frameworks outside core rules. |
+Read the diagram from left to right: `app` composes concrete targets, outer
+targets depend inward on `core` ports, and dotted arrows are diagnostic
+reporting paths rather than domain dependencies.
 
 ### 3.2 Dependency Direction
 
