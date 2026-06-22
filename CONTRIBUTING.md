@@ -38,8 +38,7 @@ relevant links or logs.
 
 ## Engineering Standards
 
-Use [docs/quality/engineering-standards.md](docs/quality/engineering-standards.md)
-as the detailed project standard.
+Use [docs/DESIGN.md](docs/DESIGN.md) as the detailed project standard.
 
 Short version:
 
@@ -60,7 +59,7 @@ Before opening or merging a pull request, make sure:
 - behavior-changing work includes matching tests where practical
 - documentation is updated when setup, architecture, usage or release behavior
   changes
-- [docs/quality/test-matrices.md](docs/quality/test-matrices.md) is updated when
+- [docs/appendix/test-matrices.md](docs/appendix/test-matrices.md) is updated when
   test coverage or observable behavior changes
 - `ci/package` and `ci/localization` contracts are updated when runtime assets,
   QML modules, translations or OCR models change

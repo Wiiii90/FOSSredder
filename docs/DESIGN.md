@@ -14,7 +14,7 @@ Author: Wilhelm Altemeier
 7. [Quality Assurance & Testing](#7-quality-assurance--testing)
 8. [Deployment & Environment](#8-deployment--environment)
 9. [Security & Privacy](#9-security--privacy)
-10. [Appendix](#10-appendix)
+10. [Reference Appendices](#reference-appendices)
 
 ---
 
@@ -136,7 +136,7 @@ FOSSredder is structured around CMake targets with explicit dependency
 direction. The codebase is not organized as a single application folder with
 incidental helpers. Each target owns a distinct architectural responsibility.
 
-- `app` builds the `fossredder` executable and acts as the [composition root](#glossary-composition-root).
+- `app` builds the `fossredder` executable and acts as the [composition root](appendix/reference.md#glossary-composition-root).
 - `ui` owns QML modules, view models, workflows, UI adapters, and shell wiring.
 - `core` owns domain types, use-case services, workspace/session orchestration,
   jobs, policies, DTOs, and all public ports.
@@ -190,53 +190,14 @@ flowchart TD
   InfraText --> Debug
 ```
 
-The same target structure maps to a [Clean Architecture](#glossary-clean-architecture) boundary model. Code is
-allowed to depend inward toward domain and application rules; concrete
-frameworks, persistence, rendering, OCR, export, and QML stay outside the core.
+The same target structure maps to a [Clean Architecture](appendix/reference.md#glossary-clean-architecture) boundary model:
 
-```mermaid
-flowchart TB
-  subgraph Outer["Frameworks and drivers"]
-    AppDriver["app composition root"]
-    UiDriver["ui Qt/QML MVVM"]
-    PersistenceDriver["persistence SQLite"]
-    InfraDriver["infra Poppler OpenCV Tesseract xlnt libzip"]
-    DebugDriver["debug diagnostics"]
-  end
-
-  subgraph InterfaceAdapters["Interface adapters and ports"]
-    WorkspacePorts["workspace ports"]
-    UseCasePorts["use-case ports"]
-    RepositoryPorts["repository ports"]
-    InfraPorts["infra ports"]
-    Dtos["snapshots requests results"]
-  end
-
-  subgraph ApplicationLayer["Application use cases"]
-    WorkspaceUseCases["workspace services"]
-    ImportUseCases["import services"]
-    AnalysisUseCases["analysis services"]
-    AnnualUseCases["annual services"]
-    ExportUseCases["export services"]
-  end
-
-  subgraph DomainLayer["Domain rules"]
-    Entities["domain entities"]
-    Values["value objects"]
-    Policies["domain policies"]
-    Catalog["WorkspaceCatalog"]
-  end
-
-  Outer --> InterfaceAdapters
-  InterfaceAdapters --> ApplicationLayer
-  ApplicationLayer --> DomainLayer
-  ApplicationLayer --> InterfaceAdapters
-  PersistenceDriver -. implements .-> RepositoryPorts
-  InfraDriver -. implements .-> InfraPorts
-  UiDriver --> WorkspacePorts
-  UiDriver --> UseCasePorts
-  AppDriver --> Outer
-```
+| Boundary | Owned by | Rule |
+|---|---|---|
+| Domain rules | `core/domain` | No UI, persistence or third-party runtime dependency. |
+| Application use cases | `core/application` | Coordinate workflows through domain objects, snapshots and ports. |
+| Ports and DTOs | `core/ports` | Define stable contracts for UI, persistence and infrastructure. |
+| Adapters and drivers | `ui`, `persistence`, `infra/*`, `debug`, `app` | Depend inward, implement ports, and keep concrete frameworks outside core rules. |
 
 ### 3.2 Dependency Direction
 
@@ -312,14 +273,34 @@ When adding a feature, choose the target based on responsibility:
 - Add target wiring in the closest `CMakeLists.txt` and cover the seam with the
   nearest test family.
 
+### 3.6 Layer Ownership And Refactor Rules
+
+Layer ownership is intentionally narrow:
+
+| Layer | Owns | Must not own |
+|---|---|---|
+| `core/domain` | Entities, value objects, invariants and reusable policies. | UI state, persistence details or workflow DTO storage. |
+| `core/application` | Use-case orchestration, workspace services, imports, exports, analysis and annual workflows. | Qt/QML bindings or concrete third-party libraries. |
+| `core/ports` | Public contracts for use cases, workspace access, persistence and infrastructure capabilities. | Concrete implementations. |
+| `persistence` | SQLite schema, repositories, registry and workspace state storage. | Domain rules or UI projections. |
+| `infra/*` | Concrete adapters for PDF rendering, image processing, OCR, archive and XLSX output. | Product workflows or UI decisions. |
+| `ui/src` and `ui/include/ui` | QML-facing state, view models, workflows, adapters, selectors and payload mapping. | Domain invariants, persistence decisions or duplicated business rules. |
+| `ui/qml` | Declarative composition, binding, layout, controls and user intent. | Core logic, workflow decisions or data transformation. |
+
+Refactors should preserve behavior unless the issue explicitly changes it, stay
+inside the owning layer, and remove dead wrappers or stale compatibility paths
+instead of moving them. Search C++, QML and tests before renaming public API.
+Create shared helpers only when they represent a stable project concept, not
+just a few repeated lines.
+
 ## 4. Core Domain & Application Model <a id="4-core-domain--application-model"></a>
 ### 4.1 Domain-Driven Design Orientation
 
 The `core` target is the inner boundary of FOSSredder. It follows a
-[Domain-Driven Design (DDD)](#glossary-domain-driven-design) orientation: core
+[Domain-Driven Design (DDD)](appendix/reference.md#glossary-domain-driven-design) orientation: core
 owns the domain language, application use cases and
-[ports](#glossary-port) that connect the desktop UI, persistence and
-[infrastructure adapters](#glossary-adapter) without making the core depend on
+[ports](appendix/reference.md#glossary-port) that connect the desktop UI, persistence and
+[infrastructure adapters](appendix/reference.md#glossary-adapter) without making the core depend on
 Qt, SQLite, Poppler, OpenCV, Tesseract, xlnt or Inno Setup.
 
 The core is intentionally split into three primary areas:
@@ -328,7 +309,7 @@ The core is intentionally split into three primary areas:
 |---|---|---|
 | Domain model | `core/include/core/domain`, `core/src/domain` | Entities, value objects, policies and the workspace catalog. This code represents business concepts and invariants. |
 | Application layer | `core/include/core/application`, `core/src/application` | Use-case orchestration, workspace session state, import parsing, matching, analysis, annual reports, export and storage coordination. |
-| Ports | `core/include/core/ports` | Stable contracts used by UI, persistence and infrastructure. Ports contain snapshots, commands, request/result [DTOs](#glossary-dto) and abstract service interfaces. |
+| Ports | `core/include/core/ports` | Stable contracts used by UI, persistence and infrastructure. Ports contain snapshots, commands, request/result [DTOs](appendix/reference.md#glossary-dto) and abstract service interfaces. |
 
 Supporting packages such as `core/errors`, `core/jobs`, `core/constants` and
 `core/utils` are allowed to support the domain and application layer, but they
@@ -1300,7 +1281,7 @@ The UI target is organized into these areas:
 | Platform services | `ui/include/ui/platform`, `ui/src/platform` | Native file dialogs, filesystem browsing and runtime language switching. |
 | Observability | `ui/include/ui/observability`, `ui/src/observability` | UI-specific trace origins and diagnostic helpers. |
 
-The UI uses an [MVVM](#glossary-mvvm)-oriented structure:
+The UI uses an [MVVM](appendix/reference.md#glossary-mvvm)-oriented structure:
 
 - QML reads and invokes QML-facing `QObject` APIs.
 - View models own presentation state and form behavior.
@@ -1573,6 +1554,28 @@ Use this workflow when adding a new UI feature or screen:
 8. Add QML components under `ui/qml/FossRedder/Views/<Feature>` and route them through `ContentRouter` and `SidebarRouter` when the feature is top-level.
 9. Add unit tests for view models/workflows/adapters and QML tests for reusable views or controls.
 
+### 6.9 UI Source And QML Rules
+
+View models are narrow QML API surfaces. Public `Q_PROPERTY` and `Q_INVOKABLE`
+members should map to values QML binds or actions QML triggers. View models may
+hold presentation state such as text fields, selected ids, dirty state,
+expanded state and button enablement; they must not mutate domain objects,
+parse business formats, calculate analysis output, finalize imports, export
+files or inspect aggregates directly.
+
+Catalog CRUD goes through `WorkspaceCommands`, workspace reads go through
+`WorkspaceSelectors`, and cross-view selection goes through
+`WorkspaceSelection`. Multi-step use cases go through feature workflows and
+core use-case ports. UI adapters translate between Qt/QML-friendly types and
+core ports; they should mostly map, delegate, bridge cancellation/progress and
+convert payloads.
+
+QML remains declarative: compose UI, bind state and emit user intent. Feature
+screens live under `ui/qml/FossRedder/Views/<Feature>/`, new QML files are
+registered in the owning `qmldir`, and shared `Controls`, `Components` and
+theme values should be preferred over one-off colors, spacing, sizes or layout
+hacks.
+
 ## 7. Quality Assurance & Testing <a id="7-quality-assurance--testing"></a>
 
 Quality assurance is a design boundary, not only a CI activity. The test suite
@@ -1580,11 +1583,11 @@ mirrors the product architecture: domain rules stay in core tests, SQLite
 behavior stays in persistence tests, external-library behavior stays in
 infrastructure tests, and QML-facing behavior stays in UI/QML tests.
 
-Chapter 7 covers the QA strategy, the test pyramid, quality gates and a compact
-matrix summary. Full row-level traceability lives in
-[docs/quality/test-matrices.md](quality/test-matrices.md). Machine-readable
-runtime and localization contracts remain next to the CI scripts that enforce
-them.
+Chapter 7 covers the QA strategy, the test pyramid, quality gates, engineering
+traceability rules and a compact matrix summary. Full row-level traceability
+lives in [docs/appendix/test-matrices.md](appendix/test-matrices.md).
+Machine-readable runtime and localization contracts remain next to the CI
+scripts that enforce them.
 
 ### 7.1 QA Strategy And Test Pyramid
 
@@ -1613,7 +1616,7 @@ flowchart BT
 ### 7.2 Matrix Summary
 
 The design document keeps only the matrix grouping. Row-level traceability is
-kept in [docs/quality/test-matrices.md](quality/test-matrices.md) so matrix
+kept in [docs/appendix/test-matrices.md](appendix/test-matrices.md) so matrix
 maintenance does not interrupt the architecture narrative.
 
 Matrix grouping:
@@ -1635,7 +1638,7 @@ They stay next to the scripts that validate them:
 
 ### 7.3 Test Execution
 
-The full [CMake preset](#glossary-cmake-preset) inventory is documented in
+The full [CMake preset](appendix/reference.md#glossary-cmake-preset) inventory is documented in
 Chapter 8 because presets are part of the build and deployment environment. The
 QA chapter only documents the execution paths that quality gates consume.
 
@@ -1652,7 +1655,7 @@ QA chapter only documents the execution paths that quality gates consume.
 
 ### 7.4 Pipeline Quality Gates
 
-The main [CI pipeline](#glossary-ci-pipeline) is `.github/workflows/pipeline.yml`
+The main [CI pipeline](appendix/reference.md#glossary-ci-pipeline) is `.github/workflows/pipeline.yml`
 and is named `Pipeline`. It runs for pushes and pull requests on `develop` and
 `master`, for `v*` tags, and by manual dispatch.
 
@@ -1695,6 +1698,17 @@ Use this workflow when adding tests:
 8. Use temporary SQLite files for persistence behavior that needs a real database.
 9. Keep OCR/parser tests deterministic with generated fixtures or controlled input data.
 10. Update layout, localization or workflow contracts when a feature adds a required runtime asset.
+
+### 7.6 Traceability Rules
+
+- Add or update tests at the architectural boundary that owns the behavior.
+- Update [test matrices](appendix/test-matrices.md) when observable behavior or covered test scope changes.
+- Update `ci/package/package-layout-contract.json` when a required runtime file, QML module or packaged asset changes.
+- Update `ci/localization/localization-contract.json` when supported UI languages or bundled OCR models change.
+- Keep test names searchable from matrix IDs when a matrix row maps to code.
+- State skipped verification explicitly in the pull request.
+- Keep includes, formatting and static-analysis behavior aligned with `.clang-format` and `.clang-tidy`.
+- Keep public headers documented with Doxygen when public API changes.
 
 ## 8. Deployment & Environment <a id="8-deployment--environment"></a>
 
@@ -1763,8 +1777,8 @@ The installer workflows configure the `app` preset with the explicit
 
 ### 8.3 Installed Runtime Layout
 
-The [installer](#glossary-installer) must stage a self-contained
-[runtime layout](#glossary-runtime-layout) under the installation directory.
+The [installer](appendix/reference.md#glossary-installer) must stage a self-contained
+[runtime layout](appendix/reference.md#glossary-runtime-layout) under the installation directory.
 
 ```text
 <install-root>/
@@ -1796,7 +1810,7 @@ The [installer](#glossary-installer) must stage a self-contained
 | `bin/platforms/qwindows.dll` | Required Qt Windows platform plugin. |
 | `bin/qml` | Qt and FOSSredder QML imports. |
 | `bin/i18n` | Compiled Qt translation catalogs. |
-| `bin/res/tessdata` | Bundled [tessdata](#glossary-tessdata) OCR language and orientation models. |
+| `bin/res/tessdata` | Bundled [tessdata](appendix/reference.md#glossary-tessdata) OCR language and orientation models. |
 
 The layout contract is explicit in `ci/package/package-layout-contract.json`.
 It verifies required runtime files, Qt QML imports and the FOSSredder QML module
@@ -1848,7 +1862,7 @@ FOSSredder-Setup-<version>-win-x64.exe
 | Develop nightly | Successful `Pipeline` run on `develop` | Project testing and validation before master/release. | Mutable `develop-nightly` GitHub pre-release and short-lived workflow artifacts. |
 | Stable release | Push of a `v*` tag | Public release users. | Immutable GitHub Release with installer, SHA256 sums and release manifest. |
 
-The current installer is not documented as [code-signed](#glossary-code-signing).
+The current installer is not documented as [code-signed](appendix/reference.md#glossary-code-signing).
 Windows can therefore show an unknown-publisher warning until release signing is
 added.
 
@@ -1868,12 +1882,12 @@ GitHub Actions.
 
 ### 8.7 User Data And Portability
 
-[Workspace](#glossary-workspace) data is user-managed and portable.
+[Workspace](appendix/reference.md#glossary-workspace) data is user-managed and portable.
 
 | File | Role |
 |---|---|
 | `workspace.fossredder` | Canonical SQLite-backed workspace file. |
-| `registry.db` | Local latest-workspace [registry](#glossary-registry). It can be recreated. |
+| `registry.db` | Local latest-workspace [registry](appendix/reference.md#glossary-registry). It can be recreated. |
 
 Users can back up, copy or move `.fossredder` workspace files as regular files.
 The registry is a convenience index and is not required to recover workspace
@@ -1900,7 +1914,7 @@ local-first boundary, explicit data ownership and conservative defaults.
 
 ### 9.1 Threat Model
 
-The current [threat model](#glossary-threat-model) focuses on local desktop use.
+The current [threat model](appendix/reference.md#glossary-threat-model) focuses on local desktop use.
 It does not claim enterprise endpoint management, encrypted workspace storage or
 signed releases yet.
 
@@ -1950,7 +1964,7 @@ Current enforcement points:
 - GitHub, Codecov and Pages integrations exist only in CI workflows, not in the installed desktop runtime.
 
 If a future feature introduces network access, it must be documented as a new
-system boundary and hidden behind a core-owned [port](#glossary-port).
+system boundary and hidden behind a core-owned [port](appendix/reference.md#glossary-port).
 
 ### 9.4 Storage And Encryption
 
@@ -1965,7 +1979,7 @@ Persistent data is stored in local SQLite files.
 The workspace file is the sensitive asset. The registry can reveal local file
 paths, but it does not contain the workspace catalog itself.
 
-There is no transparent [at-rest encryption](#glossary-at-rest-encryption) in
+There is no transparent [at-rest encryption](appendix/reference.md#glossary-at-rest-encryption) in
 the current implementation. If encrypted workspaces become a requirement, add
 the feature behind an explicit storage boundary. Candidate approaches:
 
@@ -2020,118 +2034,9 @@ Release integrity rules:
 | Artifact retention review | Limits exposure of build logs and package artifacts. | Before public CI/release hardening. |
 | Explicit network-access policy | Keeps local-first behavior enforceable if online features arrive. | Before any network feature. |
 
-## 10. Appendix <a id="10-appendix"></a>
-### 10.1 Glossary
+## 10. Reference Appendices <a id="reference-appendices"></a>
 
-| Term | Meaning |
-|---|---|
-| <a id="glossary-domain-driven-design"></a>Domain-Driven Design (DDD) | Design approach that models software around business concepts, language and invariants. In FOSSredder this means core owns entities, values, policies and use cases rather than Qt or database details. |
-| <a id="glossary-clean-architecture"></a>Clean Architecture | Dependency model where domain and application rules sit at the center, while UI, persistence, frameworks and external libraries stay outside and depend inward through ports. |
-| <a id="glossary-composition-root"></a>Composition root | Startup boundary that is allowed to know concrete implementations and wire them together. In FOSSredder this is the `app` target. |
-| <a id="glossary-mvvm"></a>Model-View-ViewModel (MVVM) | UI architecture where QML views bind to `QObject` view models, while model data comes from core snapshots, commands and use-case ports. |
-| <a id="glossary-dto"></a>Data Transfer Object (DTO) | Plain request, result or snapshot structure used to cross architectural boundaries without exposing mutable domain objects. |
-| <a id="glossary-domain-language"></a>Domain language | The project vocabulary used by the product and the code, for example actor, property, contract, statement, transaction, analysis and annual. |
-| <a id="glossary-domain-entity"></a>Domain entity | A domain object with identity and lifecycle, such as `Actor`, `Contract`, `Transaction` or `Annual`. |
-| <a id="glossary-value-object"></a>Value object | Immutable or normalization-focused domain type identified by its value rather than an id, such as `EntityName`, `MoneyAmount` or `Year`. |
-| <a id="glossary-policy"></a>Policy | A named domain rule object for behavior that should not be hidden in UI, persistence or ad-hoc helpers. |
-| <a id="glossary-use-case"></a>Use case | Application-level operation that coordinates domain objects and ports to perform user-visible work. |
-| <a id="glossary-port"></a>Port | Core-defined interface or DTO boundary consumed by UI, persistence or infrastructure. Ports keep dependency direction pointing inward. |
-| <a id="glossary-adapter"></a>Adapter | Concrete implementation that translates between a port and an external library, service or UI workflow. |
-| <a id="glossary-repository"></a>Repository | Persistence interface or implementation responsible for storing and loading one family of domain/application records. |
-| <a id="glossary-workspace"></a>Workspace | User-managed `.fossredder` SQLite file containing catalog entities, workflow state and logs. |
-| <a id="glossary-registry"></a>Registry | Small local `registry.db` used to remember the latest workspace path. |
-| <a id="glossary-catalog"></a>Catalog | Domain aggregate containing actors, properties, contracts, statements, transactions, analyses and annuals. |
-| <a id="glossary-session-state"></a>Workspace session state | In-memory application state for the active workspace, including catalog data and workflow records. |
-| <a id="glossary-snapshot"></a>Snapshot | Read model projected from workspace state for UI or use-case consumption. |
-| <a id="glossary-draft"></a>Draft | Import-time statement or transaction state that can be reviewed before finalization. |
-| <a id="glossary-import-log"></a>Import log | Persisted workflow record describing an import run, its status and related draft/final statement. |
-| <a id="glossary-export-log"></a>Export log | Persisted workflow record describing an export run, its status and produced output metadata. |
-| <a id="glossary-view-model"></a>View model | QML-facing `QObject` that owns presentation state for one feature area. |
-| <a id="glossary-workflow"></a>Workflow | Coordinator for multi-step or asynchronous behavior, for example import, analysis, annual or export execution. |
-| <a id="glossary-qml-module"></a>QML module | Importable QML package described by `qmldir` files and loaded by the Qt QML engine. |
-| <a id="glossary-cmake-preset"></a>CMake preset | Named CMake configure/build/test entry in `CMakePresets.json`. Presets are the supported way to describe repeatable local and CI builds. |
-| <a id="glossary-test-matrix"></a>Test matrix | Table that maps behavior families to expected tests and implementation locations. |
-| <a id="glossary-quality-gate"></a>Quality gate | Required validation step that must pass before a branch, release or installer artifact is considered acceptable. |
-| <a id="glossary-ci-pipeline"></a>CI pipeline | GitHub Actions workflow that validates build, tests, static analysis, coverage, documentation, Pages and develop-nightly packaging. |
-| <a id="glossary-static-analysis"></a>Static analysis | Source/build analysis that checks code without relying only on runtime behavior. The current configured tool is clang-tidy. |
-| <a id="glossary-coverage"></a>Coverage | Measurement of which code lines or regions are exercised by tests. FOSSredder generates LLVM/LCOV coverage and uploads Codecov input. |
-| <a id="glossary-doxygen"></a>Doxygen | Documentation generator used to produce HTML documentation from source comments and configured inputs. |
-| <a id="glossary-pages"></a>GitHub Pages | Hosted GitHub site used here for generated documentation and coverage reports. |
-| <a id="glossary-artifact"></a>Artifact | File or directory produced by CI, for example coverage HTML, Doxygen HTML, package logs or installer output. |
-| <a id="glossary-installer"></a>Installer | Windows setup executable produced by Inno Setup and attached to nightly or stable releases. |
-| <a id="glossary-runtime-layout"></a>Runtime layout | Installed file structure required for the application to start correctly, including executable, Qt plugins, QML modules, translations and tessdata. |
-| <a id="glossary-tessdata"></a>Tessdata | Tesseract OCR language and orientation model files bundled with the application. |
-| <a id="glossary-release-channel"></a>Release channel | Distribution path with its own trigger and audience, for example develop nightly or stable tagged release. |
-| <a id="glossary-develop-nightly"></a>Develop nightly | Mutable GitHub pre-release built from validated `develop` pipeline runs. |
-| <a id="glossary-stable-release"></a>Stable release | GitHub Release built from an immutable `v*` tag. |
-| <a id="glossary-code-signing"></a>Code signing | Cryptographic signing of installer/executable artifacts so Windows can identify the publisher. |
-| <a id="glossary-threat-model"></a>Threat model | Structured view of relevant risks, trust boundaries and mitigations. |
-| <a id="glossary-at-rest-encryption"></a>At-rest encryption | Encryption of stored files such as the workspace database while they are not actively in use. |
-| <a id="glossary-telemetry"></a>Telemetry | Automatic runtime collection or upload of usage, diagnostic or environment data. |
-| <a id="glossary-runner"></a>Runner | Machine that executes GitHub Actions jobs. FOSSredder uses a self-hosted Windows runner for Windows build jobs. |
-| <a id="glossary-vcpkg-manifest"></a>vcpkg manifest | `vcpkg.json` dependency declaration used by CMake/vcpkg manifest mode. |
+Long reference material is kept outside the main design narrative:
 
-### 10.2 External Dependencies
-
-Dependencies are managed through `vcpkg.json`. The manifest is the authoritative
-source for third-party dependency names; product versioning is owned by
-`project(FossRedder VERSION ...)` in the root `CMakeLists.txt`.
-
-| Role | Dependencies |
-|---|---|
-| UI | `qtbase`, `qtdeclarative`, `qtquickcontrols2`, `qttools`, `qtsvg`, `qtimageformats`, `qtshadertools` |
-| PDF rendering | `poppler` |
-| Image processing | `opencv` |
-| OCR | `tesseract`, `leptonica`, runtime `tessdata` files |
-| Data and export | `nlohmann-json`, `xlnt`, `protobuf`, `libzip` |
-| Logging and support | `spdlog`, `icu`, `pkgconf` |
-| Tests | `gtest` |
-
-### 10.3 Important Runtime Files
-
-| File or directory | Meaning |
-|---|---|
-| `core/include/core/constants/runtime.h` | Canonical runtime filenames such as workspace and registry names. |
-| `app/i18n` | Translation sources and generated catalogs. |
-| `infra/text-recognition/res/tessdata` | OCR models bundled into the installed runtime. |
-| `ui/qml/FossRedder` | Application QML module tree. |
-| `installer/inno` | Inno Setup definition and include files. |
-| `ci/package/package-layout-contract.json` | Installer/runtime layout contract. |
-| `ci/localization/localization-contract.json` | Supported language and OCR model contract. |
-
-### 10.4 Reference Index
-
-| Concept | Representative files |
-|---|---|
-| Application entry and composition | `app/src/main.cpp`, `app/src/main_qml.cpp` |
-| CMake presets | `CMakePresets.json` |
-| CMake project version | `CMakeLists.txt` |
-| Core domain model | `core/include/core/domain`, `core/src/domain` |
-| Core application services | `core/include/core/application`, `core/src/application` |
-| Core ports | `core/include/core/ports` |
-| Workspace session and facade | `core/include/core/application/workspace`, `core/src/application/workspace` |
-| Storage orchestration | `core/include/core/application/storage/StorageManager.h`, `core/src/application/storage/StorageManager.cpp` |
-| Schema and migrations | `persistence/src/SqliteSchema.cpp`, `persistence/include/persistence/SqliteSchema.h` |
-| Workspace state store | `persistence/src/WorkspaceStateStore.cpp`, `persistence/include/persistence/WorkspaceStateStore.h` |
-| Registry | `persistence/src/SqliteRegistry.cpp`, `core/include/core/ports/infra/storage/IRegistry.h` |
-| Repository implementations | `persistence/src/repositories`, `persistence/include/persistence/repositories` |
-| Import application | `core/src/application/import`, `core/include/core/application/import` |
-| PDF adapter | `infra/pdf-rendering` |
-| Image-processing adapter | `infra/image-processing` |
-| OCR adapter and tessdata | `infra/text-recognition` |
-| XLSX writer adapter | `infra/xlsx-writer` |
-| Archive adapter | `infra/archive` |
-| Analysis image renderer | `infra/analysis-image-renderer` |
-| UI shell | `ui/include/ui/shell`, `ui/src/shell`, `ui/qml/FossRedder/Components` |
-| UI workspace roles | `ui/include/ui/workspace`, `ui/src/workspace` |
-| UI view models and workflows | `ui/include/ui/viewmodels`, `ui/src/viewmodels`, `ui/include/ui/workflows`, `ui/src/workflows` |
-| QML views and controls | `ui/qml/FossRedder/Views`, `ui/qml/FossRedder/Controls` |
-| Tests | `core/tests`, `persistence/tests`, `infra/*/tests`, `ui/tests` |
-| Pipeline workflow | `.github/workflows/pipeline.yml` |
-| Release workflow | `.github/workflows/release.yml` |
-| Packaging scripts | `ci/package`, `installer` |
-| Coverage and Pages | `ci/coverage`, `ci/pages`, `Doxyfile` |
-
-### 10.5 Quality Traceability
-
-The full row-level test matrices live in [docs/quality/test-matrices.md](quality/test-matrices.md). This design document keeps the QA strategy and gate model in Chapter 7; the dedicated matrix document provides traceability across core, infrastructure, UI, QML and deployment/runtime QA.
+- [Design Appendix](appendix/reference.md) keeps the glossary, dependency list, runtime file index and reference index.
+- [Test Matrices](appendix/test-matrices.md) keeps row-level QA traceability for core, infrastructure, UI, QML and deployment/runtime checks.
