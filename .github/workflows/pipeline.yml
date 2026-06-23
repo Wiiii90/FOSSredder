@@ -3,10 +3,7 @@ name: Pipeline
 on:
   push:
     branches:
-      - develop
       - master
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - develop
@@ -244,7 +241,7 @@ jobs:
           artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
 
   installer:
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/develop'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop'
     needs:
       - build-and-test
       - static-analysis
