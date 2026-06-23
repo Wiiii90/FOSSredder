@@ -100,6 +100,31 @@ TEST(WorkspaceCommandServiceTest, InsertsTransactionAfterRequestedStatementTrans
     EXPECT_EQ((*match)->valuta(), "2026-01-06");
 }
 
+TEST(WorkspaceCommandServiceTest, RejectsTransactionWithBlankName) {
+    auto storage = std::make_unique<core::tests::application::workspace::FakeStorageManager>();
+    WorkspaceSession session(std::move(storage));
+    session.newFile("P:/workspace.db");
+
+    WorkspaceCommandService service(session);
+
+    core::ports::workspace::StatementCommand statementCommand;
+    statementCommand.name = "Statement";
+    const auto statementId = service.addStatement(statementCommand);
+    ASSERT_FALSE(statementId.empty());
+
+    core::ports::workspace::TransactionCommand command;
+    command.name = "   ";
+    command.bookingDate = "2026-01-01";
+    command.amountText = "10.0";
+    command.statementId = statementId;
+
+    const auto validation = service.validate(command);
+
+    EXPECT_FALSE(validation.valid());
+    EXPECT_TRUE(service.addTransaction(command).empty());
+    EXPECT_TRUE(session.catalogState().transactions().empty());
+}
+
 TEST(WorkspaceCommandServiceTest, TransactionAllocatableChangeForcesContractModeToMixed) {
     auto storage = std::make_unique<core::tests::application::workspace::FakeStorageManager>();
     auto* storagePtr = storage.get();

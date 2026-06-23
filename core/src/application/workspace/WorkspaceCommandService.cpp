@@ -280,6 +280,7 @@ core::ports::workspace::ValidationResult validateTransactionCommand(
     const core::ports::workspace::TransactionCommand& command,
     bool requireStatementId) {
     core::ports::workspace::ValidationResult result;
+    requireEntityName(result, "name", command.name, "Transaction name");
     requireText(result, "bookingDate", command.bookingDate, "Booking date");
     if (!isBlank(command.bookingDate) && !core::domain::policies::transaction::hasValidBookingDate(command.bookingDate)) {
         result.addError("bookingDate", "invalid", "Booking date is invalid.");

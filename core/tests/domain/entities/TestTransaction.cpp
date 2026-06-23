@@ -23,7 +23,7 @@ TEST(TransactionTest, ConstructorStoresNormalizedCoreFields) {
 TEST(TransactionTest, MutatorsNormalizeRelationsAndTrackState) {
     Transaction transaction;
 
-    transaction.setName("  rent  ");
+    transaction.setName(EntityName{"  rent  "});
     transaction.setBookingDate(" 2024-02-01 ");
     transaction.setValuta("  EUR ");
     transaction.setAmount(99.5);

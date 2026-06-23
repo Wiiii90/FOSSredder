@@ -12,6 +12,7 @@
 
 #include "core/domain/policies/TransactionPolicy.h"
 #include "core/domain/values/BookingDate.h"
+#include "core/domain/values/EntityName.h"
 #include "core/domain/values/MoneyAmount.h"
 
 namespace core::domain {
@@ -46,7 +47,12 @@ public:
     Transaction& operator=(Transaction&&) = delete;
 
     /**
-     * @brief Sets the transaction name.
+     * @brief Sets the transaction name from a value object.
+     * @param value Normalized entity name wrapper.
+     */
+    void setName(EntityName value);
+    /**
+     * @brief Sets the transaction name from raw text.
      * @param value Raw transaction name text.
      */
     void setName(std::string value);

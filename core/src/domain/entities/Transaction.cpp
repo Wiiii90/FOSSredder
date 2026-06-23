@@ -24,8 +24,12 @@ Transaction::Transaction(std::string nameValue,
     setValuta(std::move(valutaValue));
 }
 
+void Transaction::setName(EntityName value) {
+    name_ = std::move(value.value());
+}
+
 void Transaction::setName(std::string value) {
-    name_ = policies::transaction::normalizeText(std::move(value));
+    setName(EntityName(std::move(value)));
 }
 
 void Transaction::setBookingDate(BookingDate value) {
