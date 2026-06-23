@@ -40,6 +40,7 @@ It should provide:
 - installer-specific wizard artwork
 - bundled runtime layout produced by the package step
 - explicit close-application behavior during install and update
+- maintenance prompt for repair/update or uninstall when FOSSredder is already installed
 
 ## Build Entry
 

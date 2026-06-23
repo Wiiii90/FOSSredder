@@ -8,3 +8,4 @@
 #include "includes\files.iss"
 #include "includes\icons.iss"
 #include "includes\run.iss"
+#include "includes\maintenance.iss"
