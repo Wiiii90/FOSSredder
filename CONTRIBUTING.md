@@ -27,6 +27,9 @@ Use the GitHub issue forms whenever possible:
 Good issues state the problem, expected outcome, scope, acceptance criteria and
 relevant links or logs.
 
+Use [ROADMAP.md](ROADMAP.md) for future feature ideas that are not ready for an
+issue yet.
+
 ## Pull Requests
 
 - Keep pull requests focused and reviewable.
@@ -38,7 +41,9 @@ relevant links or logs.
 
 ## Engineering Standards
 
-Use [docs/DESIGN.md](docs/DESIGN.md) as the detailed project standard.
+Use [docs/DESIGN.md](docs/DESIGN.md) as the architectural reference for changes
+that affect system boundaries, core behavior, persistence, infrastructure, UI
+structure, deployment, or security/privacy.
 
 Short version:
 
@@ -49,6 +54,15 @@ Short version:
   ports.
 - Remove dead code instead of moving it into new wrappers or private support files.
 - Keep public headers documented when public API changes.
+
+## Code Style
+
+- Format C++ code with the repository `.clang-format`. The active style is based
+  on LLVM for C++20, and no competing C++ format is used in this project.
+- C++ header and source files should start with a file-level Doxygen block that
+  contains `@file` and `@brief`.
+- Header function declarations should document the public contract with `@brief`,
+  `@param` for each parameter, and `@return` for non-void return values.
 
 ## Quality Checklist
 
@@ -66,14 +80,8 @@ Before opening or merging a pull request, make sure:
 
 ## Releases
 
-- Milestones represent version targets.
+- GitHub milestones should stay focused on active release work.
 - `develop` can publish nightly pre-releases for installer validation.
 - Stable releases are cut from `master` using `v*` tags.
 - Release work should verify versioning, release notes, installer output,
   package layout and localization/OCR assets.
-
-## Questions
-
-If something is unclear, open the closest matching issue type and add enough
-context for triage. If the work does not fit an existing template, start with a
-discussion or ask for maintainer guidance.

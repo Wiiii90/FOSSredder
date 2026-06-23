@@ -1,19 +1,35 @@
 # FOSSredder Installer
 
-This directory owns the Windows installer definition, setup branding, and
-release packaging expectations for FOSSredder.
+This directory owns the user-facing Windows installer definition for
+FOSSredder.
+
+## Purpose
+
+The installer source lives here because setup metadata, shortcuts, wizard
+artwork and Inno Setup sections belong to the delivered Windows product, not to
+the CI scripts that build it.
+
+`installer/inno/fossredder.iss` is the Inno Setup entry point. The files under
+`installer/inno/includes` split the setup definition into focused sections for
+metadata, languages, messages, tasks, files, icons and post-install actions.
+
+## Structure
+
+| Path | Purpose |
+|---|---|
+| `installer/inno/fossredder.iss` | Main Inno Setup script. |
+| `installer/inno/includes/*.iss` | Included setup sections. |
+| `installer/assets` | Installer-only wizard artwork. |
 
 ## Installer Contract
 
-The installer is built with Inno Setup from `installer/inno/fossredder.iss`.
-It packages the staged application produced by CMake install and creates a
-Windows x64 installer artifact:
+The installer is expected to create a Windows x64 setup artifact named:
 
 ```text
 FOSSredder-Setup-<version>-win-x64.exe
 ```
 
-The installer should provide:
+It should provide:
 
 - consistent `FOSSredder` product naming
 - x64-only installation
@@ -21,51 +37,26 @@ The installer should provide:
 - Start Menu shortcut
 - optional desktop shortcut
 - application icon in setup and uninstall metadata
-- bundled Tesseract OCR models required for local statement import
-- GitHub project, support, and release URLs
-- Windows installer version metadata
-- explicit close-application behavior during install/update
+- installer-specific wizard artwork
+- bundled runtime layout produced by the package step
+- explicit close-application behavior during install and update
 
-## Build Flow
+## Build Entry
 
-The packaging flow is intentionally split by responsibility:
-
-- `cmake/modules/FossredderPackaging.cmake` exposes the `package` target.
-- `ci/package/package-inno.ps1` prepares staging, deploys runtime dependencies, and calls Inno Setup.
-- `ci/package/validate-package.ps1` verifies that the expected installer artifact was produced.
-- `ci/package/test-package-layout.ps1` verifies the staged runtime contract used by the installer.
-- `ci/localization/localization-contract.json` defines supported UI languages and bundled OCR model expectations.
-- `installer/inno/fossredder.iss` defines the user-facing installer entry point.
-- `installer/inno/includes/*.iss` split setup metadata, tasks, files, icons, and run behavior.
-- `infra/text-recognition/res/tessdata` provides the bundled OCR models installed to `bin/res/tessdata`.
-- `installer/assets/` owns installer-specific wizard artwork.
-
-Local package build:
+Local and CI packaging should build the CMake `package` target through the
+configured presets:
 
 ```powershell
 cmake --preset app
 cmake --build --preset release-installer
 ```
 
-Successful `develop` pipeline runs build and validate the installer as part of
-the main `Pipeline` workflow. The validated installer is uploaded as the
-`fossredder-installer` artifact and is used to update the mutable
-`develop-nightly` GitHub pre-release for testing.
+The packaging scripts under `ci/package` prepare the staging directory, deploy
+runtime dependencies and call Inno Setup. Keep detailed packaging commands and
+layout validation notes in `ci/package/README.md`.
 
-Stable installers are published by the `Release` workflow from `v*` version
-tags.
+## Related Documentation
 
-## Release Hardening
-
-The v0.5.0 installer is expected to install a self-contained Windows runtime for
-the application. Release validation should confirm:
-
-- the installer contains `bin/fossredder.exe`
-- Qt runtime DLLs, plugins, and QML imports are present under `bin`
-- Tesseract model files are present under `bin/res/tessdata`
-- compiled Qt translation catalogs are present under `bin/i18n`
-- the installed application launches from the Start Menu shortcut
-- PDF import can run without requiring a manually configured external
-  Tesseract data path
-- promoted `master` installers are published through GitHub Releases from `v*`
-  tags
+- Root build entry points: `README.md`
+- Deployment design: `docs/DESIGN.md`
+- Packaging scripts and validation: `ci/package/README.md`

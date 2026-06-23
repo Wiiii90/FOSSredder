@@ -2,104 +2,51 @@
 
 ## Current baseline
 
-The current baseline already includes:
+The current baseline is `0.5.0`.
 
-- import workflows for Commerzbank PDF statements
-- export workflows for XLSX and CSV
-- plot rendering in the export flow
-- a functional persistence layer
-- a core architecture based on DDD and clean architecture ideas
-- a recently refactored `ui/src` layer aligned more closely with the core
-- an active and expanding automated test suite
-- multithreading for release use
+## Plan to 1.0.0
 
-## Release strategy
+These feature ideas are planned before the production release:
 
-The next step is to treat the current state as the first stable, named baseline:
+#### Matching and import review:
 
-- `0.5.0` is the first real runnable version we want to keep stable
-- later versions are planned as roadmap targets, not as immediate GitHub milestones
-- patch releases such as `0.5.1` are only relevant if an already released baseline needs a hotfix
+- production-ready matching pipeline
+- fuzzy and Levenshtein-based matching
+- richer match review in the UI
+- pre-import review workflow for transaction extraction
+- extracted PDF text as a secondary signal for OCR improvement
 
-## Milestone target: `0.5.0`
+#### Calculation and workflow behavior:
 
-`0.5.0` is the baseline freeze milestone. It marks the first version that is stable enough to be treated as a reference point for future work.
+- tax and recoverable-cost calculation improvements
+- reverse adjustments and offsets
+- workflow settings for import and export
+- user-facing policy hints for validation rules
 
-The work that belongs to this baseline includes:
+#### Property allocation:
 
-- stabilizing the Commerzbank PDF import flow
-- stabilizing XLSX and CSV export
-- keeping persistence functional without redesigning it yet
-- locking in the refactored UI and core integration
-- expanding regression coverage for the current baseline
-- recording the current architecture and release scope
+- split transaction costs and income across assigned properties
+- default to equal shares when a transaction is assigned to multiple properties
+- let users adjust allocation shares before calculation and export
 
-## Planned roadmap after `0.5.0`
+#### Export behavior:
 
-### `0.6.0` - Matching and workflow configuration
+- stronger export generation for production use
+- configurable export workflow defaults
 
-This milestone should focus on the matcher and the first useful workflow settings:
+## Post-1.0.0 expansion
 
-- replace the current weak matcher with a production-ready matching pipeline
-- add fuzzy matching support
-- add Levenshtein-based matching support
-- prepare the UI for richer match review
-- introduce initial workflow settings for import and export
-- add user-facing policy hints for validation rules
-- use extracted PDF text as a secondary signal for OCR improvement
+These feature ideas are intentionally planned after production release:
 
-### `0.7.0` - Calculation and domain hardening
-
-This milestone should focus on the business logic and the domain model:
-
-- refactor the calculation engine for tax and recoverable cost logic
-- add support for reverse adjustments and offsets
-- make domain entities and value objects more explicit
-- rework domain policies for validation and business constraints
-- harden export generation for production use
-- expand workflow tests around calculation and export
-
-### `0.8.0` - Packaging, build, CI, and documentation
-
-This milestone should focus on making the project look and behave like a production application:
-
-- replace the current Inno Setup packaging flow with a production installer
-- add installer options for OCR models, data paths, and runtime configuration
-- normalize the CMake build and packaging configuration
-- extend GitHub Actions for release-grade CI
-- add automated Doxygen documentation generation to CI
-- prepare a public release homepage with versioned downloads
-
-### `0.9.0` - Release hardening and polish
-
-This milestone should focus on release readiness:
-
-- polish the current UI for release readiness
-- create contract tests for import and export boundaries
-- introduce golden PDF fixtures for statement import tests
-- add a pre-import review workflow for transaction extraction
-- finalize workflow settings coverage
-- complete release documentation and onboarding notes
-
-### `1.0.0` - Production release
-
-This is the production release target:
-
-- prepare the final production release candidate
-- verify deployment readiness for January production use
-- freeze the release scope
-
-## Post-1.0 expansion
-
-These items are intentionally planned after `1.0.0`:
+#### Import expansion:
 
 - scalable import support for additional bank statement templates
+
+#### OCR modernization:
+
 - OCR stack evaluation and modernization
-- a dedicated persistence architecture refactor cycle
-- expanded OCR tuning for Poppler, OpenCV, and Tesseract
+- expanded OCR tuning for Poppler, OpenCV and Tesseract
 
-## Notes on process
+#### Persistence architecture:
 
-- The active GitHub milestone should stay focused on the current baseline work
-- later roadmap items should be pulled into issues only when they become actionable
-- detailed release notes and changelog entries can be added when release tagging becomes relevant
+- dedicated persistence architecture refactor cycle
