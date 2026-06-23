@@ -52,12 +52,11 @@ MainWindowServices installMainWindowContext(QQmlEngine* qmlEngine,
   return services;
 }
 
-void wireMainWindowActions(MainWindow& window,
-                           const MainWindowServices& services,
-                           const std::shared_ptr<
-                               core::ports::diagnostics::IErrorReporter>&
-                               errorReporter,
-                           const std::function<void()>& showAbout) {
+void wireMainWindowActions(
+    MainWindow& window, const MainWindowServices& services,
+    const std::shared_ptr<core::ports::diagnostics::IErrorReporter>&
+        errorReporter,
+    const std::function<void()>& showAbout) {
   if (!services.actions)
     return;
 
@@ -77,8 +76,10 @@ void wireMainWindowActions(MainWindow& window,
       });
   QObject::connect(
       actions->openFileAction(), &QAction::triggered, &window,
-      [&window, errorReporter](bool) {
-        const QString file = ui::dialogs::pickOpenStorageFile(&window);
+      [&window, workspaceStore = services.workspaceStore, errorReporter](bool) {
+        const QString file = ui::dialogs::pickOpenStorageFile(
+            &window,
+            workspaceStore ? workspaceStore->currentPath() : QString());
         if (file.isEmpty())
           return;
         ui::window::reportMainWindowFlow(
@@ -98,8 +99,10 @@ void wireMainWindowActions(MainWindow& window,
                    });
   QObject::connect(
       actions->saveFileAsAction(), &QAction::triggered, &window,
-      [&window, errorReporter](bool) {
-        const QString file = ui::dialogs::pickSaveStorageFileAs(&window);
+      [&window, workspaceStore = services.workspaceStore, errorReporter](bool) {
+        const QString file = ui::dialogs::pickSaveStorageFileAs(
+            &window,
+            workspaceStore ? workspaceStore->currentPath() : QString());
         if (file.isEmpty())
           return;
         ui::window::reportMainWindowFlow(
@@ -120,9 +123,11 @@ void wireMainWindowActions(MainWindow& window,
 
   QObject::connect(
       actions, &ui::Actions::importBrowseRequested, &window,
-      [&window, actions, status = services.status,
+      [&window, actions, status = services.status, settings = services.settings,
        errorReporter](const QString& filter) {
-        const QStringList files = ui::dialogs::pickImportFiles(&window, filter);
+        const QStringList files = ui::dialogs::pickImportFiles(
+            &window, filter,
+            settings ? settings->importDefaultPath() : QString());
         if (!files.isEmpty()) {
           ui::window::reportMainWindowFlow(
               errorReporter.get(),
@@ -140,9 +145,11 @@ void wireMainWindowActions(MainWindow& window,
 
   QObject::connect(
       actions, &ui::Actions::exportBrowseRequested, &window,
-      [&window, actions, status = services.status,
+      [&window, actions, status = services.status, settings = services.settings,
        errorReporter](const QString& filter) {
-        const QString file = ui::dialogs::pickExportFile(&window, filter);
+        const QString file = ui::dialogs::pickExportFile(
+            &window, filter,
+            settings ? settings->exportDefaultDirectory() : QString());
         if (!file.isEmpty()) {
           ui::window::reportMainWindowFlow(
               errorReporter.get(),
@@ -158,10 +165,11 @@ void wireMainWindowActions(MainWindow& window,
 
   QObject::connect(
       actions, &ui::Actions::exportDirectoryBrowseRequested, &window,
-      [&window, actions, status = services.status,
+      [&window, actions, status = services.status, settings = services.settings,
        errorReporter](const QString& title) {
-        const QString directory =
-            ui::dialogs::pickExportDirectory(&window, title);
+        const QString directory = ui::dialogs::pickExportDirectory(
+            &window, title,
+            settings ? settings->exportDefaultDirectory() : QString());
         if (!directory.isEmpty()) {
           ui::window::reportMainWindowFlow(
               errorReporter.get(),
