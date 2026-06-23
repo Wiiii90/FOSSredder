@@ -375,12 +375,18 @@ if ($coverageRows.Count -gt 0) {
         Measure-Object -Average |
         Select-Object -ExpandProperty Average
     $lcovTotalRow = ""
+    $lcovSeparatorRow = ""
     if ($lcovLineCoverage) {
+        $lcovSeparatorRow = @"
+        <tr class="coverage-spacer" aria-hidden="true">
+          <td colspan="5"></td>
+        </tr>
+"@
         $lcovTotalRow = @"
         <tr class="codecov-total">
           <th scope="row">Codecov input (LCOV)</th>
-          <td class="muted">-</td>
-          <td class="muted">-</td>
+          <td></td>
+          <td></td>
           <td>$(New-CoverageCell -Value $lcovLineCoverage.Percent)</td>
           <td class="muted">$([int]$lcovLineCoverage.Hit) / $([int]$lcovLineCoverage.Found) lines</td>
         </tr>
@@ -410,14 +416,6 @@ if ($coverageRows.Count -gt 0) {
         $($htmlRows -join [Environment]::NewLine)
       </tbody>
       <tfoot>
-        <tr class="weighted-total">
-          <th scope="row">Weighted total</th>
-          <td>$(New-CoverageCell -Value $regionsWeighted)</td>
-          <td>$(New-CoverageCell -Value $functionsWeighted)</td>
-          <td>$(New-CoverageCell -Value $linesWeighted)</td>
-          <td>$(New-CoverageCell -Value $weightedAverage)</td>
-        </tr>
-        $lcovTotalRow
         <tr>
           <th scope="row">Column average</th>
           <td>$(New-CoverageCell -Value $regionsAverage)</td>
@@ -425,6 +423,15 @@ if ($coverageRows.Count -gt 0) {
           <td>$(New-CoverageCell -Value $linesAverage)</td>
           <td>$(New-CoverageCell -Value $overallAverage)</td>
         </tr>
+        <tr class="weighted-total">
+          <th scope="row">Weighted total</th>
+          <td>$(New-CoverageCell -Value $regionsWeighted)</td>
+          <td>$(New-CoverageCell -Value $functionsWeighted)</td>
+          <td>$(New-CoverageCell -Value $linesWeighted)</td>
+          <td>$(New-CoverageCell -Value $weightedAverage)</td>
+        </tr>
+        $lcovSeparatorRow
+        $lcovTotalRow
       </tfoot>
     </table>
   </div>
@@ -459,7 +466,8 @@ $htmlIndex = @(
     'th:first-child, td:first-child { text-align: left; }',
     'thead th, tfoot th, tfoot td { background: #f1f5f9; }',
     '.weighted-total th, .weighted-total td { background: #ecfdf5; }',
-    '.codecov-total th, .codecov-total td { background: #eff6ff; }',
+    '.coverage-spacer td { height: .65rem; padding: 0; background: var(--paper); border-bottom: 1px solid var(--line); }',
+    '.codecov-total th, .codecov-total td { background: var(--paper); }',
     'tbody th { font-size: .9rem; }',
     'a { color: var(--accent); font-weight: 700; text-decoration: none; }',
     'a:hover { text-decoration: underline; }',
