@@ -1,19 +1,24 @@
 module FossRedder.Controls
 depends QtQuick
+AddButton 1.0 AddButton.qml
+AppScrollBar 1.0 AppScrollBar.qml
 Button 1.0 Button.qml
 CheckBox 1.0 CheckBox.qml
+CheckListPanel 1.0 CheckListPanel.qml
+CompactAddButton 1.0 CompactAddButton.qml
+CompactRemoveButton 1.0 CompactRemoveButton.qml
 DangerButton 1.0 DangerButton.qml
 DropdownMenu 1.0 DropdownMenu.qml
+DisclosureButton 1.0 DisclosureButton.qml
 DropZone 1.0 DropZone.qml
-FilePicker 1.0 FilePicker.qml
 IconButton 1.0 IconButton.qml
 NextButton 1.0 NextButton.qml
 NextPageButton 1.0 NextPageButton.qml
 Panel 1.0 Panel.qml
-PrimaryButton 1.0 PrimaryButton.qml
 PrevButton 1.0 PrevButton.qml
 PrevPageButton 1.0 PrevPageButton.qml
 ProgressBar 1.0 ProgressBar.qml
+ReturnButton 1.0 ReturnButton.qml
 SecondaryButton 1.0 SecondaryButton.qml
 SuccessButton 1.0 SuccessButton.qml
 TextArea 1.0 TextArea.qml

@@ -1,12 +1,13 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Import/TransactionDraftFieldRow.qml
- * @brief Provides the TransactionDraftFieldRow component.
+ * @file ui/qml/FossRedder/Views/Import/TransactionDraftFieldRow.qml
+ * @brief Provides a reusable two-column field row layout for transaction draft panels.
  */
+
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
-pragma ComponentBehavior: Bound
 
 Item {
     id: root
@@ -16,26 +17,9 @@ Item {
     property string rightLabel: ""
     property real leftWeight: 1
     property real rightWeight: 1
+    property real columnSpacing: root.theme.spacingMedium
     property Component leftContent
     property Component rightContent
-
-    function loaderItem(loader) {
-        return loader ? loader["item"] : null
-    }
-
-    function loaderPreferredHeight(loader) {
-        const loadedItem = root.loaderItem(loader)
-        return loadedItem ? Math.max(40, loadedItem.implicitHeight || 0) : 40
-    }
-
-    function syncLoaderWidth(loader) {
-        const loadedItem = root.loaderItem(loader)
-        if (loadedItem && loadedItem.hasOwnProperty("width")) loadedItem.width = loader.width
-    }
-
-    function onLoaderWidthChanged(loader) {
-        root.syncLoaderWidth(loader)
-    }
 
     implicitWidth: row.implicitWidth
     implicitHeight: Math.max(leftColumn.implicitHeight, rightColumn.implicitHeight)
@@ -43,8 +27,7 @@ Item {
     RowLayout {
         id: row
         anchors.fill: parent
-        anchors.top: parent.top
-        spacing: root.theme.spacingMedium
+        spacing: root.columnSpacing
 
         ColumnLayout {
             id: leftColumn
@@ -53,16 +36,18 @@ Item {
             Layout.alignment: Qt.AlignTop
             spacing: root.theme.spacingSmall
 
-            Label { text: root.leftLabel; Layout.fillWidth: true }
+            Label {
+                color: root.theme.textPrimary
+                text: root.leftLabel
+                Layout.fillWidth: true
+            }
 
             Loader {
                 id: leftLoader
                 Layout.fillWidth: true
-                Layout.preferredHeight: root.loaderPreferredHeight(leftLoader)
+                Layout.preferredHeight: Math.max(root.theme.controlHeight, implicitHeight)
                 Layout.alignment: Qt.AlignTop
                 sourceComponent: root.leftContent
-                onLoaded: root.syncLoaderWidth(leftLoader)
-                onWidthChanged: root.onLoaderWidthChanged(leftLoader)
             }
         }
 
@@ -73,16 +58,18 @@ Item {
             Layout.alignment: Qt.AlignTop
             spacing: root.theme.spacingSmall
 
-            Label { text: root.rightLabel; Layout.fillWidth: true }
+            Label {
+                color: root.theme.textPrimary
+                text: root.rightLabel
+                Layout.fillWidth: true
+            }
 
             Loader {
                 id: rightLoader
                 Layout.fillWidth: true
-                Layout.preferredHeight: root.loaderPreferredHeight(rightLoader)
+                Layout.preferredHeight: Math.max(root.theme.controlHeight, implicitHeight)
                 Layout.alignment: Qt.AlignTop
                 sourceComponent: root.rightContent
-                onLoaded: root.syncLoaderWidth(rightLoader)
-                onWidthChanged: root.onLoaderWidthChanged(rightLoader)
             }
         }
     }

@@ -1,0 +1,370 @@
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - develop
+      - master
+  workflow_dispatch:
+    inputs:
+      publish_pages:
+        description: 'Publish GitHub Pages from this run'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: pipeline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  build-and-test:
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Prepare staging dir
+        run: |
+          $staging = Join-Path $env:RUNNER_TEMP "fossredder-staging-${{ github.job }}-${{ github.run_id }}"
+          if (Test-Path $staging) { Remove-Item -Path $staging -Recurse -Force }
+          New-Item -ItemType Directory -Path $staging | Out-Null
+          icacls $staging /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T | Out-Null
+          echo "TARGET_DIR=$staging" >> $env:GITHUB_ENV
+
+      - name: Ensure no running binaries
+        run: |
+          $procs = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match 'fossredder|_unit_tests|ui_interaction_tests|ui_unit_tests|document_image_processing_unit_tests|persistence_unit_tests|qml' }
+          if ($procs) { $procs | ForEach-Object { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } }
+
+      - name: Clean previous build
+        run: |
+          if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
+
+      - name: Validate runner prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1
+
+      - name: Configure tests preset
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset tests
+
+      - name: Build tests preset
+        run: cmake --build --preset release-tests --parallel 2
+
+      - name: Run test preset
+        run: ctest --preset release-tests
+
+  static-analysis:
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+    needs: build-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Prepare staging dir
+        run: |
+          $staging = Join-Path $env:RUNNER_TEMP "fossredder-staging-${{ github.job }}-${{ github.run_id }}"
+          if (Test-Path $staging) { Remove-Item -Path $staging -Recurse -Force }
+          New-Item -ItemType Directory -Path $staging | Out-Null
+          icacls $staging /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T | Out-Null
+          echo "TARGET_DIR=$staging" >> $env:GITHUB_ENV
+
+      - name: Clean previous build
+        run: |
+          if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
+
+      - name: Validate runner prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireClangTidy
+
+      - name: Configure clang-tidy preset
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset clang-tidy
+
+      - name: Build clang-tidy preset
+        run: cmake --build --preset release-clang-tidy --parallel 1
+
+  coverage:
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+    needs: build-and-test
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Prepare staging dir
+        run: |
+          $staging = Join-Path $env:RUNNER_TEMP "fossredder-staging-${{ github.job }}-${{ github.run_id }}"
+          if (Test-Path $staging) { Remove-Item -Path $staging -Recurse -Force }
+          New-Item -ItemType Directory -Path $staging | Out-Null
+          icacls $staging /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T | Out-Null
+          echo "TARGET_DIR=$staging" >> $env:GITHUB_ENV
+
+      - name: Clean previous build
+        run: |
+          if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
+
+      - name: Validate runner prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireCoverageTools
+
+      - name: Configure coverage preset
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset coverage
+
+      - name: Build coverage preset
+        run: cmake --build --preset release-coverage --parallel 2
+
+      - name: Collect LLVM coverage
+        run: .\ci\coverage\coverage-windows.ps1 -BuildDir .build\coverage -Config Release -OutDir coverage
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-report
+          path: coverage
+          if-no-files-found: error
+
+      - name: Upload Codecov report
+        continue-on-error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: .\ci\coverage\upload-codecov.ps1 -CoverageFile .\coverage\coverage.lcov
+
+  documentation:
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+    needs: build-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate runner prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireDoxygen -SkipBuildPrerequisites
+
+      - name: Clean previous Doxygen output
+        run: |
+          if (Test-Path .\docs\html) { Remove-Item -Path .\docs\html -Recurse -Force }
+
+      - name: Generate Doxygen HTML
+        run: doxygen Doxyfile
+
+      - name: Copy Doxygen assets
+        run: |
+          $iconTarget = ".\docs\html\app\assets\icons"
+          New-Item -ItemType Directory -Path $iconTarget -Force | Out-Null
+          Copy-Item -Path ".\app\assets\icons\fossredder.png" -Destination $iconTarget -Force
+
+      - name: Upload Doxygen artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: doxygen-html
+          path: docs/html
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-pages:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_pages == true
+    needs:
+      - coverage
+      - documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download Doxygen artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: doxygen-html
+          path: site/api
+
+      - name: Download coverage artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage-artifact
+
+      - name: Assemble GitHub Pages site
+        shell: bash
+        run: |
+          mkdir -p site/coverage
+          cp -R coverage-artifact/html/. site/coverage/
+          cp ci/pages/index.html site/index.html
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+          path: site
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+
+  installer:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop'
+    needs:
+      - build-and-test
+      - static-analysis
+      - coverage
+      - documentation
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate localization contract
+        run: .\ci\localization\check-localization.ps1
+
+      - name: Resolve package version
+        run: |
+          $cmake = Get-Content CMakeLists.txt -Raw
+          if ($cmake -notmatch 'project\s*\(\s*FossRedder\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)') {
+            throw "Could not resolve project version from CMakeLists.txt"
+          }
+          echo "PACKAGE_VERSION=$($Matches[1])" >> $env:GITHUB_ENV
+
+      - name: Prepare staging dir
+        run: |
+          $staging = Join-Path $env:RUNNER_TEMP "fossredder-staging-${{ github.job }}-${{ github.run_id }}"
+          if (Test-Path $staging) { Remove-Item -Path $staging -Recurse -Force }
+          New-Item -ItemType Directory -Path $staging | Out-Null
+          icacls $staging /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T | Out-Null
+          echo "TARGET_DIR=$staging" >> $env:GITHUB_ENV
+
+      - name: Clean previous build
+        run: |
+          if (Test-Path .build) { Remove-Item -Path .build -Recurse -Force }
+
+      - name: Validate runner prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireInnoSetup
+
+      - name: Configure installer preset
+        run: cmake -DTARGET_DIR="$env:TARGET_DIR" -DFOSSREDDER_FAST_QML_BUILD=ON --preset app
+
+      - name: Build app and installer
+        run: .\ci\package\build-installer.ps1
+
+      - name: Validate installer artifact
+        run: .\ci\package\validate-package.ps1 -DistDir .build\app\dist
+
+      - name: Run installer QA
+        run: .\ci\package\test-package-layout.ps1 -StagingDir .build\app\staging -DistDir .build\app\dist
+
+      - name: Create release metadata
+        env:
+          RELEASE_REF_NAME: ${{ github.ref_name }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: .\ci\release\create-release-metadata.ps1 -DistDir .build\app\dist
+
+      - name: Validate GitHub release prerequisites
+        run: .\ci\runner\assert-quality-runner.ps1 -RequireGitHubCli -SkipBuildPrerequisites
+
+      - name: Publish develop nightly pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "develop-nightly"
+          $installer = ".build\app\dist\FOSSredder-Setup-$env:PACKAGE_VERSION-win-x64.exe"
+          if (!(Test-Path $installer)) {
+            throw "Nightly installer not found: $installer"
+          }
+
+          git tag -f $tag $env:GITHUB_SHA
+          git push --force origin "refs/tags/$tag"
+
+          $notes = @(
+            "Latest validated develop installer.",
+            "",
+            "Branch: develop",
+            "Commit: $env:GITHUB_SHA",
+            "Pipeline run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID",
+            "",
+            "This pre-release is mutable and intended for testing only."
+          ) -join [Environment]::NewLine
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag `
+              --title "Develop Nightly" `
+              --notes "$notes" `
+              --prerelease `
+              --target $env:GITHUB_SHA
+          } else {
+            gh release edit $tag `
+              --title "Develop Nightly" `
+              --notes "$notes" `
+              --prerelease
+          }
+
+          gh release upload $tag $installer --clobber
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-installer
+          path: .build/app/dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload release metadata artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-release-metadata
+          path: .build/app/release/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload package logs
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: fossredder-package-logs
+          path: .build/logs/package/*
+          if-no-files-found: warn
+          retention-days: 7

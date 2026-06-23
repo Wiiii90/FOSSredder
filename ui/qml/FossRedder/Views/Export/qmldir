@@ -1,0 +1,7 @@
+module FossRedder.Views.Export
+ExportBottomBar 1.0 ExportBottomBar.qml
+ExportForm 1.0 ExportForm.qml
+ExportPanel 1.0 ExportPanel.qml
+ExportProgressBar 1.0 ExportProgressBar.qml
+ExportSidebar 1.0 ExportSidebar.qml
+ExportView 1.0 ExportView.qml

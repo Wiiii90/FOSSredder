@@ -1,16 +1,18 @@
 module FossRedder.Components
 depends QtQuick
-Histogram 1.0 Charts/Histogram.qml
-Pie 1.0 Charts/Pie.qml
-EntityPicker 1.0 Common/EntityPicker.qml
-ListRow 1.0 Common/ListRow.qml
-RunLogList 1.0 Common/RunLogList.qml
-AppMenu 1.0 Layout/AppMenu.qml
-Content 1.0 Layout/Content.qml
-ContentRouter 1.0 Layout/ContentRouter.qml
-Shell 1.0 Layout/Shell.qml
-Sidebar 1.0 Layout/Sidebar.qml
-SidebarRouter 1.0 Layout/SidebarRouter.qml
-StatusBar 1.0 Layout/StatusBar.qml
-Toolbar 1.0 Layout/Toolbar.qml
-BottomBar 1.0 Layout/BottomBar.qml
+StatusChip 1.0 StatusChip.qml
+RunLogList 1.0 RunLogList.qml
+AppMenu 1.0 AppMenu.qml
+internal AppMenuItem AppMenuItem.qml
+internal AppMenuPopupFrame AppMenuPopupFrame.qml
+internal AppMenuSeparator AppMenuSeparator.qml
+Content 1.0 Content.qml
+ContentRouter 1.0 ContentRouter.qml
+Shell 1.0 Shell.qml
+Sidebar 1.0 Sidebar.qml
+SidebarRouter 1.0 SidebarRouter.qml
+StatusBar 1.0 StatusBar.qml
+Toolbar 1.0 Toolbar.qml
+internal ToolbarDivider ToolbarDivider.qml
+internal ToolbarGroup ToolbarGroup.qml
+BottomBar 1.0 BottomBar.qml

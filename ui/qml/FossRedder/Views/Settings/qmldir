@@ -1,0 +1,7 @@
+module FossRedder.Views.Settings
+SettingsExport 1.0 SettingsExport.qml
+SettingsGeneral 1.0 SettingsGeneral.qml
+SettingsImport 1.0 SettingsImport.qml
+SettingsMiscellaneous 1.0 SettingsMiscellaneous.qml
+SettingsSidebar 1.0 SettingsSidebar.qml
+SettingsView 1.0 SettingsView.qml

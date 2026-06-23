@@ -11,21 +11,56 @@
       "name": "vcpkg-base",
       "generator": "Visual Studio 18 2026",
       "architecture": {
-        "value": "x64"
+        "value": "x64",
+        "strategy": "set"
       },
       "cacheVariables": {
         "VCPKG_TARGET_TRIPLET": "x64-windows",
         "VCPKG_APPLOCAL_DEPS": "ON"
       },
-      "environment": {
-        "QT_DEBUG_PLUGINS": "1"
-      }
+      "environment": {}
+    },
+    {
+      "hidden": true,
+      "name": "vcpkg-ninja-base",
+      "generator": "Ninja Multi-Config",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "VCPKG_APPLOCAL_DEPS": "ON"
+      },
+      "environment": {}
     },
     {
       "name": "app",
       "displayName": "App",
       "inherits": "vcpkg-base",
-      "binaryDir": "${sourceDir}/.build/${presetName}"
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "app-fast",
+      "displayName": "App Fast QML",
+      "inherits": "app",
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "cacheVariables": {
+        "FOSSREDDER_FAST_QML_BUILD": "ON"
+      }
+    },
+    {
+      "name": "app-ninja-fast",
+      "displayName": "App Ninja Fast QML",
+      "inherits": "vcpkg-ninja-base",
+      "binaryDir": "${sourceDir}/.build/${presetName}",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF",
+        "FOSSREDDER_FAST_QML_BUILD": "ON"
+      }
     },
     {
       "name": "tests",
@@ -37,20 +72,19 @@
         "BUILD_CORE_TESTS": "ON",
         "BUILD_UI_TESTS": "ON",
         "BUILD_PERSISTENCE_TESTS": "ON",
-        "BUILD_DEBUG_TESTS": "ON",
-        "BUILD_OPENCV_TESTS": "ON"
+        "BUILD_DIAGNOSTICS_TESTS": "ON",
+        "BUILD_INFRA_DOCUMENT_IMAGE_PROCESSING_TESTS": "ON",
+        "BUILD_INFRA_ARCHIVE_TESTS": "ON",
+        "BUILD_INFRA_PDF_RENDERING_TESTS": "ON",
+        "BUILD_INFRA_TEXT_RECOGNITION_TESTS": "ON",
+        "BUILD_INFRA_ANALYSIS_RENDERING_TESTS": "ON",
+        "BUILD_INFRA_XLSX_WRITER_TESTS": "ON"
       }
     },
     {
-      "name": "ci",
-      "displayName": "CI",
+      "name": "clang-tidy",
+      "displayName": "clang-tidy",
       "inherits": "tests",
-      "binaryDir": "${sourceDir}/.build/${presetName}"
-    },
-    {
-      "name": "tidy",
-      "displayName": "Tidy",
-      "inherits": "ci",
       "binaryDir": "${sourceDir}/.build/${presetName}",
       "cacheVariables": {
         "FOSSREDDER_ENABLE_CLANG_TIDY": "ON"
@@ -59,7 +93,7 @@
     {
       "name": "coverage",
       "displayName": "Coverage",
-      "inherits": "ci",
+      "inherits": "tests",
       "binaryDir": "${sourceDir}/.build/${presetName}",
       "toolset": "ClangCL",
       "cacheVariables": {
@@ -79,6 +113,26 @@
       "configuration": "Release"
     },
     {
+      "name": "debug-app-fast",
+      "configurePreset": "app-fast",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-app-fast",
+      "configurePreset": "app-fast",
+      "configuration": "Release"
+    },
+    {
+      "name": "debug-app-ninja-fast",
+      "configurePreset": "app-ninja-fast",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-app-ninja-fast",
+      "configurePreset": "app-ninja-fast",
+      "configuration": "Release"
+    },
+    {
       "name": "debug-tests",
       "configurePreset": "tests",
       "configuration": "Debug"
@@ -89,13 +143,8 @@
       "configuration": "Release"
     },
     {
-      "name": "release-ci",
-      "configurePreset": "ci",
-      "configuration": "Release"
-    },
-    {
-      "name": "release-tidy",
-      "configurePreset": "tidy",
+      "name": "release-clang-tidy",
+      "configurePreset": "clang-tidy",
       "configuration": "Release"
     },
     {
@@ -104,7 +153,7 @@
       "configuration": "Release"
     },
     {
-      "name": "release-package",
+      "name": "release-installer",
       "configurePreset": "app",
       "configuration": "Release",
       "targets": [
@@ -124,14 +173,6 @@
     {
       "name": "release-tests",
       "configurePreset": "tests",
-      "configuration": "Release",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
-      "name": "release-ci",
-      "configurePreset": "ci",
       "configuration": "Release",
       "output": {
         "outputOnFailure": true

@@ -1,0 +1,9 @@
+module FossRedder.Views.Contract
+ContractActorsPanel 1.0 ContractActorsPanel.qml
+ContractAllocatablePanel 1.0 ContractAllocatablePanel.qml
+ContractBottomBar 1.0 ContractBottomBar.qml
+ContractForm 1.0 ContractForm.qml
+ContractPropertiesPanel 1.0 ContractPropertiesPanel.qml
+ContractSidebar 1.0 ContractSidebar.qml
+ContractTypePanel 1.0 ContractTypePanel.qml
+ContractView 1.0 ContractView.qml

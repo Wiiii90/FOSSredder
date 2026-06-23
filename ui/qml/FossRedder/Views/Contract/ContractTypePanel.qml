@@ -1,11 +1,6 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Contract/ContractTypePanel.qml
- * @brief Provides the ContractTypePanel component.
- */
-
-/*!
  * @file ui/qml/FossRedder/Views/Contract/ContractTypePanel.qml
- * @brief Type input panel used inside the contract form.
+ * @brief Provides the ContractTypePanel component.
  */
 
 import QtQuick 2.15
@@ -16,8 +11,7 @@ import FossRedder.Controls 1.0 as Controls
 Controls.Panel {
     id: root
     required property var theme
-    property string typeValue: ""
-    signal typeEdited(string text)
+    required property var contractViewModel
 
     Layout.fillWidth: true
     contentSpacing: root.theme.spacingSmall
@@ -30,18 +24,24 @@ Controls.Panel {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
+        Layout.fillHeight: true
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Type")
             Layout.fillWidth: true
         }
 
         Controls.TextField {
+            objectName: "contractTypeField"
             Layout.fillWidth: true
-            text: root.typeValue
-            onTextEdited: root.typeEdited(text)
+            text: root.contractViewModel ? root.contractViewModel.type : ""
+            onTextChanged: if (root.contractViewModel)
+                root.contractViewModel.type = text
+            onTextEdited: if (root.contractViewModel)
+                root.contractViewModel.type = text
         }
     }
 }

@@ -1,14 +1,14 @@
-﻿cmake_minimum_required(VERSION 4.0.1)
+cmake_minimum_required(VERSION 4.0.1)
 
-include(cmake/Vcpkg.cmake)
+include(cmake/modules/FossredderVcpkg.cmake)
 fossredder_configure_vcpkg()
 
-project(FossRedder VERSION 0.1.0 LANGUAGES CXX)
+project(FossRedder VERSION 0.5.0 LANGUAGES CXX)
 
 include(CMakePackageConfigHelpers)
 include(CTest)
-include(cmake/Targets.cmake)
-include(cmake/QualityTools.cmake)
+include(cmake/modules/FossredderTargets.cmake)
+include(cmake/modules/FossredderQualityTools.cmake)
 
 fossredder_configure_quality_tools()
 
@@ -19,18 +19,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+if(MSVC)
+    # MSVC needs /FS when multiple generated sources can write the same PDB in parallel.
+    add_compile_options(/FS)
+endif()
 
 # Generate Qt Creator/QML Language Server metadata for QML editing.
 set(QT_QML_GENERATE_QMLLS_INI ON)
 
 # Module layout.
-add_subdirectory(api)
 add_subdirectory(core)
-add_subdirectory(debug)
+add_subdirectory(diagnostics)
+add_subdirectory(infra)
 add_subdirectory(persistence)
-add_subdirectory(services/poppler)
-add_subdirectory(services/opencv)
-add_subdirectory(services/tesseract)
 add_subdirectory(ui)
 add_subdirectory(app)
 
@@ -53,7 +54,7 @@ endif()
 list(REMOVE_DUPLICATES FOSSREDDER_QT_PUBLIC_COMPONENTS)
 
 configure_package_config_file(
-    "${CMAKE_SOURCE_DIR}/cmake/FossRedderConfig.cmake.in"
+    "${CMAKE_SOURCE_DIR}/cmake/templates/FossRedderConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/FossRedderConfig.cmake"
     INSTALL_DESTINATION "${FOSSREDDER_INSTALL_CMAKEDIR}"
 )
@@ -76,5 +77,5 @@ install(FILES
     DESTINATION "${FOSSREDDER_INSTALL_CMAKEDIR}"
 )
 
-include(cmake/Packaging.cmake)
+include(cmake/modules/FossredderPackaging.cmake)
 fossredder_configure_packaging()

@@ -7,48 +7,21 @@
 
 #define NOMINMAX
 
-#include <string>
-#include <vector>
-#include <memory>
-#include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-#include <filesystem>
 #include <algorithm>
-#include <regex>
-#include <sstream>
 #include <cctype>
 #include <cmath>
-#include <set>
-#include <map>
+#include <cstdlib>
+#include <filesystem>
 #include <iomanip>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <regex>
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include <QApplication>
 #include <QMainWindow>
-
-#include "core/models/Actor.h"
-#include "core/models/Analysis.h"
-#include "core/models/AnalysisResult.h"
-#include "core/models/Annual.h"
-#include "core/models/AppState.h"
-#include "core/models/Contract.h"
-#include "core/models/DeletionImpact.h"
-#include "core/models/StatementDraft.h"
-#include "core/models/TransactionDraft.h"
-#include "core/models/Property.h"
-#include "core/models/Statement.h"
-#include "core/models/Transaction.h"
-
-using core::domain::Actor;
-using core::domain::Analysis;
-using core::domain::AnalysisResult;
-using core::domain::AnalysisTransaction;
-using core::domain::Annual;
-using core::domain::AppState;
-using core::domain::Contract;
-using core::domain::DeletionImpact;
-using core::domain::StatementDraft;
-using core::domain::TransactionDraft;
-using core::domain::Property;
-using core::domain::Statement;
-using core::domain::Transaction;

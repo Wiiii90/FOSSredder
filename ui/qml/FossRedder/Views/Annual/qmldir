@@ -1,0 +1,8 @@
+module FossRedder.Views.Annual
+AnnualAnalysesPanel 1.0 AnnualAnalysesPanel.qml
+AnnualBottomBar 1.0 AnnualBottomBar.qml
+AnnualForm 1.0 AnnualForm.qml
+AnnualSidebar 1.0 AnnualSidebar.qml
+AnnualTransactionsPanel 1.0 AnnualTransactionsPanel.qml
+AnnualVerificationPanel 1.0 AnnualVerificationPanel.qml
+AnnualView 1.0 AnnualView.qml

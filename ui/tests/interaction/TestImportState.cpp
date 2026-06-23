@@ -1,81 +1,125 @@
 /**
  * @file ui/tests/interaction/TestImportState.cpp
- * @brief Interaction tests for `ImportState`.
+ * @brief Interaction tests for import overview wiring.
  */
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
-#include <QRegularExpression>
+#include <memory>
 
-#include "ui/config/Defaults.h"
-#include "ui/import/ImportState.h"
-#include "ui/models/ImportRunList.h"
-#include "ui/text/Text.h"
+#include "support/ImportRunnerStub.h"
+#include "support/ViewModelTestHarness.h"
+#include "ui/adapters/ImportAdapter.h"
+#include "ui/shell/Settings.h"
+#include "ui/viewmodels/ImportViewModel.h"
+#include "ui/workflows/ImportWorkflow.h"
 
-namespace {
+namespace ui {
 
-using ui::ImportRunList;
-using ui::importing::ImportState;
+TEST(ImportInteractionTest,
+     INTERACTION_IMPORT_001_OverviewAppliesDefaultPathAndFiltersManualFiles) {
+  tests::support::WorkspaceHarness harness;
+  const auto adapter = std::make_shared<adapters::ImportAdapter>(
+      std::make_shared<tests::support::ImportRunnerStub>());
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
+  Settings settings;
+  ImportViewModel viewModel;
 
-TEST(ImportStateTests, AddFilesUsesFirstFileAsSelectionAndQueuesRemainingFiles)
-{
-    ImportState state;
+  settings.setImportDefaultPath(QStringLiteral("P:/imports/default.pdf"));
+  viewModel.setSettings(&settings);
+  viewModel.setImportWorkflow(&workflow);
 
-    const bool changed = state.addFiles({QStringLiteral(" first.pdf "), QString(), QStringLiteral("second.pdf"), QStringLiteral("third.pdf")});
+  EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/default.pdf"));
+  EXPECT_TRUE(viewModel.canStart());
 
-    EXPECT_TRUE(changed);
-    EXPECT_EQ(state.selectedFile(), QStringLiteral("first.pdf"));
-    ASSERT_EQ(state.queuedFiles().size(), 2);
-    EXPECT_EQ(state.queuedFiles().at(0), QStringLiteral("second.pdf"));
-    EXPECT_EQ(state.queuedFiles().at(1), QStringLiteral("third.pdf"));
+  settings.setImportDefaultPath(QStringLiteral("P:/imports/updated.pdf"));
+  EXPECT_EQ(workflow.selectedFile(), QStringLiteral("P:/imports/updated.pdf"));
+
+  settings.setImportDefaultPath({});
+  workflow.setSelectedFile({});
+  viewModel.setManualPathText(QStringLiteral("P:/imports/readme.txt"));
+  viewModel.addSelectedImportFiles();
+
+  EXPECT_TRUE(workflow.selectedFile().isEmpty());
+  EXPECT_TRUE(workflow.queuedFiles().isEmpty());
+
+  viewModel.setManualPathText(QStringLiteral("P:/imports/statement.PDF"));
+  viewModel.addSelectedImportFiles();
+
+  EXPECT_EQ(workflow.selectedFile(),
+            QStringLiteral("P:/imports/statement.PDF"));
+  EXPECT_EQ(viewModel.importFileSummary(),
+            QStringLiteral("Selected: statement.PDF"));
+  EXPECT_TRUE(viewModel.manualPathText().isEmpty());
+
+  settings.setImportDefaultPath(QStringLiteral("P:/imports/later-default.pdf"));
+  EXPECT_EQ(workflow.selectedFile(),
+            QStringLiteral("P:/imports/statement.PDF"));
 }
 
-TEST(ImportStateTests, UpdateProgressExtractsPageInformationFromPhaseText)
-{
-    ImportState state;
-    const QRegularExpression pagePattern(ui::config::kImportProgressPagePattern);
+TEST(ImportInteractionTest,
+     INTERACTION_IMPORT_002_PauseGatesWorkflowProgressUpdates) {
+  tests::support::WorkspaceHarness harness;
+  const auto runner = std::make_shared<tests::support::ImportRunnerStub>();
+  runner->nextStatementImportHandle.importId = "import-1";
+  runner->nextStatementImportHandle.subscriptionId = 1;
+  const auto adapter = std::make_shared<adapters::ImportAdapter>(runner);
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
 
-    state.beginImport(QStringLiteral("statement.pdf"));
-    state.updateProgress(0.42, QStringLiteral("Parsing [3 / 7]"), pagePattern);
+  workflow.setSelectedFile(QStringLiteral("statement.pdf"));
+  workflow.startStatementImport();
 
-    EXPECT_DOUBLE_EQ(state.progress(), 0.42);
-    EXPECT_EQ(state.phase(), QStringLiteral("Parsing [3 / 7]"));
-    EXPECT_EQ(state.currentPage(), 3);
-    EXPECT_EQ(state.pageCount(), 7);
+  EXPECT_FALSE(workflow.isPaused());
+  EXPECT_EQ(workflow.phase().toStdString(), "Starting import...");
+
+  workflow.pauseImport();
+  EXPECT_TRUE(workflow.isPaused());
+  EXPECT_EQ(workflow.phase().toStdString(), "Paused");
+
+  workflow.resumeImport();
+  EXPECT_FALSE(workflow.isPaused());
+  EXPECT_EQ(workflow.phase().toStdString(), "Running import...");
 }
 
-TEST(ImportStateTests, RecordCanceledAppendsCanceledRunAndClearsCurrentSelection)
-{
-    ImportRunList runs;
-    ImportState state;
+TEST(
+    ImportInteractionTest,
+    INTERACTION_IMPORT_003_ViewModelFinalizesDraftThroughWorkflowAndWorkspace) {
+  tests::support::WorkspaceHarness harness(
+      tests::support::makeStateWithDraftStack());
+  const auto adapter = std::make_shared<adapters::ImportAdapter>(
+      std::make_shared<tests::support::ImportRunnerStub>());
+  ImportWorkflow workflow(
+      adapter, tests::support::noopErrorReporter(),
+      [&]() {
+        return harness.store->snapshot();
+      },
+      harness.commands.get(), harness.selectors.get());
+  ImportViewModel viewModel;
+  viewModel.setImportWorkflow(&workflow);
+  viewModel.setWorkspaceRoles(harness.store.get(), harness.commands.get(),
+                              harness.selection.get(), harness.selectors.get());
 
-    state.beginImport(QStringLiteral("statement.pdf"));
-    state.beginCancel(true);
-    state.recordCanceled(QStringLiteral("2025-01-15T12:00:00Z"));
+  viewModel.openImportLog(QStringLiteral("draft-1"), true,
+                          QStringLiteral("draft-1"), {});
+  ASSERT_TRUE(viewModel.hasDraft());
 
-    EXPECT_FALSE(state.isRunning());
-    EXPECT_FALSE(state.cancelRequested());
-    EXPECT_TRUE(state.selectedFile().isEmpty());
-    EXPECT_TRUE(state.currentRunFile().isEmpty());
-    EXPECT_EQ(runs.rowCount(), 0);
+  viewModel.finalize();
+
+  const auto snapshot = harness.workspace->workspaceSnapshot();
+  EXPECT_FALSE(viewModel.hasDraft());
+  EXPECT_EQ(snapshot.statementDrafts.size(), 2U);
+  ASSERT_FALSE(snapshot.statements.empty());
+  EXPECT_EQ(snapshot.statements.back().name, std::string("Draft 1"));
 }
 
-TEST(ImportStateTests, RecordFailedClearsQueueAndPersistsFailureMessage)
-{
-    ImportRunList runs;
-    ImportState state;
-
-    ASSERT_TRUE(state.addFiles({QStringLiteral("statement.pdf"), QStringLiteral("queued.pdf")}));
-    const QString selected = state.takeSelectedFileForStart();
-    ASSERT_EQ(selected, QStringLiteral("statement.pdf"));
-
-    state.beginImport(selected);
-    state.recordFailed(QStringLiteral("2025-01-15T12:00:00Z"), QStringLiteral("import failed"));
-
-    EXPECT_FALSE(state.isRunning());
-    EXPECT_EQ(state.error(), QStringLiteral("import failed"));
-    EXPECT_TRUE(state.queuedFiles().isEmpty());
-    EXPECT_EQ(runs.rowCount(), 0);
-}
-
-} // namespace
+} // namespace ui

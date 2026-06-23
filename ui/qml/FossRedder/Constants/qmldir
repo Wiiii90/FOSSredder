@@ -1,4 +1,0 @@
-module FossRedder.Constants
-depends QtQuick
-Analysis 1.0 Analysis.js
-FileFormats 1.0 FileFormats.js

@@ -1,0 +1,6 @@
+module FossRedder.Views.Actor
+ActorBottomBar 1.0 ActorBottomBar.qml
+ActorContractPanel 1.0 ActorContractPanel.qml
+ActorForm 1.0 ActorForm.qml
+ActorSidebar 1.0 ActorSidebar.qml
+ActorView 1.0 ActorView.qml

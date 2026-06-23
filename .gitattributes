@@ -1,77 +1,87 @@
-## Enforce consistent EOLs, mark binary files, and keep copilot instructions excluded from master merges
-# NOTE: header line must be a comment to avoid attribute parsing warnings
-
-# Keep this attributes file normalized
-.gitattributes text eol=lf
-
-# Default: treat files as text where appropriate and keep LF in the repository
+# Normalize repository text files to LF unless a file type needs CRLF locally.
 * text=auto eol=lf
 
-###############################################################################
-# Source files: enforce LF in the repo
-###############################################################################
-*.c     text eol=lf
-*.h     text eol=lf
-*.cpp   text eol=lf
-*.hpp   text eol=lf
-*.cc    text eol=lf
-*.hh    text eol=lf
-*.inl   text eol=lf
-*.mm    text eol=lf
-*.rs    text eol=lf
-*.go    text eol=lf
-*.java  text eol=lf
-*.cs    text eol=lf
+# Repository metadata
+.clang-format text eol=lf
+.clang-tidy text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+CODEOWNERS text eol=lf
+CONTRIBUTING.md text eol=lf diff=markdown
+LICENSE text eol=lf
+README.md text eol=lf diff=markdown
+ROADMAP.md text eol=lf diff=markdown
 
-# Project, config and documentation files
-CMakeLists.txt    text eol=lf
-*.cmake           text eol=lf
-*.json            text eol=lf
-*.yml             text eol=lf
-*.yaml            text eol=lf
-*.md              text eol=lf
-*.txt             text eol=lf
+# C++ and CMake
+*.c text eol=lf diff=cpp
+*.cc text eol=lf diff=cpp
+*.cpp text eol=lf diff=cpp
+*.cxx text eol=lf diff=cpp
+*.h text eol=lf diff=cpp
+*.hh text eol=lf diff=cpp
+*.hpp text eol=lf diff=cpp
+*.hxx text eol=lf diff=cpp
+*.inl text eol=lf diff=cpp
+*.ixx text eol=lf diff=cpp
+CMakeLists.txt text eol=lf
+*.cmake text eol=lf
+*.cmake.in text eol=lf
 
-# Scripts: prefer LF for POSIX scripts
-*.sh    text eol=lf
-*.py    text eol=lf
-*.pl    text eol=lf
+# Qt, QML and UI text assets
+*.js text eol=lf
+*.qml text eol=lf
+*.qrc text eol=lf diff=xml
+*.svg text eol=lf diff=xml
+*.ts text eol=lf diff=xml
+qmldir text eol=lf
 
-# Windows scripts: keep CRLF in worktree
-*.bat   text eol=crlf
-*.cmd   text eol=crlf
-*.ps1   text eol=crlf
+# Project configuration and documentation
+*.html text eol=lf diff=html
+*.in text eol=lf
+*.iss text eol=lf
+*.json text eol=lf
+*.md text eol=lf diff=markdown
+*.txt text eol=lf
+*.xml text eol=lf diff=xml
+*.yaml text eol=lf
+*.yml text eol=lf
+Doxyfile text eol=lf
 
-###############################################################################
-# Binary files - do not attempt EOL normalization
-###############################################################################
-*.png   binary
-*.jpg   binary
-*.jpeg  binary
-*.gif   binary
-*.ico   binary
-*.tiff  binary
-*.bmp   binary
-*.zip   binary
-*.tar   binary
-*.gz    binary
-*.7z    binary
-*.exe   binary
-*.dll   binary
-*.so    binary
+# Windows command files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Images and icons
+*.bmp binary
+*.gif binary
+*.ico binary
+*.jpeg binary
+*.jpg binary
+*.png binary
+*.tif binary
+*.tiff binary
+*.webp binary
+
+# Runtime, package and generated binary artifacts
+*.7z binary
+*.a binary
+*.dll binary
+*.docx binary
 *.dylib binary
-*.lib   binary
-*.a     binary
-*.obj   binary
-*.o     binary
-*.pdb   binary
-*.pdf   binary
-
-# Large or generated resource directories - treat as binary
-services/llama/res/** binary
-services/tesseract/res/** binary
-
-# Keep branch-specific copilot instructions out of master merges
-.github/copilot-instructions.md merge=ours
-
-# End of file
+*.exe binary
+*.gz binary
+*.lib binary
+*.msi binary
+*.o binary
+*.obj binary
+*.pdb binary
+*.pdf binary
+*.qm binary
+*.rcc binary
+*.so binary
+*.tar binary
+*.traineddata binary
+*.xls binary
+*.xlsx binary
+*.zip binary

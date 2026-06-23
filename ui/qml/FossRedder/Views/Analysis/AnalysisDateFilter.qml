@@ -1,25 +1,23 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Analysis/AnalysisDateFilter.qml
+ * @file ui/qml/FossRedder/Views/Analysis/AnalysisDateFilter.qml
  * @brief Provides the AnalysisDateFilter component.
  */
+
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
     required property var theme
-    property int dateModeIndex: 1
-    property string yearValue: ""
-    property string dateFromValue: ""
-    property string dateToValue: ""
+    required property var analysisViewModel
+    property bool initialized: false
     readonly property real modeFieldWidth: root.theme.formFieldWidth
     readonly property real valueFieldWidth: root.theme.formFieldWidth
     readonly property real yearFieldWidth: (root.theme.formFieldWidth * 2) + root.theme.spacingSmall + implicitFromLabel.implicitWidth + implicitToLabel.implicitWidth
-    signal filterChanged()
 
     Layout.fillWidth: true
     contentSpacing: root.theme.spacingSmall
@@ -28,67 +26,80 @@ Controls.Panel {
         Layout.fillWidth: true
         spacing: root.theme.spacingSmall
 
-        Label {
-            text: qsTr("Date")
-            Layout.preferredWidth: root.theme.formLabelWidth
+        Controls.DropdownMenu {
+            id: dateFieldCombo
+            objectName: "analysisDateFieldComboBox"
+            Layout.preferredWidth: root.theme.formFieldWidth
+            model: [qsTr("Booking Date"), qsTr("Valuta")]
+            currentIndex: root.analysisViewModel.dateFieldIndex
+            onCurrentIndexChanged: {
+                if (root.initialized)
+                    root.analysisViewModel.dateFieldIndex = currentIndex;
+            }
         }
 
         Controls.DropdownMenu {
             id: dateModeCombo
+            objectName: "analysisDateModeComboBox"
             Layout.preferredWidth: root.theme.formFieldWidth
-            model: [ qsTr("Year"), qsTr("Date Range") ]
-            currentIndex: root.dateModeIndex
+            model: [qsTr("Year"), qsTr("Date Range")]
+            currentIndex: root.analysisViewModel.dateModeIndex
             onCurrentIndexChanged: {
-                root.dateModeIndex = currentIndex
-                root.filterChanged()
+                if (root.initialized)
+                    root.analysisViewModel.dateModeIndex = currentIndex;
             }
         }
 
         Label {
             id: implicitFromLabel
-            visible: root.dateModeIndex === 1
+            color: root.theme.textPrimary
+            visible: root.analysisViewModel.dateModeIndex === 1
             text: qsTr("From")
         }
 
         Controls.TextField {
             id: dateFromField
-            visible: root.dateModeIndex === 1
+            objectName: "analysisDateFromField"
+            visible: root.analysisViewModel.dateModeIndex === 1
             Layout.preferredWidth: root.theme.formFieldWidth
             placeholderText: qsTr("YYYY-MM-DD")
-            text: root.dateFromValue
+            text: root.analysisViewModel.dateFromValue
             onTextChanged: {
-                root.dateFromValue = text
-                root.filterChanged()
+                if (root.initialized)
+                    root.analysisViewModel.dateFromValue = text;
             }
         }
 
         Label {
             id: implicitToLabel
-            visible: root.dateModeIndex === 1
+            color: root.theme.textPrimary
+            visible: root.analysisViewModel.dateModeIndex === 1
             text: qsTr("To")
         }
 
         Controls.TextField {
             id: dateToField
-            visible: root.dateModeIndex === 1
+            objectName: "analysisDateToField"
+            visible: root.analysisViewModel.dateModeIndex === 1
             Layout.preferredWidth: root.theme.formFieldWidth
             placeholderText: qsTr("YYYY-MM-DD")
-            text: root.dateToValue
+            text: root.analysisViewModel.dateToValue
             onTextChanged: {
-                root.dateToValue = text
-                root.filterChanged()
+                if (root.initialized)
+                    root.analysisViewModel.dateToValue = text;
             }
         }
 
         Controls.TextField {
             id: yearField
-            visible: root.dateModeIndex === 0
+            objectName: "analysisYearField"
+            visible: root.analysisViewModel.dateModeIndex === 0
             Layout.preferredWidth: root.yearFieldWidth
             placeholderText: qsTr("YYYY")
-            text: root.yearValue
+            text: root.analysisViewModel.yearValue
             onTextChanged: {
-                root.yearValue = text
-                root.filterChanged()
+                if (root.initialized)
+                    root.analysisViewModel.yearValue = text;
             }
         }
 
@@ -96,4 +107,6 @@ Controls.Panel {
             Layout.fillWidth: true
         }
     }
+
+    Component.onCompleted: root.initialized = true
 }

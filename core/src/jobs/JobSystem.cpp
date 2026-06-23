@@ -1,25 +1,30 @@
 /**
  * @file core/src/jobs/JobSystem.cpp
- * @brief Implements the import job orchestration facade.
+ * @brief Implements the generic job system facade.
  */
 
 #include "core/jobs/JobSystem.h"
 
-#include "core/constants/CoreDefaults.h"
-#include "core/import/IImportStatement.h"
 #include "JobManager.h"
 #include "core/jobs/Scheduler.h"
 
-#include <filesystem>
+#include <algorithm>
 #include <thread>
+#include <utility>
 
 namespace {
+
+constexpr unsigned int kSingleCpuFallbackThreshold = 2;
+constexpr std::size_t kSingleWorkerFallback = 1;
+constexpr std::size_t kFallbackWorkerCount = 4;
+constexpr std::size_t kQueueCapacity = 128;
+constexpr std::size_t kSlotLimiterWorkerDivisor = 2;
 
 std::size_t defaultWorkers()
 {
     const auto hc = std::thread::hardware_concurrency();
-    if (hc == 0) return core::constants::jobs::kFallbackWorkerCount;
-    if (hc <= 2) return 1;
+    if (hc == 0) return kFallbackWorkerCount;
+    if (hc <= kSingleCpuFallbackThreshold) return kSingleWorkerFallback;
     return static_cast<std::size_t>(hc - 1);
 }
 
@@ -34,22 +39,23 @@ namespace core::jobs {
 
 class JobSystem::Impl {
 public:
-    Impl(std::shared_ptr<core::importing::IImportStatement> importService, std::size_t workers)
-        : importService(std::move(importService))
-        , manager()
-        , scheduler(resolveWorkerCount(workers), core::constants::jobs::kQueueCapacity)
-        , ocrLimiter(std::max<std::size_t>(std::size_t{1}, resolveWorkerCount(workers) / core::constants::jobs::kOcrWorkerDivisor))
+    Impl(std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+         std::size_t workers)
+        : manager(errorReporter)
+        , scheduler(resolveWorkerCount(workers), kQueueCapacity, std::move(errorReporter))
+        , slotLimiter(std::max<std::size_t>(std::size_t{1}, resolveWorkerCount(workers) / kSlotLimiterWorkerDivisor))
     {
     }
 
-    std::shared_ptr<core::importing::IImportStatement> importService;
     JobManager manager;
     Scheduler scheduler;
-    SlotLimiter ocrLimiter;
+    SlotLimiter slotLimiter;
 };
 
-JobSystem::JobSystem(std::shared_ptr<core::importing::IImportStatement> importService, std::size_t workers)
-    : impl_(std::make_unique<Impl>(std::move(importService), workers)) {
+JobSystem::JobSystem(
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+    std::size_t workers)
+    : impl_(std::make_unique<Impl>(std::move(errorReporter), workers)) {
 }
 
 JobSystem::~JobSystem() = default;
@@ -58,72 +64,49 @@ JobSystem::JobSystem(JobSystem&&) noexcept = default;
 
 JobSystem& JobSystem::operator=(JobSystem&&) noexcept = default;
 
-JobId JobSystem::startImportStatement(const ImportStatementJobSpec& spec) {
-    JobId id = impl_->manager.submitImportStatement(spec);
+JobId JobSystem::submit(JobKind kind)
+{
+    return impl_->manager.submit(kind);
+}
 
-    impl_->scheduler.enqueue([this, id, spec]() {
-        impl_->manager.start(id);
+void JobSystem::start(const JobId& id)
+{
+    impl_->manager.start(id);
+}
 
-        try {
-            if (!impl_->importService) {
-                impl_->manager.fail(id, std::string(core::constants::jobs::messages::kImportServiceUnavailable));
-                return;
-            }
-            if (spec.sourcePath.empty() || !std::filesystem::exists(spec.sourcePath)) {
-                impl_->manager.fail(id, std::string(core::constants::importing::kErrorSourceMissing));
-                return;
-            }
-            if (spec.runRoot.empty()) {
-                impl_->manager.fail(id, std::string(core::constants::importing::kErrorRunRootMissing));
-                return;
-            }
+void JobSystem::publish(const JobEvent& event)
+{
+    impl_->manager.publish(event);
+}
 
-            auto cancel = impl_->manager.cancelFlag(id);
-            auto progressCb = [this, id](double p, const std::string& msg) {
-                JobEvent ev;
-                ev.jobId = id;
-                ev.kind = JobKind::ImportStatement;
-                ev.state = JobState::Running;
-                ev.stage = JobStage::None;
-                ev.progress = p;
-                ev.message = msg;
-                impl_->manager.publish(ev);
-            };
+void JobSystem::fail(const JobId& id, const std::string& error)
+{
+    impl_->manager.fail(id, error);
+}
 
-            ImportRequest req;
-            req.sourcePath = spec.sourcePath;
-            req.runRoot = spec.runRoot;
-            req.runIdPrefix = spec.runIdPrefix;
-            req.jobId = id;
-            req.progressCallback = std::move(progressCb);
-            req.cancelFlag = cancel;
-            req.scheduler = &impl_->scheduler;
-            req.ocrLimiter = &impl_->ocrLimiter;
+void JobSystem::finish(const JobId& id)
+{
+    impl_->manager.finish(id);
+}
 
-            auto result = impl_->importService->importStatement(req);
-            if (!result.data) {
-                impl_->manager.fail(id, std::string(core::constants::importing::kErrorExtractionFailed));
-                return;
-            }
+std::shared_ptr<std::atomic<bool>> JobSystem::cancelFlag(const JobId& id) const
+{
+    return impl_->manager.cancelFlag(id);
+}
 
-            impl_->manager.setStatementResult(id, result.data);
-            impl_->manager.setStatementTransactions(id, std::move(result.transactions));
-            impl_->manager.setStatementArtifacts(id, std::move(result.artifacts));
+std::shared_ptr<std::atomic<bool>> JobSystem::pauseFlag(const JobId& id) const
+{
+    return impl_->manager.pauseFlag(id);
+}
 
-            if (cancel && cancel->load()) {
-                impl_->manager.cancel(id);
-                return;
-            }
+Scheduler& JobSystem::scheduler()
+{
+    return impl_->scheduler;
+}
 
-            impl_->manager.finish(id);
-        } catch (const std::exception& ex) {
-            impl_->manager.fail(id, ex.what());
-        } catch (...) {
-            impl_->manager.fail(id, std::string(core::constants::jobs::messages::kUnknownError));
-        }
-    });
-
-    return id;
+SlotLimiter& JobSystem::slotLimiter()
+{
+    return impl_->slotLimiter;
 }
 
 SubscriptionId JobSystem::subscribe(const JobId& id, JobEventCallback cb)
@@ -141,27 +124,23 @@ void JobSystem::cancel(const JobId& id)
     impl_->manager.cancel(id);
 }
 
+void JobSystem::pause(const JobId& id)
+{
+    impl_->manager.pause(id);
+}
+
+void JobSystem::resume(const JobId& id)
+{
+    impl_->manager.resume(id);
+}
+
 std::optional<JobSnapshot> JobSystem::snapshot(const JobId& id) const
 {
     return impl_->manager.snapshot(id);
 }
 
-std::shared_ptr<core::domain::Statement> JobSystem::statementResult(const JobId& id) const
+void JobSystem::shutdown()
 {
-    return impl_->manager.statementResult(id);
-}
-
-std::vector<core::domain::TransactionDraft> JobSystem::statementTransactions(const JobId& id) const
-{
-    return impl_->manager.statementTransactions(id);
-}
-
-std::map<std::string, std::vector<uint8_t>> JobSystem::takeStatementArtifacts(const JobId& id)
-{
-    return impl_->manager.takeStatementArtifacts(id);
-}
-
-void JobSystem::shutdown() {
     impl_->scheduler.stop();
 }
 

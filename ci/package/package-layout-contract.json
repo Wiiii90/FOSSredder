@@ -1,0 +1,28 @@
+{
+  "requiredRuntimeFiles": [
+    "bin/fossredder.exe",
+    "bin/qt.conf",
+    "bin/platforms/qwindows.dll"
+  ],
+  "qtQmlImports": [
+    "QtQuick",
+    "QtQuick.Controls",
+    "QtQuick.Layouts",
+    "QtQuick.Effects"
+  ],
+  "appQmlModules": [
+    "FossRedder",
+    "FossRedder.Components",
+    "FossRedder.Controls",
+    "FossRedder.Views",
+    "FossRedder.Views.Actor",
+    "FossRedder.Views.Analysis",
+    "FossRedder.Views.Annual",
+    "FossRedder.Views.Booking",
+    "FossRedder.Views.Contract",
+    "FossRedder.Views.Export",
+    "FossRedder.Views.Import",
+    "FossRedder.Views.Property",
+    "FossRedder.Views.Settings"
+  ]
+}

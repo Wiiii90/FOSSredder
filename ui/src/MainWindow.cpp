@@ -5,80 +5,62 @@
 
 #include "MainWindow.h"
 
+#include "core/ports/diagnostics/IErrorReporter.h"
+
 #include <QCloseEvent>
 #include <QEvent>
+#include <QIcon>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQmlImageProviderBase>
-#include <QVariant>
 #include <QQuickItem>
 #include <QQuickView>
+#include <QSize>
 #include <QSizePolicy>
+#include <QTimer>
 #include <QWidget>
 #include <qqml.h>
 #include <string>
+#include <utility>
 
-#include "core/constants/CoreDefaults.h"
-#include "ui/actions/Actions.h"
-#include "ui/bootstrap/AppContext.h"
-#include "ui/bootstrap/QmlContracts.h"
-#include "ui/bootstrap/QmlRuntime.h"
-#include "ui/config/Defaults.h"
+#include "ui/i18n/Text.h"
 #include "ui/observability/Origins.h"
-#include "ui/util/StringConversions.h"
-#include "ui/text/Text.h"
-#include "ui/window/MainWindowContext.h"
-#include "ui/window/MainWindowTrace.h"
+#include "ui/shell/AppActions.h"
+#include "ui/shell/AppContext.h"
+#include "ui/shell/Defaults.h"
+#include "ui/shell/QmlContracts.h"
+#include "ui/shell/QmlDiagnostics.h"
+#include "ui/shell/QmlRuntime.h"
+#include "ui/shell/window/MainWindowContext.h"
+#include "ui/shell/window/MainWindowTrace.h"
+#include "ui/utils/StringConversions.h"
 
 namespace {
 
 using ui::observability::context::kError;
 
-/** @brief Keeps the QML root object's size properties aligned with the host size. */
-void syncRootObjectSize(QQuickView *quickView, QWidget *hostWidget) {
+/** @brief Keeps the QML root object's size properties aligned with the host
+ * size. */
+void syncRootObjectSize(QQuickView* quickView, QWidget* hostWidget) {
   if (!quickView || !hostWidget || !quickView->rootObject())
     return;
 
-  QObject *root = quickView->rootObject();
+  QObject* root = quickView->rootObject();
   root->setProperty(ui::qml::contracts::properties::kWidth,
                     hostWidget->width());
   root->setProperty(ui::qml::contracts::properties::kHeight,
                     hostWidget->height());
 }
 
-/** @brief Reports synchronous QML load failures from the quick view. */
-void reportQmlLoadErrors(QQuickView *quickView, const QUrl &source) {
-  if (!quickView || quickView->status() != QQuickView::Error)
-    return;
-
-  const auto errors = quickView->errors();
-  if (errors.isEmpty()) {
-    core::errors::report(core::errors::ErrorSeverity::Error,
-                         ui::observability::codes::QmlLoadFailed,
-                         ui::observability::origins::mainWindow::kLoadQml,
-                         "QQuickView failed to load the main QML source",
-                         {{"url", source.toString().toStdString()}});
-    return;
-  }
-
-  for (const auto &error : errors) {
-    core::errors::report(core::errors::ErrorSeverity::Error,
-                         ui::observability::codes::QmlLoadFailed,
-                         ui::observability::origins::mainWindow::kLoadQml,
-                         error.toString().toStdString(),
-                         {{"url", error.url().toString().toStdString()},
-                          {"line", std::to_string(error.line())},
-                          {"column", std::to_string(error.column())}});
-  }
-}
-
 } // namespace
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-  setWindowTitle(
-      QString::fromLatin1(core::constants::application::kDisplayName.data()));
+MainWindow::MainWindow(
+    std::shared_ptr<core::ports::diagnostics::IErrorReporter> errorReporter,
+    QWidget* parent)
+    : QMainWindow(parent), errorReporter_(std::move(errorReporter)) {
+  setWindowTitle(ui::config::kApplicationDisplayName);
   resize(ui::config::kMainWindowDefaultWidth,
          ui::config::kMainWindowDefaultHeight);
 
@@ -100,7 +82,8 @@ void MainWindow::setupQuickHost() {
   appContext_ = new ui::bootstrap::AppContext(this);
 
   m_quickContainer = QWidget::createWindowContainer(m_quickView, this);
-  m_quickContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  m_quickContainer->setSizePolicy(QSizePolicy::Expanding,
+                                  QSizePolicy::Expanding);
   m_quickContainer->setMinimumSize(0, 0);
   m_quickContainer->setAcceptDrops(true);
   m_quickContainer->installEventFilter(this);
@@ -116,29 +99,46 @@ void MainWindow::setupUiContext() {
   }
 
   const auto services =
-      ui::window::installMainWindowContext(*m_quickView->rootContext(), this,
-                                           this);
+      ui::window::installMainWindowContext(m_quickView->engine(), this);
   actions_ = services.actions;
-  dataSession_ = services.dataSession;
+  workspaceStore_ = services.workspaceStore;
+  workspaceCommands_ = services.workspaceCommands;
+  workspaceSelection_ = services.workspaceSelection;
+  workspaceSelectors_ = services.workspaceSelectors;
+  settings_ = services.settings;
   status_ = services.status;
+
+  setupAutosaveTimer();
 
   if (appContext_) {
     appContext_->setActions(services.actions);
     appContext_->setNavigation(services.navigation);
-    appContext_->setSession(services.dataSession);
-    appContext_->setFileSystemController(services.fileSystem);
+    appContext_->setFileSystemBrowser(services.fileSystemBrowser);
+    appContext_->setLanguageService(services.languageService);
     appContext_->setStatus(services.status);
+#ifdef QT_DEBUG
+    appContext_->setIsDebugBuild(true);
+#else
+    appContext_->setIsDebugBuild(false);
+#endif
   }
 }
 
 void MainWindow::setupActionRouting() {
-  ui::window::wireMainWindowActions(
-      *this, {actions_, nullptr, dataSession_, nullptr, status_},
-      [this]() { onAbout(); });
+  ui::window::wireMainWindowActions(*this,
+                                    {actions_, nullptr, workspaceStore_,
+                                     workspaceCommands_, workspaceSelection_,
+                                     workspaceSelectors_, nullptr, nullptr,
+                                     settings_, status_},
+                                    errorReporter_,
+                                    [this]() {
+                                      onAbout();
+                                    });
 }
 
 void MainWindow::setupQmlRuntime() {
-  auto *engine = m_quickView ? m_quickView->engine() : nullptr;
+  auto* engine = m_quickView ? m_quickView->engine() : nullptr;
+  ui::bootstrap::registerTypes();
   ui::bootstrap::configureRuntime(engine);
 }
 
@@ -147,8 +147,8 @@ void MainWindow::prepareForQmlShutdown() {
     return;
 
   qmlShutdownPrepared_ = true;
-  auto *quickView = m_quickView;
-  auto *quickContainer = m_quickContainer;
+  auto* quickView = m_quickView;
+  auto* quickContainer = m_quickContainer;
   m_quickView = nullptr;
   m_quickContainer = nullptr;
 
@@ -167,30 +167,12 @@ void MainWindow::prepareForQmlShutdown() {
   }
 }
 
-MainWindow::~MainWindow() { prepareForQmlShutdown(); }
-
-void MainWindow::setQmlContextProperty(const QString &name, QObject *value) {
-  if (!m_quickView)
-    return;
-  if (!m_quickView->rootContext())
-    return;
-  m_quickView->rootContext()->setContextProperty(name, value);
-  if (appContext_)
-    appContext_->setProperty(name.toUtf8().constData(), QVariant::fromValue(value));
+MainWindow::~MainWindow() {
+  prepareForQmlShutdown();
 }
 
-void MainWindow::setQmlContextValue(const QString &name, const QVariant &value) {
-  if (!m_quickView)
-    return;
-  if (!m_quickView->rootContext())
-    return;
-  m_quickView->rootContext()->setContextProperty(name, value);
-  if (appContext_)
-    appContext_->setProperty(name.toUtf8().constData(), value);
-}
-
-void MainWindow::addImageProvider(const QString &id,
-                                  QQmlImageProviderBase *provider) {
+void MainWindow::addImageProvider(const QString& id,
+                                  QQmlImageProviderBase* provider) {
   if (!m_quickView)
     return;
   if (!m_quickView->engine())
@@ -198,7 +180,7 @@ void MainWindow::addImageProvider(const QString &id,
   m_quickView->engine()->addImageProvider(id, provider);
 }
 
-void MainWindow::loadQml(const QUrl &source) {
+void MainWindow::loadQml(const QUrl& source) {
   if (!m_quickView)
     return;
   if (!source.isEmpty() && m_quickView->source() == source)
@@ -207,29 +189,32 @@ void MainWindow::loadQml(const QUrl &source) {
   if (source.isEmpty()) {
     m_quickView->loadFromModule(ui::qml::contracts::module::kName,
                                 ui::qml::contracts::module::kMainTypeName);
-    reportQmlLoadErrors(m_quickView,
-                        QUrl(QStringLiteral("module:FossRedder/Main")));
+    ui::bootstrap::reportQmlLoadErrors(
+        m_quickView, QUrl(QStringLiteral("module:FossRedder/Main")),
+        errorReporter_.get());
   } else {
     m_quickView->setSource(source);
-    reportQmlLoadErrors(m_quickView, source);
+    ui::bootstrap::reportQmlLoadErrors(m_quickView, source,
+                                       errorReporter_.get());
   }
   syncRootObjectSize(m_quickView, m_quickContainer);
 }
 
-QQmlEngine *MainWindow::qmlEngine() const noexcept {
+QQmlEngine* MainWindow::qmlEngine() const noexcept {
   return m_quickView ? m_quickView->engine() : nullptr;
 }
 
-bool MainWindow::eventFilter(QObject *obj, QEvent *ev) {
+bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
   if (obj == m_quickContainer && ev->type() == QEvent::Resize) {
     syncRootObjectSize(m_quickView, m_quickContainer);
   }
 
   if (obj == m_quickContainer) {
-    const auto outcome = dropController_.handle(ev);
+    const auto outcome = dropHandler_.handle(ev);
     if (outcome.handled) {
       if (ev->type() == QEvent::Drop && outcome.accepted && actions_) {
         ui::window::reportMainWindowFlow(
+            errorReporter_.get(),
             ui::observability::origins::mainWindow::kDragDrop,
             "Import files dropped", core::errors::ErrorSeverity::Info,
             ui::window::makeFileListContext(outcome.files));
@@ -243,57 +228,134 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *ev) {
   return QMainWindow::eventFilter(obj, ev);
 }
 
-void MainWindow::closeEvent(QCloseEvent *event) {
+void MainWindow::setupAutosaveTimer() {
+  if (!autosaveTimer_) {
+    autosaveTimer_ = new QTimer(this);
+    connect(autosaveTimer_, &QTimer::timeout, this, [this]() {
+      if (!workspaceStore_ || workspaceStore_->currentPath().isEmpty()) {
+        return;
+      }
+      ui::window::reportMainWindowFlow(
+          errorReporter_.get(),
+          ui::observability::origins::mainWindow::kActionRouting,
+          "Periodic autosave requested");
+      emit saveFileRequested();
+    });
+  }
+
+  if (!settings_) {
+    if (autosaveTimer_) {
+      autosaveTimer_->stop();
+    }
+    return;
+  }
+
+  connect(settings_, &ui::Settings::autosaveIntervalMinutesChanged, this,
+          &MainWindow::applyAutosaveSchedule, Qt::UniqueConnection);
+  connect(settings_, &ui::Settings::stateChanged, this,
+          &MainWindow::applyAutosaveSchedule, Qt::UniqueConnection);
+  applyAutosaveSchedule();
+}
+
+void MainWindow::applyAutosaveSchedule() {
+  if (!autosaveTimer_ || !settings_) {
+    return;
+  }
+
+  const int minutes = settings_->autosaveIntervalMinutes();
+  if (minutes <= 0) {
+    autosaveTimer_->stop();
+    return;
+  }
+
+  const int intervalMs = minutes * 60 * 1000;
+  if (autosaveTimer_->isActive() && autosaveTimer_->interval() == intervalMs) {
+    return;
+  }
+
+  autosaveTimer_->start(intervalMs);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
   if (closeWorkflow_.allowImmediateClose(event)) {
     prepareForQmlShutdown();
     QMainWindow::closeEvent(event);
     return;
   }
 
+  if (!settings_ || !settings_->autosaveOnClose()) {
+    ui::window::reportMainWindowFlow(
+        errorReporter_.get(),
+        ui::observability::origins::mainWindow::kClose,
+        "Main window close requested; autosave on close disabled");
+    prepareForQmlShutdown();
+    event->accept();
+    QMainWindow::closeEvent(event);
+    return;
+  }
+
   ui::window::reportMainWindowFlow(
+      errorReporter_.get(),
       ui::observability::origins::mainWindow::kClose,
       "Main window close requested; triggering save workflow");
-  closeWorkflow_.requestClose(event, [this]() { emit saveFileRequested(); });
+  closeWorkflow_.requestClose(event, [this]() {
+    emit saveFileRequested();
+  });
 }
 
-void MainWindow::handleStorageOperationSucceeded(const QString &operation) {
+void MainWindow::handleStorageOperationSucceeded(const QString& operation) {
   if (!closeWorkflow_.handleStorageOperationSucceeded(
-          operation, ui::config::operationKeys::kSaveFile,
-          [this]() {
+          operation, ui::config::operationKeys::kSaveFile, [this]() {
             QMetaObject::invokeMethod(
-                this, [this]() { close(); }, Qt::QueuedConnection);
+                this,
+                [this]() {
+                  close();
+                },
+                Qt::QueuedConnection);
           })) {
     return;
   }
 
   ui::window::reportMainWindowFlow(
+      errorReporter_.get(),
       ui::observability::origins::mainWindow::kCloseSucceeded,
       "Pending close save finished; closing main window");
 }
 
-void MainWindow::handleStorageOperationFailed(const QString &operation,
-                                              const QString &error) {
+void MainWindow::handleStorageOperationFailed(const QString& operation,
+                                              const QString& error) {
   if (!closeWorkflow_.handleStorageOperationFailed(
           operation, ui::config::operationKeys::kSaveFile))
     return;
 
   const QString message =
-      error.isEmpty() ? ui::text::controllerErrors::storageSaveFailed()
-                      : error;
+      error.isEmpty() ? ui::text::workflowErrors::storageSaveFailed() : error;
   if (status_)
     status_->setText(message);
 
   ui::window::reportMainWindowFlow(
+      errorReporter_.get(),
       ui::observability::origins::mainWindow::kCloseFailed,
       "Pending close save failed; keeping main window open",
       core::errors::ErrorSeverity::Warning,
       {{kError, ui::strings::toStdString(message)}});
 
   QMetaObject::invokeMethod(
-      this, [this]() { close(); }, Qt::QueuedConnection);
+      this,
+      [this]() {
+        close();
+      },
+      Qt::QueuedConnection);
 }
 
 void MainWindow::onAbout() {
-  QMessageBox::about(this, ui::text::mainWindow::aboutTitle(),
-                     ui::text::mainWindow::aboutBody());
+  QMessageBox dialog(this);
+  dialog.setWindowTitle(ui::text::mainWindow::aboutTitle());
+  dialog.setIconPixmap(QIcon(ui::config::kAppIconResource)
+                           .pixmap(QSize(ui::config::kAboutDialogIconSize,
+                                         ui::config::kAboutDialogIconSize)));
+  dialog.setText(ui::text::mainWindow::aboutHeadline());
+  dialog.setInformativeText(ui::text::mainWindow::aboutBody());
+  dialog.setStandardButtons(QMessageBox::Ok);
+  dialog.exec();
 }

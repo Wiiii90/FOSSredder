@@ -1,199 +1,88 @@
-﻿# FOSSredder
+<p align="center">
+  <img src="app/assets/icons/fossredder.png" alt="FOSSredder" width="96">
+</p>
 
-[![CI](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml/badge.svg?branch=master)](https://github.com/Wiiii90/fossredder/actions/workflows/quality.yml)
-[![codecov](https://codecov.io/gh/Wiiii90/fossredder/graph/badge.svg?token=LGALNE53Z6)](https://codecov.io/gh/Wiiii90/fossredder)
+<h1 align="center">FOSSredder</h1>
+
+<p align="center">
+  <a href="https://github.com/Wiiii90/FOSSredder/actions/workflows/pipeline.yml?query=branch%3Amaster"><img alt="Stable pipeline" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/FOSSredder/pipeline.yml?branch=master&label=stable%20pipeline&style=flat-square"></a>
+  <a href="https://codecov.io/gh/Wiiii90/FOSSredder/branch/master"><img alt="Stable coverage" src="https://codecov.io/gh/Wiiii90/FOSSredder/branch/master/graph/badge.svg?token=LGALNE53Z6"></a>
+  <a href="https://github.com/Wiiii90/FOSSredder/actions/workflows/pipeline.yml?query=branch%3Adevelop"><img alt="Nightly pipeline" src="https://img.shields.io/github/actions/workflow/status/Wiiii90/FOSSredder/pipeline.yml?branch=develop&label=nightly%20pipeline&style=flat-square"></a>
+  <a href="https://codecov.io/gh/Wiiii90/FOSSredder/branch/develop"><img alt="Nightly coverage" src="https://codecov.io/gh/Wiiii90/FOSSredder/branch/develop/graph/badge.svg?token=LGALNE53Z6"></a>
+</p>
 
 **FOSSredder** is a deliberately overengineered Windows desktop application built for a concrete, real-world use case: extracting structured data from PDF bank statements issued by Commerzbank, a major German banking institution, in order to automate the annual allocation of recoverable costs to tenants.
 
 The application replaces a manual, Excel-based workflow with a semi-automated pipeline. It extracts transaction data from PDF statements using OCR and heuristic parsing, followed by a custom matching engine that pre-fills entries by linking them to specific actors, properties, and contracts. A dedicated review interface allows for human-in-the-loop validation, streamlining the process of identifying recoverable costs before the final export back into a structured Excel format.
 
-While the core problem could be addressed with simple scripts or well-known LLMs, this project also serves as an engineering exercise to explore modular system design, extensibility, and modern development workflows:
-* **Modular System Design:** Built with decoupled CMake targets (core, persistence, ui, services) to ensure a clear separation of concerns and high maintainability.
-* **Extensible Architecture:** Designed to support additional document formats through a strategy-based approach that leverages internal service adapters for OCR and parsing.
-* **Modern Development:** Built using an iterative, AI-assisted workflow with a strong emphasis on Clean Architecture principles.
-* **Privacy by Design:** Since financial data is sensitive, the system runs strictly locally. No cloud, no external APIs.
+While the core problem could be addressed with simpler scripts, this project also serves as an engineering exercise in modular system design, extensibility, automation, and AI-assisted development workflows.
+## Technology Stack
 
-## Technology stack
+- **Application:** C++20, Qt 6, QML / Qt Quick
+- **Architecture:** Modular CMake targets for [core](core), [persistence](persistence), [ui](ui), [infra](infra), and [app](app)
+- **Data & Persistence:** SQLite, nlohmann-json
+- **Document Processing:** Poppler, OpenCV, Tesseract
+- **Testing & Quality:** GoogleTest, clang-tidy, LLVM coverage, Codecov
+- **Build & Packaging:** CMake, vcpkg, Inno Setup, GitHub Actions
+- **Documentation:** Doxygen, GitHub Pages
+- **Localization:** Qt Linguist catalogs, bundled Tesseract OCR models
+- **Platform:** Windows 10+
 
-- Language: C++20
-- GUI: Qt6 (QML / Qt Quick)
-- Build System: CMake
-- Dependency Management: vcpkg (manifest mode)
-- Persistence: SQLite (runtime storage)
-- PDF / Image / OCR: Poppler, OpenCV, Tesseract
-- Testing: GoogleTest (`gtest`)
-- Logging: `spdlog`
-- JSON: `nlohmann-json`
-- Packaging: Inno Setup (`installer/fossredder.iss`, `ci/package-inno.ps1`)
-- Platform: Windows 10+
+## Quick Start
 
-## Project Status
-This application is in **Active Alpha** and has reached its first named baseline milestone. The current codebase is installable, launchable, and functional for the core Commerzbank statement workflow, while still being actively hardened and refined.
-* **Core Functionality:** Commerzbank PDF import, XLSX and CSV export, persistence, and the refactored UI/core integration are implemented and usable.
-* **Current Focus:** Stabilizing the `v0.5.0` baseline, improving the matcher and workflow configuration, and tightening the calculation and domain model.
-* **Near-term Work:** Packaging and installer hardening, GitHub Actions and Doxygen automation, contract and golden tests, and release-readiness polish.
+Prerequisites:
 
-## Getting started
+- CMake 4.0.1 or newer
+- vcpkg in manifest mode
+- A Windows C++ toolchain supported by the configured CMake presets
+- Inno Setup 6 when building the Windows installer
 
-### Prerequisites
-
-The project uses CMake (minimum 4.0.1) with the `Visual Studio 18 2026` generator (x64) and `vcpkg` in manifest mode for dependency management.
-
-Install vcpkg (install to a short path, e.g. `C:\vcpkg`):
+Minimal setup:
 
 ```powershell
-git clone https://github.com/microsoft/vcpkg.git <path-to-vcpkg>
+git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+C:\vcpkg\bootstrap-vcpkg.bat
+[Environment]::SetEnvironmentVariable('VCPKG_ROOT', 'C:\vcpkg', 'User')
 ```
 
-Bootstrap vcpkg (prepare vcpkg for use with this repository).
-
-```powershell
-<path-to-vcpkg>\bootstrap-vcpkg.bat
-```
-
-Set vcpkg root (set `VCPKG_ROOT` to the vcpkg path so CMake can find the toolchain).
-
-```powershell
-[Environment]::SetEnvironmentVariable('VCPKG_ROOT', '<path-to-vcpkg>', 'User')
-```
-
-The project uses `CMakePresets.json` for presets. List available presets:
-
-```powershell
-cmake --list-presets
-```
-
-Choose a configure preset and run `cmake --preset <name>` to configure. Examples are given in the upcoming chapters.
-
-**Note:** CMake should pick up the vcpkg toolchain automatically when using these presets because the project calls `fossredder_configure_vcpkg()` in `CMakeLists.txt`. If your environment does not, set the `VCPKG_ROOT` environment variable and re-run the configure preset.
-
-### Building
-
-The default workflow configures app and provides debug-app and release-app build variants.
-
-Configure (app preset):
+Build the app:
 
 ```powershell
 cmake --preset app
-```
-
-Build debug app (includes debug symbols and has assertions enabled)
-
-```powershell
-cmake --build --preset debug-app
-```
-
-Executable: `./.build/app/bin/Debug/fossredder.exe`
-
-Build release app (optimized for distribution and packaging):
-
-```powershell
 cmake --build --preset release-app
 ```
 
-Executable: `./.build/app/bin/Release/fossredder.exe`
+Fast Ninja app build:
 
-### Testing
+```powershell
+cmake --preset app-ninja-fast
+cmake --build --preset release-app-ninja-fast
+```
 
-The test suite uses GoogleTest and includes unit, interaction, UI/QML, persistence and debug-module tests.
-
-Configure (tests preset):
+Run tests:
 
 ```powershell
 cmake --preset tests
-```
-
-Build release tests:
-
-```powershell
 cmake --build --preset release-tests
-```
-
-Run tests (in console only):
-
-```powershell
 ctest --preset release-tests --output-on-failure
 ```
 
-### Packaging
-
-The project uses Inno Setup for Windows installer packaging through the `release-package` preset.
-
-Build release package (creates the Windows installer via Inno Setup):
+Build the Windows installer:
 
 ```powershell
-cmake --build --preset release-package
+cmake --build --preset release-installer
 ```
 
-Installer: `./.build/app/dist/fossredder-<version>.exe`
+Installer output:
 
-### Quality Workflow
-
-The project uses clang-tidy for static analysis, LLVM coverage for coverage reports, and Codecov for publishing coverage results from the GitHub Actions workflow in `.github/workflows/quality.yml`. The same tools can also be run locally.
-
-Notes: Coverage requires Clang/`clang-cl` and `clang-tidy` runs only if installed and the `tidy` preset is used.
-
-#### CI Workflow
-
-Configure CI (ci preset):
-
-```powershell
-cmake --preset ci
+```text
+.build/app/dist/FOSSredder-Setup-<version>-win-x64.exe
 ```
 
-Build release ci:
+### Project Links
 
-```powershell
-cmake --build --preset release-ci
-```
-
-Run CI tests:
-
-```powershell
-ctest --preset release-ci --output-on-failure
-```
-
-#### Clang-Tidy
-
-Configure tidy:
-
-```powershell
-cmake --preset tidy
-```
-
-Build release tidy (runs static analysis during build):
-
-```powershell
-cmake --build --preset release-tidy
-```
-
-#### Coverage
-
-Configure coverage:
-
-```powershell
-cmake --preset coverage
-```
-
-Build release coverage (builds the instrumented test binaries):
-
-```powershell
-cmake --build --preset release-coverage
-```
-
-Run coverage tests (collects coverage data):
-
-```powershell
-ctest --preset release-coverage --output-on-failure
-```
-
-Coverage output: `./coverage/` and `./coverage/coverage.lcov`.
-
-## Docs
-
-- `docs/` contains design artifacts and requirements. The implementation (code) should be considered the authoritative source when documentation and code disagree.
-- All source headers are documented using Doxygen-style comments (`@brief`, `@param`, etc.). You can generate the full HTML reference by running `doxygen Doxyfile` in the project root.
-
-## License
-
-This project is licensed under the MIT License. See `LICENSE` for details.
+- **Design:** [Design documentation](docs/DESIGN.md)
+- **Code Reference:** [Doxygen documentation](https://wiiii90.github.io/FOSSredder/api/)
+- **Coverage:** [Coverage report](https://wiiii90.github.io/FOSSredder/coverage/)
+- **Releases:** [GitHub releases](https://github.com/Wiiii90/FOSSredder/releases)
+- **License:** [MIT License](LICENSE)

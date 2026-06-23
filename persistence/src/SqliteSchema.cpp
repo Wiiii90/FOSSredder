@@ -1,482 +1,336 @@
+/**
+ * @file persistence/src/SqliteSchema.cpp
+ * @brief Implements SQLite schema initialization and versioning.
+ */
+
 #include "persistence/SqliteSchema.h"
 
 #include <sqlite3.h>
+
 #include <stdexcept>
 #include <string>
 
 static void exec(sqlite3* db, const char* sql) {
-    char* err = nullptr;
-    if (sqlite3_exec(db, sql, nullptr, nullptr, &err) != SQLITE_OK) {
-        std::string e = err ? err : "unknown";
-        if (err) sqlite3_free(err);
-        throw std::runtime_error(e);
+  char* err = nullptr;
+  if (sqlite3_exec(db, sql, nullptr, nullptr, &err) != SQLITE_OK) {
+    std::string message = err ? err : "unknown";
+    if (err) {
+      sqlite3_free(err);
     }
-}
-
-static bool hasColumn(sqlite3* db, const char* table, const char* column) {
-    if (!db || !table || !column) return false;
-
-    const std::string sql = std::string("PRAGMA table_info(") + table + ");";
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return false;
-
-    bool found = false;
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        const auto* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        if (name && std::string(name) == column) {
-            found = true;
-            break;
-        }
-    }
-    sqlite3_finalize(stmt);
-    return found;
+    throw std::runtime_error(message);
+  }
 }
 
 int SqliteSchema::getUserVersion(sqlite3* db) {
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "PRAGMA user_version;", -1, &stmt, nullptr) != SQLITE_OK) return 0;
-    int v = 0;
-    if (sqlite3_step(stmt) == SQLITE_ROW) v = sqlite3_column_int(stmt, 0);
-    sqlite3_finalize(stmt);
-    return v;
+  sqlite3_stmt* stmt = nullptr;
+  if (sqlite3_prepare_v2(db, "PRAGMA user_version;", -1, &stmt, nullptr) !=
+      SQLITE_OK) {
+    return 0;
+  }
+
+  int version = 0;
+  if (sqlite3_step(stmt) == SQLITE_ROW) {
+    version = sqlite3_column_int(stmt, 0);
+  }
+
+  sqlite3_finalize(stmt);
+  return version;
 }
 
 void SqliteSchema::setUserVersion(sqlite3* db, int v) {
-    exec(db, (std::string("PRAGMA user_version = ") + std::to_string(v) + ";").c_str());
+  exec(db, (std::string("PRAGMA user_version = ") + std::to_string(v) + ";")
+               .c_str());
 }
 
 void SqliteSchema::ensure(sqlite3* db) {
-    if (!db) throw std::runtime_error("db is null");
-    exec(db, "PRAGMA foreign_keys = ON;");
-    migrate(db);
+  if (!db) {
+    throw std::runtime_error("db is null");
+  }
+
+  exec(db, "PRAGMA foreign_keys = ON;");
+  migrate(db);
 }
 
 void SqliteSchema::migrate(sqlite3* db) {
-    int v = getUserVersion(db);
+  const int version = getUserVersion(db);
+  exec(
+      db,
+      "BEGIN;"
+      "CREATE TABLE IF NOT EXISTS configs (name TEXT PRIMARY KEY, value TEXT);"
+      "CREATE TABLE IF NOT EXISTS actors ("
+      "id TEXT PRIMARY KEY,"
+      "name TEXT NOT NULL UNIQUE,"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      ");"
+      "CREATE TABLE IF NOT EXISTS actor_aliases ("
+      "actor_id TEXT NOT NULL,"
+      "alias TEXT NOT NULL,"
+      "hit_count INTEGER NOT NULL DEFAULT 1,"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "last_used_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "PRIMARY KEY(actor_id, alias),"
+      "FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS properties ("
+      "id TEXT PRIMARY KEY,"
+      "name TEXT NOT NULL UNIQUE,"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      ");"
+      "CREATE TABLE IF NOT EXISTS property_aliases ("
+      "property_id TEXT NOT NULL,"
+      "alias TEXT NOT NULL,"
+      "hit_count INTEGER NOT NULL DEFAULT 1,"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "last_used_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "PRIMARY KEY(property_id, alias),"
+      "FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS contracts ("
+      "id TEXT PRIMARY KEY,"
+      "name TEXT NOT NULL,"
+      "type TEXT NOT NULL DEFAULT '',"
+      "allocatable_mode TEXT NOT NULL DEFAULT 'mixed',"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      ");"
+      "CREATE TABLE IF NOT EXISTS contract_aliases ("
+      "contract_id TEXT NOT NULL,"
+      "alias TEXT NOT NULL,"
+      "hit_count INTEGER NOT NULL DEFAULT 1,"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "last_used_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "PRIMARY KEY(contract_id, alias),"
+      "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS contract_actors ("
+      "contract_id TEXT NOT NULL,"
+      "actor_id TEXT NOT NULL,"
+      "PRIMARY KEY(contract_id, actor_id),"
+      "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE CASCADE,"
+      "FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS contract_properties ("
+      "contract_id TEXT NOT NULL,"
+      "property_id TEXT NOT NULL,"
+      "PRIMARY KEY(contract_id, property_id),"
+      "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE CASCADE,"
+      "FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS statements ("
+      "id TEXT PRIMARY KEY,"
+      "name TEXT NOT NULL DEFAULT '',"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      ");"
+      "CREATE TABLE IF NOT EXISTS statement_transactions ("
+      "statement_id TEXT NOT NULL,"
+      "transaction_id TEXT NOT NULL,"
+      "position INTEGER NOT NULL DEFAULT 0,"
+      "PRIMARY KEY(statement_id, transaction_id),"
+      "FOREIGN KEY(statement_id) REFERENCES statements(id) ON DELETE CASCADE,"
+      "FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE "
+      "CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS statement_drafts ("
+      "id TEXT PRIMARY KEY,"
+      "name TEXT NOT NULL DEFAULT '',"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      ");"
+      "CREATE TABLE IF NOT EXISTS statement_draft_transactions ("
+      "statement_draft_id TEXT NOT NULL,"
+      "transaction_draft_id TEXT NOT NULL,"
+      "position INTEGER NOT NULL DEFAULT 0,"
+      "PRIMARY KEY(statement_draft_id, transaction_draft_id),"
+      "FOREIGN KEY(statement_draft_id) REFERENCES statement_drafts(id) ON "
+      "DELETE CASCADE,"
+      "FOREIGN KEY(transaction_draft_id) REFERENCES transaction_drafts(id) ON "
+      "DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS transaction_drafts ("
+      "id TEXT PRIMARY KEY,"
+      "statement_draft_id TEXT,"
+      "position INTEGER NOT NULL DEFAULT 0,"
+      "name TEXT NOT NULL DEFAULT '',"
+      "booking_date TEXT NOT NULL DEFAULT '',"
+      "valuta TEXT NOT NULL DEFAULT '',"
+      "amount REAL NOT NULL DEFAULT 0,"
+      "actor_text TEXT NOT NULL DEFAULT '',"
+      "property_text TEXT NOT NULL DEFAULT '',"
+      "actor_id TEXT NOT NULL DEFAULT '',"
+      "actor_selected INTEGER NOT NULL DEFAULT 0,"
+      "contract_id TEXT NOT NULL DEFAULT '',"
+      "contract_selected INTEGER NOT NULL DEFAULT 0,"
+      "metadata TEXT NOT NULL DEFAULT '',"
+      "proof_image_data BLOB,"
+      "type TEXT NOT NULL DEFAULT '',"
+      "allocatable INTEGER NOT NULL DEFAULT 0,"
+      "allocatable_selected INTEGER NOT NULL DEFAULT 0,"
+      "status INTEGER NOT NULL DEFAULT 1,"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "FOREIGN KEY(statement_draft_id) REFERENCES statement_drafts(id) ON "
+      "DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS transaction_draft_properties ("
+      "transaction_draft_id TEXT NOT NULL,"
+      "property_position INTEGER NOT NULL,"
+      "property_id TEXT NOT NULL,"
+      "PRIMARY KEY(transaction_draft_id, property_position),"
+      "FOREIGN KEY(transaction_draft_id) REFERENCES transaction_drafts(id) ON "
+      "DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS transactions ("
+      "id TEXT PRIMARY KEY,"
+      "name TEXT NOT NULL DEFAULT '',"
+      "booking_date TEXT NOT NULL DEFAULT '',"
+      "amount REAL NOT NULL DEFAULT 0,"
+      "statement_id TEXT,"
+      "status INTEGER NOT NULL DEFAULT 0,"
+      "actor_id TEXT,"
+      "contract_id TEXT,"
+      "valuta TEXT NOT NULL DEFAULT '',"
+      "allocatable INTEGER NOT NULL DEFAULT 0,"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE SET NULL,"
+      "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE SET NULL,"
+      "FOREIGN KEY(statement_id) REFERENCES statements(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS transaction_properties ("
+      "transaction_id TEXT NOT NULL,"
+      "property_id TEXT NOT NULL,"
+      "PRIMARY KEY(transaction_id, property_id),"
+      "FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE "
+      "CASCADE,"
+      "FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS analyses ("
+      "id TEXT PRIMARY KEY,"
+      "name TEXT NOT NULL DEFAULT '',"
+      "type TEXT NOT NULL DEFAULT '',"
+      "config_json TEXT NOT NULL DEFAULT '',"
+      "filter_spec TEXT NOT NULL DEFAULT '',"
+      "export_format TEXT NOT NULL DEFAULT '',"
+      "include_calc_adjustments INTEGER NOT NULL DEFAULT 1,"
+      "export_state_json TEXT NOT NULL DEFAULT '{}',"
+      "snapshot_transactions_json TEXT NOT NULL DEFAULT '{}',"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      ");"
+      "CREATE TABLE IF NOT EXISTS analysis_adjustments ("
+      "analysis_id TEXT NOT NULL,"
+      "adjustment_key TEXT NOT NULL,"
+      "adjustment_value REAL NOT NULL DEFAULT 0,"
+      "position INTEGER NOT NULL DEFAULT 0,"
+      "PRIMARY KEY(analysis_id, adjustment_key),"
+      "FOREIGN KEY(analysis_id) REFERENCES analyses(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS annuals ("
+      "id TEXT PRIMARY KEY,"
+      "name TEXT NOT NULL DEFAULT '',"
+      "year INTEGER NOT NULL DEFAULT 0,"
+      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      ");"
+      "CREATE TABLE IF NOT EXISTS annual_analyses ("
+      "annual_id TEXT NOT NULL,"
+      "analysis_id TEXT NOT NULL,"
+      "position INTEGER NOT NULL DEFAULT 0,"
+      "PRIMARY KEY(annual_id, analysis_id),"
+      "FOREIGN KEY(annual_id) REFERENCES annuals(id) ON DELETE CASCADE,"
+      "FOREIGN KEY(analysis_id) REFERENCES analyses(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS import_logs ("
+      "id TEXT PRIMARY KEY,"
+      "time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "type TEXT NOT NULL DEFAULT '',"
+      "file TEXT NOT NULL DEFAULT '',"
+      "status TEXT NOT NULL DEFAULT '',"
+      "message TEXT NOT NULL DEFAULT '',"
+      "draft_attached INTEGER NOT NULL DEFAULT 0,"
+      "draft_id TEXT NOT NULL DEFAULT '',"
+      "statement_id TEXT NOT NULL DEFAULT ''"
+      ");"
+      "CREATE TABLE IF NOT EXISTS import_log_statement_drafts ("
+      "import_log_id TEXT NOT NULL,"
+      "statement_draft_id TEXT NOT NULL,"
+      "position INTEGER NOT NULL DEFAULT 0,"
+      "PRIMARY KEY(import_log_id, statement_draft_id),"
+      "FOREIGN KEY(import_log_id) REFERENCES import_logs(id) ON DELETE CASCADE,"
+      "FOREIGN KEY(statement_draft_id) REFERENCES statement_drafts(id) ON "
+      "DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS export_logs ("
+      "id TEXT PRIMARY KEY,"
+      "time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+      "target_path TEXT NOT NULL DEFAULT '',"
+      "status TEXT NOT NULL DEFAULT '',"
+      "message TEXT NOT NULL DEFAULT '',"
+      "payload TEXT NOT NULL DEFAULT ''"
+      ");"
+      "CREATE TABLE IF NOT EXISTS export_log_annuals ("
+      "export_log_id TEXT NOT NULL,"
+      "annual_id TEXT NOT NULL,"
+      "position INTEGER NOT NULL DEFAULT 0,"
+      "PRIMARY KEY(export_log_id, annual_id),"
+      "FOREIGN KEY(export_log_id) REFERENCES export_logs(id) ON DELETE CASCADE,"
+      "FOREIGN KEY(annual_id) REFERENCES annuals(id) ON DELETE CASCADE"
+      ");"
+      "CREATE TABLE IF NOT EXISTS export_log_analyses ("
+      "export_log_id TEXT NOT NULL,"
+      "analysis_id TEXT NOT NULL,"
+      "position INTEGER NOT NULL DEFAULT 0,"
+      "PRIMARY KEY(export_log_id, analysis_id),"
+      "FOREIGN KEY(export_log_id) REFERENCES export_logs(id) ON DELETE CASCADE,"
+      "FOREIGN KEY(analysis_id) REFERENCES analyses(id) ON DELETE CASCADE"
+      ");"
+      "CREATE INDEX IF NOT EXISTS idx_transactions_contract_id ON "
+      "transactions(contract_id);"
+      "CREATE INDEX IF NOT EXISTS idx_contract_actors_actor_id ON "
+      "contract_actors(actor_id);"
+      "CREATE INDEX IF NOT EXISTS idx_contract_properties_property_id ON "
+      "contract_properties(property_id);"
+      "CREATE INDEX IF NOT EXISTS idx_transaction_properties_property_id ON "
+      "transaction_properties(property_id);"
+      "CREATE INDEX IF NOT EXISTS idx_statement_transactions_transaction_id ON "
+      "statement_transactions(transaction_id);"
+      "CREATE INDEX IF NOT EXISTS "
+      "idx_statement_draft_transactions_transaction_draft_id ON "
+      "statement_draft_transactions(transaction_draft_id);"
+      "CREATE INDEX IF NOT EXISTS idx_actor_aliases_alias ON "
+      "actor_aliases(alias);"
+      "CREATE INDEX IF NOT EXISTS idx_property_aliases_alias ON "
+      "property_aliases(alias);"
+      "CREATE INDEX IF NOT EXISTS idx_contract_aliases_alias ON "
+      "contract_aliases(alias);"
+      "CREATE INDEX IF NOT EXISTS idx_import_logs_time ON import_logs(time "
+      "DESC);"
+      "CREATE INDEX IF NOT EXISTS idx_export_logs_time ON export_logs(time "
+      "DESC);"
+      "CREATE INDEX IF NOT EXISTS idx_analysis_adjustments_analysis_id ON "
+      "analysis_adjustments(analysis_id);"
+      "CREATE INDEX IF NOT EXISTS idx_annual_analyses_analysis_id ON "
+      "annual_analyses(analysis_id);"
+      "CREATE INDEX IF NOT EXISTS "
+      "idx_import_log_statement_drafts_statement_draft_id ON "
+      "import_log_statement_drafts(statement_draft_id);"
+      "CREATE INDEX IF NOT EXISTS idx_export_log_annuals_annual_id ON "
+      "export_log_annuals(annual_id);"
+      "CREATE INDEX IF NOT EXISTS idx_export_log_analyses_analysis_id ON "
+      "export_log_analyses(analysis_id);"
+      "COMMIT;");
 
-    if (v < 1) {
-        // Initial schema: use TEXT primary keys to allow UUIDs as ids
-        exec(db,
-            "BEGIN;"
-            "CREATE TABLE IF NOT EXISTS configs (name TEXT PRIMARY KEY, value TEXT);"
-            "CREATE TABLE IF NOT EXISTS actors ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT UNIQUE,"
-            "type TEXT,"
-            "description TEXT"
-            ");"
-            "CREATE TABLE IF NOT EXISTS properties ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT UNIQUE,"
-            "address TEXT,"
-            "description TEXT,"
-            "consumption REAL,"
-            "consumption_unit TEXT"
-            ");"
-            "CREATE TABLE IF NOT EXISTS contracts ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT,"
-            "type TEXT,"
-            "description TEXT,"
-            "start_date TEXT,"
-            "end_date TEXT,"
-            "base_price REAL,"
-            "consumption_price REAL,"
-            "monthly_advance REAL"
-            ");"
-            "CREATE TABLE IF NOT EXISTS contract_actors ("
-            "contract_id TEXT NOT NULL,"
-            "actor_id TEXT NOT NULL,"
-            "PRIMARY KEY(contract_id, actor_id),"
-            "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE CASCADE,"
-            "FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE CASCADE"
-            ");"
-            "CREATE TABLE IF NOT EXISTS contract_properties ("
-            "contract_id TEXT NOT NULL,"
-            "property_id TEXT NOT NULL,"
-            "PRIMARY KEY(contract_id, property_id),"
-            "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE CASCADE,"
-            "FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE"
-            ");"
-            "CREATE TABLE IF NOT EXISTS statements ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT"
-            ");"
-            "CREATE TABLE IF NOT EXISTS transactions ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT,"
-            "booking_date TEXT,"
-            "valuta TEXT,"
-            "amount REAL,"
-            "status INTEGER NOT NULL DEFAULT 0,"
-            "description TEXT,"
-            "type TEXT,"
-            "actor_id TEXT,"
-            "contract_id TEXT,"
-            "statement_id TEXT,"
-            "metadata TEXT,"
-            "proof_image_path TEXT,"
-            "allocatable INTEGER NOT NULL DEFAULT 0,"
-            "FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE SET NULL,"
-            "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE SET NULL,"
-            "FOREIGN KEY(statement_id) REFERENCES statements(id) ON DELETE CASCADE"
-            ");"
-            "CREATE TABLE IF NOT EXISTS transaction_properties ("
-            "transaction_id TEXT NOT NULL,"
-            "property_id TEXT NOT NULL,"
-            "PRIMARY KEY(transaction_id, property_id),"
-            "FOREIGN KEY(transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,"
-            "FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE"
-            ");"
-            "CREATE TABLE IF NOT EXISTS analyses ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT,"
-            "type TEXT,"
-            "config_json TEXT,"
-            "filter_spec TEXT,"
-            "created_at TEXT,"
-            "updated_at TEXT,"
-            "schema_version INTEGER"
-            ");"
-            "CREATE TABLE IF NOT EXISTS annuals ("
-            "id TEXT PRIMARY KEY,"
-            "year INTEGER,"
-            "transaction_ids TEXT,"
-            "assigned_analysis_ids TEXT,"
-            "verification_state INTEGER NOT NULL DEFAULT 0,"
-            "created_at TEXT,"
-            "updated_at TEXT,"
-            "schema_version INTEGER"
-            ");"
-            "CREATE INDEX IF NOT EXISTS idx_transactions_contract_id ON transactions(contract_id);"
-            "CREATE INDEX IF NOT EXISTS idx_contract_actors_actor_id ON contract_actors(actor_id);"
-            "CREATE INDEX IF NOT EXISTS idx_contract_properties_property_id ON contract_properties(property_id);"
-            "CREATE INDEX IF NOT EXISTS idx_transaction_properties_property_id ON transaction_properties(property_id);"
-            "COMMIT;"
-        );
-        setUserVersion(db, 1);
-        v = 1;
-    }
-
-    if (v < 2) {
-        exec(db,
-            "BEGIN;"
-            "CREATE TABLE IF NOT EXISTS actor_aliases ("
-            "actor_id TEXT NOT NULL,"
-            "alias TEXT NOT NULL,"
-            "hit_count INTEGER NOT NULL DEFAULT 1,"
-            "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "last_used_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "PRIMARY KEY(actor_id, alias),"
-            "FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE CASCADE"
-            ");"
-            "CREATE TABLE IF NOT EXISTS property_aliases ("
-            "property_id TEXT NOT NULL,"
-            "alias TEXT NOT NULL,"
-            "hit_count INTEGER NOT NULL DEFAULT 1,"
-            "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "last_used_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "PRIMARY KEY(property_id, alias),"
-            "FOREIGN KEY(property_id) REFERENCES properties(id) ON DELETE CASCADE"
-            ");"
-            "CREATE TABLE IF NOT EXISTS contract_aliases ("
-            "contract_id TEXT NOT NULL,"
-            "alias TEXT NOT NULL,"
-            "hit_count INTEGER NOT NULL DEFAULT 1,"
-            "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "last_used_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-            "PRIMARY KEY(contract_id, alias),"
-            "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE CASCADE"
-            ");"
-            "CREATE INDEX IF NOT EXISTS idx_actor_aliases_alias ON actor_aliases(alias);"
-            "CREATE INDEX IF NOT EXISTS idx_property_aliases_alias ON property_aliases(alias);"
-            "CREATE INDEX IF NOT EXISTS idx_contract_aliases_alias ON contract_aliases(alias);"
-            "COMMIT;"
-        );
-        setUserVersion(db, 2);
-        v = 2;
-    }
-
-    if (v < 3) {
-        exec(db,
-            "BEGIN;"
-            "CREATE TABLE IF NOT EXISTS statement_drafts ("
-            "scope TEXT PRIMARY KEY,"
-            "name TEXT"
-            ");"
-            "CREATE TABLE IF NOT EXISTS transaction_drafts ("
-            "scope TEXT NOT NULL,"
-            "position INTEGER NOT NULL,"
-            "name TEXT,"
-            "booking_date TEXT,"
-            "valuta TEXT,"
-            "amount REAL,"
-            "description TEXT,"
-            "actor_text TEXT,"
-            "property_text TEXT,"
-            "actor_id TEXT,"
-            "new_actor_selected INTEGER NOT NULL DEFAULT 0,"
-            "contract_id TEXT,"
-            "new_contract_selected INTEGER NOT NULL DEFAULT 0,"
-            "metadata TEXT,"
-            "proof_image_path TEXT,"
-            "type TEXT,"
-            "allocatable INTEGER NOT NULL DEFAULT 0,"
-            "allocatable_manual_override INTEGER NOT NULL DEFAULT 0,"
-            "status INTEGER NOT NULL DEFAULT 1,"
-            "PRIMARY KEY(scope, position),"
-            "FOREIGN KEY(scope) REFERENCES statement_drafts(scope) ON DELETE CASCADE"
-            ");"
-            "CREATE TABLE IF NOT EXISTS transaction_draft_properties ("
-            "scope TEXT NOT NULL,"
-            "position INTEGER NOT NULL,"
-            "property_position INTEGER NOT NULL,"
-            "property_id TEXT NOT NULL,"
-            "PRIMARY KEY(scope, position, property_position),"
-            "FOREIGN KEY(scope, position) REFERENCES transaction_drafts(scope, position) ON DELETE CASCADE"
-            ");"
-            "COMMIT;"
-        );
-        setUserVersion(db, 3);
-        v = 3;
-    }
-
-    if (v < 4) {
-        exec(db,
-            "BEGIN;"
-            "CREATE TABLE IF NOT EXISTS statement_drafts_v2 ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT"
-            ");"
-            "CREATE TABLE IF NOT EXISTS transaction_drafts_v2 ("
-            "id TEXT PRIMARY KEY,"
-            "statement_draft_id TEXT,"
-            "position INTEGER NOT NULL DEFAULT 0,"
-            "name TEXT,"
-            "booking_date TEXT,"
-            "valuta TEXT,"
-            "amount REAL,"
-            "description TEXT,"
-            "actor_text TEXT,"
-            "property_text TEXT,"
-            "actor_id TEXT,"
-            "new_actor_selected INTEGER NOT NULL DEFAULT 0,"
-            "contract_id TEXT,"
-            "new_contract_selected INTEGER NOT NULL DEFAULT 0,"
-            "metadata TEXT,"
-            "proof_image_path TEXT,"
-            "type TEXT,"
-            "allocatable INTEGER NOT NULL DEFAULT 0,"
-            "allocatable_manual_override INTEGER NOT NULL DEFAULT 0,"
-            "status INTEGER NOT NULL DEFAULT 1,"
-            "FOREIGN KEY(statement_draft_id) REFERENCES statement_drafts_v2(id) ON DELETE CASCADE"
-            ");"
-            "CREATE TABLE IF NOT EXISTS transaction_draft_properties_v2 ("
-            "transaction_draft_id TEXT NOT NULL,"
-            "property_position INTEGER NOT NULL,"
-            "property_id TEXT NOT NULL,"
-            "PRIMARY KEY(transaction_draft_id, property_position),"
-            "FOREIGN KEY(transaction_draft_id) REFERENCES transaction_drafts_v2(id) ON DELETE CASCADE"
-            ");"
-
-            "INSERT OR IGNORE INTO statement_drafts_v2 (id, name) "
-            "SELECT scope, name FROM statement_drafts;"
-
-            "INSERT OR REPLACE INTO transaction_drafts_v2 ("
-            "id, statement_draft_id, position, name, booking_date, valuta, amount, description, actor_text, property_text, actor_id, new_actor_selected, contract_id, new_contract_selected, metadata, proof_image_path, type, allocatable, allocatable_manual_override, status"
-            ") "
-            "SELECT scope || ':' || printf('%010d', position), scope, position, name, booking_date, valuta, amount, description, actor_text, property_text, actor_id, new_actor_selected, contract_id, new_contract_selected, metadata, proof_image_path, type, allocatable, allocatable_manual_override, status "
-            "FROM transaction_drafts;"
-
-            "INSERT OR REPLACE INTO transaction_draft_properties_v2 (transaction_draft_id, property_position, property_id) "
-            "SELECT scope || ':' || printf('%010d', position), property_position, property_id FROM transaction_draft_properties;"
-
-            "DROP TABLE IF EXISTS transaction_draft_properties;"
-            "DROP TABLE IF EXISTS transaction_drafts;"
-            "DROP TABLE IF EXISTS statement_drafts;"
-
-            "ALTER TABLE statement_drafts_v2 RENAME TO statement_drafts;"
-            "ALTER TABLE transaction_drafts_v2 RENAME TO transaction_drafts;"
-            "ALTER TABLE transaction_draft_properties_v2 RENAME TO transaction_draft_properties;"
-            "COMMIT;"
-        );
-        setUserVersion(db, 4);
-        v = 4;
-    }
-
-    if (v < 5) {
-        exec(db,
-            "BEGIN;"
-            "CREATE TABLE IF NOT EXISTS import_logs ("
-            "id TEXT PRIMARY KEY,"
-            "time TEXT,"
-            "type TEXT,"
-            "file TEXT,"
-            "status TEXT,"
-            "message TEXT,"
-            "draft_attached INTEGER NOT NULL DEFAULT 0,"
-            "statement_id TEXT"
-            ");"
-            "CREATE INDEX IF NOT EXISTS idx_import_logs_time ON import_logs(time DESC);"
-            "COMMIT;"
-        );
-        setUserVersion(db, 5);
-        v = 5;
-    }
-
-    if (v < 6) {
-        exec(db,
-            "BEGIN;"
-            "ALTER TABLE transaction_drafts ADD COLUMN proof_image_data BLOB;"
-            "COMMIT;"
-        );
-        setUserVersion(db, 6);
-        v = 6;
-    }
-
-    if (v < 7) {
-        exec(db,
-            "PRAGMA foreign_keys = OFF;"
-            "BEGIN;"
-            "CREATE TABLE IF NOT EXISTS transactions_v2 ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT,"
-            "booking_date TEXT,"
-            "valuta TEXT,"
-            "amount REAL,"
-            "status INTEGER NOT NULL DEFAULT 0,"
-            "description TEXT,"
-            "type TEXT,"
-            "actor_id TEXT,"
-            "contract_id TEXT,"
-            "statement_id TEXT,"
-            "metadata TEXT,"
-            "allocatable INTEGER NOT NULL DEFAULT 0,"
-            "FOREIGN KEY(actor_id) REFERENCES actors(id) ON DELETE SET NULL,"
-            "FOREIGN KEY(contract_id) REFERENCES contracts(id) ON DELETE SET NULL,"
-            "FOREIGN KEY(statement_id) REFERENCES statements(id) ON DELETE CASCADE"
-            ");"
-            "INSERT INTO transactions_v2 (id, name, booking_date, valuta, amount, status, description, type, actor_id, contract_id, statement_id, metadata, allocatable) "
-            "SELECT id, name, booking_date, valuta, amount, status, description, type, actor_id, contract_id, statement_id, metadata, allocatable FROM transactions;"
-            "DROP TABLE IF EXISTS transactions;"
-            "ALTER TABLE transactions_v2 RENAME TO transactions;"
-            "CREATE INDEX IF NOT EXISTS idx_transactions_contract_id ON transactions(contract_id);"
-
-            "CREATE TABLE IF NOT EXISTS transaction_drafts_v3 ("
-            "id TEXT PRIMARY KEY,"
-            "statement_draft_id TEXT,"
-            "position INTEGER NOT NULL DEFAULT 0,"
-            "name TEXT,"
-            "booking_date TEXT,"
-            "valuta TEXT,"
-            "amount REAL,"
-            "description TEXT,"
-            "actor_text TEXT,"
-            "property_text TEXT,"
-            "actor_id TEXT,"
-            "new_actor_selected INTEGER NOT NULL DEFAULT 0,"
-            "contract_id TEXT,"
-            "new_contract_selected INTEGER NOT NULL DEFAULT 0,"
-            "metadata TEXT,"
-            "type TEXT,"
-            "allocatable INTEGER NOT NULL DEFAULT 0,"
-            "allocatable_manual_override INTEGER NOT NULL DEFAULT 0,"
-            "status INTEGER NOT NULL DEFAULT 1,"
-            "proof_image_data BLOB,"
-            "FOREIGN KEY(statement_draft_id) REFERENCES statement_drafts(id) ON DELETE CASCADE"
-            ");"
-            "INSERT INTO transaction_drafts_v3 (id, statement_draft_id, position, name, booking_date, valuta, amount, description, actor_text, property_text, actor_id, new_actor_selected, contract_id, new_contract_selected, metadata, type, allocatable, allocatable_manual_override, status, proof_image_data) "
-            "SELECT id, statement_draft_id, position, name, booking_date, valuta, amount, description, actor_text, property_text, actor_id, new_actor_selected, contract_id, new_contract_selected, metadata, type, allocatable, allocatable_manual_override, status, proof_image_data FROM transaction_drafts;"
-            "DROP TABLE IF EXISTS transaction_drafts;"
-            "ALTER TABLE transaction_drafts_v3 RENAME TO transaction_drafts;"
-            "COMMIT;"
-            "PRAGMA foreign_keys = ON;"
-        );
-        setUserVersion(db, 7);
-        v = 7;
-    }
-
-    if (v < 8) {
-        exec(db,
-            "BEGIN;"
-            "ALTER TABLE import_logs ADD COLUMN draft_id TEXT;"
-            "UPDATE import_logs SET draft_id = id WHERE draft_attached = 1 AND (draft_id IS NULL OR draft_id = '');"
-            "COMMIT;"
-        );
-        setUserVersion(db, 8);
-        v = 8;
-    }
-
-    if (v < 9) {
-        exec(db, "BEGIN;");
-        exec(db,
-            "CREATE TABLE IF NOT EXISTS analyses ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT,"
-            "type TEXT,"
-            "config_json TEXT,"
-            "filter_spec TEXT,"
-            "created_at TEXT,"
-            "updated_at TEXT,"
-            "schema_version INTEGER"
-            ");");
-        if (!hasColumn(db, "analyses", "export_format")) {
-            exec(db, "ALTER TABLE analyses ADD COLUMN export_format TEXT NOT NULL DEFAULT ''; ");
-        }
-        if (!hasColumn(db, "analyses", "include_calc_adjustments")) {
-            exec(db, "ALTER TABLE analyses ADD COLUMN include_calc_adjustments INTEGER NOT NULL DEFAULT 1; ");
-        }
-        if (!hasColumn(db, "analyses", "export_state_json")) {
-            exec(db, "ALTER TABLE analyses ADD COLUMN export_state_json TEXT NOT NULL DEFAULT '{}'; ");
-        }
-        if (!hasColumn(db, "analyses", "snapshot_transactions_json")) {
-            exec(db, "ALTER TABLE analyses ADD COLUMN snapshot_transactions_json TEXT NOT NULL DEFAULT '{}'; ");
-        }
-        exec(db, "COMMIT;");
-        setUserVersion(db, 9);
-        v = 9;
-    }
-
-    if (v < 10) {
-        exec(db, "BEGIN;");
-        exec(db,
-            "CREATE TABLE IF NOT EXISTS annuals ("
-            "id TEXT PRIMARY KEY,"
-            "name TEXT,"
-            "year INTEGER,"
-            "transaction_ids TEXT,"
-            "assigned_analysis_ids TEXT,"
-            "verification_state INTEGER NOT NULL DEFAULT 0,"
-            "created_at TEXT,"
-            "updated_at TEXT,"
-            "schema_version INTEGER"
-            ");");
-        if (!hasColumn(db, "annuals", "name")) {
-            exec(db, "ALTER TABLE annuals ADD COLUMN name TEXT NOT NULL DEFAULT ''; ");
-        }
-        exec(db, "COMMIT;");
-        setUserVersion(db, 10);
-        v = 10;
-    }
-
-    if (v < 11) {
-        exec(db,
-            "BEGIN;"
-            "CREATE TABLE IF NOT EXISTS export_logs ("
-            "id TEXT PRIMARY KEY,"
-            "time TEXT,"
-            "target_path TEXT,"
-            "status TEXT,"
-            "message TEXT,"
-            "payload TEXT"
-            ");"
-            "CREATE INDEX IF NOT EXISTS idx_export_logs_time ON export_logs(time DESC);"
-            "COMMIT;"
-        );
-        setUserVersion(db, 11);
-        v = 11;
-    }
+  if (version >= 1 && version < 2) {
+    exec(db, "ALTER TABLE contracts ADD COLUMN allocatable_mode TEXT NOT NULL "
+             "DEFAULT 'mixed';");
+    setUserVersion(db, 2);
+  } else if (version < 1) {
+    setUserVersion(db, 2);
+  }
 }

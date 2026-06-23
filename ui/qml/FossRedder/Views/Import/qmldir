@@ -1,0 +1,20 @@
+module FossRedder.Views.Import
+ImportBottomBar 1.0 ImportBottomBar.qml
+ImportForm 1.0 ImportForm.qml
+ImportHomeView 1.0 ImportHomeView.qml
+ImportPanel 1.0 ImportPanel.qml
+ImportProgressBar 1.0 ImportProgressBar.qml
+ImportSidebar 1.0 ImportSidebar.qml
+ImportView 1.0 ImportView.qml
+StatementDraftBottomBar 1.0 StatementDraftBottomBar.qml
+StatementDraftForm 1.0 StatementDraftForm.qml
+StatementDraftView 1.0 StatementDraftView.qml
+TransactionDraftContractActorPanel 1.0 TransactionDraftContractActorPanel.qml
+TransactionDraftContractAllocatablePanel 1.0 TransactionDraftContractAllocatablePanel.qml
+TransactionDraftContractPanel 1.0 TransactionDraftContractPanel.qml
+TransactionDraftContractPropertyPanel 1.0 TransactionDraftContractPropertyPanel.qml
+TransactionDraftFieldRow 1.0 TransactionDraftFieldRow.qml
+TransactionDraftForm 1.0 TransactionDraftForm.qml
+TransactionDraftMetadataPanel 1.0 TransactionDraftMetadataPanel.qml
+TransactionDraftProofPanel 1.0 TransactionDraftProofPanel.qml
+TransactionDraftView 1.0 TransactionDraftView.qml

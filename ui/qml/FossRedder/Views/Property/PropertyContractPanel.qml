@@ -1,29 +1,24 @@
 /**
- * @file P:/fossredder-ui/ui/qml/FossRedder/Views/Property/PropertyContractPanel.qml
- * @brief Provides the PropertyContractPanel component.
+ * @file ui/qml/FossRedder/Views/Property/PropertyContractPanel.qml
+ * @brief Provides contract selection controls used by the property form.
  */
 
-/*!
- * @file ui/qml/FossRedder/Views/Property/PropertyContractPanel.qml
- * @brief Contract selection panel used by the property form with an internal scrollable list.
- */
+pragma ComponentBehavior: Bound
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import FossRedder.Controls 1.0 as Controls
-pragma ComponentBehavior: Bound
 
 Controls.Panel {
     id: root
     required property var theme
+    required property var propertyViewModel
     property var contractRows: []
-    property var selectedContractIds: []
-    signal selectionChanged(var ids)
 
     Layout.fillWidth: true
-    Layout.minimumHeight: root.theme.viewSelectionPanelMinHeight
-    Layout.preferredHeight: root.theme.viewSelectionPanelPreferredHeight
+    Layout.fillHeight: false
+    Layout.preferredHeight: implicitHeight
     contentSpacing: root.theme.spacingSmall
 
     background: Rectangle {
@@ -34,66 +29,47 @@ Controls.Panel {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        Layout.fillWidth: true
+        Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+        Layout.preferredHeight: implicitHeight
         spacing: root.theme.spacingSmall
 
         Label {
+            color: root.theme.textPrimary
             text: qsTr("Contracts")
             Layout.fillWidth: true
         }
 
-        Flickable {
-            id: contractScroll
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            contentWidth: width
-            contentHeight: contractColumn.implicitHeight
+        Controls.CheckListPanel {
+            Repeater {
+                model: root.contractRows
 
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-            }
+                delegate: RowLayout {
+                    id: contractRow
+                    required property var modelData
+                    readonly property string contractId: contractRow.modelData && contractRow.modelData.id ? contractRow.modelData.id : ""
 
-            Column {
-                id: contractColumn
-                width: contractScroll.width
-                spacing: root.theme.spacingSmall
+                    Layout.fillWidth: true
+                    spacing: root.theme.spacingSmall
 
-                Repeater {
-                    model: root.contractRows
+                    Controls.CheckBox {
+                        objectName: "propertyContractCheckBox"
+                        Layout.fillWidth: false
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                        checked: root.propertyViewModel && root.propertyViewModel.selectedContractIds ? root.propertyViewModel.selectedContractIds.indexOf(contractRow.contractId) !== -1 : false
+                        onToggled: if (root.propertyViewModel)
+                            root.propertyViewModel.setContractSelected(contractRow.contractId, checked)
+                    }
 
-                    delegate: RowLayout {
-                        id: contractRow
-                        required property var modelData
-                        readonly property string contractId: contractRow.modelData && contractRow.modelData.id ? contractRow.modelData.id : ""
+                    Label {
+                        color: root.theme.textPrimary
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                        text: contractRow.modelData && contractRow.modelData.name ? contractRow.modelData.name : ""
+                        elide: Text.ElideRight
+                    }
 
-                        width: contractColumn.width
-                        spacing: root.theme.spacingSmall
-
-                        Controls.CheckBox {
-                            Layout.fillWidth: false
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            checked: root.selectedContractIds.indexOf(contractRow.contractId) !== -1
-                            onClicked: {
-                                const next = root.selectedContractIds ? root.selectedContractIds.slice(0) : []
-                                const idx = next.indexOf(contractRow.contractId)
-                                if (checked && idx === -1)
-                                    next.push(contractRow.contractId)
-                                else if (!checked && idx !== -1)
-                                    next.splice(idx, 1)
-                                root.selectionChanged(next)
-                            }
-                        }
-
-                        Label {
-                            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                            text: contractRow.modelData && contractRow.modelData.name ? contractRow.modelData.name : ""
-                            elide: Text.ElideRight
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
+                    Item {
+                        Layout.fillWidth: true
                     }
                 }
             }
