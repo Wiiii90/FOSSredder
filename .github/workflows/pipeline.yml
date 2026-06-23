@@ -103,7 +103,7 @@ jobs:
         run: cmake -DTARGET_DIR="$env:TARGET_DIR" --preset clang-tidy
 
       - name: Build clang-tidy preset
-        run: cmake --build --preset release-clang-tidy --parallel 2
+        run: cmake --build --preset release-clang-tidy --parallel 1
 
   coverage:
     runs-on:
