@@ -20,8 +20,9 @@ target_compile_features(fossredder_infra_text_recognition PUBLIC cxx_std_20)
 
 find_package(Tesseract REQUIRED CONFIG)
 target_link_libraries(fossredder_infra_text_recognition
-    PRIVATE
+    PUBLIC
         FossRedder::Core
+    PRIVATE
         Tesseract::libtesseract
 )
 

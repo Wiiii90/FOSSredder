@@ -16,7 +16,7 @@ target_include_directories(fossredder_infra_xlsx_writer PUBLIC
 
 target_compile_features(fossredder_infra_xlsx_writer PUBLIC cxx_std_20)
 
-find_package(xlnt CONFIG QUIET)
+find_package(xlnt CONFIG REQUIRED)
 
 target_link_libraries(fossredder_infra_xlsx_writer
     PUBLIC
@@ -28,7 +28,7 @@ if(TARGET xlnt::xlnt)
 elseif(TARGET xlnt)
     target_link_libraries(fossredder_infra_xlsx_writer PRIVATE xlnt)
 else()
-    message(WARNING "xlnt library not found; XLSX export may fail to link")
+    message(FATAL_ERROR "xlnt package was found, but no supported xlnt target is available")
 endif()
 
 fossredder_set_library_output_dirs(fossredder_infra_xlsx_writer)

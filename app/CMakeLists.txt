@@ -63,7 +63,7 @@ target_link_libraries(fossredder PRIVATE
 if(MSVC)
     target_compile_options(fossredder PRIVATE /Zc:__cplusplus)
 
-    if (WIN32)
+    if(WIN32)
         target_link_options(fossredder PRIVATE
             "$<$<CONFIG:Debug>:/SUBSYSTEM:CONSOLE>"
             "$<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>"

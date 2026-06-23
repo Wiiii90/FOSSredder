@@ -1363,9 +1363,9 @@ FOSSredder-Setup-<version>-win-x64.exe
 stable release. Stable releases are immutable GitHub Releases created from
 version tags.
 
-GitHub Pages is published by the main pipeline on `develop` and `master`.
-It combines Doxygen HTML, coverage HTML and `ci/pages/index.html` into the
-published site.
+GitHub Pages is published only from a manually dispatched main pipeline run with
+Pages publishing enabled. It combines Doxygen HTML, coverage HTML and
+`ci/pages/index.html` into the published site.
 
 ## 9. Security & Privacy <a id="9-security--privacy"></a>
 
@@ -1423,7 +1423,7 @@ configuration and are not stored in repository files.
 | <a id="glossary-adapter"></a>Adapter | Concrete implementation that translates between a port and an external library, service or UI workflow. |
 | <a id="glossary-artifact"></a>Artifact | File or directory produced by CI or packaging, for example coverage HTML, Doxygen HTML, package logs or installer output. |
 | <a id="glossary-catalog"></a>Catalog | Domain aggregate containing actors, properties, contracts, statements, transactions, analyses and annuals. |
-| <a id="glossary-ci-pipeline"></a>CI pipeline | GitHub Actions workflow that validates build, tests, static analysis, coverage, documentation, Pages and develop-nightly packaging. |
+| <a id="glossary-ci-pipeline"></a>CI pipeline | GitHub Actions workflow that validates build, tests, static analysis, coverage, documentation and develop-nightly packaging. It can publish GitHub Pages when manually requested. |
 | <a id="glossary-clean-architecture"></a>Clean Architecture | Dependency model where domain and application rules sit at the center, while UI, persistence, frameworks and external libraries stay outside and depend inward through ports. |
 | <a id="glossary-cmake-preset"></a>CMake preset | Named CMake configure/build/test entry in `CMakePresets.json`. Presets are the supported way to describe repeatable local and CI builds. |
 | <a id="glossary-cmake-target"></a>CMake target | Named build unit that owns sources, include paths, compile features and link dependencies. |

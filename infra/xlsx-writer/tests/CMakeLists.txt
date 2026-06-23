@@ -20,4 +20,4 @@ target_link_libraries(infra_xlsx_writer_unit_tests
 )
 fossredder_enable_target_quality(infra_xlsx_writer_unit_tests)
 fossredder_set_runtime_output_dirs(infra_xlsx_writer_unit_tests)
-gtest_discover_tests(infra_xlsx_writer_unit_tests PROPERTIES LABELS "INFRA_XLSX_WRITER")
+gtest_discover_tests(infra_xlsx_writer_unit_tests PROPERTIES LABELS "INFRA_XLSX_WRITER_UNIT")

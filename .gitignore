@@ -1,54 +1,99 @@
-# IDE / Editor
-.vs/
-.vscode/
-*.qmlls.ini
+# Editors and local workspace
+/.codex/
+/.vs/
+/.vscode/
+/.idea/
 *.suo
 *.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.qmlls.ini
 
 # Local environment
 .env
+.env.*
+!.env.example
 
-# Build directories
-.build/
-.runner/
-build/
-out/
-cmake-build-*/
-vcpkg_installed/
-vcpkg/
-CMakeUserPresets.json
+# CMake and build trees
+/.build/
+/build/
+/out/
+/cmake-build-*/
+/CMakeCache.txt
+/CMakeFiles/
+/CMakeUserPresets.json
+/Testing/
+/cmake_install.cmake
+/compile_commands.json
+/DartConfiguration.tcl
 
-# Compiled artifacts
+# Dependency trees
+/third_party/
+/vcpkg/
+/vcpkg_installed/
+
+# Compiler and linker outputs
 *.a
+*.dll
 *.dylib
+*.exe
+*.exp
 *.gch
+*.ilk
+*.iobj
+*.ipdb
 *.lib
 *.o
 *.obj
 *.pch
+*.pdb
 *.so
 
-# Runtime / local data
-fossredder.db
-logs/
+# Generated Qt and localization files
+*.jsc
+*.qm
+*.qmlc
+*.rcc
+
+# Test, coverage and quality outputs
+/coverage/
+/htmlcov/
+*.coverage
+*.gcda
+*.gcno
+*.profdata
+*.profraw
+codecov.json
 
 # Packaging outputs
-dist/
-staging/
-/coverage/
+/dist/
+/staging/
+/_CPack_Packages/
+*.msi
+*.nupkg
 
-# Local resources
-services/llama/res/
-services/tesseract/res/
+# Generated documentation
+/docs/html/
+/docs/latex/
+/doxygen_sqlite3.db
 
-# Third-party local content
-third_party/
+# Runtime data and diagnostics
+/.tmp-appdata/
+/LOCAL_APPDATA_FONTCONFIG_CACHE/
+/diagnostics_output/
+/logs/
+/fossredder.db
+/registry.db
+/workspace.fossredder
+*.fossredder
+*.sqlite
+*.sqlite3
 
-# Project-local misc
-LOCAL_APPDATA_FONTCONFIG_CACHE/
-docs/todo.txt
-
-diagnostics_output/
-docs/html/
-
-.tmp-appdata/
+# Temporary files
+*.bak
+*.log
+*.tmp
+*.swp
+*~

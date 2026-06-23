@@ -104,7 +104,7 @@ foreach ($sourceModel in $sourceTessdataFiles) {
     Assert-Path $stagedModelPath "Bundled Tesseract OCR model missing from staged package: $stagedModelPath"
 }
 
-Assert-Path (Join-Path $RepoRoot "installer\assets\wizard-banner.bmp") "Installer wizard banner asset missing."
+Assert-Path (Join-Path $RepoRoot "installer\assets\wizard-image.bmp") "Installer wizard image asset missing."
 Assert-Path (Join-Path $RepoRoot "installer\assets\wizard-small.bmp") "Installer wizard small image asset missing."
 
 $installer = Get-Item -Path $installerPath

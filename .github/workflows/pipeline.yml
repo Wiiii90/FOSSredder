@@ -12,6 +12,12 @@ on:
       - develop
       - master
   workflow_dispatch:
+    inputs:
+      publish_pages:
+        description: 'Publish GitHub Pages from this run'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: pipeline-${{ github.workflow }}-${{ github.ref }}
@@ -186,7 +192,7 @@ jobs:
           retention-days: 7
 
   publish-pages:
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_pages == true
     needs:
       - coverage
       - documentation

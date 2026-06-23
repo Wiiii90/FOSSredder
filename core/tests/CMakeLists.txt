@@ -50,4 +50,4 @@ fossredder_enable_target_quality(core_tests)
 fossredder_set_runtime_output_dirs(core_tests)
 
 include(GoogleTest)
-gtest_discover_tests(core_tests PROPERTIES LABELS "CORE")
+gtest_discover_tests(core_tests PROPERTIES LABELS "CORE_UNIT")

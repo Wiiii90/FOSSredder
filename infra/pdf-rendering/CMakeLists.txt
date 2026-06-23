@@ -24,8 +24,9 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(OpenCV REQUIRED)
 
 target_link_libraries(fossredder_infra_pdf_rendering
-    PRIVATE
+    PUBLIC
         FossRedder::Core
+    PRIVATE
         PkgConfig::POPPLER_CPP
         nlohmann_json::nlohmann_json
         ${OpenCV_LIBS}

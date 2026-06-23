@@ -17,8 +17,8 @@ Checks: >-
   readability-redundant-control-flow,
   readability-redundant-smartptr-get
 WarningsAsErrors: ''
-HeaderFilterRegex: '(^|.*[\\/])(app|core|debug|infra|persistence|ui)([\\/]|$)'
-ExcludeHeaderFilterRegex: '(^|.*[\\/])(\.build|build|vcpkg)([\\/]|$)|(^|.*[\\/])(moc_|qrc_)'
+HeaderFilterRegex: '(^|.*[\\/])(app|core|diagnostics|infra|persistence|ui)([\\/]|$)'
+ExcludeHeaderFilterRegex: '(^|.*[\\/])(\.build|build|cmake-build-[^\\/]*|vcpkg|vcpkg_installed)([\\/]|$)|(^|.*[\\/])(moc_|qrc_)'
 FormatStyle: file
 SystemHeaders: false
 ...

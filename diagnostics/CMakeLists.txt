@@ -38,6 +38,6 @@ fossredder_install_headers("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # Optional module-local tests.
 option(BUILD_DIAGNOSTICS_TESTS "Build tests for diagnostics module" OFF)
-if (BUILD_DIAGNOSTICS_TESTS)
+if(BUILD_DIAGNOSTICS_TESTS)
     add_subdirectory(tests)
 endif()

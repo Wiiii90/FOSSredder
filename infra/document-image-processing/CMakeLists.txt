@@ -35,7 +35,7 @@ fossredder_install_library_target(fossredder_infra_document_image_processing)
 fossredder_install_headers("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # Optional module-local tests.
-option(BUILD_DOCUMENT_IMAGE_PROCESSING_TESTS "Build tests for document image processing infrastructure" OFF)
-if(BUILD_DOCUMENT_IMAGE_PROCESSING_TESTS)
+option(BUILD_INFRA_DOCUMENT_IMAGE_PROCESSING_TESTS "Build tests for document image processing infrastructure" OFF)
+if(BUILD_INFRA_DOCUMENT_IMAGE_PROCESSING_TESTS)
     add_subdirectory(tests)
 endif()

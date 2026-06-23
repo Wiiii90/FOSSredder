@@ -47,7 +47,7 @@ target_compile_definitions(ui_unit_tests PRIVATE
 target_compile_features(ui_unit_tests PRIVATE cxx_std_20)
 fossredder_set_runtime_output_dirs(ui_unit_tests)
 fossredder_enable_target_quality(ui_unit_tests)
-gtest_discover_tests(ui_unit_tests PROPERTIES LABELS "UNIT")
+gtest_discover_tests(ui_unit_tests PROPERTIES LABELS "UI_UNIT")
 
 set(UI_INTERACTION_TEST_SRCS
     interaction/TestFeatureWiring.cpp
@@ -66,7 +66,7 @@ target_include_directories(ui_interaction_tests PRIVATE
 )
 fossredder_set_runtime_output_dirs(ui_interaction_tests)
 fossredder_enable_target_quality(ui_interaction_tests)
-gtest_discover_tests(ui_interaction_tests PROPERTIES LABELS "INTERACTION")
+gtest_discover_tests(ui_interaction_tests PROPERTIES LABELS "UI_INTERACTION")
 
 add_executable(ui_qml_tests
     qml/qmltests.cpp
@@ -98,6 +98,6 @@ fossredder_configure_qt_runtime(ui_qml_tests
 
 add_test(NAME ui_qml_tests COMMAND ui_qml_tests -platform windows)
 set_tests_properties(ui_qml_tests PROPERTIES
-    LABELS "UI;QML"
+    LABELS "UI_QML"
     ENVIRONMENT "QML_DISABLE_DISK_CACHE=1;QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:ui_qml_tests>/platforms;QT_PLUGIN_PATH=$<TARGET_FILE_DIR:ui_qml_tests>;QML2_IMPORT_PATH=$<TARGET_FILE_DIR:ui_qml_tests>/qml;QML_IMPORT_PATH=$<TARGET_FILE_DIR:ui_qml_tests>/qml"
 )

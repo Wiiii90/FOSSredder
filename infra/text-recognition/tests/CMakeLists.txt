@@ -21,4 +21,4 @@ target_link_libraries(infra_text_recognition_unit_tests
 )
 fossredder_enable_target_quality(infra_text_recognition_unit_tests)
 fossredder_set_runtime_output_dirs(infra_text_recognition_unit_tests)
-gtest_discover_tests(infra_text_recognition_unit_tests PROPERTIES LABELS "INFRA_TEXT_RECOGNITION")
+gtest_discover_tests(infra_text_recognition_unit_tests PROPERTIES LABELS "INFRA_TEXT_RECOGNITION_UNIT")

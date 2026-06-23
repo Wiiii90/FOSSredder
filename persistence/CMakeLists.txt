@@ -52,6 +52,6 @@ fossredder_install_headers("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # Optional module-local tests.
 option(BUILD_PERSISTENCE_TESTS "Build tests for persistence module" OFF)
-if (BUILD_PERSISTENCE_TESTS)
+if(BUILD_PERSISTENCE_TESTS)
     add_subdirectory(tests)
 endif()

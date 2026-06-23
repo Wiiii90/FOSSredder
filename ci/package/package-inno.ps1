@@ -5,7 +5,7 @@ param(
     [string]$InstallerScript = "installer\\inno\\fossredder.iss",
     [string]$ISCCPath = "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
     [string]$OutputDir = ".build\\app\\dist",
-    [string]$WizardBannerFile = "installer\\assets\\wizard-banner.bmp",
+    [string]$WizardImageFile = "installer\\assets\\wizard-image.bmp",
     [string]$WizardSmallFile = "installer\\assets\\wizard-small.bmp",
     [string]$LocalizationContract = "ci\\localization\\localization-contract.json",
     [string]$AppQmlSourceDir = "ui\\qml\\FossRedder",
@@ -101,7 +101,7 @@ $OutputDirAbs = Get-AbsPath $OutputDir $RepoRoot
 $InstallerAbs = Get-AbsPath $InstallerScript $RepoRoot
 $LicenseFileAbs = Get-AbsPath "LICENSE" $RepoRoot
 $IconFileAbs = Get-AbsPath "app\\assets\\icons\\fossredder.ico" $RepoRoot
-$WizardBannerSourceAbs = Get-AbsPath $WizardBannerFile $RepoRoot
+$WizardImageSourceAbs = Get-AbsPath $WizardImageFile $RepoRoot
 $WizardSmallSourceAbs = Get-AbsPath $WizardSmallFile $RepoRoot
 $LocalizationContractAbs = Get-AbsPath $LocalizationContract $RepoRoot
 $AppQmlSourceDirAbs = Get-AbsPath $AppQmlSourceDir $RepoRoot
@@ -110,7 +110,7 @@ if (-not (Test-Path $BuildDirAbs)) { throw "BuildDir not found: $BuildDirAbs" }
 if (-not (Test-Path $InstallerAbs)) { throw "Installer script not found: $InstallerAbs" }
 if (-not (Test-Path $LicenseFileAbs)) { throw "License file not found: $LicenseFileAbs" }
 if (-not (Test-Path $IconFileAbs)) { throw "Installer icon file not found: $IconFileAbs" }
-if (-not (Test-Path $WizardBannerSourceAbs)) { throw "Wizard banner image not found: $WizardBannerSourceAbs" }
+if (-not (Test-Path $WizardImageSourceAbs)) { throw "Wizard image not found: $WizardImageSourceAbs" }
 if (-not (Test-Path $WizardSmallSourceAbs)) { throw "Wizard small image not found: $WizardSmallSourceAbs" }
 if (-not (Test-Path $LocalizationContractAbs)) { throw "Localization contract not found: $LocalizationContractAbs" }
 if (-not (Test-Path $AppQmlSourceDirAbs)) { throw "App QML source directory not found: $AppQmlSourceDirAbs" }
@@ -213,9 +213,9 @@ if (!(Test-Path $installerAssetBuildDir)) {
     New-Item -ItemType Directory -Path $installerAssetBuildDir | Out-Null
 }
 
-$WizardBannerBuildAbs = Join-Path $installerAssetBuildDir "wizard-banner.bmp"
+$WizardImageBuildAbs = Join-Path $installerAssetBuildDir "wizard-image.bmp"
 $WizardSmallBuildAbs = Join-Path $installerAssetBuildDir "wizard-small.bmp"
-Convert-InstallerBitmap -SourcePath $WizardBannerSourceAbs -OutputPath $WizardBannerBuildAbs -Width 493 -Height 58
+Convert-InstallerBitmap -SourcePath $WizardImageSourceAbs -OutputPath $WizardImageBuildAbs -Width 164 -Height 314
 Convert-InstallerBitmap -SourcePath $WizardSmallSourceAbs -OutputPath $WizardSmallBuildAbs -Width 55 -Height 55
 
 if ($RunQtDeployFallback) {
@@ -380,7 +380,7 @@ $arguments = @(
     "/DStaging=`"$StagingDirAbs`"",
     "/DLicenseFile=`"$LicenseFileAbs`"",
     "/DIconFile=`"$IconFileAbs`"",
-    "/DWizardBannerFile=`"$WizardBannerBuildAbs`"",
+    "/DWizardImageFile=`"$WizardImageBuildAbs`"",
     "/DWizardSmallFile=`"$WizardSmallBuildAbs`""
 )
 $proc = Start-Process -FilePath $ISCCPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru -RedirectStandardOutput $isccOut -RedirectStandardError $isccErr
