@@ -10,8 +10,7 @@ import QtTest 1.3
 import "../../common" as Common
 import FossRedder.Views.Export 1.0 as Export
 
-import "../../common/Lookup.js" as Lookup
-import "../../common/TestSupport.js" as TestSupport
+import "../../common"
 
 TestCase {
     id: testCase

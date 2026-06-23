@@ -9,7 +9,7 @@ import QtQuick 2.15
 import QtTest 1.3
 import FossRedder.Controls 1.0
 
-import "../common/Lookup.js" as Lookup
+import "../common"
 
 TestCase {
     id: testCase

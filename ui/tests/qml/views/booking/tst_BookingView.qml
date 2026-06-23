@@ -10,7 +10,7 @@ import QtTest 1.3
 import "../../common" as Common
 import FossRedder.Views.Booking 1.0 as Booking
 
-import "../../common/Lookup.js" as Lookup
+import "../../common"
 
 TestCase {
     id: testCase

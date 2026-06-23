@@ -1,0 +1,3 @@
+TestTheme 1.0 TestTheme.qml
+singleton Lookup 1.0 Lookup.qml
+singleton TestSupport 1.0 TestSupport.qml

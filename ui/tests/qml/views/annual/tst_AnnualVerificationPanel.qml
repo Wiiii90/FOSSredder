@@ -6,8 +6,7 @@
 import QtQuick 2.15
 import QtTest 1.3
 import FossRedder.Views.Annual 1.0 as Annual
-import "../../common/Lookup.js" as Lookup
-import "../../common/TestSupport.js" as TestSupport
+import "../../common"
 
 TestCase {
     id: testCase
